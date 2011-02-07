@@ -1,0 +1,17 @@
+# Temp files from Windows/MacOSX/etc.
+.*~$
+\.DS_Store
+Thumbs\.db
+
+# App cache files.
+^website/_cache/
+
+# Libs files we don't need.
+^website/_piecrust/libs/geshi/docs/
+^website/_piecrust/libs/sfyaml/doc/
+^website/_piecrust/libs/sfyaml/test/
+^website/_piecrust/libs/twig/bin/
+^website/_piecrust/libs/twig/doc/
+^website/_piecrust/libs/twig/test/
+^website/_piecrust/libs/twig/phpunit\.xml
+

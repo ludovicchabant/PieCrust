@@ -1,0 +1,11 @@
+site:
+    title: PieCrust Demo
+    template_engine: Dwoo
+
+markdown:
+    use_markdown_extra: true
+    use_smartypants: true
+
+smartypants:
+    enable: true
+    use_smartypants_typographer: true

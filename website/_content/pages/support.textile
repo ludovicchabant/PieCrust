@@ -1,0 +1,11 @@
+---
+title: Getting support
+---
+
+h2. Forums
+
+If there were forums about *PieCrust*, you could probably get support there.
+
+h2. GetSatisfaction
+
+That's also a good source.
