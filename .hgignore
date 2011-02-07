@@ -4,7 +4,7 @@
 Thumbs\.db
 
 # App cache files.
-^website/_cache/
+^website/_cache/.*?\.(?!empty)
 
 # Libs files we don't need.
 ^website/_piecrust/libs/geshi/docs/
