@@ -153,7 +153,7 @@ class PieCrust
         $requestedPath = $this->getRequestedPath($_SERVER['QUERY_STRING']);
         
         $pageContents = file_get_contents($requestedPath);
-        $pageConfig = $this->getPageConfig(&$pageContents);
+        $pageConfig = $this->getPageConfig($pageContents);
         
         $pageExtension = pathinfo($requestedPath, PATHINFO_EXTENSION);
         $formattedPageContents = $this->getFormattedPageContents($pageContents, $pageExtension);
@@ -188,7 +188,7 @@ class PieCrust
     protected function getPageConfig(&$pageContents)
     {
         $yamlHeaderMatches = array();
-        $hasYamlHeader = preg_match('/^(---\s*\n.*?\n?)^(---\s*$\n?)/m', $pageContents, &$yamlHeaderMatches);
+        $hasYamlHeader = preg_match('/^(---\s*\n.*?\n?)^(---\s*$\n?)/m', $pageContents, $yamlHeaderMatches);
         if ($hasYamlHeader == true)
         {
             $yamlHeader = substr($pageContents, 0, strlen($yamlHeaderMatches[1]));
