@@ -8,26 +8,15 @@
 define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
 
-if (!defined(PIECRUST_INDEX_PAGE_NAME)) {
-    define('PIECRUST_INDEX_PAGE_NAME', '_index');
-}
+define('PIECRUST_INDEX_PAGE_NAME', '_index');
+define('PIECRUST_CONFIG_PATH', '_content/config.yml');
+define('PIECRUST_CONTENT_TEMPLATES_DIR', '_content/templates/');
+define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
+define('PIECRUST_CACHE_COMPILED_TEMPLATES_DIR', '_cache/templates_c/');
+define('PIECRUST_CACHE_TEMPLATES_CACHE_DIR', '_cache/templates/');
 
-if (!defined(PIECRUST_CONFIG_PATH)) {
-    define('PIECRUST_CONFIG_PATH', '_content/config.yml');
-}
-
-if (!defined(PIECRUST_CONTENT_TEMPLATES_DIR)) {
-    define('PIECRUST_CONTENT_TEMPLATES_DIR', '_content/templates/');
-}
-if (!defined(PIECRUST_CONTENT_PAGES_DIR)) {
-    define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
-}
-if (!defined(PIECRUST_CACHE_COMPILED_TEMPLATES_DIR)) {
-    define('PIECRUST_CACHE_COMPILED_TEMPLATES_DIR', '_cache/templates_c/');
-}
-if (!defined(PIECRUST_CACHE_TEMPLATES_CACHE_DIR)) {
-    define('PIECRUST_CACHE_TEMPLATES_CACHE_DIR', '_cache/templates/');
-}
+define('PIECRUST_DEFAULT_TEMPLATE_NAME', 'default');
+define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
 
 require_once('IFormatter.class.php');
 require_once('ITemplateEngine.class.php');
@@ -117,8 +106,8 @@ class PieCrust
             try
             {
                 $config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
-                if (!isset($config['site']))
-                    $config['site'] = array();
+                if (!isset($config['site']))	// Define the 'site' configuration to prevent having to test for its 
+                    $config['site'] = array();	// existence every time we need to test for a key.
                 $config['url_base'] = $this->urlBase;
             }
             catch (InvalidArgumentException $e)
@@ -187,29 +176,26 @@ class PieCrust
         }
         
         $requestUri = null;
-        if (isset($_SERVER['HTTP_X_REWRITE_URL']))
+        if (isset($_SERVER['IIS_WasUrlRewritten']) &&
+            $_SERVER['IIS_WasUrlRewritten'] == '1' &&
+            isset($_SERVER['UNENCODED_URL']) &&
+            $_SERVER['UNENCODED_URL'] != '')
         {
-            // IIS rewriting
-            $requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
-        }
-        elseif (isset($_SERVER['IIS_WasUrlRewritten']) &&
-                $_SERVER['IIS_WasUrlRewritten'] == '1' &&
-                isset($_SERVER['UNENCODED_URL']) &&
-                $_SERVER['UNENCODED_URL'] != '')
-        {
-            // IIS7 rewriting
+            // IIS7 rewriting module.
             $requestUri = $_SERVER['UNENCODED_URL'];
+			if (strlen($this->urlBase) > 1)
+                $requestUri = substr($requestUri, strlen($this->urlBase) - 1);
         }
         elseif (isset($_SERVER['REQUEST_URI']))
         {
-            // Apache/generic rewriting
+            // Apache mod_rewrite.
             $requestUri = $_SERVER['REQUEST_URI'];
             if (strlen($this->urlBase) > 1)
                 $requestUri = substr($requestUri, strlen($this->urlBase) - 1);
         }
         if ($requestUri == null)
         {
-            die ("Can't figure out the request URI!");
+            die ("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache");
         }
         return $requestUri;
     }
@@ -222,12 +208,12 @@ class PieCrust
         $requestedPathPattern = $this->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $requestedUrl) . '.*';
         $requestedPath = glob($requestedPathPattern, GLOB_NOSORT|GLOB_ERR);
         if ($requestedPath === false)
-            throw new PieCrustException('An error occured while trying to find the requested article.');
+            throw new PieCrustException('An error occured while trying to find the requested article: ' . $requestedUrl);
         $pathCount = count($requestedPath);
         if ($pathCount == 0)
-            throw new PieCrustException('The requested article was not found.');
+            throw new PieCrustException('The requested article was not found: ' . $requestedUrl);
         if ($pathCount > 1)
-            throw new PieCrustException('More than one file was found for the requested article.');
+            throw new PieCrustException('More than one file was found for the requested article: ' . $requestedUrl);
         
         return $requestedPath[0];
     }
@@ -311,14 +297,16 @@ class PieCrust
     protected function renderPage($pageConfig, $pageData)
     {
         $config = $this->getConfig();
-        $templateEngineName = $config['site']['template_engine'];
-        if (!isset($templateEngineName) or $templateEngineName == '')
-            throw new PieCrustException('No template engine has been defined in the site configuration.');
+        $templateEngineName = (isset($config['site']['template_engine']) ? $config['site']['template_engine'] : PIECRUST_DEFAULT_TEMPLATE_ENGINE);
         $templateEngineClass = $templateEngineName . 'TemplateEngine';
         require_once(PIECRUST_APP_DIR . 'template-engines/' . $templateEngineClass . '.class.php');
         $reflector = new ReflectionClass($templateEngineClass);
         $templateEngine = $reflector->newInstance();
         $templateEngine->initialize($this->getConfig());
-        $templateEngine->renderPage($this, $pageConfig, $pageData);
+		
+		// Define the default template if none was specified.
+		if (!isset($pageConfig['layout']))
+            $pageConfig['layout'] = PIECRUST_DEFAULT_TEMPLATE_NAME;
+        echo $templateEngine->renderPage($this, $pageConfig, $pageData);
     }
 }
