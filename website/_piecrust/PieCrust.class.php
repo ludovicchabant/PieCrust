@@ -1,5 +1,10 @@
 <?php
 
+/**
+ *  The main PieCrust app class.
+ *
+ */
+
 define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
 
@@ -162,7 +167,8 @@ class PieCrust
                             'content' => $formattedPageContents,
                             'page' => $this->getPageData($pageConfig),
                             'site' => $this->getSiteData($this->getConfig()),
-                            'piecrust' => $this->getGlobalData()
+                            'piecrust' => $this->getGlobalData(),
+                            'helpers' => $this->getHelpersData()
                          );
         $this->renderPage($pageConfig, $pageData);
     }
@@ -255,8 +261,13 @@ class PieCrust
             'version' => PieCrust::VERSION
         );
     }
+
+    protected function getHelpersData()
+    {
+        
+    }
     
-    protected function renderPage($pageConfig, $pageContents)
+    protected function renderPage($pageConfig, $pageData)
     {
         $config = $this->getConfig();
         $templateEngineName = $config['site']['template_engine'];
@@ -267,6 +278,6 @@ class PieCrust
         $reflector = new ReflectionClass($templateEngineClass);
         $templateEngine = $reflector->newInstance();
         $templateEngine->initialize($this->getConfig());
-        $templateEngine->renderPage($this, $pageConfig, $pageContents);
+        $templateEngine->renderPage($this, $pageConfig, $pageData);
     }
 }
