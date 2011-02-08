@@ -1,6 +1,6 @@
 site:
     title: PieCrust Demo
-    template_engine: Dwoo
+    template_engine: Twig
     pretty_urls: true
 
 markdown:
