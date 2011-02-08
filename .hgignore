@@ -14,4 +14,6 @@ Thumbs\.db
 ^website/_piecrust/libs/twig/doc/
 ^website/_piecrust/libs/twig/test/
 ^website/_piecrust/libs/twig/phpunit\.xml
-
+^website/_piecrust/libs/lessphp/docs/
+^website/_piecrust/libs/lessphp/tests/
+^website/_piecrust/libs/lessphp/\.gitignore
