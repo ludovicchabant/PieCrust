@@ -14,7 +14,8 @@ class TwigTemplateEngine implements ITemplateEngine
         return (self::$usePrettyUrls ? '/' : '/?/');
     }
 	
-	protected $cacheTemplates;
+	protected $isCacheEnabled;
+	protected $useCacheAsTemplates;
 	
     public function initialize($config)
     {
@@ -22,15 +23,20 @@ class TwigTemplateEngine implements ITemplateEngine
         require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/Functions.php');
         Twig_Autoloader::register();
 		self::$usePrettyUrls = ($config['site']['pretty_urls'] == true);
-		$this->cacheTemplates = ($config['site']['cache_templates'] == true);
+		$this->isCacheEnabled = ($config['site']['enable_cache'] == true);
+		$this->useCacheAsTemplates = ($config['site']['use_cache_as_templates'] == true);
     }
     
     public function renderPage($pieCrustApp, $pageConfig, $pageData)
     {
-        $loader = new Twig_Loader_Filesystem($pieCrustApp->getTemplatesDir());
+		$dirs = array($pieCrustApp->getTemplatesDir());
+		if ($this->isCacheEnabled and $this->useCacheAsTemplates)
+			array_push($dirs, $pieCrustApp->getFormattedCacheDir());
+        
+		$loader = new Twig_Loader_Filesystem($dirs);
         $twig = new Twig_Environment($loader,
                                      array(
-                                        'cache' => $this->cacheTemplates ? $pieCrustApp->getCompiledTemplatesDir() : false
+                                        'cache' => $this->isCacheEnabled ? $pieCrustApp->getCompiledTemplatesDir() : false
                                     ));
         $twig->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
         

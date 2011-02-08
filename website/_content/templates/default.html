@@ -11,10 +11,14 @@
 <body>
     <div id="container" class="container">
         <div id="header">
+			{% block header %}
             <h1>{{ site.title }}</h1>
+			{% endblock %}
         </div>
         <div id="content">
+			{% block content %}
             {{ content|raw }}
+			{% endblock %}
         </div>
         <div id="sidebar">
             <ul>
@@ -24,7 +28,9 @@
             </ul>
         </div>
         <div id="footer">
+			{% block footer %}
             <p>Baked with <em>PieCrust {{ piecrust.version }}</em>.</p>
+			{% endblock %}
         </div>
     </div>
 </body>

@@ -1,6 +1,6 @@
 site:
     title: PieCrust Demo
-    template_engine: Twig
+    enable_cache: true
     pretty_urls: true
 
 markdown:

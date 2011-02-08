@@ -1,0 +1,24 @@
+<?php
+
+function piecrust_fatal_error($errors)
+{
+	$errorMessages = '';
+	foreach ($errors as $e)
+	{
+		$errorMessages .= '<li>' . $e->getMessage() . '</li>' . "\n";
+	}
+	$html = <<<EOD
+<!doctype html>
+<html>
+	<body>
+		<h1>Wow, something is seriously fucked up here.</h1>
+		<p>We're very sorry but things went so bad around here that we can't even show
+		   you a nice error page. All we know is that the following happened:</p>
+		<ul>
+			$errorMessages
+		</ul>
+	</body>
+</html>
+EOD;
+	echo $html;
+}
