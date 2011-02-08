@@ -1,6 +1,7 @@
 site:
     title: PieCrust Demo
     template_engine: Dwoo
+    pretty_urls: true
 
 markdown:
     use_markdown_extra: true

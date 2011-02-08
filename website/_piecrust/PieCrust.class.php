@@ -117,6 +117,8 @@ class PieCrust
             try
             {
                 $config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
+                if (!isset($config['site']))
+                    $config['site'] = array();
                 $config['url_base'] = $this->urlBase;
             }
             catch (InvalidArgumentException $e)
@@ -155,7 +157,8 @@ class PieCrust
     
     public function run()
     {
-        $requestedPath = $this->getRequestedPath($_SERVER['QUERY_STRING']);
+        $requestedUri = $this->getRequestUri();
+        $requestedPath = $this->getRequestedPath($requestedUri);
         
         $pageContents = file_get_contents($requestedPath);
         $pageConfig = $this->getPageConfig($pageContents);
@@ -171,6 +174,44 @@ class PieCrust
                             'helpers' => $this->getHelpersData()
                          );
         $this->renderPage($pageConfig, $pageData);
+    }
+    
+    protected function getRequestUri()
+    {
+        $config = $this->getConfig();
+        if (!isset($config['site']['pretty_urls']) ||
+            $config['site']['pretty_urls'] != true)
+        {
+            // Using standard query (no pretty URLs / URL rewriting)
+            return $_SERVER['QUERY_STRING'];
+        }
+        
+        $requestUri = null;
+        if (isset($_SERVER['HTTP_X_REWRITE_URL']))
+        {
+            // IIS rewriting
+            $requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
+        }
+        elseif (isset($_SERVER['IIS_WasUrlRewritten']) &&
+                $_SERVER['IIS_WasUrlRewritten'] == '1' &&
+                isset($_SERVER['UNENCODED_URL']) &&
+                $_SERVER['UNENCODED_URL'] != '')
+        {
+            // IIS7 rewriting
+            $requestUri = $_SERVER['UNENCODED_URL'];
+        }
+        elseif (isset($_SERVER['REQUEST_URI']))
+        {
+            // Apache/generic rewriting
+            $requestUri = $_SERVER['REQUEST_URI'];
+            if (strlen($this->urlBase) > 1)
+                $requestUri = substr($requestUri, strlen($this->urlBase) - 1);
+        }
+        if ($requestUri == null)
+        {
+            die ("Can't figure out the request URI!");
+        }
+        return $requestUri;
     }
     
     protected function getRequestedPath($localUrl)

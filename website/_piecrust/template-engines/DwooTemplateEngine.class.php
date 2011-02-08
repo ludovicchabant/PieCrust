@@ -1,10 +1,23 @@
 <?php
 
 class DwooTemplateEngine implements ITemplateEngine
-{   
+{
+    protected static $usePrettyUrls;
+    
+    public static function usePrettyUrls()
+    {
+        return DwooTemplateEngine::$usePrettyUrls;
+    }
+    
+    public static function getPathPrefix()
+    {
+        return (DwooTemplateEngine::$usePrettyUrls ? '/' : '/?/');
+    }
+    
     public function initialize($config)
     {
         require_once(PIECRUST_APP_DIR . 'libs/dwoo/dwooAutoload.php');
+        DwooTemplateEngine::$usePrettyUrls = ($config['site']['pretty_urls'] == true);
     }
     
     public function renderPage($pieCrustApp, $pageConfig, $pageData)

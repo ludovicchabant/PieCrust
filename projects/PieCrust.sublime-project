@@ -1,32 +1,17 @@
 {
 	"buffers":
 	[
-		{
-			"file": "/C/Users/lchabant/Code/Home/PieCrust/website/index.php",
-			"settings":
-			{
-				"buffer_size": 176,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/C/Users/lchabant/Code/Home/PieCrust/website/_piecrust/PieCrust.class.php",
-			"settings":
-			{
-				"buffer_size": 9468,
-				"line_ending": "Unix"
-			}
-		}
 	],
 	"build_system": "",
 	"file_history":
 	[
+		"/C/Users/lchabant/Code/Home/PieCrust/website/index.php",
+		"/C/Users/lchabant/Code/Home/PieCrust/website/_piecrust/PieCrust.class.php",
 		"/C/Users/lchabant/Code/Home/PieCrust/website/web.config",
 		"/C/Users/lchabant/Code/Home/PieCrust/.hgignore",
 		"/C/Users/lchabant/Code/Home/PieCrust/website/_cache/_templates/.empty",
 		"/C/Users/lchabant/Code/Home/PieCrust/website/_cache/_templates_c/.empty",
 		"/C/Users/lchabant/Code/Home/PieCrust/website/phpinfo.php",
-		"/C/Users/lchabant/Code/Home/PieCrust/website/index.php",
 		"/C/Users/lchabant/Code/Home/PieCrust/website/.htaccess"
 	],
 	"find_in_files":
@@ -67,63 +52,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "/C/Users/lchabant/Code/Home/PieCrust/website/index.php",
-					"settings":
-					{
-						"buffer_size": 176,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								176,
-								176
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/PHP/PHP.tmLanguage"
-						},
-						"translation.x": 0,
-						"translation.y": 0,
-						"zoom_level": 1
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/C/Users/lchabant/Code/Home/PieCrust/website/_piecrust/PieCrust.class.php",
-					"settings":
-					{
-						"buffer_size": 9468,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								833,
-								833
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/PHP/PHP.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0,
-						"translation.y": 0,
-						"zoom_level": 1
-					},
-					"type": "text"
-				}
 			]
 		}
 	],
