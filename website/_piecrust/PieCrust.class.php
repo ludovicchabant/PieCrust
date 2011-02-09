@@ -208,9 +208,6 @@ class PieCrust
 			}
 			catch (Exception $inner)
 			{
-				if (ini_get('display_errors'))
-					throw $inner;
-					
 				include 'FatalError.inc.php';
 				piecrust_fatal_error(array($e, $inner));
 			}

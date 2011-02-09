@@ -2,10 +2,18 @@
 
 function piecrust_fatal_error($errors)
 {
+	$printDetails = (ini_get('display_errors') == true);
 	$errorMessages = '';
 	foreach ($errors as $e)
 	{
-		$errorMessages .= '<li>' . $e->getMessage() . '</li>' . "\n";
+		$errorMessages .= '<li><h3>' . $e->getMessage() . '</h3>';
+		if ($printDetails)
+		{
+			$errorMessages .= '<p>Error: <code>' . $e->getCode() . '</code><br/>' .
+							  '   File: <code>' . $e->getFile() . '</code><br/>' .
+							  '   Line <code>' . $e->getLine() . '</code></p>';
+		}
+		$errorMessages .= '</li>' . "\n";
 	}
 	$html = <<<EOD
 <!doctype html>
