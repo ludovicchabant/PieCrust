@@ -14,33 +14,43 @@ class TwigTemplateEngine implements ITemplateEngine
         return (self::$usePrettyUrls ? '/' : '/?/');
     }
 	
-	protected $isCacheEnabled;
-	protected $useCacheAsTemplates;
+	protected $twigLoader;
+	protected $twigEnv;
 	
-    public function initialize($config)
+    public function initialize(PieCrust $pieCrust)
     {
         require_once(PIECRUST_APP_DIR . 'libs/twig/lib/Twig/Autoloader.php');
         require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/Functions.php');
         Twig_Autoloader::register();
+		
+		$config = $pieCrust->getConfig();
 		self::$usePrettyUrls = ($config['site']['pretty_urls'] == true);
-		$this->isCacheEnabled = ($config['site']['enable_cache'] == true);
-		$this->useCacheAsTemplates = ($config['site']['use_cache_as_templates'] == true);
+		
+		$isCacheEnabled = ($config['site']['enable_cache'] == true);
+		$useCacheAsTemplates = ($config['site']['use_cache_as_templates'] == true);
+		$autoReload = (isset($config['twig']) and $config['twig']['auto_reload'] == true);
+		
+		$dirs = array($pieCrust->getTemplatesDir());
+		if ($this->isCacheEnabled and $this->useCacheAsTemplates)
+			array_push($dirs, $pieCrust->getFormattedCacheDir());
+        
+		$this->twigLoader = new Twig_Loader_Filesystem($dirs);
+		$options = array(
+							'cache' => ($isCacheEnabled ? $pieCrust->getCompiledTemplatesDir() : false),
+							'auto_reload' => $autoReload
+						);
+        $this->twigEnv = new Twig_Environment($this->twigLoader, $options);
+        $this->twigEnv->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
     }
     
-    public function renderPage($pieCrustApp, $pageConfig, $pageData)
+    public function renderPage($pageConfig, $pageData)
     {
-		$dirs = array($pieCrustApp->getTemplatesDir());
-		if ($this->isCacheEnabled and $this->useCacheAsTemplates)
-			array_push($dirs, $pieCrustApp->getFormattedCacheDir());
-        
-		$loader = new Twig_Loader_Filesystem($dirs);
-        $twig = new Twig_Environment($loader,
-                                     array(
-                                        'cache' => $this->isCacheEnabled ? $pieCrustApp->getCompiledTemplatesDir() : false
-                                    ));
-        $twig->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
-        
-        $template = $twig->loadTemplate($pageConfig['layout'] . '.html');
+        $template = $this->twigEnv->loadTemplate($pageConfig['layout'] . '.html');
         return $template->render($pageData);
     }
+	
+	public function isCacheValid($templateName, $time)
+	{
+		return $this->twigLoader->isFresh($templateName . '.html', $time);
+	}
 }

@@ -222,14 +222,29 @@ class PieCrust
 			$uri = $this->getRequestUri();
 		}
 		$requestedPath = $this->getRequestedPath($uri);
+        
+        $config = $this->getConfig();
+        $isCacheEnabled = ($config['site']['enable_cache'] == true);
 		
 		// Get the page's config and formatted contents.
 		$config = $this->getConfig();
 		$formattedCache = null;
-		if ($config['site']['enable_cache'] == true)
+        $formattedCacheTime = null;
+		if ($isCacheEnabled)
+        {
 			$formattedCache = new Cache($this->getFormattedCacheDir());
-		if ($formattedCache == null or $formattedCache->isExpired($requestedPath, $uri, 'html'))
-		{		
+            $formattedCacheTime = $formattedCache->getCacheTime($uri, 'html');
+        }
+		if ($formattedCacheTime != null and $formattedCacheTime > filemtime($requestedPath))
+		{
+			$formattedPageContents = $formattedCache->read($uri, 'html');
+			$pageConfigText = $formattedCache->read($uri, 'yml');
+			$yamlParser = new sfYamlParser();
+			$pageConfig = $yamlParser->parse($pageConfigText);
+            $this->validatePageConfig($pageConfig);
+        }
+        else
+        {
 			$pageContents = file_get_contents($requestedPath);
 			$pageConfig = $this->getPageConfig($pageContents);
 		
@@ -242,40 +257,57 @@ class PieCrust
 				$formattedCache->write($uri, 'yml', $yamlDumper->dump($pageConfig));
 			}
 		}
-		else
-		{
-			$formattedPageContents = $formattedCache->read($uri, 'html');
-			$pageConfigText = $formattedCache->read($uri, 'yml');
-			$yamlParser = new sfYamlParser();
-			$pageConfig = $yamlParser->parse($pageConfigText);
-		}
+        if (!isset($pageConfig) or !isset($formattedPageContents))
+            throw new PieCrustException('An unknown error occured while loading the page contents and configuration.');
 		
-		// Render the page.
-		$pageData = array(
-							'content' => $formattedPageContents,
-							'page' => $this->getPageData($pageConfig),
-							'site' => $this->getSiteData($this->getConfig()),
-							'piecrust' => $this->getGlobalData(),
-							'helpers' => $this->getHelpersData()
-						 );
-		if ($extraPageData != null)
-		{
-			if (is_array($extraPageData))
-			{
-				foreach ($extraPageData as $key => $value)
-				{
-					if (!isset($pageData[$key]))
-						$pageData[$key] = $value;
-					else
-						$pageData[($key . '.extra')] = $value;
-				}
-			}
-			else
-			{
-				$pageData['extra'] = $extraPageData;
-			}
-		}
-		$this->renderPage($pageConfig, $pageData);
+		// Get the template engine and figure out if we need to re-render the page.
+        $htmlCache = null;
+        if ($isCacheEnabled)
+        {        
+            $htmlCache = new Cache($this->getHtmlCacheDir());
+        }
+        $templateEngine = $this->getTemplateEngine();
+        if ($isCacheEnabled and
+            $formattedCacheTime != null and
+            $templateEngine->isCacheValid($pageConfig['layout'], $formattedCacheTime))
+        {
+            // The template is still valid, so since the inputs to the template
+            // have not changed either, we can just load the whole thing from the HTML cache.
+            die('CACHE!');
+            echo $htmlCache->read($uri, 'html');
+        }
+        else
+        {
+            $pageData = array(
+                                'content' => $formattedPageContents,
+                                'page' => $this->getPageData($pageConfig),
+                                'site' => $this->getSiteData($this->getConfig()),
+                                'piecrust' => $this->getGlobalData(),
+                                'helpers' => $this->getHelpersData()
+                             );
+            if ($extraPageData != null)
+            {
+                if (is_array($extraPageData))
+                {
+                    foreach ($extraPageData as $key => $value)
+                    {
+                        if (!isset($pageData[$key]))
+                            $pageData[$key] = $value;
+                        else
+                            $pageData[($key . '.extra')] = $value;
+                    }
+                }
+                else
+                {
+                    $pageData['extra'] = $extraPageData;
+                }
+            }
+            $output = $templateEngine->renderPage($pageConfig, $pageData);
+            if ($isCacheEnabled)
+                $htmlCache->write($uri, 'html', $output);
+            echo "<!-- PieCrust " . self::VERSION . " - fresh baking! -->\n";
+            echo $output;
+        }
 	}
     
     protected function getRequestUri()
@@ -358,7 +390,16 @@ class PieCrust
         {
             $pageConfig = array();
         }
+        
+        $this->validatePageConfig($pageConfig);
+            
         return $pageConfig;
+    }
+    
+    protected function validatePageConfig(&$pageConfig)
+    {
+		if (!isset($pageConfig['layout']))
+            $pageConfig['layout'] = PIECRUST_DEFAULT_TEMPLATE_NAME;
     }
     
     protected function getFormattedPageContents($pageContents, $pageExtension)
@@ -367,7 +408,7 @@ class PieCrust
         $formattedPageContents = $pageContents;
         foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
         {
-            $formatter->initialize($this->getConfig());
+            $formatter->initialize($this);
             if ($formatter->supportsExtension($pageExtension, $unFormatted))
             {
                 $formattedPageContents = $formatter->format($formattedPageContents);
@@ -412,7 +453,7 @@ class PieCrust
         
     }
     
-    protected function renderPage($pageConfig, $pageData)
+    protected function getTemplateEngine()
     {
         $config = $this->getConfig();
         $templateEngineName = (isset($config['site']['template_engine']) ? $config['site']['template_engine'] : PIECRUST_DEFAULT_TEMPLATE_ENGINE);
@@ -420,11 +461,7 @@ class PieCrust
         require_once(PIECRUST_APP_DIR . 'template-engines/' . $templateEngineClass . '.class.php');
         $reflector = new ReflectionClass($templateEngineClass);
         $templateEngine = $reflector->newInstance();
-        $templateEngine->initialize($this->getConfig());
-		
-		// Define the default template if none was specified.
-		if (!isset($pageConfig['layout']))
-            $pageConfig['layout'] = PIECRUST_DEFAULT_TEMPLATE_NAME;
-        echo $templateEngine->renderPage($this, $pageConfig, $pageData);
+        $templateEngine->initialize($this);
+        return $templateEngine;
     }
 }

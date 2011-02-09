@@ -5,7 +5,6 @@ site:
 
 markdown:
     use_markdown_extra: true
-    use_smartypants: true
 
 smartypants:
     enable: true

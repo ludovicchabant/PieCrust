@@ -4,8 +4,9 @@ class MarkdownFormatter implements IFormatter
 {
     protected $markdownLibDir;
     
-    public function initialize($config)
+    public function initialize(PieCrust $pieCrust)
     {
+        $config = $pieCrust->getConfig();
         $this->markdownLibDir = 'markdown';
         $markdownConfig = $config['markdown'];
         if ($markdownConfig != null)

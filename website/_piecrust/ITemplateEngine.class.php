@@ -2,6 +2,7 @@
 
 interface ITemplateEngine
 {
-    public function initialize($config);
-    public function renderPage($pieCrustApp, $pageConfig, $pageData);
+    public function initialize(PieCrust $pieCrust);
+    public function renderPage($pageConfig, $pageData);
+    public function isCacheValid($templateName, $time);
 }

@@ -2,7 +2,7 @@
 
 class TextileFormatter implements IFormatter
 {
-    public function initialize($config)
+    public function initialize(PieCrust $pieCrust)
     {
     }
     

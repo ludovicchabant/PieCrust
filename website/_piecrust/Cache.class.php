@@ -14,12 +14,20 @@ class Cache
 			);
 	}
 	
-	public function isExpired($sourcePath, $uri, $extension)
+	public function isValid($uri, $extension, timestamp $time)
+	{
+		$cacheTime = $this->getCacheTime($uri, $extension);
+		if ($cacheTime == null)
+			return false;
+		return $cacheTime > $time;
+	}
+	
+	public function getCacheTime($uri, $extension)
 	{
 		$cachePath = $this->getCachePath($uri, $extension);
 		if (!file_exists($cachePath))
-			return true;
-		return filemtime($cachePath) < filemtime($sourcePath);
+			return null;
+		return filemtime($cachePath);
 	}
 	
 	public function read($uri, $extension)
