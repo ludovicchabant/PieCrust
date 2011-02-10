@@ -10,24 +10,26 @@
 </head>
 <body>
     <div id="container" class="container">
-        <div id="header">
+        <div id="header" class="span-24 last">
 			{% block header %}
             <h1>{{ site.title }}</h1>
 			{% endblock %}
         </div>
-        <div id="content">
-			{% block content %}
-            {{ content|raw }}
-			{% endblock %}
-        </div>
-        <div id="sidebar">
+        <hr />
+        <div id="menu" class="span-24 last">
             <ul>
                 <li><a href="{{ site.root }}">Home</a></li>
                 <li><a href="{{ pcurl('about') }}">About</a></li>
                 <li><a href="{{ pcurl('support') }}">Support</a></li>
             </ul>
         </div>
-        <div id="footer">
+        <hr />
+        <div id="content" class="span-24 last">
+			{% block content %}
+            {{ content|raw }}
+			{% endblock %}
+        </div>
+        <div id="footer" class="span-24 last">
 			{% block footer %}
             <p>Baked with <em>PieCrust {{ piecrust.version }}</em>.</p>
 			{% endblock %}
