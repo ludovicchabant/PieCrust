@@ -22,6 +22,8 @@ define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
 
 require_once('IFormatter.class.php');
 require_once('ITemplateEngine.class.php');
+require_once('Page.class.php');
+require_once('PageRenderer.class.php');
 require_once('Cache.class.php');
 require_once('PluginLoader.class.php');
 require_once('PieCrustException.class.php');
@@ -35,6 +37,11 @@ class PieCrust
     const VERSION = '0.0.1';
     
     protected $urlBase;
+	
+	public function getUrlBase()
+	{
+		return $this->urlBase;
+	}
     
     protected $templatesDir;
     
@@ -136,23 +143,39 @@ class PieCrust
     
     public function getConfig()
     {
-        if ($config == null)
+        if (!isset($this->config) or $this->config == null)
         {
             try
             {
 				$yamlParser = new sfYamlParser();
-                $config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
-                if (!isset($config['site']))	// Define the 'site' configuration to prevent having to test for its 
-                    $config['site'] = array();	// existence every time we need to test for a key.
-                $config['url_base'] = $this->urlBase;
+                $this->config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
+				
+				// Add the default values.
+				$this->config = array_merge(array(
+						'site' => array(
+								'title' => 'PieCrust Untitled Website',
+								'enable_cache' => false
+							),
+						'url_base' => $this->urlBase
+					), $this->config);
             }
             catch (Exception $e)
             {
                 throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage());
             }
         }
-        return $config;
+        return $this->config;
     }
+	
+	public function getConfigValue($category, $key)
+	{
+		$config = $this->getConfig();
+		if (!isset($config[$category]))
+			return null;
+		if (!isset($config[$category][$key]))
+			return null;
+		return $config[$category][$key];
+	}
     
     protected $formattersLoader;
     
@@ -166,6 +189,26 @@ class PieCrust
                                             create_function('$p1, $p2', 'return $p1->getPriority() < $p2->getPriority();'));
         }
         return $this->formattersLoader;
+    }
+	
+	protected $templateEngine;
+    
+    public function getTemplateEngine()
+    {
+		if ($this->templateEngine == null)
+		{
+			$templateEngineName = $this->getConfigValue('site', 'template_engine');
+			if ($templateEngineName == null)
+				$templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
+				
+			$templateEngineClass = $templateEngineName . 'TemplateEngine';
+			require_once(PIECRUST_APP_DIR . 'template-engines/' . $templateEngineClass . '.class.php');
+			
+			$reflector = new ReflectionClass($templateEngineClass);
+			$this->templateEngine = $reflector->newInstance();
+			$this->templateEngine->initialize($this);
+		}
+        return $this->templateEngine;
     }
     
     public function __construct($urlBase = null)
@@ -221,101 +264,17 @@ class PieCrust
 		{
 			$uri = $this->getRequestUri();
 		}
-		$requestedPath = $this->getRequestedPath($uri);
-        
-        $config = $this->getConfig();
-        $isCacheEnabled = ($config['site']['enable_cache'] == true);
 		
-		// Get the page's config and formatted contents.
-		$config = $this->getConfig();
-		$formattedCache = null;
-        $formattedCacheTime = null;
-		if ($isCacheEnabled)
-        {
-			$formattedCache = new Cache($this->getFormattedCacheDir());
-            $formattedCacheTime = $formattedCache->getCacheTime($uri, 'html');
-        }
-		if ($formattedCacheTime != null and $formattedCacheTime > filemtime($requestedPath))
-		{
-			$formattedPageContents = $formattedCache->read($uri, 'html');
-			$pageConfigText = $formattedCache->read($uri, 'yml');
-			$yamlParser = new sfYamlParser();
-			$pageConfig = $yamlParser->parse($pageConfigText);
-            $this->validatePageConfig($pageConfig);
-        }
-        else
-        {
-			$pageContents = file_get_contents($requestedPath);
-			$pageConfig = $this->getPageConfig($pageContents);
-		
-			$pageExtension = pathinfo($requestedPath, PATHINFO_EXTENSION);
-			$formattedPageContents = $this->getFormattedPageContents($pageContents, $pageExtension);
-			if ($formattedCache != null)
-			{
-				$formattedCache->write($uri, 'html', $formattedPageContents);
-				$yamlDumper = new sfYamlDumper();
-				$formattedCache->write($uri, 'yml', $yamlDumper->dump($pageConfig));
-			}
-		}
-        if (!isset($pageConfig) or !isset($formattedPageContents))
-            throw new PieCrustException('An unknown error occured while loading the page contents and configuration.');
-		
-		// Get the template engine and figure out if we need to re-render the page.
-        $htmlCache = null;
-        if ($isCacheEnabled)
-        {        
-            $htmlCache = new Cache($this->getHtmlCacheDir());
-        }
-        $templateEngine = $this->getTemplateEngine();
-        if ($isCacheEnabled and
-            $formattedCacheTime != null and
-            $templateEngine->isCacheValid($pageConfig['layout'], $formattedCacheTime))
-        {
-            // The template is still valid, so since the inputs to the template
-            // have not changed either, we can just load the whole thing from the HTML cache.
-            die('CACHE!');
-            echo $htmlCache->read($uri, 'html');
-        }
-        else
-        {
-            $pageData = array(
-                                'content' => $formattedPageContents,
-                                'page' => $this->getPageData($pageConfig),
-                                'site' => $this->getSiteData($this->getConfig()),
-                                'piecrust' => $this->getGlobalData(),
-                                'helpers' => $this->getHelpersData()
-                             );
-            if ($extraPageData != null)
-            {
-                if (is_array($extraPageData))
-                {
-                    foreach ($extraPageData as $key => $value)
-                    {
-                        if (!isset($pageData[$key]))
-                            $pageData[$key] = $value;
-                        else
-                            $pageData[($key . '.extra')] = $value;
-                    }
-                }
-                else
-                {
-                    $pageData['extra'] = $extraPageData;
-                }
-            }
-            $output = $templateEngine->renderPage($pageConfig, $pageData);
-            if ($isCacheEnabled)
-                $htmlCache->write($uri, 'html', $output);
-            echo "<!-- PieCrust " . self::VERSION . " - fresh baking! -->\n";
-            echo $output;
-        }
+		// Get the requested page and render it.
+		$page = new Page($this, $uri);
+		$pageRenderer = new PageRenderer($this);
+		$pageRenderer->render($page, $extraPageData);
 	}
     
     protected function getRequestUri()
     {
-        $config = $this->getConfig();
 		$requestUri = null;
-        if (!isset($config['site']['pretty_urls']) ||
-            $config['site']['pretty_urls'] != true)
+        if ($this->getConfigValue('site', 'pretty_urls') != true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
             $requestUri = $_SERVER['QUERY_STRING'];
@@ -350,118 +309,5 @@ class PieCrust
 			$requestUri = '/' . PIECRUST_INDEX_PAGE_NAME;
 		}
         return $requestUri;
-    }
-    
-    protected function getRequestedPath($localUrl)
-    {
-        $requestedUrl = ltrim($localUrl, '/');
-        $requestedPathPattern = $this->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $requestedUrl) . '.*';
-        $requestedPath = glob($requestedPathPattern, GLOB_NOSORT|GLOB_ERR);
-        if ($requestedPath === false)
-            throw new PieCrustException('404');
-        $pathCount = count($requestedPath);
-        if ($pathCount == 0)
-            throw new PieCrustException('404');
-        if ($pathCount > 1)
-            throw new PieCrustException('More than one article was found for the requested URL (' . $requestedUrl . '). Tell the writers to make up their minds.');
-        
-        return $requestedPath[0];
-    }
-    
-    protected function getPageConfig(&$pageContents)
-    {
-        $yamlHeaderMatches = array();
-        $hasYamlHeader = preg_match('/^(---\s*\n.*?\n?)^(---\s*$\n?)/m', $pageContents, $yamlHeaderMatches);
-        if ($hasYamlHeader == true)
-        {
-            $yamlHeader = substr($pageContents, 0, strlen($yamlHeaderMatches[1]));
-            $pageContents = substr($pageContents, strlen($yamlHeaderMatches[0]));
-			try
-			{
-				$yamlParser = new sfYamlParser();
-				$pageConfig = $yamlParser->parse($yamlHeader);
-            }
-            catch (Exception $e)
-            {
-                throw new PieCrustException('An error occured while reading the YAML header for the requested article: ' . $e->getMessage());
-            }
-        }
-        else
-        {
-            $pageConfig = array();
-        }
-        
-        $this->validatePageConfig($pageConfig);
-            
-        return $pageConfig;
-    }
-    
-    protected function validatePageConfig(&$pageConfig)
-    {
-		if (!isset($pageConfig['layout']))
-            $pageConfig['layout'] = PIECRUST_DEFAULT_TEMPLATE_NAME;
-    }
-    
-    protected function getFormattedPageContents($pageContents, $pageExtension)
-    {
-        $unFormatted = true;
-        $formattedPageContents = $pageContents;
-        foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
-        {
-            $formatter->initialize($this);
-            if ($formatter->supportsExtension($pageExtension, $unFormatted))
-            {
-                $formattedPageContents = $formatter->format($formattedPageContents);
-                $unFormatted = false;
-            }
-        }
-        return $formattedPageContents;
-    }
-    
-    protected function getPageData($pageConfig)
-    {
-        return array(
-            'title' => $pageConfig['title']
-        );
-    }
-    
-    protected function getSiteData($appConfig)
-    {
-        $siteConfig = $appConfig['site'];
-        if (isset($siteConfig))
-        {
-            return array(
-                'title' => $siteConfig['title'],
-                'root' => $appConfig['url_base']
-            );
-        }
-        else
-        {
-            return array();
-        }
-    }
-    
-    protected function getGlobalData()
-    {
-        return array(
-            'version' => PieCrust::VERSION
-        );
-    }
-
-    protected function getHelpersData()
-    {
-        
-    }
-    
-    protected function getTemplateEngine()
-    {
-        $config = $this->getConfig();
-        $templateEngineName = (isset($config['site']['template_engine']) ? $config['site']['template_engine'] : PIECRUST_DEFAULT_TEMPLATE_ENGINE);
-        $templateEngineClass = $templateEngineName . 'TemplateEngine';
-        require_once(PIECRUST_APP_DIR . 'template-engines/' . $templateEngineClass . '.class.php');
-        $reflector = new ReflectionClass($templateEngineClass);
-        $templateEngine = $reflector->newInstance();
-        $templateEngine->initialize($this);
-        return $templateEngine;
     }
 }

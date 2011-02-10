@@ -11,7 +11,7 @@ class Dwoo_Plugin_pca extends Dwoo_Block_Plugin implements Dwoo_ICompilable_Bloc
 		$p = $compiler->getCompiledParams($params);
         if (isset($p['href']))
         {
-            $p['href'] = '\'' . PIECRUST_URL_BASE . DwooTemplateEngine::getPathPrefix() . trim($p['href'], '/\'') . '\'';
+            $p['href'] = '\'' . DwooTemplateEngine::getPathPrefix() . trim($p['href'], '/\'') . '\'';
         }
 
 		$out = Dwoo_Compiler::PHP_OPEN . 'echo \'<a '.self::paramsToAttributes($p);

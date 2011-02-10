@@ -14,12 +14,12 @@ class Cache
 			);
 	}
 	
-	public function isValid($uri, $extension, timestamp $time)
+	public function isValid($uri, $extension, $time)
 	{
 		$cacheTime = $this->getCacheTime($uri, $extension);
 		if ($cacheTime == null)
 			return false;
-		return $cacheTime > $time;
+		return $cacheTime >= $time;
 	}
 	
 	public function getCacheTime($uri, $extension)
