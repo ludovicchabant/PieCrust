@@ -7,6 +7,11 @@ class Cache
 	
 	public function __construct($baseDir)
 	{
+		if (!is_dir($baseDir))
+		{
+            mkdir($baseDir, 0777, true);
+		}
+		
 		$this->baseDir = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->commentTags = array(
 				'html' => array('<!-- ', ' -->'),
@@ -17,7 +22,7 @@ class Cache
 	public function isValid($uri, $extension, $time)
 	{
 		$cacheTime = $this->getCacheTime($uri, $extension);
-		if ($cacheTime == null)
+		if ($cacheTime == false)
 			return false;
 		return $cacheTime >= $time;
 	}
@@ -26,7 +31,7 @@ class Cache
 	{
 		$cachePath = $this->getCachePath($uri, $extension);
 		if (!file_exists($cachePath))
-			return null;
+			return false;
 		return filemtime($cachePath);
 	}
 	

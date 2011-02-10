@@ -12,10 +12,7 @@ define('PIECRUST_INDEX_PAGE_NAME', '_index');
 define('PIECRUST_CONFIG_PATH', '_content/config.yml');
 define('PIECRUST_CONTENT_TEMPLATES_DIR', '_content/templates/');
 define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
-define('PIECRUST_CACHE_FORMATTED_DIR', '_cache/formatted/');
-define('PIECRUST_CACHE_COMPILED_TEMPLATES_DIR', '_cache/templates_c/');
-define('PIECRUST_CACHE_TEMPLATES_CACHE_DIR', '_cache/templates/');
-define('PIECRUST_CACHE_HTML_DIR', '_cache/html/');
+define('PIECRUST_CACHE_DIR', '_cache/');
 
 define('PIECRUST_DEFAULT_TEMPLATE_NAME', 'default');
 define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
@@ -75,75 +72,27 @@ class PieCrust
             throw new PieCrustException('The pages directory doesn\'t exist: ' . $this->pagesDir);
     }
 	
-	protected $formattedCacheDir;
+	protected $cacheDir;
 	
-	public function getFormattedCacheDir()
+	public function getCacheDir()
     {
-        if ($this->formattedCacheDir === null)
-            $this->setFormattedCacheDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_FORMATTED_DIR));
-        return $this->formattedCacheDir;
+        if ($this->cacheDir === null)
+            $this->setCacheDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_DIR));
+        return $this->cacheDir;
     }
     
-    public function setFormattedCacheDir($dir)
+    public function setCacheDir($dir)
     {
-		$this->formattedCacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-		if (is_writable($this->formattedCacheDir) === false)
-			throw new PieCrustException('The formatted cache directory must be writable: ' . $this->formattedCacheDir);
-    }
-    
-    protected $compiledTemplatesDir;
-    
-    public function getCompiledTemplatesDir()
-    {
-        if ($this->compiledTemplatesDir === null)
-            $this->setCompiledTemplatesDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_COMPILED_TEMPLATES_DIR));
-        return $this->compiledTemplatesDir;
-    }
-    
-    public function setCompiledTemplatesDir($dir)
-    {
-		$this->compiledTemplatesDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-		if (is_writable($this->compiledTemplatesDir) === false)
-			throw new PieCrustException('The compiled templates directory must be writable: ' . $this->compiledTemplatesDir);
-    }
-    
-    protected $templatesCacheDir;
-    
-    public function getTemplatesCacheDir()
-    {
-        if ($this->templatesCacheDir === null)
-            $this->setTemplatesCacheDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_TEMPLATES_CACHE_DIR));
-        return $this->templatesCacheDir;
-    }
-    
-    public function setTemplatesCacheDir($dir)
-    {
-        $this->templatesCacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-        if (is_writable($this->templatesCacheDir) === false)
-            throw new PieCrustException('The cached templates directory must be writable: ' . $this->templatesCacheDir);
-    }
-	
-	protected $htmlCacheDir;
-	
-	public function getHtmlCacheDir()
-    {
-        if ($this->htmlCacheDir === null)
-            $this->setHtmlCacheDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_HTML_DIR));
-        return $this->htmlCacheDir;
-    }
-    
-    public function setHtmlCacheDir($dir)
-    {
-		$this->htmlCacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-		if (is_writable($this->htmlCacheDir) === false)
-			throw new PieCrustException('The HTML cache directory must be writable: ' . $this->htmlCacheDir);
+		$this->cacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+		if (is_writable($this->cacheDir) === false)
+			throw new PieCrustException('The cache directory must be writable: ' . $this->cacheDir);
     }
     
     protected $config;
     
     public function getConfig()
     {
-        if (!isset($this->config) or $this->config == null)
+        if ($this->config === null)
         {
             try
             {
@@ -181,7 +130,7 @@ class PieCrust
     
     public function getFormattersLoader()
     {
-        if ($this->formattersLoader == null)
+        if ($this->formattersLoader === null)
         {
             $this->formattersLoader = new PluginLoader(
                                             'IFormatter',
@@ -211,8 +160,8 @@ class PieCrust
     
     public function getTemplateEngine()
     {
-		if ($this->templateEngine == null)
-		{
+		if ($this->templateEngine === null)
+		{		
 			$templateEngineName = $this->getConfigValue('site', 'template_engine');
 			if ($templateEngineName == null)
 				$templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
@@ -226,6 +175,21 @@ class PieCrust
 		}
         return $this->templateEngine;
     }
+	
+	public function getSiteData()
+	{
+		$config = $this->getConfig();
+		$data = array(
+			'site' => array(
+				'title' => $config['site']['title'],
+				'root' => $this->urlBase
+			),
+			'piecrust' => array(
+				'version' => self::VERSION
+			)
+		);
+		return $data;
+	}
     
     public function __construct($urlBase = null)
     {

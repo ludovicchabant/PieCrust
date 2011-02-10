@@ -1,9 +1,9 @@
 <?php
 
 class PageRenderer
-{	
-	protected $cache;
+{
 	protected $pieCrust;
+	protected $cache;
 	
 	public function __construct(PieCrust $pieCrust)
 	{
@@ -12,35 +12,26 @@ class PageRenderer
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
 		{
-			$this->cache = new Cache($pieCrust->getHtmlCacheDir());
+			$this->cache = new Cache($pieCrust->getCacheDir() . 'html');
 		}
 	}
 	
-	public function render(Page $page, $extraPageData = null)
+	public function render(Page $page, $extraData = null)
 	{
 		$pageConfig = $page->getConfig();
-		$templateName = $pageConfig['layout'];
-		$pageCacheLocallyDisabled = (isset($pageConfig['enable_cache']) and $pageConfig['enable_cache'] === false);
+		$templateName = $pageConfig['layout'] . '.html';
 		
 		// Get the template engine and figure out if we need to re-render the page.
-		$templateEngine = $this->pieCrust->getTemplateEngine();
 		$fetchFromHtmlCache = false;
 		if ($this->cache != null and
-			$pageCacheLocallyDisabled == false and
-			$page->isFresh() == false and
-			$templateEngine->isCacheValid($templateName))
+			$page->isCached())
 		{
+			$templateFilename = $this->pieCrust->getTemplatesDir() . $templateName;
+			$templateTime = filemtime($templateFilename);
 			$pageCacheTime = $page->getCacheTime();
-			$templateCacheTime = $templateEngine->getCacheTime($templateName);
-			$maxTime = max($pageCacheTime, $templateCacheTime);
+			$maxTime = max($pageCacheTime, $templateTime);
 			if ($this->cache->isValid($page->getUri(), 'html', $maxTime))
 			{
-				// The page's contents and config were fetched from the cache, the
-				// template the page is using has a valid cache too, and we have a
-				// final HTML cache that was computed from the combination of the 2,
-				// so unless there's some dynamic stuff going on (in which case the 
-				// user should disable caching for that page in the YAML header), we
-				// can use that HTML cache.
 				$fetchFromHtmlCache = true;
 			}
 		}
@@ -51,78 +42,28 @@ class PageRenderer
         }
         else
         {
-            $pageData = array(
-                                'content' => $page->getContents(),
-                                'page' => $this->getPageData($pageConfig),
-								'asset' => $this->getAssetData($page->getAssetsDir()),
-                                'site' => $this->getSiteData($this->pieCrust->getConfig()),
-                                'piecrust' => $this->getGlobalData()
-                             );
-            if ($extraPageData != null)
+			$templateEngine = $this->pieCrust->getTemplateEngine();
+            $data = array('content' => $page->getContents());
+			$data = array_merge($data, $page->getPageData(), $this->pieCrust->getSiteData());
+            if ($extraData != null)
             {
-                if (is_array($extraPageData))
+                if (is_array($extraData))
                 {
-					$pageData = array_merge($pageData, $extraPageData);
+					$data = array_merge($data, $extraData);
                 }
                 else
                 {
-                    $pageData['extra'] = $extraPageData;
+                    $data['extra'] = $extraData;
                 }
             }
-            $output = $templateEngine->renderPage($pageConfig, $pageData);
+            $output = $templateEngine->renderFile($templateName, $data);
             if ($this->cache != null)
 			{
                 $this->cache->write($page->getUri(), 'html', $output);
 			}
-            echo "<!-- PieCrust " . PieCrust::VERSION . " - " . ($page->isFresh() ? "baked just now!" : "baked this morning!") . " -->\n";
+            echo "<!-- PieCrust " . PieCrust::VERSION . " - " . ($page->isCached() ? "baked this morning!" : "baked just now!") . " -->\n";
             echo $output;
         }
 	}
-	
-	protected function getPageData($pageConfig)
-    {
-        return array(
-            'title' => $pageConfig['title']
-        );
-    }
-	
-	protected function getAssetData($assetsDir)
-	{
-		$pathPattern = $assetsDir . DIRECTORY_SEPARATOR . '*';
-        $paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
-		if ($paths === false or count($paths) == 0)
-			return array();
-		
-		$data = array();
-		foreach ($paths as $p)
-		{
-			$keyName = str_replace('.', '_', basename($p));
-			$data[$keyName] = $p;
-		}
-		return $data;
-	}
-    
-    protected function getSiteData($appConfig)
-    {
-        $siteConfig = $appConfig['site'];
-        if (isset($siteConfig))
-        {
-            return array(
-                'title' => $siteConfig['title'],
-                'root' => $appConfig['url_base']
-            );
-        }
-        else
-        {
-            return array();
-        }
-    }
-    
-    protected function getGlobalData()
-    {
-        return array(
-            'version' => PieCrust::VERSION
-        );
-    }
 }
 

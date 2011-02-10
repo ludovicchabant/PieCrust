@@ -5,6 +5,9 @@ class Page
 	protected $pieCrust;
 	protected $cache;
 	
+	protected $path;
+	protected $assetsDir;
+	
 	protected $uri;
 	
 	public function getUri()
@@ -12,23 +15,34 @@ class Page
 		return $this->uri;
 	}
 	
-	protected $path;
-	protected $assetsDir;
-	
-	public function getAssetsDir()
+	protected $isCached;
+		
+	public function isCached()
 	{
-		return $this->assetsDir;
+		if ($this->isCached === null)
+		{
+			$cacheTime = $this->getCacheTime();
+			if ($cacheTime === false)
+			{
+				$this->isCached = false;
+			}
+			else
+			{
+				$this->isCached = ($cacheTime > filemtime($this->path));
+			}
+		}
+		return $this->isCached;
 	}
 	
 	protected $cacheTime;
-		
+	
 	public function getCacheTime()
 	{
 		if ($this->cacheTime === null)
 		{
-			if ($this->cache === null)
+			if ($this->cache == null)
 			{
-				$this->cacheTime = false;			
+				$this->cacheTime = false;
 			}
 			else
 			{
@@ -36,11 +50,6 @@ class Page
 			}
 		}
 		return $this->cacheTime;
-	}
-	
-	public function isFresh()
-	{
-		return ($this->getCacheTime() == null);
 	}
 	
 	protected $config;
@@ -65,25 +74,66 @@ class Page
 		return $this->contents;
 	}
 	
+	public function getPageData()
+	{
+		$config = $this->getConfig();
+        return array(
+			'page' => array(
+				'title' => $config['title']
+			),
+			'asset'=> $this->getAssetData()
+        );
+    }
+	
+	protected $assetData;
+	
+	protected function getAssetData()
+	{
+		if ($this->assetData === null)
+		{
+			$this->assetData = array();
+			
+			if (is_dir($this->assetsDir))
+			{
+				$assetUrlBase = $this->pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $this->getUri();
+			
+				$pathPattern = $this->assetsDir . DIRECTORY_SEPARATOR . '*';
+				$paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
+				if ($paths === false)
+					throw new PieCrustException('An error occured while reading the requested page\'s assets directory.');
+				
+				if (count($paths) > 0)
+				{			
+					foreach ($paths as $p)
+					{
+						$name = basename($p);
+						$key = str_replace('.', '_', $name);
+						$this->assetData[$key] = $assetUrlBase . '/' . $name;
+					}
+				}
+			}
+		}
+		return $this->assetData;
+	}
+	
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
 		$this->pieCrust = $pieCrust;
-		$this->uri = $uri;
+		$this->uri = ltrim($uri, '/');
 		$this->path = $this->findPath($pieCrust, $uri);
-		$pathParts = pathinfo($this->path, PATHINFO_DIRNAME|PATHINFO_FILENAME);
+		$pathParts = pathinfo($this->path);
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
 		
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
 		{
-			$this->cache = new Cache($pieCrust->getFormattedCacheDir());
+			$this->cache = new Cache($pieCrust->getCacheDir() . 'pages_r');
 		}
 	}
 	
 	protected function loadConfigAndContents()
 	{
-		$cacheTime = $this->getCacheTime();
-		if ($cacheTime !== false and ($cacheTime > filemtime($this->path)))
+		if ($this->isCached())
 		{
 			// Get the page from the cache.
 			$this->contents = $this->cache->read($this->uri, 'html');
@@ -101,7 +151,12 @@ class Page
 			$this->config = $this->parseConfig($rawContents);
 		
 			$extension = pathinfo($this->path, PATHINFO_EXTENSION);
-			$this->contents = $this->pieCrust->formatText($rawContents, $extension);
+			$formattedContents = $this->pieCrust->formatText($rawContents, $extension);
+			
+			$data = $this->getPageData();
+			$data = array_merge($data, $this->pieCrust->getSiteData());
+			$templateEngine = $this->pieCrust->getTemplateEngine();
+			$this->contents = $templateEngine->renderString($formattedContents, $data);
 			
 			if ($this->cache != null)
 			{
@@ -113,7 +168,9 @@ class Page
 		}
         if (!isset($this->config) or $this->config == null or 
 			!isset($this->contents) or $this->contents == null)
+		{
             throw new PieCrustException('An unknown error occured while loading the contents and configuration for page: ' . $this->uri);
+		}
 	}
     
     protected function findPath(PieCrust $pieCrust, $uri)
