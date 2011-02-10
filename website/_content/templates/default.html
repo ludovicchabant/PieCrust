@@ -1,12 +1,14 @@
+{% import 'macros_google.html' as google %}
 <!doctype html>
 <html>
 <head>
-    <title>{{ site.title }} &mdash; {{ page.title }}</title>
+    <title>{{ site.title }}{% if page.title is not empty %} &mdash; {{ page.title }}{% endif %}</title>
     <meta name="generator" content="PieCrust" />
     <meta name="template-engine" content="Twig" />
 {% include('blueprint.html') %}
     <link rel="stylesheet/less" href="{{ site.root }}css/default.less" type="text/css" media="all" />
 {% include('less.html') %}
+	{{ google.webfonts('Lobster|Covered+By+Your+Grace') }}
 </head>
 <body>
     <div id="container" class="container">
@@ -31,7 +33,7 @@
         </div>
         <div id="footer" class="span-24 last">
 			{% block footer %}
-            <p>Baked with <em>PieCrust {{ piecrust.version }}</em>.</p>
+            <p>Baked with <em><a href="http://piecrustphp.com">PieCrust</a> {{ piecrust.version }}</em>.</p>
 			{% endblock %}
         </div>
     </div>

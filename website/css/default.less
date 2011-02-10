@@ -1,28 +1,60 @@
 @background: #FFF;
-@highlight: #FAFFD9;
+@highlight: #FFF;
 @crust: #CF931B;
-@light_crust: #E5CF4E;
+@light_crust: #F5CD82;
 @dark_crust: #D65F04;
 @cherry: #D42708;
 
-
+html, body {
+	height: 100%;
+}
 body {
 	font-family: Georgia, serif;
 	font-size: 110%;
 }
 
-h1 {
-	text-align: center;
-	font-weight: bold;
-	color: @cherry;
+.letterpress {
+	text-shadow: 0px -1px 3px rgba(0,0,0,35),
+				 0px 1px 3px rgba(255,255,255,30);
 }
 
 #container {
+	background: @light_crust;
+	min-height: 100%;
+	
+	a {
+		color: @cherry;
+		font-weight: bold;
+		text-decoration: none;
+		padding: 0.1em 0.2em;
+		
+		&:link {
+		}
+		&:visited {
+			color: @dark_crust;
+		}
+		&:hover {
+			color: @highlight;
+			background: @cherry;
+		}
+		&:active {
+		}
+	}
 }
 
 #header {
-    padding: 2em;
-	background: @light_crust;
+	background: @dark_crust;
+	font-size: 1.8em;
+	
+	h1 {
+		.letterpress;
+		
+		margin: 0.5em auto;
+		font-family: Lobster, Arial, sans-serif;
+		text-align: center;
+		font-weight: bold;
+		color: #fff;
+	}
 }
 
 #menu ul li {
@@ -36,4 +68,20 @@ h1 {
 
 #content {
     margin: 1em 2em;
+	
+	h2 {
+		color: @dark_crust;
+		font-family: 'Covered By Your Grace', Arial, sans-serif;
+		letter-spacing: 0.07em;
+	}
+}
+
+#footer {
+	font-size: 0.8em;
+	text-transform: lowercase;
+	text-align: center;
+	
+	p {
+		margin: 1em;
+	}
 }
