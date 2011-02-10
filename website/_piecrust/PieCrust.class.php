@@ -190,6 +190,22 @@ class PieCrust
         }
         return $this->formattersLoader;
     }
+    
+    public function formatText($text, $extension)
+    {
+        $unformatted = true;
+        $formattedText = $text;
+        foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
+        {
+            $formatter->initialize($this);
+            if ($formatter->supportsExtension($extension, $unformatted))
+            {
+                $formattedText = $formatter->format($formattedText);
+                $unformatted = false;
+            }
+        }
+        return $formattedText;
+    }
 	
 	protected $templateEngine;
     
@@ -221,6 +237,8 @@ class PieCrust
         {
             $this->urlBase = rtrim($urlBase, '/') . '/';
         }
+        
+        date_default_timezone_set('America/Los_Angeles');
     }
     
     public function run($uri = null)

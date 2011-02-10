@@ -1,66 +1,89 @@
 <?php
 
-
-
 class Page
 {
-	protected $uri;
-	protected $path;
-	
-	protected $config;
-	protected $contents;
-	
+	protected $pieCrust;
 	protected $cache;
-	protected $cacheTime;
+	
+	protected $uri;
 	
 	public function getUri()
 	{
 		return $this->uri;
 	}
 	
+	protected $path;
+	protected $assetsDir;
+	
+	public function getAssetsDir()
+	{
+		return $this->assetsDir;
+	}
+	
+	protected $cacheTime;
+		
 	public function getCacheTime()
 	{
+		if ($this->cacheTime === null)
+		{
+			if ($this->cache === null)
+			{
+				$this->cacheTime = false;			
+			}
+			else
+			{
+				$this->cacheTime = $this->cache->getCacheTime($this->uri, 'html');
+			}
+		}
 		return $this->cacheTime;
 	}
 	
 	public function isFresh()
 	{
-		return ($this->cacheTime == null);
+		return ($this->getCacheTime() == null);
 	}
+	
+	protected $config;
 	
 	public function getConfig()
 	{
+		if ($this->config === null)
+		{
+			$this->loadConfigAndContents();
+		}
 		return $this->config;
 	}
 	
+	protected $contents;
+	
 	public function getContents()
 	{
+		if ($this->contents === null)
+		{
+			$this->loadConfigAndContents();
+		}
 		return $this->contents;
 	}
 	
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
+		$this->pieCrust = $pieCrust;
 		$this->uri = $uri;
 		$this->path = $this->findPath($pieCrust, $uri);
+		$pathParts = pathinfo($this->path, PATHINFO_DIRNAME|PATHINFO_FILENAME);
+		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
 		
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
 		{
 			$this->cache = new Cache($pieCrust->getFormattedCacheDir());
 		}
-		
-		$this->initialize($pieCrust);
 	}
 	
-	protected function initialize(PieCrust $pieCrust)
+	protected function loadConfigAndContents()
 	{
-        $this->cacheTime = null;
-		if ($this->cache != null)
-        {
-            $this->cacheTime = $this->cache->getCacheTime($this->uri, 'html');
-        }
-		
-		if ($this->cacheTime != null and ($this->cacheTime > filemtime($this->path)))
+		$cacheTime = $this->getCacheTime();
+		if ($cacheTime !== false and ($cacheTime > filemtime($this->path)))
 		{
 			// Get the page from the cache.
 			$this->contents = $this->cache->read($this->uri, 'html');
@@ -78,7 +101,7 @@ class Page
 			$this->config = $this->parseConfig($rawContents);
 		
 			$extension = pathinfo($this->path, PATHINFO_EXTENSION);
-			$this->contents = $this->formatContents($pieCrust, $rawContents, $extension);
+			$this->contents = $this->pieCrust->formatText($rawContents, $extension);
 			
 			if ($this->cache != null)
 			{
@@ -145,21 +168,5 @@ class Page
 				'title' => 'Untitled Page'
 			), $config);
 		return $validatedConfig;
-    }
-    
-    protected function formatContents($pieCrust, $contents, $extension)
-    {
-        $unFormatted = true;
-        $formattedContents = $contents;
-        foreach ($pieCrust->getFormattersLoader()->getPlugins() as $formatter)
-        {
-            $formatter->initialize($pieCrust);
-            if ($formatter->supportsExtension($extension, $unFormatted))
-            {
-                $formattedContents = $formatter->format($formattedContents);
-                $unFormatted = false;
-            }
-        }
-        return $formattedContents;
     }
 }

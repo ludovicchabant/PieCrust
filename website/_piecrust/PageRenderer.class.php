@@ -54,6 +54,7 @@ class PageRenderer
             $pageData = array(
                                 'content' => $page->getContents(),
                                 'page' => $this->getPageData($pageConfig),
+								'asset' => $this->getAssetData($page->getAssetsDir()),
                                 'site' => $this->getSiteData($this->pieCrust->getConfig()),
                                 'piecrust' => $this->getGlobalData()
                              );
@@ -84,6 +85,22 @@ class PageRenderer
             'title' => $pageConfig['title']
         );
     }
+	
+	protected function getAssetData($assetsDir)
+	{
+		$pathPattern = $assetsDir . DIRECTORY_SEPARATOR . '*';
+        $paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
+		if ($paths === false or count($paths) == 0)
+			return array();
+		
+		$data = array();
+		foreach ($paths as $p)
+		{
+			$keyName = str_replace('.', '_', basename($p));
+			$data[$keyName] = $p;
+		}
+		return $data;
+	}
     
     protected function getSiteData($appConfig)
     {
