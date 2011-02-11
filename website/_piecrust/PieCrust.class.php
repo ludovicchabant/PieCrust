@@ -12,6 +12,7 @@ define('PIECRUST_INDEX_PAGE_NAME', '_index');
 define('PIECRUST_CONFIG_PATH', '_content/config.yml');
 define('PIECRUST_CONTENT_TEMPLATES_DIR', '_content/templates/');
 define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
+define('PIECRUST_CONTENT_POSTS_DIR', '_content/posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
 
 define('PIECRUST_DEFAULT_TEMPLATE_NAME', 'default');
@@ -71,6 +72,22 @@ class PieCrust
         if (is_dir($this->pagesDir) === false)
             throw new PieCrustException('The pages directory doesn\'t exist: ' . $this->pagesDir);
     }
+    
+    protected $postsDir;
+    
+    public function getPostsDir()
+    {
+        if ($this->postsDir === null)
+            $this->setPostsDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_POSTS_DIR));
+        return $this->postsDir;
+    }
+    
+    public function setPostsDir($dir)
+    {
+        $this->postsDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+        if (is_dir($this->postsDir) === false)
+            throw new PieCrustException('The posts directory doesn\'t exist: ' . $this->postsDir);
+    }
 	
 	protected $cacheDir;
 	
@@ -100,13 +117,17 @@ class PieCrust
                 $this->config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
 				
 				// Add the default values.
-				$this->config = array_merge(array(
-						'site' => array(
+                if (!isset($this->config['site']))
+                    $this->config['site'] = array();
+                    
+				$this->config['site'] = array_merge(array(
 								'title' => 'PieCrust Untitled Website',
-								'enable_cache' => false
-							),
-						'url_base' => $this->urlBase
-					), $this->config);
+								'enable_cache' => false,
+                                'posts_per_page' => 5,
+                                'posts_url' => 'blog',
+                                'posts_date_format' => 'F j, Y'
+							), $this->config['site']);
+                $this->config['url_base'] = $this->urlBase;
             }
             catch (Exception $e)
             {
@@ -181,11 +202,12 @@ class PieCrust
 		$config = $this->getConfig();
 		$data = array(
 			'site' => array(
-				'title' => $config['site']['title'],
-				'root' => $this->urlBase
+				'root' => $this->urlBase,
+				'title' => $config['site']['title']
 			),
 			'piecrust' => array(
-				'version' => self::VERSION
+				'version' => self::VERSION,
+                'branding' => 'Baked with <em><a href="http://piecrustphp.com">PieCrust</a> ' . self::VERSION . '</em>.'
 			)
 		);
 		return $data;

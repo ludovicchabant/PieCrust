@@ -4,9 +4,14 @@ class Page
 {
 	protected $pieCrust;
 	protected $cache;
+	protected $assetsDir;
 	
 	protected $path;
-	protected $assetsDir;
+	
+	public function getPath()
+	{
+		return $this->path;
+	}
 	
 	protected $uri;
 	
@@ -77,12 +82,18 @@ class Page
 	public function getPageData()
 	{
 		$config = $this->getConfig();
-        return array(
+        $data = array(
 			'page' => array(
 				'title' => $config['title']
 			),
 			'asset'=> $this->getAssetData()
         );
+		if (isset($config['need_posts']) and $config['need_posts'] == true)
+		{
+			$postsData = $this->getPostsData();
+			$data['posts'] = $postsData;
+		}
+		return $data;
     }
 	
 	protected $assetData;
@@ -116,6 +127,51 @@ class Page
 		return $this->assetData;
 	}
 	
+	protected $postsData;
+	
+	protected function getPostsData()
+	{
+		if ($this->postsData === null)
+		{
+			$this->postsData = array();
+			
+			$pathPattern = $this->pieCrust->getPostsDir() . '*';
+			$paths = glob($pathPattern, GLOB_ERR);
+			if ($paths === false)
+				throw new PieCrustException('An error occured while reading the posts directory.');
+			
+			if (count($paths) > 0)
+			{
+				$postsUri = $this->pieCrust->getConfigValue('site', 'posts_url');
+				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
+				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
+				
+				foreach ($paths as $p)
+				{
+					$matches = array();
+					$filename = pathinfo($p, PATHINFO_FILENAME);
+					if (preg_match('/^(\d+-\d+-\d+)_(.*)$/', $filename, $matches) == false)
+						continue;
+					
+					$post = new Page($this->pieCrust, '/' . $postsUri . '/' . $filename);
+					$postConfig = $post->getConfig();
+					$postDateTime = strtotime($matches[1]);
+					
+					array_push($this->postsData, array(
+						'title' => $postConfig['title'],
+						'date' => date($postsDateFormat, $postDateTime),
+						'content' => $post->getContents()
+					));
+					
+					$postsPerPage--;
+					if ($postsPerPage == 0)
+						break;
+				}
+			}
+		}
+		return $this->postsData;
+	}
+	
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
 		$this->pieCrust = $pieCrust;
@@ -144,19 +200,17 @@ class Page
         }
         else
         {
-			// Re-format/process the page.
-			$this->cacheTime = null;		// Unset cacheTime to say we're fresh.
-			
+			// Re-format/process the page.			
 			$rawContents = file_get_contents($this->path);
 			$this->config = $this->parseConfig($rawContents);
-		
-			$extension = pathinfo($this->path, PATHINFO_EXTENSION);
-			$formattedContents = $this->pieCrust->formatText($rawContents, $extension);
 			
 			$data = $this->getPageData();
 			$data = array_merge($data, $this->pieCrust->getSiteData());
 			$templateEngine = $this->pieCrust->getTemplateEngine();
-			$this->contents = $templateEngine->renderString($formattedContents, $data);
+			$rawContents = $templateEngine->renderString($rawContents, $data);
+		
+			$extension = pathinfo($this->path, PATHINFO_EXTENSION);
+			$this->contents = $this->pieCrust->formatText($rawContents, $extension);
 			
 			if ($this->cache != null)
 			{
@@ -176,10 +230,21 @@ class Page
     protected function findPath(PieCrust $pieCrust, $uri)
     {
         $uri = ltrim($uri, '/');
-        $pathPattern = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.*';
+		$postsUrl = $pieCrust->getConfigValue('site', 'posts_url');
+		$baseDir = $pieCrust->getPagesDir();
+		if (substr($uri, 0, strlen($postsUrl)) == $postsUrl)
+		{
+			$baseDir = $pieCrust->getPostsDir();
+			$uri = substr($uri, strlen($postsUrl));
+		}
+		
+		$pathPattern = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.*';
         $paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
         if ($paths === false)
-            throw new PieCrustException('404');
+		{
+			die($pathPattern);
+			throw new PieCrustException('404');
+		}
         $pathCount = count($paths);
         if ($pathCount == 0)
             throw new PieCrustException('404');
@@ -192,11 +257,11 @@ class Page
     protected function parseConfig(&$rawContents)
     {
         $yamlHeaderMatches = array();
-        $hasYamlHeader = preg_match('/^(---\s*\n.*?\n?)^(---\s*$\n?)/m', $rawContents, $yamlHeaderMatches);
+        $hasYamlHeader = preg_match('/^(---\s*\n)((.*\n)*?)^(---\s*\n)/m', $rawContents, $yamlHeaderMatches);
         if ($hasYamlHeader == true)
         {
 			// Remove the YAML header from the raw contents string.
-            $yamlHeader = substr($rawContents, 0, strlen($yamlHeaderMatches[1]));
+            $yamlHeader = substr($rawContents, strlen($yamlHeaderMatches[1]), strlen($yamlHeaderMatches[2]));
             $rawContents = substr($rawContents, strlen($yamlHeaderMatches[0]));
 			// Parse the YAML header.
 			try
