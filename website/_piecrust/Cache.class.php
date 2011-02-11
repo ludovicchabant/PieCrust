@@ -44,6 +44,12 @@ class Cache
 	public function write($uri, $extension, $contents)
 	{
 		$cachePath = $this->getCachePath($uri, $extension);
+		
+		if (!is_dir(dirname($cachePath)))
+		{
+            mkdir(dirname($cachePath), 0777, true);
+		}
+		
 		$commentTags = $this->commentTags[$extension];
 		$header = $commentTags[0] . 'PieCrust ' . PieCrust::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
 		file_put_contents($cachePath, ($header . $contents));
