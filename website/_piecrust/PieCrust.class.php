@@ -125,7 +125,8 @@ class PieCrust
 								'enable_cache' => false,
                                 'posts_per_page' => 5,
                                 'posts_url' => 'blog',
-                                'posts_date_format' => 'F j, Y'
+                                'posts_date_format' => 'F j, Y',
+								'debug' => 'false'
 							), $this->config['site']);
                 $this->config['url_base'] = $this->urlBase;
             }
@@ -235,6 +236,13 @@ class PieCrust
 		}
 		catch (Exception $e)
 		{
+			if ($this->getConfigValue('site', 'debug') == true)
+			{
+				include 'FatalError.inc.php';
+				piecrust_fatal_error(array($e));
+				exit();
+			}
+			
 			$errorPageUri = '_error';
 			if ($e->getMessage() == '404')
 			{
