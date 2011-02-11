@@ -1,7 +1,8 @@
 site:
     title: PieCrust Demo
-    enable_cache: true
+    enable_cache: false
     pretty_urls: true
+    debug: true
 
 markdown:
     use_markdown_extra: true

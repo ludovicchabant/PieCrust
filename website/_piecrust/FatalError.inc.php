@@ -11,7 +11,8 @@ function piecrust_fatal_error($errors)
 		{
 			$errorMessages .= '<p>Error: <code>' . $e->getCode() . '</code><br/>' .
 							  '   File: <code>' . $e->getFile() . '</code><br/>' .
-							  '   Line <code>' . $e->getLine() . '</code></p>';
+							  '   Line <code>' . $e->getLine() . '</code><br/>' .
+							  '   Trace: <code><pre>' . $e->getTraceAsString() . '</pre></code></p>';
 		}
 		$errorMessages .= '</li>' . "\n";
 	}
