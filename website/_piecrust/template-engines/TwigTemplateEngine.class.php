@@ -19,13 +19,11 @@ class TwigTemplateEngine implements ITemplateEngine
         Twig_Autoloader::register();
 		
 		$usePrettyUrls = ($pieCrust->getConfigValue('site','pretty_urls') === true);		
-		$isCacheEnabled = ($pieCrust->getConfigValue('site', 'enable_cache') === true);
-		$disableAutoReload = ($pieCrust->getConfigValue('twig', 'auto_reload') === false);
 		
 		$this->pieCrust = $pieCrust;
 		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
         
-		$options = array('auto_reload' => !$disableAutoReload);
+		$options = array('cache' => false);
         $this->twigEnv = new Twig_Environment(null, $options);
         $this->twigEnv->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
     }

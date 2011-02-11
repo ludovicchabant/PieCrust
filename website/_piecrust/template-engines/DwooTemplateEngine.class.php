@@ -9,47 +9,44 @@ class DwooTemplateEngine implements ITemplateEngine
         return self::$pathPrefix;
     }
     
+	protected $pieCrust;
     protected $dwoo;
     protected $templatesDir;
-	protected $autoRecompile;
     
     public function initialize(PieCrust $pieCrust)
     {
         require_once(PIECRUST_APP_DIR . 'libs/dwoo/dwooAutoload.php');
 		
         $usePrettyUrls = ($pieCrust->getConfigValue('site', 'pretty_urls') === true); 		
-        $useCacheAsTemplates = ($pieCrust->getConfigValue('site', 'use_cache_as_templates') === true);
-        if ($useCacheAsTemplates)
-            throw new PieCrustException('The "use_cache_as_templates" setting is not implemented with the Dwoo template engine yet.');
-		
+
+		$this->pieCrust = $pieCrust;
 		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/');
 		
-		$this->autoRecompile = ($pieCrust->getConfigValue('dwoo', 'auto_recompile') === true);
-        
-        $this->dwoo = new Dwoo($pieCrust->getCompiledTemplatesDir(), $pieCrust->getTemplatesCacheDir());
+		$compileDir = $pieCrust->getCacheDir() . 'templates_c';
+		if (!is_dir($compileDir))
+		{
+            mkdir($compileDir, 0777, true);
+		}
+		$cacheDir = $pieCrust->getCacheDir() . 'templates';
+		if (!is_dir($cacheDir))
+		{
+            mkdir($cacheDir, 0777, true);
+		}
+		
+        $this->dwoo = new Dwoo($compileDir, $cacheDir);
         $this->dwoo->getLoader()->addDirectory(PIECRUST_APP_DIR . 'libs-plugins/dwoo/');
         $this->templatesDir = $pieCrust->getTemplatesDir();
     }
-    
-    public function renderPage($pageConfig, $pageData)
-    {
-        $tpl = new Dwoo_Template_File($this->templatesDir . $pageConfig['layout'] . '.tpl');
-		if ($this->autoRecompile)
-			$tpl->forceCompilation();
-        
-        $data = new Dwoo_Data();
-        $data->setData($pageData);
-        
-        return $this->dwoo->get($tpl, $data);
-    }
-    
-    public function isCacheValid($templateName)
-    {
-        return false;
-    }
 	
-	public function getCacheTime($templateName)
+	public function renderString($content, $data)
 	{
-		return false;
+		$tpl = new Dwoo_Template_String($content);
+		return $this->dwoo->get($tpl, $data);
+	}
+	
+	public function renderFile($templateName, $data)
+	{
+		$tpl = new Dwoo_Template_File($this->templatesDir . $templateName);
+		return $this->dwoo->get($tpl, $data);
 	}
 }

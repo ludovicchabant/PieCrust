@@ -17,3 +17,6 @@ Thumbs\.db
 ^website/_piecrust/libs/lessphp/docs/
 ^website/_piecrust/libs/lessphp/tests/
 ^website/_piecrust/libs/lessphp/\.gitignore
+^website/_piecrust/libs/mustache/\.gitmodules
+^website/_piecrust/libs/mustache/examples/
+^website/_piecrust/libs/mustache/test/
