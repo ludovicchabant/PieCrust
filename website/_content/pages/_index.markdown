@@ -1,8 +1,17 @@
 ---
-title:
+title: 
+need_posts: true
 ---
 
-This is the demo website for [PieCrust][1]. It has lots of good tasty bits...
+This is the demo website for [PieCrust]. It has lots of good tasty bits...
 
-[1]: http://piecrustphp.com
-[Pie]: {{asset.pie_gif}}
+{% for post in posts %}
+<h2>{{ post.title }}</h2>
+
+{{ post.content|raw }}
+
+<hr />
+
+{% endfor %}
+
+[PieCrust]: http://piecrustphp.com

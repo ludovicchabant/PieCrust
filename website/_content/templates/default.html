@@ -27,13 +27,15 @@
         </div>
         <hr />
         <div id="content" class="span-24 last">
-			{% block content %}
-            {{ content|raw }}
-			{% endblock %}
+            <div id="content-inner">
+                {% block content %}
+                {{ content|raw }}
+        		{% endblock %}
+            </div>
         </div>
         <div id="footer" class="span-24 last">
 			{% block footer %}
-            <p>Baked with <em><a href="http://piecrustphp.com">PieCrust</a> {{ piecrust.version }}</em>.</p>
+            <p>{{ piecrust.branding|raw }}</p>
 			{% endblock %}
         </div>
     </div>
