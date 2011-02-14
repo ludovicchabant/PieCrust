@@ -146,6 +146,7 @@ class PieCrust
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
                         'enable_cache' => false,
+						'enable_gzip' => false,
                         'posts_per_page' => 5,
                         'posts_url' => 'blog',
                         'posts_date_format' => 'F j, Y',
@@ -295,11 +296,33 @@ class PieCrust
 		{
 			$uri = $this->getRequestUri();
 		}
+	
+		$gzipEnabled = (($this->getConfigValue('site', 'enable_gzip') == true) and
+						(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
 		
 		// Get the requested page and render it.
 		$page = new Page($this, $uri);
 		$pageRenderer = new PageRenderer($this);
+		
+		if ($gzipEnabled)
+		{
+			ob_start();
+		}
 		$pageRenderer->render($page, $extraPageData);
+		if ($gzipEnabled)
+		{
+			$output = ob_get_clean();
+			$zippedOutput = gzencode($output);
+			if ($zippedOutput === false)
+			{
+				echo $output;
+			}
+			else
+			{
+				header('Content-Encoding: gzip');
+				echo $zippedOutput;
+			}
+		}
 	}
     
     protected function getRequestUri()

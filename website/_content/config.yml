@@ -1,6 +1,7 @@
 site:
     title: PieCrust Demo
     enable_cache: false
+    enable_gzip: true
     pretty_urls: true
     debug: true
 
