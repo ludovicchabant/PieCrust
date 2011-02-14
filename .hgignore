@@ -20,3 +20,4 @@ Thumbs\.db
 ^website/_piecrust/libs/mustache/\.gitmodules
 ^website/_piecrust/libs/mustache/examples/
 ^website/_piecrust/libs/mustache/test/
+tests/_cache
