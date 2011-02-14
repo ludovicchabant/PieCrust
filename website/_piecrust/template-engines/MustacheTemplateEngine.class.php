@@ -15,12 +15,12 @@ class MustacheTemplateEngine implements ITemplateEngine
 	
 	public function renderString($content, $data)
 	{
-		return $this->mustache->render($content, $data);
+		echo $this->mustache->render($content, $data);
 	}
 	
 	public function renderFile($templateName, $data)
 	{
 		$content = file_get_contents($this->templatesDir . $templateName);
-		return $this->renderString($content, $data);
+		$this->renderString($content, $data);
 	}
 }

@@ -41,12 +41,12 @@ class DwooTemplateEngine implements ITemplateEngine
 	public function renderString($content, $data)
 	{
 		$tpl = new Dwoo_Template_String($content);
-		return $this->dwoo->get($tpl, $data);
+		$this->dwoo->output($tpl, $data);
 	}
 	
 	public function renderFile($templateName, $data)
 	{
 		$tpl = new Dwoo_Template_File($this->templatesDir . $templateName);
-		return $this->dwoo->get($tpl, $data);
+		$this->dwoo->output($tpl, $data);
 	}
 }

@@ -42,12 +42,12 @@ class TwigTemplateEngine implements ITemplateEngine
 	{
 		$this->twigLoader->setTemplateSource('__string_tpl__', $content);
 		$tpl = $this->twigEnv->loadTemplate('__string_tpl__');
-		return $tpl->render($data);
+		$tpl->display($data);
 	}
 	
     public function renderFile($templateName, $data)
 	{
 		$tpl = $this->twigEnv->loadTemplate($templateName);
-		return $tpl->render($data);
+		$tpl->display($data);
 	}
 }

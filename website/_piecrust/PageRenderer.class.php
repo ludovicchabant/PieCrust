@@ -9,7 +9,7 @@ class PageRenderer
 		$this->pieCrust = $pieCrust;
 	}
 	
-	public function get(Page $page, $extraData = null)
+	public function render(Page $page, $extraData = null)
 	{
 		$pageConfig = $page->getConfig();
 		$templateName = $pageConfig['layout'] . '.html';
@@ -29,15 +29,16 @@ class PageRenderer
 				$data['extra'] = $extraData;
 			}
 		}
-		$output = $templateEngine->renderFile($templateName, $data);
-		return "<!-- PieCrust " . PieCrust::VERSION . " - " .
-				($page->isCached() ? "baked this morning!" : "baked just now!") . " -->\n" .
-				$output;
+
+		echo "<!-- PieCrust " . PieCrust::VERSION . " - " . ($page->isCached() ? "baked this morning!" : "baked just now!") . " -->\n";
+		$templateEngine->renderFile($templateName, $data);
 	}
 	
-	public function render(Page $page, $extraData = null)
+	public function get(Page $page, $extraData = null)
 	{
-		echo get($page, $extraData);
+		ob_start();
+		get($page, $extraData);
+		return ob_get_clean();
 	}
 }
 

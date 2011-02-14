@@ -135,11 +135,11 @@ class Page
 		{
 			$this->postsData = array();
 			
-			$pathPattern = $this->pieCrust->getPostsDir() . '*';
+			$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
 			$paths = glob($pathPattern, GLOB_ERR);
 			if ($paths === false)
 				throw new PieCrustException('An error occured while reading the posts directory.');
-			
+
 			if (count($paths) > 0)
 			{
 				$postsUri = $this->pieCrust->getConfigValue('site', 'posts_url');
@@ -152,7 +152,7 @@ class Page
 					$filename = pathinfo($p, PATHINFO_FILENAME);
 					if (preg_match('/^(\d+-\d+-\d+)_(.*)$/', $filename, $matches) == false)
 						continue;
-					
+
 					$post = new Page($this->pieCrust, '/' . $postsUri . '/' . $filename);
 					$postConfig = $post->getConfig();
 					$postDateTime = strtotime($matches[1]);
@@ -207,8 +207,10 @@ class Page
 			$data = $this->getPageData();
 			$data = array_merge($data, $this->pieCrust->getSiteData());
 			$templateEngine = $this->pieCrust->getTemplateEngine();
-			$rawContents = $templateEngine->renderString($rawContents, $data);
-		
+			ob_start();
+			$templateEngine->renderString($rawContents, $data);
+			$rawContents = ob_get_clean();
+			
 			$this->contents = $this->pieCrust->formatText($rawContents, $this->config['format']);
 			
 			if ($this->cache != null)
