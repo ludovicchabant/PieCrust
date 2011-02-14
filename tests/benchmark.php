@@ -14,13 +14,19 @@ function rmdir_recursive($dir, $level = 0)
     $files = glob($dir . '*', GLOB_MARK);
     foreach ($files as $file)
     {
-    	if ($file[0] == '.')
+    	if ($file == '.' or $file == '..' or $file = '.empty')
+    	{
     		continue;
+    	}
     	
         if(substr($file, -1) == '/')
+        {
             rmdir_recursive($file, $level + 1);
-        else 
+        }
+        else
+        {
             unlink($file);
+        }
     } 
     
     if ($level > 0 and is_dir($dir))
