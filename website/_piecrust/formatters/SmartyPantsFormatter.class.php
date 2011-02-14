@@ -9,9 +9,9 @@ class SmartyPantsFormatter implements IFormatter
     {
         $config = $pieCrust->getConfig();
         $this->smartypantsLibDir = 'smartypants';
-        $smartypantsConfig = $config['smartypants'];
-        if (isset($smartypantsConfig))
+        if (isset($config['smartypants']))
         {
+            $smartypantsConfig = $config['smartypants'];
             $this->enabled = ($smartypantsConfig['enable'] == true);
             if ($smartypantsConfig['use_smartypants_typographer'] == true)
             {

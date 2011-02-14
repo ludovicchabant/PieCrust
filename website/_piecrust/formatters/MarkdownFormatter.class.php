@@ -8,13 +8,9 @@ class MarkdownFormatter implements IFormatter
     {
         $config = $pieCrust->getConfig();
         $this->markdownLibDir = 'markdown';
-        $markdownConfig = $config['markdown'];
-        if ($markdownConfig != null)
+        if ($pieCrust->getConfigValue('markdown', 'use_markdown_extra') == true)
         {
-            if ($markdownConfig['use_markdown_extra'] == true)
-            {
-                $this->markdownLibDir = 'markdown-extra';
-            }
+            $this->markdownLibDir = 'markdown-extra';
         }
     }
     
