@@ -44,7 +44,6 @@ class Cache
 	public function write($uri, $extension, $contents)
 	{
 		$cachePath = $this->getCachePath($uri, $extension);
-		
 		if (!is_dir(dirname($cachePath)))
 		{
             mkdir(dirname($cachePath), 0777, true);
