@@ -5,8 +5,14 @@
  *
  */
 
-define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
+if (!defined(PIECRUST_APP_DIR))
+{
+    define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
+}
+if (!defined(PIECRUST_ROOT_DIR))
+{
+    define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
+}
 
 define('PIECRUST_INDEX_PAGE_NAME', '_index');
 define('PIECRUST_CONFIG_PATH', '_content/config.yml');
@@ -15,6 +21,7 @@ define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
 define('PIECRUST_CONTENT_POSTS_DIR', '_content/posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
 
+define('PIECRUST_DEFAULT_FORMAT', 'markdown');
 define('PIECRUST_DEFAULT_TEMPLATE_NAME', 'default');
 define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
 
@@ -114,21 +121,8 @@ class PieCrust
             try
             {
 				$yamlParser = new sfYamlParser();
-                $this->config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
-				
-				// Add the default values.
-                if (!isset($this->config['site']))
-                    $this->config['site'] = array();
-                    
-				$this->config['site'] = array_merge(array(
-								'title' => 'PieCrust Untitled Website',
-								'enable_cache' => false,
-                                'posts_per_page' => 5,
-                                'posts_url' => 'blog',
-                                'posts_date_format' => 'F j, Y',
-								'debug' => 'false'
-							), $this->config['site']);
-                $this->config['url_base'] = $this->urlBase;
+                $config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
+				$this->config = $this->validateConfig($config);			
             }
             catch (Exception $e)
             {
@@ -136,6 +130,30 @@ class PieCrust
             }
         }
         return $this->config;
+    }
+    
+    public function setConfig($config)
+    {
+        $this->config = $this->validateConfig($config);
+    }
+    
+    protected function validateConfig($config)
+    {
+        // Add the default values.
+        if (!isset($config['site']))
+            $config['site'] = array();
+            
+        $config['site'] = array_merge(array(
+                        'title' => 'PieCrust Untitled Website',
+                        'enable_cache' => false,
+                        'posts_per_page' => 5,
+                        'posts_url' => 'blog',
+                        'posts_date_format' => 'F j, Y',
+                        'debug' => 'false'
+                    ),
+                    $config['site']);
+        $config['url_base'] = $this->urlBase;
+        return $config;
     }
 	
 	public function getConfigValue($category, $key)
@@ -246,6 +264,7 @@ class PieCrust
 			$errorPageUri = '_error';
 			if ($e->getMessage() == '404')
 			{
+                header('HTTP/1.0 404 Not Found');
 				$errorPageUri = '_404';
 			}
 			try

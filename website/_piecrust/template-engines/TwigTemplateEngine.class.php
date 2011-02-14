@@ -29,6 +29,11 @@ class TwigTemplateEngine implements ITemplateEngine
 		$this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs);
         
 		$options = array('cache' => false);
+		if ($pieCrust->getConfigValue('site', 'enable_cache') == true)
+		{
+			$options['cache'] = $pieCrust->getCacheDir() . 'templates_c';
+			$options['auto_reload'] = true;
+		}
         $this->twigEnv = new Twig_Environment($this->twigLoader, $options);
         $this->twigEnv->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
     }

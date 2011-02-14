@@ -209,8 +209,7 @@ class Page
 			$templateEngine = $this->pieCrust->getTemplateEngine();
 			$rawContents = $templateEngine->renderString($rawContents, $data);
 		
-			$extension = pathinfo($this->path, PATHINFO_EXTENSION);
-			$this->contents = $this->pieCrust->formatText($rawContents, $extension);
+			$this->contents = $this->pieCrust->formatText($rawContents, $this->config['format']);
 			
 			if ($this->cache != null)
 			{
@@ -237,21 +236,7 @@ class Page
 			$baseDir = $pieCrust->getPostsDir();
 			$uri = substr($uri, strlen($postsUrl));
 		}
-		
-		$pathPattern = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.*';
-        $paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
-        if ($paths === false)
-		{
-			die($pathPattern);
-			throw new PieCrustException('404');
-		}
-        $pathCount = count($paths);
-        if ($pathCount == 0)
-            throw new PieCrustException('404');
-        if ($pathCount > 1)
-            throw new PieCrustException('More than one article was found for the requested URL (' . $uri . '). Tell the writers to make up their minds.');
-        
-        return $paths[0];
+		return $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
     }
     
     protected function parseConfig(&$rawContents)
@@ -287,6 +272,7 @@ class Page
 		// Add the default page config values.
 		$validatedConfig = array_merge(array(
 				'layout' => PIECRUST_DEFAULT_TEMPLATE_NAME,
+				'format' => PIECRUST_DEFAULT_FORMAT,
 				'title' => 'Untitled Page'
 			), $config);
 		return $validatedConfig;
