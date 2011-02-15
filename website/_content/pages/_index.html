@@ -5,8 +5,12 @@ need_posts: true
 
 This is the demo website for [PieCrust]. It has lots of good tasty bits...
 
-{% for post in posts %}
+{% for post in pagination.posts %}
 {% include 'partial_post.html' %}
 {% endfor %}
 
+&laquo; [Newer Entries][prev_page] - [Older Entries][next_page] &raquo;
+
 [PieCrust]: http://piecrustphp.com
+[prev_page]: {{ pcurl(pagination.prev_page) }}
+[next_page]: {{ pcurl(pagination.next_page) }}

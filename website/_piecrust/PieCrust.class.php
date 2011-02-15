@@ -145,10 +145,11 @@ class PieCrust
             
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
+                        'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'enable_cache' => false,
 						'enable_gzip' => false,
                         'posts_per_page' => 5,
-                        'posts_url' => 'blog',
+                        'posts_url' => 'Y/m/%s',
                         'posts_date_format' => 'F j, Y',
                         'debug' => 'false'
                     ),

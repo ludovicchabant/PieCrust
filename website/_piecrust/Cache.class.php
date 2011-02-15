@@ -15,7 +15,8 @@ class Cache
 		$this->baseDir = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->commentTags = array(
 				'html' => array('<!-- ', ' -->'),
-				'yml' => array('# ', '')
+				'yml' => array('# ', ''),
+				'json' => null
 			);
 	}
 	
@@ -50,7 +51,10 @@ class Cache
 		}
 		
 		$commentTags = $this->commentTags[$extension];
-		$header = $commentTags[0] . 'PieCrust ' . PieCrust::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
+		if ($commentTags != null)
+			$header = $commentTags[0] . 'PieCrust ' . PieCrust::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
+		else
+			$header = '';
 		file_put_contents($cachePath, ($header . $contents));
 	}
 	

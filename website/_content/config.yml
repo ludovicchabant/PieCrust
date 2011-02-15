@@ -4,6 +4,7 @@ site:
     enable_gzip: true
     pretty_urls: true
     debug: true
+    posts_per_page: 3
 
 markdown:
     use_markdown_extra: true

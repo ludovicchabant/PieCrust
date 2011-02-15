@@ -20,6 +20,13 @@ class Page
 		return $this->uri;
 	}
 	
+	protected $pageNumber;
+	
+	public function getPageNumber()
+	{
+		return $this->pageNumber;
+	}
+	
 	protected $isCached;
 		
 	public function isCached()
@@ -90,8 +97,8 @@ class Page
         );
 		if (isset($config['need_posts']) and $config['need_posts'] == true)
 		{
-			$postsData = $this->getPostsData();
-			$data['posts'] = $postsData;
+			$paginationData = $this->getPaginationData();
+			$data['pagination'] = $paginationData;
 		}
 		return $data;
     }
@@ -127,13 +134,15 @@ class Page
 		return $this->assetData;
 	}
 	
-	protected $postsData;
+	protected $paginationData;
 	
-	protected function getPostsData()
+	protected function getPaginationData()
 	{
-		if ($this->postsData === null)
+		if ($this->paginationData === null)
 		{
-			$this->postsData = array();
+			$postsData = array();
+			$nextPageIndex = null;
+			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : '';
 			
 			$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
 			$paths = glob($pathPattern, GLOB_ERR);
@@ -142,14 +151,16 @@ class Page
 
 			if (count($paths) > 0)
 			{
+				rsort($paths);
 				$postsUri = $this->pieCrust->getConfigValue('site', 'posts_url');
 				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
 				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
 				
-				foreach ($paths as $p)
+				$offset = ($this->pageNumber - 1) * $postsPerPage;
+				for ($i = $offset; $i < $offset + $postsPerPage and $i < count($paths); ++$i)
 				{
 					$matches = array();
-					$filename = pathinfo($p, PATHINFO_FILENAME);
+					$filename = pathinfo($paths[$i], PATHINFO_FILENAME);
 					if (preg_match('/^(\d+-\d+-\d+)_(.*)$/', $filename, $matches) == false)
 						continue;
 
@@ -157,28 +168,34 @@ class Page
 					$postConfig = $post->getConfig();
 					$postDateTime = strtotime($matches[1]);
 					
-					array_push($this->postsData, array(
+					array_push($postsData, array(
 						'title' => $postConfig['title'],
 						'date' => date($postsDateFormat, $postDateTime),
 						'content' => $post->getContents()
 					));
-					
-					$postsPerPage--;
-					if ($postsPerPage == 0)
-						break;
+				}
+				
+				if ($offset + $postsPerPage < count($paths))
+				{
+					$nextPageIndex = $this->pageNumber + 1;
 				}
 			}
+			
+			$this->paginationData = array(
+										  'posts' => $postsData,
+										  'prev_page' => ($this->uri == '_index' && $previousPageIndex == null) ?
+															'' : $this->uri . '/' . $previousPageIndex,
+										  'this_page' => $this->uri . '/' . $this->pageNumber,
+										  'next_page' => $this->uri . '/' . $nextPageIndex
+										  );
 		}
-		return $this->postsData;
+		return $this->paginationData;
 	}
 	
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
 		$this->pieCrust = $pieCrust;
-		$this->uri = ltrim($uri, '/');
-		$this->path = $this->findPath($pieCrust, $uri);
-		$pathParts = pathinfo($this->path);
-		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
+		$this->parseUri($uri);
 		
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
@@ -193,9 +210,8 @@ class Page
 		{
 			// Get the page from the cache.
 			$this->contents = $this->cache->read($this->uri, 'html');
-			$configText = $this->cache->read($this->uri, 'yml');
-			$yamlParser = new sfYamlParser();
-			$config = $yamlParser->parse($configText);
+			$configText = $this->cache->read($this->uri, 'json');
+			$config = json_decode($configText, true);
 			$this->config = $this->buildValidatedConfig($config);
         }
         else
@@ -216,9 +232,8 @@ class Page
 			if ($this->cache != null)
 			{
 				$this->cache->write($this->uri, 'html', $this->contents);
-				$yamlDumper = new sfYamlDumper();
-				$yamlMarkup = $yamlDumper->dump($this->config, 1);
-				$this->cache->write($this->uri, 'yml', $yamlMarkup);
+				$yamlMarkup = json_encode($this->config);
+				$this->cache->write($this->uri, 'json', $yamlMarkup);
 			}
 		}
         if (!isset($this->config) or $this->config == null or 
@@ -228,17 +243,30 @@ class Page
 		}
 	}
     
-    protected function findPath(PieCrust $pieCrust, $uri)
+    protected function parseUri($uri)
     {
         $uri = ltrim($uri, '/');
-		$postsUrl = $pieCrust->getConfigValue('site', 'posts_url');
-		$baseDir = $pieCrust->getPagesDir();
+		$pageNumber = 1;
+		$matches = array();
+		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
+		{
+			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+			$pageNumber = intval($matches[1]);
+		}
+		$this->uri = $uri;
+		$this->pageNumber = $pageNumber;
+		
+		$postsUrl = $this->pieCrust->getConfigValue('site', 'posts_url');
+		$baseDir = $this->pieCrust->getPagesDir();
 		if (substr($uri, 0, strlen($postsUrl)) == $postsUrl)
 		{
-			$baseDir = $pieCrust->getPostsDir();
+			$baseDir = $this->pieCrust->getPostsDir();
 			$uri = substr($uri, strlen($postsUrl));
 		}
-		return $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+		$this->path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+		
+		$pathParts = pathinfo($this->path);
+		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
     }
     
     protected function parseConfig(&$rawContents)
@@ -274,7 +302,7 @@ class Page
 		// Add the default page config values.
 		$validatedConfig = array_merge(array(
 				'layout' => PIECRUST_DEFAULT_TEMPLATE_NAME,
-				'format' => PIECRUST_DEFAULT_FORMAT,
+				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
 				'title' => 'Untitled Page'
 			), $config);
 		return $validatedConfig;
