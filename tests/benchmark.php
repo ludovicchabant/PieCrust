@@ -1,13 +1,17 @@
 <?php
 
+// This requires PEAR Benchmark package.
 require_once 'Benchmark/Timer.php';
 require_once 'Benchmark/Iterate.php';
 
+// Include the PieCrust app but with a root directory set
+// to the test website's root dir.
 define('PIECRUST_ROOT_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 require_once '../website/_piecrust/PieCrust.class.php';
 
-define('BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
 
+
+// Utility methods.
 function rmdir_recursive($dir, $level = 0)
 {
 	$dir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR; 
@@ -35,6 +39,41 @@ function rmdir_recursive($dir, $level = 0)
     }
 }
 
+function average($values)
+{
+	if (!is_array($values))
+		return false;
+		
+	if (count($values) > 1 )
+	{
+		return (array_sum($values) / count($values));
+	}
+	else
+	{
+		return current($values);
+	}
+}
+
+function median($values)
+{
+	if (!is_array($values))
+		return false;
+		
+	sort($values);
+	$count = count($values);
+	$middle = $count / 2;
+	if ($count % 2 == 0)
+	{
+		return ($values[$middle] + $values[$middle-1])/2;
+	}
+	else
+	{
+		return $values[$middle];
+	}
+}
+
+define('BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
+
 function ensure_cache($ensureClean = true)
 {
 	if ($ensureClean and is_dir(BENCHMARKS_CACHE_DIR))
@@ -47,48 +86,19 @@ function ensure_cache($ensureClean = true)
 	}
 }
 
-function run_query($bench, $pieCrust, $uri = '/test')
+function run_query($pieCrust, $uri = '/test', $bench = null)
 {
 	$page = new Page($pieCrust, $uri);
-	//$bench->setMarker('Created page');
+	if ($bench != null)
+		$bench->setMarker('Created page');
 	
 	$renderer = new PageRenderer($pieCrust);
-	//$bench->setMarker('Created renderer');
+	if ($bench != null)
+		$bench->setMarker('Created renderer');
 	
 	$page = $renderer->get($page);
-	//$bench->setMarker('Rendered page');
+	if ($bench != null)
+		$bench->setMarker('Rendered page');
 	
 	return $page;
 }
-
-function profiling_tick_function($display = false)
-{
-    static $times;
-
-    switch ($display)
-    {
-    case false:
-        // add the current time to the list of recorded times
-        $times[] = microtime();
-        break;
-    case true:
-        // return elapsed times in microseconds
-        $start = array_shift($times);
-
-        $start_mt = explode(' ', $start); 
-        $start_total = doubleval($start_mt[0]) + $start_mt[1]; 
-
-        foreach ($times as $stop)
-        { 
-            $stop_mt = explode(' ', $stop); 
-            $stop_total = doubleval($stop_mt[0]) + $stop_mt[1]; 
-            $elapsed[] = $stop_total - $start_total; 
-        }
-
-        unset($times);
-        return $elapsed;
-        break;
-    }
-}
-
-
