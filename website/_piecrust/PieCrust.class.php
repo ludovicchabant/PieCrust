@@ -15,10 +15,11 @@ if (!defined(PIECRUST_ROOT_DIR))
 }
 
 define('PIECRUST_INDEX_PAGE_NAME', '_index');
-define('PIECRUST_CONFIG_PATH', '_content/config.yml');
-define('PIECRUST_CONTENT_TEMPLATES_DIR', '_content/templates/');
-define('PIECRUST_CONTENT_PAGES_DIR', '_content/pages/');
-define('PIECRUST_CONTENT_POSTS_DIR', '_content/posts/');
+define('PIECRUST_CONTENT_DIR', '_content/');
+define('PIECRUST_CONFIG_PATH', PIECRUST_CONTENT_DIR . 'config.yml');
+define('PIECRUST_CONTENT_TEMPLATES_DIR', PIECRUST_CONTENT_DIR . 'templates/');
+define('PIECRUST_CONTENT_PAGES_DIR', PIECRUST_CONTENT_DIR . 'pages/');
+define('PIECRUST_CONTENT_POSTS_DIR', PIECRUST_CONTENT_DIR . 'posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
 
 define('PIECRUST_DEFAULT_FORMAT', 'markdown');
@@ -121,7 +122,7 @@ class PieCrust
             try
             {
 				$yamlParser = new sfYamlParser();
-                $config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
+				$config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
 				$this->config = $this->validateConfig($config);			
             }
             catch (Exception $e)
@@ -256,6 +257,12 @@ class PieCrust
 		}
 		catch (Exception $e)
 		{
+			if ($this->isEmptySetup())
+			{
+				$this->showWelcomePage();
+				exit();
+			}
+		
 			if ($this->getConfigValue('site', 'debug') == true)
 			{
 				include 'FatalError.inc.php';
@@ -333,6 +340,8 @@ class PieCrust
         {
             // Using standard query (no pretty URLs / URL rewriting)
             $requestUri = $_SERVER['QUERY_STRING'];
+			if ($requestUri == null or $requestUri == '')
+				$requestUri = '/';
         }
 		else
 		{
@@ -357,7 +366,7 @@ class PieCrust
 		}
         if ($requestUri == null)
         {
-            die ("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache");
+            die ("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache).");
         }
 		if ($requestUri == '/')
 		{
@@ -365,4 +374,25 @@ class PieCrust
 		}
         return $requestUri;
     }
+	
+	protected function isEmptySetup()
+	{
+		if (!is_dir(PIECRUST_ROOT_DIR . PIECRUST_CONTENT_DIR))
+			return true;
+		if (!is_file(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH))
+			return true;
+		$templatesDir = ($this->templatesDir != null) ? $this->templatesDir : (PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
+		if (!is_dir($templatesDir))
+			return true;
+		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : (PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
+		if (!is_dir($pagesDir))
+			return true;
+			
+		return false;
+	}
+	
+	protected function showWelcomePage()
+	{
+		echo file_get_contents(PIECRUST_APP_DIR . 'messages/welcome.html');
+	}
 }
