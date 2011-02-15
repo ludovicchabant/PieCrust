@@ -39,7 +39,7 @@ require_once('libs/sfyaml/lib/sfYamlDumper.php');
 
 class PieCrust
 {
-    const VERSION = '0.0.1';
+    const VERSION = '0.0.2';
     
     protected $urlBase;
 	
