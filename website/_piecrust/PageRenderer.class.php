@@ -37,7 +37,7 @@ class PageRenderer
 	public function get(Page $page, $extraData = null)
 	{
 		ob_start();
-		get($page, $extraData);
+		$this->render($page, $extraData);
 		return ob_get_clean();
 	}
 }
