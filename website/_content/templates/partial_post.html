@@ -1,5 +1,5 @@
 <div class="post">
-	<h2>{{ post.title }}</h2>
+	<h2><a href="{{ pcurl(post.url) }}">{{ post.title }}</a></h2>
 	<div class="post-date">{{ post.date }}</div>
 
 	{{ post.content|raw }}

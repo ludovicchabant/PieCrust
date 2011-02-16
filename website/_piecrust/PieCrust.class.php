@@ -23,7 +23,8 @@ define('PIECRUST_CONTENT_POSTS_DIR', PIECRUST_CONTENT_DIR . 'posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
 
 define('PIECRUST_DEFAULT_FORMAT', 'markdown');
-define('PIECRUST_DEFAULT_TEMPLATE_NAME', 'default');
+define('PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME', 'default');
+define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
 define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
 
 require_once('IFormatter.class.php');
@@ -150,7 +151,6 @@ class PieCrust
                         'enable_cache' => false,
 						'enable_gzip' => false,
                         'posts_per_page' => 5,
-                        'posts_url' => 'Y/m/%s',
                         'posts_date_format' => 'F j, Y',
                         'debug' => 'false'
                     ),

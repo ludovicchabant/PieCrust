@@ -5,6 +5,7 @@ class Page
 	protected $pieCrust;
 	protected $cache;
 	protected $assetsDir;
+	protected $isPost;
 	
 	protected $path;
 	
@@ -152,7 +153,6 @@ class Page
 			if (count($paths) > 0)
 			{
 				rsort($paths);
-				$postsUri = $this->pieCrust->getConfigValue('site', 'posts_url');
 				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
 				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
 				
@@ -161,17 +161,21 @@ class Page
 				{
 					$matches = array();
 					$filename = pathinfo($paths[$i], PATHINFO_FILENAME);
-					if (preg_match('/^(\d+-\d+-\d+)_(.*)$/', $filename, $matches) == false)
+					if (preg_match('/^((\d+)-(\d+)-(\d+))_(.*)$/', $filename, $matches) == false)
 						continue;
-
-					$post = new Page($this->pieCrust, '/' . $postsUri . '/' . $filename);
+						
+					$post = new Page($this->pieCrust, '/' . $matches[2] . '/' . $matches[3] . '/' . $matches[4] . '/' . $matches[5]);
 					$postConfig = $post->getConfig();
 					$postDateTime = strtotime($matches[1]);
+					$postContents = $post->getContents();
+					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
+					$postUri = $post->getUri();
 					
 					array_push($postsData, array(
 						'title' => $postConfig['title'],
+						'url' => $postUri,
 						'date' => date($postsDateFormat, $postDateTime),
-						'content' => $post->getContents()
+						'content' => $postContentsSplit[0]
 					));
 				}
 				
@@ -250,20 +254,28 @@ class Page
 		$matches = array();
 		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
 		{
+			// Requesting a page other than the first for this article.
 			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
 			$pageNumber = intval($matches[1]);
 		}
 		$this->uri = $uri;
 		$this->pageNumber = $pageNumber;
-		
-		$postsUrl = $this->pieCrust->getConfigValue('site', 'posts_url');
-		$baseDir = $this->pieCrust->getPagesDir();
-		if (substr($uri, 0, strlen($postsUrl)) == $postsUrl)
+
+		$matches = array();
+		if (preg_match('/^((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
 		{
+			// Requesting a post.
 			$baseDir = $this->pieCrust->getPostsDir();
-			$uri = substr($uri, strlen($postsUrl));
+			$this->path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
+			$this->isPost = true;
 		}
-		$this->path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+		else
+		{
+			// Requesting a page.
+			$baseDir = $this->pieCrust->getPagesDir();
+			$this->path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+			$this->isPost = false;
+		}
 		
 		$pathParts = pathinfo($this->path);
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
@@ -301,7 +313,7 @@ class Page
     {
 		// Add the default page config values.
 		$validatedConfig = array_merge(array(
-				'layout' => PIECRUST_DEFAULT_TEMPLATE_NAME,
+				'layout' => ($this->isPost = true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
 				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
 				'title' => 'Untitled Page'
 			), $config);
