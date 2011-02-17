@@ -13,6 +13,11 @@ class MustacheTemplateEngine implements ITemplateEngine
 		$this->templatesDir = $pieCrust->getTemplatesDir();
     }
 	
+	public function addTemplatesPaths($paths)
+	{
+		throw new PieCrustException('Not implemented yet.');
+	}
+	
 	public function renderString($content, $data)
 	{
 		echo $this->mustache->render($content, $data);

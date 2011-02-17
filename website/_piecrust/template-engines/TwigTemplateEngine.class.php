@@ -38,6 +38,16 @@ class TwigTemplateEngine implements ITemplateEngine
         $this->twigEnv->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
     }
 	
+	public function addTemplatesPaths($paths)
+	{
+		$twigPaths = $this->twigLoader->getPaths();
+		if (is_array($paths))
+			$twigPaths = array_combine($twigPaths, $paths);
+		else
+			$twigPaths[] = $paths;
+		$this->twigLoader->setPaths($twigPaths);
+	}
+	
 	public function renderString($content, $data)
 	{
 		$this->twigLoader->setTemplateSource('__string_tpl__', $content);

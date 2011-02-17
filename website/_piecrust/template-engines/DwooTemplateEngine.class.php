@@ -20,7 +20,7 @@ class DwooTemplateEngine implements ITemplateEngine
         $usePrettyUrls = ($pieCrust->getConfigValue('site', 'pretty_urls') === true); 		
 
 		$this->pieCrust = $pieCrust;
-		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/');
+		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/'));
 		
 		$compileDir = $pieCrust->getCacheDir() . 'templates_c';
 		if (!is_dir($compileDir))
@@ -36,6 +36,11 @@ class DwooTemplateEngine implements ITemplateEngine
         $this->dwoo = new Dwoo($compileDir, $cacheDir);
         $this->dwoo->getLoader()->addDirectory(PIECRUST_APP_DIR . 'libs-plugins/dwoo/');
         $this->templatesDir = $pieCrust->getTemplatesDir();
+    }
+    
+    public function addTemplatesPaths($paths)
+    {
+        throw new PieCrustException('Not implemented yet.');
     }
 	
 	public function renderString($content, $data)
