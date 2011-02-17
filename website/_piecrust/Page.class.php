@@ -92,7 +92,8 @@ class Page
 		$config = $this->getConfig();
         $data = array(
 			'page' => array(
-				'title' => $config['title']
+				'title' => $config['title'],
+				'url' => $this->getUri()
 			),
 			'asset'=> $this->getAssetData()
         );
@@ -200,7 +201,7 @@ class Page
     
     protected function parseUri($uri)
     {
-        $uri = ltrim($uri, '/');
+        $uri = trim($uri, '/');
 		$pageNumber = 1;
 		$matches = array();
 		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
@@ -264,7 +265,7 @@ class Page
     {
 		// Add the default page config values.
 		$validatedConfig = array_merge(array(
-				'layout' => ($this->isPost = true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
+				'layout' => ($this->isPost == true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
 				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
 				'content_type' => 'html',
 				'title' => 'Untitled Page'
