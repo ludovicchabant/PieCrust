@@ -266,6 +266,7 @@ class Page
 		$validatedConfig = array_merge(array(
 				'layout' => ($this->isPost = true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
 				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
+				'content_type' => 'html',
 				'title' => 'Untitled Page'
 			), $config);
 		return $validatedConfig;

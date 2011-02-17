@@ -96,7 +96,7 @@ function run_query($pieCrust, $uri = '/test', $bench = null)
 	if ($bench != null)
 		$bench->setMarker('Created renderer');
 	
-	$page = $renderer->get($page);
+	$page = $renderer->get($page, null, false);
 	if ($bench != null)
 		$bench->setMarker('Rendered page');
 	
