@@ -114,15 +114,14 @@ class Page
 			
 			if (is_dir($this->assetsDir))
 			{
-				$assetUrlBase = $this->pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $this->getUri();
-			
 				$pathPattern = $this->assetsDir . DIRECTORY_SEPARATOR . '*';
 				$paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
 				if ($paths === false)
 					throw new PieCrustException('An error occured while reading the requested page\'s assets directory.');
 				
 				if (count($paths) > 0)
-				{			
+				{
+					$assetUrlBase = $this->pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $this->getUri();
 					foreach ($paths as $p)
 					{
 						$name = basename($p);
@@ -141,57 +140,9 @@ class Page
 	{
 		if ($this->paginationData === null)
 		{
-			$postsData = array();
-			$nextPageIndex = null;
-			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : '';
-			
-			$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
-			$paths = glob($pathPattern, GLOB_ERR);
-			if ($paths === false)
-				throw new PieCrustException('An error occured while reading the posts directory.');
-
-			if (count($paths) > 0)
-			{
-				rsort($paths);
-				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
-				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
-				
-				$offset = ($this->pageNumber - 1) * $postsPerPage;
-				for ($i = $offset; $i < $offset + $postsPerPage and $i < count($paths); ++$i)
-				{
-					$matches = array();
-					$filename = pathinfo($paths[$i], PATHINFO_FILENAME);
-					if (preg_match('/^((\d+)-(\d+)-(\d+))_(.*)$/', $filename, $matches) == false)
-						continue;
-						
-					$post = new Page($this->pieCrust, '/' . $matches[2] . '/' . $matches[3] . '/' . $matches[4] . '/' . $matches[5]);
-					$postConfig = $post->getConfig();
-					$postDateTime = strtotime($matches[1]);
-					$postContents = $post->getContents();
-					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
-					$postUri = $post->getUri();
-					
-					array_push($postsData, array(
-						'title' => $postConfig['title'],
-						'url' => $postUri,
-						'date' => date($postsDateFormat, $postDateTime),
-						'content' => $postContentsSplit[0]
-					));
-				}
-				
-				if ($offset + $postsPerPage < count($paths))
-				{
-					$nextPageIndex = $this->pageNumber + 1;
-				}
-			}
-			
-			$this->paginationData = array(
-										  'posts' => $postsData,
-										  'prev_page' => ($this->uri == '_index' && $previousPageIndex == null) ?
-															'' : $this->uri . '/' . $previousPageIndex,
-										  'this_page' => $this->uri . '/' . $this->pageNumber,
-										  'next_page' => $this->uri . '/' . $nextPageIndex
-										  );
+			require_once('Paginator.class.php');
+			$paginator = new Paginator($this->pieCrust);
+			$this->paginationData = $paginator->getPaginationData($this->uri, $this->pageNumber);
 		}
 		return $this->paginationData;
 	}
