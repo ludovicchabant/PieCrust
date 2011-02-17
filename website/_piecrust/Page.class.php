@@ -172,7 +172,7 @@ class Page
         }
         else
         {
-			// Re-format/process the page.			
+			// Re-format/process the page.		
 			$rawContents = file_get_contents($this->path);
 			$this->config = $this->parseConfig($rawContents);
 			
@@ -229,6 +229,8 @@ class Page
 			$this->isPost = false;
 		}
 		
+		if (!is_file($this->path))
+			throw new PieCrustException('404');		
 		$pathParts = pathinfo($this->path);
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
     }

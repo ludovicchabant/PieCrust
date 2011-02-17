@@ -150,9 +150,10 @@ class PieCrust
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'enable_cache' => false,
 						'enable_gzip' => false,
+						'pretty_urls' => false,
                         'posts_per_page' => 5,
                         'posts_date_format' => 'F j, Y',
-                        'debug' => 'false'
+                        'debug' => false
                     ),
                     $config['site']);
         $config['url_base'] = $this->urlBase;
@@ -262,8 +263,8 @@ class PieCrust
 				$this->showWelcomePage();
 				exit();
 			}
-		
-			if ($this->getConfigValue('site', 'debug') == true)
+			
+			if ($this->getConfigValue('site', 'debug') === true)
 			{
 				include 'FatalError.inc.php';
 				piecrust_fatal_error(array($e));
@@ -297,15 +298,15 @@ class PieCrust
 		}
     }
 	
-	protected function runUnsafe($uri = null, $extraPageData = null)
+	public function runUnsafe($uri = null, $extraPageData = null)
 	{
 		// Get the resource URI and corresponding physical path.
 		if ($uri == null)
 		{
-			$uri = $this->getRequestUri();
+			$uri = $this->getRequestUri($_SERVER);
 		}
 	
-		$gzipEnabled = (($this->getConfigValue('site', 'enable_gzip') == true) and
+		$gzipEnabled = (($this->getConfigValue('site', 'enable_gzip') === true) and
 						(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
 		
 		// Get the requested page and render it.
@@ -333,35 +334,41 @@ class PieCrust
 		}
 	}
     
-    protected function getRequestUri()
+    public function getRequestUri($server)
     {
 		$requestUri = null;
-        if ($this->getConfigValue('site', 'pretty_urls') != true)
+        if ($this->getConfigValue('site', 'pretty_urls') !== true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
-            $requestUri = $_SERVER['QUERY_STRING'];
+            $requestUri = $server['QUERY_STRING'];
 			if ($requestUri == null or $requestUri == '')
 				$requestUri = '/';
         }
 		else
 		{
 			// Get the requested URI via URL rewriting.
-			if (isset($_SERVER['IIS_WasUrlRewritten']) &&
-				$_SERVER['IIS_WasUrlRewritten'] == '1' &&
-				isset($_SERVER['UNENCODED_URL']) &&
-				$_SERVER['UNENCODED_URL'] != '')
+			if (isset($server['IIS_WasUrlRewritten']) &&
+				$server['IIS_WasUrlRewritten'] == '1' &&
+				isset($server['UNENCODED_URL']) &&
+				$server['UNENCODED_URL'] != '')
 			{
 				// IIS7 rewriting module.
-				$requestUri = $_SERVER['UNENCODED_URL'];
-				if (strlen($this->urlBase) > 1)
-					$requestUri = substr($requestUri, strlen($this->urlBase) - 1);
+				$requestUri = $server['UNENCODED_URL'];
 			}
-			elseif (isset($_SERVER['REQUEST_URI']))
+			elseif (isset($server['REQUEST_URI']))
 			{
 				// Apache mod_rewrite.
-				$requestUri = $_SERVER['REQUEST_URI'];
+				$requestUri = $server['REQUEST_URI'];
+			}
+			
+			if ($requestUri != null)
+			{
+				// Clean up.
 				if (strlen($this->urlBase) > 1)
 					$requestUri = substr($requestUri, strlen($this->urlBase) - 1);
+				$questionMark = strpos($requestUri, '?');
+				if ($questionMark !== false)
+					$requestUri = substr($requestUri, 0, $questionMark);
 			}
 		}
         if ($requestUri == null)
