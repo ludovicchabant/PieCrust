@@ -1,8 +1,8 @@
 
-Try adding Mustache (http://mustache.github.com) as a template engine.
+Fix/sort encoding problems (UTF-8 templates are rendered wrong).
 
-Helper for standard or asynchronous Google Analytics.
 Helper for loading recent Twitter entries (see chris.dzombak.name).
+Helper for email contact form (using jQuery hopefully).
 
 Support for administrative triggering of HTML caching (similar to Jekyll:
 	http://tatey.com/2009/04/29/jekyll-meets-dreamhost-automated-deployment-for-jekyll-with-git/ and
