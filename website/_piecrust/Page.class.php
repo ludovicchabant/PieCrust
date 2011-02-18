@@ -1,12 +1,12 @@
 <?php
 
+require_once('Assetor.class.php');
 require_once('Paginator.class.php');
 
 class Page
 {
 	protected $pieCrust;
 	protected $cache;
-	protected $assetsDir;
 	protected $isPost;
 	
 	protected $path;
@@ -92,47 +92,18 @@ class Page
 	public function getPageData()
 	{
 		$config = $this->getConfig();
-		$paginator = new Paginator($this->pieCrust, $this->getUri(), $this->getPageNumber());
+		$assetor = new Assetor($this->pieCrust, $this);
+		$paginator = new Paginator($this->pieCrust, $this);
         $data = array(
 			'page' => array(
 				'title' => $config['title'],
 				'url' => $this->getUri()
 			),
-			'asset'=> $this->getAssetData(),
+			'asset'=> $assetor,
 			'pagination' => $paginator
         );
 		return $data;
     }
-	
-	protected $assetData;
-	
-	protected function getAssetData()
-	{
-		if ($this->assetData === null)
-		{
-			$this->assetData = array();
-			
-			if (is_dir($this->assetsDir))
-			{
-				$pathPattern = $this->assetsDir . DIRECTORY_SEPARATOR . '*';
-				$paths = glob($pathPattern, GLOB_NOSORT|GLOB_ERR);
-				if ($paths === false)
-					throw new PieCrustException('An error occured while reading the requested page\'s assets directory.');
-				
-				if (count($paths) > 0)
-				{
-					$assetUrlBase = $this->pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $this->getUri();
-					foreach ($paths as $p)
-					{
-						$name = basename($p);
-						$key = str_replace('.', '_', $name);
-						$this->assetData[$key] = $assetUrlBase . '/' . $name;
-					}
-				}
-			}
-		}
-		return $this->assetData;
-	}
 	
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
@@ -220,8 +191,6 @@ class Page
 		
 		if (!is_file($this->path))
 			throw new PieCrustException('404');		
-		$pathParts = pathinfo($this->path);
-		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
     }
     
     protected function parseConfig(&$rawContents)

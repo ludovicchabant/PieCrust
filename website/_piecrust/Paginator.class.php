@@ -6,11 +6,11 @@ class Paginator
 	protected $pageUri;
 	protected $pageNumber;
     
-    public function __construct(PieCrust $pieCrust, $pageUri, $pageNumber)
+    public function __construct(PieCrust $pieCrust, Page $page)
     {
         $this->pieCrust = $pieCrust;
-		$this->pageUri = $pageUri;
-		$this->pageNumber = $pageNumber;
+		$this->pageUri = $page->getUri();
+		$this->pageNumber = $page->getPageNumber();
     }
 	
 	protected $paginationData;
