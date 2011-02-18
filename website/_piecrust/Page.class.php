@@ -1,5 +1,7 @@
 <?php
 
+require_once('Paginator.class.php');
+
 class Page
 {
 	protected $pieCrust;
@@ -90,18 +92,15 @@ class Page
 	public function getPageData()
 	{
 		$config = $this->getConfig();
+		$paginator = new Paginator($this->pieCrust, $this->getUri(), $this->getPageNumber());
         $data = array(
 			'page' => array(
 				'title' => $config['title'],
 				'url' => $this->getUri()
 			),
-			'asset'=> $this->getAssetData()
+			'asset'=> $this->getAssetData(),
+			'pagination' => $paginator
         );
-		if (isset($config['need_posts']) and $config['need_posts'] == true)
-		{
-			$paginationData = $this->getPaginationData();
-			$data['pagination'] = $paginationData;
-		}
 		return $data;
     }
 	
@@ -133,19 +132,6 @@ class Page
 			}
 		}
 		return $this->assetData;
-	}
-	
-	protected $paginationData;
-	
-	protected function getPaginationData()
-	{
-		if ($this->paginationData === null)
-		{
-			require_once('Paginator.class.php');
-			$paginator = new Paginator($this->pieCrust);
-			$this->paginationData = $paginator->getPaginationData($this->uri, $this->pageNumber);
-		}
-		return $this->paginationData;
 	}
 	
 	public function __construct(PieCrust $pieCrust, $uri)
@@ -201,6 +187,9 @@ class Page
     
     protected function parseUri($uri)
     {
+		if (strpos($uri, '..') !== false)	// Some bad boy's trying to access files outside of our standard folders...
+			throw new PieCrustException('404');
+		
         $uri = trim($uri, '/');
 		$pageNumber = 1;
 		$matches = array();
