@@ -1,11 +1,22 @@
 <?php
 
+/**
+ * The pagination manager for a page split into sub-pages.
+ *
+ * Pages that display a large number of posts may be split into
+ * several sub-pages. The Paginator class handles figuring out what
+ * posts to include for the current page number.
+ *
+ */
 class Paginator
 {
     protected $pieCrust;
 	protected $pageUri;
 	protected $pageNumber;
     
+	/**
+	 * Creates a new Paginator instance.
+	 */
     public function __construct(PieCrust $pieCrust, Page $page)
     {
         $this->pieCrust = $pieCrust;
@@ -13,8 +24,54 @@ class Paginator
 		$this->pageNumber = $page->getPageNumber();
     }
 	
+	/**
+	 * Gets the posts for this page.
+	 *
+	 * This method is meant to be called from the layouts via the template engine.
+	 */
+	public function posts()
+	{
+		$pagination = $this->getPaginationData();
+		return $pagination['posts'];
+	}
+	
+	/**
+	 * Gets the previous page's URI.
+	 *
+	 * This method is meant to be called from the layouts via the template engine.
+	 */
+	public function prev_page()
+	{
+		$pagination = $this->getPaginationData();
+		return $pagination['prev_page'];
+	}
+	
+	/**
+	 * Gets this page's URI.
+	 *
+	 * This method is meant to be called from the layouts via the template engine.
+	 */
+	public function this_page()
+	{
+		$pagination = $this->getPaginationData();
+		return $pagination['this_page'];
+	}
+	
+	/**
+	 * Gets thenext page's URI.
+	 *
+	 * This method is meant to be called from the layouts via the template engine.
+	 */
+	public function next_page()
+	{
+		$pagination = $this->getPaginationData();
+		return $pagination['next_page'];
+	}
+	
 	protected $paginationData;
-    
+    /**
+	 * Gets the pagination data for rendering.
+	 */
     public function getPaginationData()
 	{
 		if ($this->paginationData === null)
@@ -27,7 +84,10 @@ class Paginator
 			$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
 			$paths = glob($pathPattern, GLOB_ERR);
 			if ($paths === false)
+			{
 				throw new PieCrustException('An error occured while reading the posts directory.');
+			}
+			
 			if (count($paths) > 0)
 			{
 				// Posts will be named year-month-day_title.html so reverse-sorting the files by name
@@ -53,12 +113,12 @@ class Paginator
 					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
 					$postUri = $post->getUri();
 					
-					array_push($postsData, array(
+					$postsData[] = array(
 						'title' => $postConfig['title'],
 						'url' => $postUri,
 						'date' => date($postsDateFormat, $postDateTime),
 						'content' => $postContentsSplit[0]
-					));
+					);
 				}
 				
 				if ($offset + $postsPerPage < count($paths))
@@ -77,28 +137,4 @@ class Paginator
 		}
         return $this->paginationData;
     }
-	
-	public function posts()
-	{
-		$pagination = $this->getPaginationData();
-		return $pagination['posts'];
-	}
-	
-	public function prev_page()
-	{
-		$pagination = $this->getPaginationData();
-		return $pagination['prev_page'];
-	}
-	
-	public function this_page()
-	{
-		$pagination = $this->getPaginationData();
-		return $pagination['this_page'];
-	}
-	
-	public function next_page()
-	{
-		$pagination = $this->getPaginationData();
-		return $pagination['next_page'];
-	}
 }

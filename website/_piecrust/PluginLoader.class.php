@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * A simple plugin loader class.
+ *
+ * Handles including and loading PHP files, instancing plugin classes,
+ * and sorting them in custom priority orders.
+ */
 class PluginLoader
 {
     protected $interfaceName;
@@ -7,6 +13,9 @@ class PluginLoader
     protected $plugins;
     protected $pluginSortFunc;
     
+	/**
+	 * Creates a new PluginLoader instance.
+	 */
     public function __construct($interfaceName, $baseDir, $pluginSortFunc = null)
     {
         $this->interfaceName = $interfaceName;
@@ -14,6 +23,10 @@ class PluginLoader
         $this->pluginSortFunc = $pluginSortFunc;
     }
     
+	/**
+	 * Lazy-loads all registered plugins and returns an instance of each,
+	 * sorted using the custom specified sort function (if any).
+	 */
     public function getPlugins()
     {
         if ($this->plugins == null)
@@ -30,26 +43,23 @@ class PluginLoader
     protected function loadPlugins()
     {
         $classNames = array();
-        if ($handle = opendir($this->baseDir))
-        {
-            while (false !== ($file = readdir($handle)))
-            {
-                if ($file == '.' || $file == '..')
-                    continue;
-                $fileInfo = pathinfo($file);
-                if ($fileInfo['extension'] != 'php')
-                    continue;
-                
-                include_once($this->baseDir . $file);
-                $className = $fileInfo['filename'];
-                if (substr($className, -6) === ".class")
-                {
-                    $className = substr($className, 0, strlen($className) - 6);
-                }
-                array_push($classNames, $className);
-            }
+		$paths = new FilesystemIterator($this->baseDir);
+		foreach ($paths as $p)
+		{
+			if (substr($p->getFilename(), -3) !== 'php')	// SplFileInfo::getExtension is only PHP 5.3.6+ 
+			{												// so let's not use that just yet.
+				continue;
+			}
+			
+			include_once $p->getPathname();
+			
+			$className = substr($p->getFilename(), 0, strlen($p->getFilename()) - 4);
+			if (substr($className, -6) === ".class")
+			{
+				$className = substr($className, 0, strlen($className) - 6);
+			}
+			$classNames[] = $className;
         }
-        closedir($handle);
         
         $plugins = array();
         foreach ($classNames as $className)
@@ -60,7 +70,7 @@ class PluginLoader
                 if (!$reflector->implementsInterface($this->interfaceName))
                     throw new PieCrustException('Class "' . $className . '" doesn\'t implement interface "' . $this->interfaceName . '".');
                 $plugin = $reflector->newInstance();
-                array_push($plugins, $plugin);
+				$plugins[] = $plugin;
             }
             else
             {

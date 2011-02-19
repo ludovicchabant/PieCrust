@@ -1,8 +1,12 @@
 <?php
 
-require_once('Assetor.class.php');
-require_once('Paginator.class.php');
+require_once 'Assetor.class.php';
+require_once 'Paginator.class.php';
 
+/**
+ * A class that represents a page (article or post) in PieCrust.
+ *
+ */
 class Page
 {
 	protected $pieCrust;
@@ -10,28 +14,36 @@ class Page
 	protected $isPost;
 	
 	protected $path;
-	
+	/**
+	 * Gets the file-system path to the page's file.
+	 */
 	public function getPath()
 	{
 		return $this->path;
 	}
 	
 	protected $uri;
-	
+	/**
+	 * Gets the PieCrust URI to the page.
+	 */
 	public function getUri()
 	{
 		return $this->uri;
 	}
 	
 	protected $pageNumber;
-	
+	/**
+	 * Gets the page number (for pages that display a large number of posts).
+	 */
 	public function getPageNumber()
 	{
 		return $this->pageNumber;
 	}
 	
 	protected $isCached;
-		
+	/**
+	 * Gets whether this page's contents have been cached.
+	 */
 	public function isCached()
 	{
 		if ($this->isCached === null)
@@ -50,7 +62,9 @@ class Page
 	}
 	
 	protected $cacheTime;
-	
+	/**
+	 * Gets the cache time for this page, or false if it was not cached.
+	 */
 	public function getCacheTime()
 	{
 		if ($this->cacheTime === null)
@@ -68,7 +82,9 @@ class Page
 	}
 	
 	protected $config;
-	
+	/**
+	 * Gets the page's configuration from its YAML frontmatter.
+	 */
 	public function getConfig()
 	{
 		if ($this->config === null)
@@ -79,7 +95,9 @@ class Page
 	}
 	
 	protected $contents;
-	
+	/**
+	 * Gets the page's formatted contents.
+	 */
 	public function getContents()
 	{
 		if ($this->contents === null)
@@ -89,6 +107,9 @@ class Page
 		return $this->contents;
 	}
 	
+	/**
+	 * Gets the page's data for rendering.
+	 */
 	public function getPageData()
 	{
 		$config = $this->getConfig();
@@ -105,6 +126,9 @@ class Page
 		return $data;
     }
 	
+	/**
+	 * Creates a new Page instance.
+	 */
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
 		$this->pieCrust = $pieCrust;
@@ -116,6 +140,7 @@ class Page
 			$this->cache = new Cache($pieCrust->getCacheDir() . 'pages_r');
 		}
 	}
+	
 	
 	protected function loadConfigAndContents()
 	{
@@ -159,7 +184,9 @@ class Page
     protected function parseUri($uri)
     {
 		if (strpos($uri, '..') !== false)	// Some bad boy's trying to access files outside of our standard folders...
+		{
 			throw new PieCrustException('404');
+		}
 		
         $uri = trim($uri, '/');
 		$pageNumber = 1;
@@ -190,7 +217,9 @@ class Page
 		}
 		
 		if (!is_file($this->path))
-			throw new PieCrustException('404');		
+		{
+			throw new PieCrustException('404');
+		}
     }
     
     protected function parseConfig(&$rawContents)

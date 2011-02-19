@@ -11,9 +11,9 @@ class TextileFormatter implements IFormatter
         return IFormatter::PRIORITY_DEFAULT;
     }
     
-    public function supportsExtension($extension, $isUnformatted)
+    public function supportsFormat($format, $isUnformatted)
     {
-        return $isUnformatted && preg_match('/textile|tex/i', $extension);
+        return $isUnformatted && preg_match('/textile|tex/i', $format);
     }
     
     public function format($text)

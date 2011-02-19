@@ -29,7 +29,7 @@ class SmartyPantsFormatter implements IFormatter
         return IFormatter::PRIORITY_LOW;
     }
     
-    public function supportsExtension($extension, $isUnformatted)
+    public function supportsFormat($format, $isUnformatted)
     {
         return $this->enabled;
     }

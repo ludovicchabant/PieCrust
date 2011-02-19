@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * The base interface for PieCrust page formatters.
+ *
+ */
 interface IFormatter
 {
     const PRIORITY_HIGH = 1;
@@ -8,7 +12,7 @@ interface IFormatter
     
     public function initialize(PieCrust $pieCrust);
     public function getPriority();
-    public function supportsExtension($extension, $isUnformatted);
+    public function supportsFormat($format, $isUnformatted);
     public function format($text);
 }
 

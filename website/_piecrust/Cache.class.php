@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * A simple generic file-system cache class.
+ *
+ */
 class Cache
 {
 	protected $baseDir;

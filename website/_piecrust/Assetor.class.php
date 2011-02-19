@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * The asset manager for PieCrust pages.
+ *
+ * The Assetor (worst class name ever) handles lazy loading of a page's
+ * assets, stored in a subdirectory with the same name as the page file.
+ *
+ */
 class Assetor implements ArrayAccess
 {
 	protected $assetsDir;
@@ -12,7 +19,9 @@ class Assetor implements ArrayAccess
 		$this->assetsUrlBase = $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
 		
 		if (!is_dir($this->assetsDir))
+		{
 			$this->assetsDir = false;
+		}
 	}
 	
 	public function __isset($name)
