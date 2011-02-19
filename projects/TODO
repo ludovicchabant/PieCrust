@@ -1,8 +1,10 @@
 
 Fix/sort encoding problems (UTF-8 templates are rendered wrong).
+Handle cache/expiration headers (http://docs.symfony-reloaded.org/guides/cache/http.html)
 
 Helper for loading recent Twitter entries (see chris.dzombak.name).
 Helper for email contact form (using jQuery hopefully).
+Helper for DISQUS.
 
 Support for administrative triggering of HTML caching (similar to Jekyll:
 	http://tatey.com/2009/04/29/jekyll-meets-dreamhost-automated-deployment-for-jekyll-with-git/ and
