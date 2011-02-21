@@ -362,9 +362,14 @@ class PieCrust
 		{
 			if ($this->isEmptySetup())
 			{
-				$this->showWelcomePage();
+				$this->showSystemMessage('welcome');
 				exit();
 			}
+            if ($this->checkRequirements() === false)
+            {
+                $this->showSystemMessage('requirements');
+                exit();
+            }
 			
 			if ($this->getConfigValue('site', 'debug') === true)
 			{
@@ -513,9 +518,20 @@ class PieCrust
 			
 		return false;
 	}
+    
+    protected function checkRequirements()
+    {
+        $version = explode('.', phpversion());
+        if (intval($version[0]) < 5 or
+            intval($version[1]) < 3)
+        {
+            return false;
+        }
+        return true;
+    }
 	
-	protected function showWelcomePage()
+	protected function showSystemMessage($message)
 	{
-		echo file_get_contents(PIECRUST_APP_DIR . 'messages/welcome.html');
+		echo file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
 	}
 }
