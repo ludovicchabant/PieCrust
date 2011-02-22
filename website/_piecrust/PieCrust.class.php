@@ -348,7 +348,7 @@ class PieCrust
         }
         
         date_default_timezone_set('America/Los_Angeles');
-		set_error_handler(piecrust_error_handler);
+		set_error_handler('piecrust_error_handler');
     }
     
 	/**
