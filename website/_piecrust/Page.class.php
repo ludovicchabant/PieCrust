@@ -179,10 +179,12 @@ class Page
 			ob_start();
 			$templateEngine->renderString($rawContents, $data);
 			$rawContents = ob_get_clean();
+		
+			$this->contents = $this->pieCrust->formatText($rawContents, $this->config['format']);			
 			
-			$this->contents = $this->pieCrust->formatText($rawContents, $this->config['format']);
-			
-			if ($this->cache != null)
+			// Do not cache the page if 'volatile' data was accessed (e.g. the page displays
+			// the latest posts).
+			if ($this->cache != null and $this->wasVolatileDataAccessed($data) == false)
 			{
 				$this->cache->write($this->uri, 'html', $this->contents);
 				$yamlMarkup = json_encode($this->config);
@@ -194,6 +196,11 @@ class Page
 		{
             throw new PieCrustException('An unknown error occured while loading the contents and configuration for page: ' . $this->uri);
 		}
+	}
+	
+	protected function wasVolatileDataAccessed($data)
+	{
+		return $data['pagination']->wasPaginationDataAccessed();
 	}
     
     protected function parseUri($uri)

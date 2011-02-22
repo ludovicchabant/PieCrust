@@ -68,6 +68,14 @@ class Paginator
 		return $pagination['next_page'];
 	}
 	
+	/**
+	 * Gets whether the pagination data was requested by the page.
+	 */
+	public function wasPaginationDataAccessed()
+	{
+		return ($this->paginationData != null);
+	}
+	
 	protected $paginationData;
     /**
 	 * Gets the pagination data for rendering.
