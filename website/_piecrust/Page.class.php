@@ -132,7 +132,10 @@ class Page
 	public function __construct(PieCrust $pieCrust, $uri)
 	{
 		$this->pieCrust = $pieCrust;
-		$this->parseUri($uri);
+		if ($uri != null)
+		{
+			$this->parseUri($uri);
+		}
 		
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
@@ -141,6 +144,18 @@ class Page
 		}
 	}
 	
+	/**
+	 * Creates a new Page instance with some optimizations for posts built from the filesystem.
+	 */
+	public static function createPost(PieCrust $pieCrust, $uri, $path)
+	{
+		$page = new Page($pieCrust, null);
+		$page->uri = trim($uri, '/');
+		$page->path = $path;
+		$page->pageNumber = 1;
+		$page->isPost = true;
+		return $page;
+	}
 	
 	protected function loadConfigAndContents()
 	{
@@ -201,11 +216,22 @@ class Page
 		$this->pageNumber = $pageNumber;
 
 		$matches = array();
-		if (preg_match('/^((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
+		$postsPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
+		if (preg_match('/^' . $postsPrefix . '\/((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
 		{
 			// Requesting a post.
 			$baseDir = $this->pieCrust->getPostsDir();
-			$this->path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
+			$postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
+			switch ($postsFs)
+			{
+			case 'hierarchy':
+				$this->path = $baseDir . $matches[2] . DIRECTORY_SEPARATOR . $matches[3] . DIRECTORY_SEPARATOR . $matches[4] . '_' . $matches[5] . '.html';
+				break;
+			case 'flat':
+			default:
+				$this->path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
+				break;
+			}
 			$this->isPost = true;
 		}
 		else

@@ -81,34 +81,35 @@ class Paginator
 			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : '';
 			
 			// Find all HTML posts in the posts directory.
-			$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
-			$paths = glob($pathPattern, GLOB_ERR);
-			if ($paths === false)
+			$postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
+			switch ($postsFs)
 			{
-				throw new PieCrustException('An error occured while reading the posts directory.');
+			case 'hierarchy':
+				$postInfos = $this->getHierarchicalPostFiles();
+				break;
+			case 'flat':
+			default:
+				$postInfos = $this->getFlatPostFiles();
+				break;
 			}
-			
-			if (count($paths) > 0)
+			if (count($postInfos) > 0)
 			{
-				// Posts will be named year-month-day_title.html so reverse-sorting the files by name
-				// should arrange them in a nice counter-chronological order.
-				rsort($paths);
-				
 				// Load all the posts for the requested page number (page numbers start at '1').
+				$postsPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
 				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
 				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
 				$offset = ($this->pageNumber - 1) * $postsPerPage;
-				$upperLimit = min($offset + $postsPerPage, count($paths));
+				$upperLimit = min($offset + $postsPerPage, count($postInfos));
 				for ($i = $offset; $i < $upperLimit; ++$i)
 				{
-					$matches = array();
-					$filename = pathinfo($paths[$i], PATHINFO_FILENAME);
-					if (preg_match('/^((\d+)-(\d+)-(\d+))_(.*)$/', $filename, $matches) == false)
-						continue;
-						
-					$post = new Page($this->pieCrust, '/' . $matches[2] . '/' . $matches[3] . '/' . $matches[4] . '/' . $matches[5]);
+					$postInfo = $postInfos[$i];
+					$post = Page::createPost(
+						$this->pieCrust,
+						$postsPrefix . '/' . $postInfo['year'] . '/' . $postInfo['month'] . '/' . $postInfo['day'] . '/' . $postInfo['name'], 
+						$postInfo['path']);
+
 					$postConfig = $post->getConfig();
-					$postDateTime = strtotime($matches[1]);
+					$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
 					$postContents = $post->getContents();
 					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
 					$postUri = $post->getUri();
@@ -121,7 +122,7 @@ class Paginator
 					);
 				}
 				
-				if ($offset + $postsPerPage < count($paths))
+				if ($offset + $postsPerPage < count($postInfos))
 				{
 					// There's another page following this one.
 					$nextPageIndex = $this->pageNumber + 1;
@@ -137,4 +138,95 @@ class Paginator
 		}
         return $this->paginationData;
     }
+	
+	protected function getHierarchicalPostFiles()
+	{
+		$result = array();
+		
+		$years = array();
+		$yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir());
+		foreach ($yearsIterator as $year)
+		{
+			if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
+				continue;
+			
+			$thisYear = $year->getFilename();
+			$years[] = $thisYear;
+		}
+		rsort($years);
+		
+		foreach ($years as $year)
+		{
+			$months = array();
+			$monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year);
+			foreach ($monthsIterator as $month)
+			{
+				if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
+					continue;
+				
+				$thisMonth = $month->getFilename();
+				$months[] = $thisMonth;
+			}
+			rsort($months);
+				
+			foreach ($months as $month)
+			{
+				$days = array();
+				$postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year . DIRECTORY_SEPARATOR . $month);
+				foreach ($postsIterator as $post)
+				{
+					$matches = array();
+					if (preg_match('/^(\d{2})_(.*)\.html$/', $post->getFilename(), $matches) == false)
+						continue;
+					
+					$thisDay = $matches[1];
+					$days[$thisDay] = array('name' => $matches[2], 'path' => $post->getPathname());
+				}
+				krsort($days);
+				
+				foreach ($days as $day => $info)
+				{
+					$result[] = array(
+						'year' => $year,
+						'month' => $month,
+						'day' => $day,
+						'name' => $info['name'],
+						'path' => $info['path']
+					);
+				}
+			}
+		}
+		
+		return $result;
+	}
+	
+	protected function getFlatPostFiles()
+	{
+		$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
+		$paths = glob($pathPattern, GLOB_ERR);
+		if ($paths === false)
+		{
+			throw new PieCrustException('An error occured while reading the posts directory.');
+		}
+		rsort($paths);
+		
+		$result = array();
+		foreach ($paths as $path)
+		{
+			$matches = array();
+			
+			$filename = pathinfo($path, PATHINFO_BASENAME);
+			if (preg_match('/^(\d{4})-(\d{2})-(\d{2})_(.*)\.html$/', $filename, $matches) == false)
+				continue;
+			
+			$result[] = array(
+				'year' => intval($matches[1]),
+				'month' => intval($matches[2]),
+				'day' => intval($matches[3]),
+				'name' => $matches[4],
+				'path' => $path
+			);
+		}
+		return $result;
+	}
 }

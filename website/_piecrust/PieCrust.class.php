@@ -227,8 +227,10 @@ class PieCrust
                         'enable_cache' => false,
 						'enable_gzip' => false,
 						'pretty_urls' => false,
+						'posts_prefix' => '',
                         'posts_per_page' => 5,
                         'posts_date_format' => 'F j, Y',
+						'posts_fs' => 'flat',
                         'debug' => false
                     ),
                     $config['site']);
@@ -303,7 +305,7 @@ class PieCrust
 			}
 				
 			$templateEngineClass = $templateEngineName . 'TemplateEngine';
-			require_once(PIECRUST_APP_DIR . 'template-engines/' . $templateEngineClass . '.class.php');
+			require_once(PIECRUST_APP_DIR . 'template-engines' . DIRECTORY_SEPARATOR . $templateEngineClass . '.class.php');
 			
 			$reflector = new ReflectionClass($templateEngineClass);
 			$this->templateEngine = $reflector->newInstance();
@@ -362,14 +364,9 @@ class PieCrust
 		{
 			if ($this->isEmptySetup())
 			{
-				$this->showSystemMessage('welcome');
+				$this->showWelcomePage();
 				exit();
 			}
-            if ($this->checkRequirements() === false)
-            {
-                $this->showSystemMessage('requirements');
-                exit();
-            }
 			
 			if ($this->getConfigValue('site', 'debug') === true)
 			{
@@ -518,20 +515,9 @@ class PieCrust
 			
 		return false;
 	}
-    
-    protected function checkRequirements()
-    {
-        $version = explode('.', phpversion());
-        if (intval($version[0]) < 5 or
-            intval($version[1]) < 3)
-        {
-            return false;
-        }
-        return true;
-    }
 	
-	protected function showSystemMessage($message)
+	protected function showWelcomePage()
 	{
-		echo file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
+		echo file_get_contents(PIECRUST_APP_DIR . 'messages/welcome.html');
 	}
 }
