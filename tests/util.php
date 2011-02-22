@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(E_ALL ^ E_NOTICE);
+
 // Utility methods.
 function rmdir_recursive($dir, $level = 0)
 {
