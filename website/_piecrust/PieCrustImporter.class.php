@@ -7,6 +7,13 @@ define('PIECRUST_IMPORT_DIR', '_import');
 
 class PieCrustImporter
 {
+	public $postsFs;
+	
+	public function __construct()
+	{
+		$this->postsFs = 'hierarchy';
+	}
+	
 	public function importContent()
 	{
 		$files = new FilesystemIterator(PIECRUST_ROOT_DIR . PIECRUST_IMPORT_DIR);
@@ -17,7 +24,7 @@ class PieCrustImporter
 			require_once (PIECRUST_APP_DIR . 'importers' . DIRECTORY_SEPARATOR . $type . '.class.php');
 			$importer = new $type();
 			$importer->open($f->getPathname());
-			$importer->importPosts($contentDir . 'posts' . DIRECTORY_SEPARATOR);
+			$importer->importPosts(PIECRUST_ROOT_DIR . PIECRUST_CONTENT_POSTS_DIR, $this->postsFs);
 			$importer->close();
 		}
 	}

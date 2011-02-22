@@ -1,6 +1,6 @@
 <?php
 
-require_once '../libs/sfyaml/lib/sfYamlDumper.php';
+require_once 'libs/sfyaml/lib/sfYamlDumper.php';
 
 class WordpressImporter implements IImporter
 {
@@ -19,12 +19,14 @@ class WordpressImporter implements IImporter
 	{
 	}
 	
-	public function importPosts($postsDir)
+	public function importPosts($postsDir, $mode = 'flat')
 	{
 		foreach ($this->xml->channel->item as $item)
 		{
 			$wpChildren = $item->children('wp', TRUE);
 			if ($wpChildren->status != 'publish')
+				continue;
+			if ($wpChildren->post_type != 'post')
 				continue;
 			
 			$title = strval($item->title);
@@ -35,10 +37,16 @@ class WordpressImporter implements IImporter
 			$content = strval($contentChildren->encoded);		
 			
 			$timestamp = strtotime($date);
-			/*$filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR 
-								  . date('m', $timestamp) . DIRECTORY_SEPARATOR
-								  . date('d', $timestamp) . '_' . $filename . '.html';*/
-			$filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $filename . '.html';
+			if ($mode == 'hierarchy')
+			{
+				$filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR 
+									  . date('m', $timestamp) . DIRECTORY_SEPARATOR
+									  . date('d', $timestamp) . '_' . $filename . '.html';
+			}
+			else
+			{
+				$filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $filename . '.html';
+			}
 			$data = array(
 			   'title' => $title,
 			   'excerpt' => $excerpt
