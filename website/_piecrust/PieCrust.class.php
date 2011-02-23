@@ -361,7 +361,7 @@ class PieCrust
         }
         else
         {
-            $this->urlBase = '/' . trim($urlBase, '/') . '/';
+            $this->urlBase = rtrim($urlBase, '/') . '/';
         }
         
         date_default_timezone_set('America/Los_Angeles');
