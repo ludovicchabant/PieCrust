@@ -116,13 +116,12 @@ class Page
 		$assetor = new Assetor($this->pieCrust, $this);
 		$paginator = new Paginator($this->pieCrust, $this);
         $data = array(
-			'page' => array(
-				'title' => $config['title'],
-				'url' => $this->getUri()
-			),
+			'page' => $config,
 			'asset'=> $assetor,
 			'pagination' => $paginator
         );
+		$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
+		$data['page']['slug'] = $this->getUri();
 		return $data;
     }
 	
@@ -134,7 +133,17 @@ class Page
 		$this->pieCrust = $pieCrust;
 		if ($uri != null)
 		{
-			$this->parseUri($uri);
+			$uriInfo = Page::parseUri($pieCrust, $uri);
+			
+			$this->uri = $uriInfo['uri'];
+			$this->pageNumber = $uriInfo['page'];
+			$this->isPost = ($uriInfo['isPost'] === true);
+			$this->path = $uriInfo['path'];
+			
+			if (!is_file($this->path))
+			{
+				throw new PieCrustException('404');
+			}
 		}
 		
 		$this->cache = null;
@@ -156,6 +165,63 @@ class Page
 		$page->isPost = true;
 		return $page;
 	}
+	
+	/**
+	 *	Parse a relative URI and returns information about it.
+	 */
+	public static function parseUri(PieCrust $pieCrust, $uri)
+    {
+		if (strpos($uri, '..') !== false)	// Some bad boy's trying to access files outside of our standard folders...
+		{
+			throw new PieCrustException('404');
+		}
+		
+        $uri = trim($uri, '/');
+		$pageNumber = 1;
+		$matches = array();
+		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
+		{
+			// Requesting a page other than the first for this article.
+			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+			$pageNumber = intval($matches[1]);
+		}
+
+		$path = null;
+		$isPost = false;
+		$matches = array();
+		$postsPrefix = $pieCrust->getConfigValue('site', 'posts_prefix');
+		if (preg_match('/^' . $postsPrefix . '\/((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
+		{
+			// Requesting a post.
+			$baseDir = $pieCrust->getPostsDir();
+			$postsFs = $pieCrust->getConfigValue('site', 'posts_fs');
+			switch ($postsFs)
+			{
+			case 'hierarchy':
+				$path = $baseDir . $matches[2] . DIRECTORY_SEPARATOR . $matches[3] . DIRECTORY_SEPARATOR . $matches[4] . '_' . $matches[5] . '.html';
+				break;
+			case 'flat':
+			default:
+				$path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
+				break;
+			}
+			$isPost = true;
+		}
+		else
+		{
+			// Requesting a page.
+			$baseDir = $pieCrust->getPagesDir();
+			$path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+			$isPost = false;
+		}
+		
+		return array(
+			'uri' => $uri,
+			'page' => $pageNumber,
+			'isPost' => $isPost,
+			'path' => $path
+		);
+    }
 	
 	protected function loadConfigAndContents()
 	{
@@ -202,58 +268,6 @@ class Page
 	{
 		return $data['pagination']->wasPaginationDataAccessed();
 	}
-    
-    protected function parseUri($uri)
-    {
-		if (strpos($uri, '..') !== false)	// Some bad boy's trying to access files outside of our standard folders...
-		{
-			throw new PieCrustException('404');
-		}
-		
-        $uri = trim($uri, '/');
-		$pageNumber = 1;
-		$matches = array();
-		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
-		{
-			// Requesting a page other than the first for this article.
-			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
-			$pageNumber = intval($matches[1]);
-		}
-		$this->uri = $uri;
-		$this->pageNumber = $pageNumber;
-
-		$matches = array();
-		$postsPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
-		if (preg_match('/^' . $postsPrefix . '\/((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
-		{
-			// Requesting a post.
-			$baseDir = $this->pieCrust->getPostsDir();
-			$postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
-			switch ($postsFs)
-			{
-			case 'hierarchy':
-				$this->path = $baseDir . $matches[2] . DIRECTORY_SEPARATOR . $matches[3] . DIRECTORY_SEPARATOR . $matches[4] . '_' . $matches[5] . '.html';
-				break;
-			case 'flat':
-			default:
-				$this->path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
-				break;
-			}
-			$this->isPost = true;
-		}
-		else
-		{
-			// Requesting a page.
-			$baseDir = $this->pieCrust->getPagesDir();
-			$this->path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
-			$this->isPost = false;
-		}
-		
-		if (!is_file($this->path))
-		{
-			throw new PieCrustException('404');
-		}
-    }
     
     protected function parseConfig(&$rawContents)
     {

@@ -23,7 +23,7 @@ class TwigTemplateEngine implements ITemplateEngine
 		$usePrettyUrls = ($pieCrust->getConfigValue('site','pretty_urls') === true);		
 		
 		$this->pieCrust = $pieCrust;
-		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
+		self::$pathPrefix = ($pieCrust->getHost() . $pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
 		
 		$dirs = array(rtrim($this->pieCrust->getTemplatesDir(), DIRECTORY_SEPARATOR));
 		$this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs);

@@ -68,6 +68,15 @@ class PieCrust
 	 * The current version of PieCrust.
 	 */
     const VERSION = '0.0.2';
+	
+	protected $host;
+	/**
+	 * The host of the application.
+	 */
+	public function getHost()
+	{
+		return $this->host;
+	}
     
     protected $urlBase;
 	/**
@@ -223,6 +232,7 @@ class PieCrust
             
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
+						'root' => ($this->host . $this->urlBase),
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'enable_cache' => false,
 						'enable_gzip' => false,
@@ -234,7 +244,6 @@ class PieCrust
                         'debug' => false
                     ),
                     $config['site']);
-        $config['url_base'] = $this->urlBase;
         return $config;
     }
 	
@@ -319,15 +328,14 @@ class PieCrust
 	 */
 	public function getSiteData()
 	{
-		$config = $this->getConfig();
-		$data = array(
-			'site' => array(
-				'root' => $this->urlBase,
-				'title' => $config['site']['title']
-			),
-			'piecrust' => array(
-				'version' => self::VERSION,
-                'branding' => 'Baked with <em><a href="http://piecrustphp.com">PieCrust</a> ' . self::VERSION . '</em>.'
+		$data = $this->getConfig();
+		$data = array_merge(
+			$data, 
+			array(
+				'piecrust' => array(
+					'version' => self::VERSION,
+					'branding' => 'Baked with <em><a href="http://piecrustphp.com">PieCrust</a> ' . self::VERSION . '</em>.'
+				)
 			)
 		);
 		return $data;
@@ -336,15 +344,24 @@ class PieCrust
 	/**
 	 * Creates a new PieCrust instance with the given base URL.
 	 */
-    public function __construct($urlBase = null)
+    public function __construct($host = null, $urlBase = null)
     {
+		if ($host === null)
+		{
+			$this->host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+		}
+		else
+		{
+			$this->host = $host;
+		}
+		
         if ($urlBase === null)
         {
-            $this->urlBase = '/';
+			$this->urlBase = dirname($_SERVER['PHP_SELF']) . '/';
         }
         else
         {
-            $this->urlBase = rtrim($urlBase, '/') . '/';
+            $this->urlBase = '/' . trim($urlBase, '/') . '/';
         }
         
         date_default_timezone_set('America/Los_Angeles');
@@ -362,12 +379,15 @@ class PieCrust
 		}
 		catch (Exception $e)
 		{
+			// Something wrong happened... check that we're not running
+			// some completely brand new and un-configured website.
 			if ($this->isEmptySetup())
 			{
-				$this->showWelcomePage();
+				$this->showSystemMessage('welcome');
 				exit();
 			}
 			
+			// If debugging is enabled, just display the error and exit.
 			if ($this->getConfigValue('site', 'debug') === true)
 			{
 				include 'FatalError.inc.php';
@@ -375,29 +395,44 @@ class PieCrust
 				exit();
 			}
 			
+			// Get the URI to the custom error page.
 			$errorPageUri = '_error';
 			if ($e->getMessage() == '404')
 			{
                 header('HTTP/1.0 404 Not Found');
 				$errorPageUri = '_404';
 			}
-			try
+			$errorPageUriInfo = Page::parseUri($this, $errorPageUri);
+			if (is_file($errorPageUriInfo['path']))
 			{
-				$this->runUnsafe($errorPageUri, array(
-						'error' => array(
-							'code' => $e->getCode(),
-							'message' => $e->getMessage(),
-							'file' => $e->getFile(),
-							'line' => $e->getLine(),
-							'trace' => $e->getTraceAsString(),
-							'debug' => (ini_get('display_errors') == true)
-						)
-					));
+				// We have a custom error page. Show it, or display
+				// the "fatal error" page if even this doesn't work.
+				try
+				{
+					$this->runUnsafe($errorPageUri, array(
+							'error' => array(
+								'code' => $e->getCode(),
+								'message' => $e->getMessage(),
+								'file' => $e->getFile(),
+								'line' => $e->getLine(),
+								'trace' => $e->getTraceAsString(),
+								'debug' => (ini_get('display_errors') == true)
+							)
+						));
+				}
+				catch (Exception $inner)
+				{
+					include 'FatalError.inc.php';
+					piecrust_fatal_error(array($e, $inner));
+					exit();
+				}
 			}
-			catch (Exception $inner)
+			else
 			{
-				include 'FatalError.inc.php';
-				piecrust_fatal_error(array($e, $inner));
+				// We don't have a custom error page. Just show a generic
+				// error page and exit.
+				$this->showSystemMessage(substr($errorPageUri, 1));
+				exit();
 			}
 		}
     }
@@ -491,7 +526,7 @@ class PieCrust
 		}
         if ($requestUri == null)
         {
-            die ("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache).");
+            throw new PieCrustException("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache).");
         }
 		if ($requestUri == '/')
 		{
@@ -516,8 +551,8 @@ class PieCrust
 		return false;
 	}
 	
-	protected function showWelcomePage()
+	protected function showSystemMessage($message)
 	{
-		echo file_get_contents(PIECRUST_APP_DIR . 'messages/welcome.html');
+		echo file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
 	}
 }
