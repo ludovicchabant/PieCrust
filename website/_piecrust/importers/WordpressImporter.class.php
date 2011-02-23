@@ -1,6 +1,6 @@
 <?php
 
-require_once 'libs/sfyaml/lib/sfYamlDumper.php';
+require_once (dirname(__FILE__) . '/../libs/sfyaml/lib/sfYamlDumper.php');
 
 class WordpressImporter implements IImporter
 {
@@ -47,10 +47,17 @@ class WordpressImporter implements IImporter
 			{
 				$filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $filename . '.html';
 			}
+			
 			$data = array(
-			   'title' => $title,
-			   'excerpt' => $excerpt
-			 );
+				'title' => $title,
+				'id' => intval($wpChildren->post_id),
+				'time' => date('H:i:s', $timestamp)
+			);
+			if ($excerpt != null && $excerpt != '')
+			{
+				$data['excerpt'] = $excerpt;
+			}
+			
 			$yaml = new sfYamlDumper();
 			$header = $yaml->dump($data, 1);
 

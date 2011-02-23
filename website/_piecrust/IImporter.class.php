@@ -7,6 +7,6 @@
 interface IImporter
 {
 	public function importPages($pagesDir);
-	public function importPosts($postsDir, $mode = 'flat');
+	public function importPosts($postsDir);
 	public function close();
 }
