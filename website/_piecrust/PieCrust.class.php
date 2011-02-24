@@ -603,9 +603,12 @@ class PieCrust
     /**
      * Sets up basic things like the global error handler or the timezone.
      */
-    public static function setup()
+    public static function setup($profile = 'web')
     {
         date_default_timezone_set('America/Los_Angeles');
-		set_error_handler('piecrust_error_handler');
+		if ($profile == 'web')
+		{
+			set_error_handler('piecrust_error_handler');
+		}
     }
 }

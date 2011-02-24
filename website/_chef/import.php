@@ -1,10 +1,10 @@
 #!/usr/bin/php
 <?php
 
-require_once dirname(__FILE__) . '/../_piecrust/PieCrust.class.php';
-require_once dirname(__FILE__) . '/../_piecrust/PieCrustImporter.class.php';
+require_once 'ChefEnvironment.inc.php';
+require_once 'PieCrust.class.php';
+require_once 'PieCrustImporter.class.php';
 
-require_once 'Console/Color.php';
 require_once 'Console/CommandLine.php';
 
 // Set up the command line parser.
@@ -40,7 +40,7 @@ if (!is_dir($rootDir))
 }
 
 // Start importing!
-PieCrust::setup();
+PieCrust::setup('shell');
 $pieCrust = new PieCrust(array('root' => $rootDir));
 $importer = new PieCrustImporter($pieCrust);
 $importer->import();

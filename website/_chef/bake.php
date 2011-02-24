@@ -1,11 +1,12 @@
 #!/usr/bin/php
 <?php
 
-require_once dirname(__FILE__) . '/../_piecrust/PieCrust.class.php';
-require_once dirname(__FILE__) . '/../_piecrust/PieCrustBaker.class.php';
+require_once 'ChefEnvironment.inc.php';
+require_once 'PieCrust.class.php';
+require_once 'PieCrustBaker.class.php';
 
-require_once 'Console/Color.php';
 require_once 'Console/CommandLine.php';
+
 
 // Set up the command line parser.
 $parser = new Console_CommandLine(array(
@@ -66,7 +67,7 @@ if (!is_dir($outputDir) or !is_writable($outputDir))
 }
 
 // Start baking!
-PieCrust::setup();
+PieCrust::setup('shell');
 $pieCrust = new PieCrust(array('root' => $rootDir, 'url_base' => $result->options['url_base']));
 $baker = new PieCrustBaker($pieCrust);
 if (isset($result->options['templates_dir']))

@@ -1,6 +1,5 @@
 <?php
 
-require_once 'PieCrust.class.php';
 require_once 'IImporter.class.php';
 
 define('PIECRUST_IMPORT_DIR', '_import');
