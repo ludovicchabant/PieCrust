@@ -2,13 +2,6 @@
 
 class TwigTemplateEngine implements ITemplateEngine
 {
-	protected static $pathPrefix;
-    
-    public static function getPathPrefix()
-    {
-        return self::$pathPrefix;
-    }
-	
 	protected $pieCrust;
 	protected $twigEnv;
 	protected $twigLoader;
@@ -16,14 +9,11 @@ class TwigTemplateEngine implements ITemplateEngine
     public function initialize(PieCrust $pieCrust)
     {
         require_once(PIECRUST_APP_DIR . 'libs/twig/lib/Twig/Autoloader.php');
-        require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/Functions.php');
         Twig_Autoloader::register();
 		require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/ExtendedFilesystem.php');
-		
-		$usePrettyUrls = ($pieCrust->getConfigValue('site','pretty_urls') === true);		
+		require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/PieCrustExtension.php');
 		
 		$this->pieCrust = $pieCrust;
-		self::$pathPrefix = ($pieCrust->getHost() . $pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
 		
 		$dirs = array(rtrim($this->pieCrust->getTemplatesDir(), DIRECTORY_SEPARATOR));
 		$this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs);
@@ -35,7 +25,7 @@ class TwigTemplateEngine implements ITemplateEngine
 			$options['auto_reload'] = true;
 		}
         $this->twigEnv = new Twig_Environment($this->twigLoader, $options);
-        $this->twigEnv->addFunction('pcurl', new Twig_Function_Function('twig_pcurl_function'));
+        $this->twigEnv->addExtension(new PieCrustExtension($this->pieCrust));
     }
 	
 	public function addTemplatesPaths($paths)
