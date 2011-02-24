@@ -99,23 +99,10 @@ class Paginator
 			$nextPageIndex = null;
 			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : null;
 			
-			// Find all HTML posts in the posts directory.
-			$fs = new FileSystem($this->pieCrust);
-			$postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
-			switch ($postsFs)
-			{
-			case 'hierarchy':
-				$postInfos = $fs->getHierarchicalPostFiles();
-				break;
-			case 'flat':
-			default:
-				$postInfos = $fs->getFlatPostFiles();
-				break;
-			}
+			$postInfos = $this->getPostInfos();
 			if (count($postInfos) > 0)
 			{
 				// Load all the posts for the requested page number (page numbers start at '1').
-				$postsPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
 				$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
 				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
 				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
@@ -127,7 +114,7 @@ class Paginator
 					// Create the post with all the stuff we already know.
 					$post = Page::create(
 						$this->pieCrust,
-						Paginator::buildPostUrl($postsPrefix, $postsUrlFormat, $postInfo), 
+						Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
 						$postInfo['path'],
 						true);
 
@@ -161,11 +148,28 @@ class Paginator
 		}
         return $this->paginationData;
     }
+    
+    protected function getPostInfos()
+    {
+        $fs = new FileSystem($this->pieCrust);
+        $postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
+        switch ($postsFs)
+        {
+        case 'hierarchy':
+            $postInfos = $fs->getHierarchicalPostFiles();
+            break;
+        case 'flat':
+        default:
+            $postInfos = $fs->getFlatPostFiles();
+            break;
+        }
+        return $postInfos;
+    }
 	
 	/**
 	 * Builds the URL of a post given a URL format.
 	 */
-	public static function buildPostUrl($postPrefix, $postUrlFormat, $postInfo)
+	public static function buildPostUrl($postUrlFormat, $postInfo)
 	{
 		$replacements = array(
 			'%year%' => $postInfo['year'],
@@ -173,10 +177,36 @@ class Paginator
 			'%day%' => $postInfo['day'],
 			'%slug%' => $postInfo['name']
 		);
-		if ($postPrefix != '')
-		{
-			$postPrefix = rtrim($postPrefix, '/') . '/';
-		}
-		return $postPrefix . str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat);
+		return str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat);
 	}
+    
+    /**
+     * Builds the regex pattern to match the given URL format.
+     */
+    public static function buildPostUrlPattern($postUrlFormat)
+    {
+        $replacements = array(
+			'%year%' => '(?P<year>\d{4})',
+			'%month%' => '(?P<month>\d{2})',
+			'%day%' => '(?P<day>\d{2})',
+			'%slug%' => '(?P<slug>.*?)'
+		);
+        return '/^' . str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat) . '$/';
+    }
+    
+    /**
+     * Builds the URL of a tag listing.
+     */
+    public static function buildTagUrl($tagUrlFormat, $tag)
+    {
+        return str_replace('%tag%', $tag, $tagUrlFormat);
+    }
+    
+    /**
+     * Builds the URL of a category listing.
+     */
+    public static function buildCategoryUrl($categoryUrlFormat, $category)
+    {
+        return str_replace('%category%', $category, $categoryUrlFormat);
+    }
 }

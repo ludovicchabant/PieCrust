@@ -226,8 +226,8 @@ class Page
 		$path = null;
 		$isPost = false;
 		$matches = array();
-		$postsPrefix = $pieCrust->getConfigValue('site', 'posts_prefix');
-		if (preg_match('/^' . $postsPrefix . '\/((\d+)\/(\d+)\/(\d+))\/(.*)$/', $uri, $matches))
+		$postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValue('site', 'posts_urls'));
+		if (preg_match($postsPattern, $uri, $matches))
 		{
 			// Requesting a post.
 			$baseDir = $pieCrust->getPostsDir();
@@ -235,11 +235,11 @@ class Page
 			switch ($postsFs)
 			{
 			case 'hierarchy':
-				$path = $baseDir . $matches[2] . DIRECTORY_SEPARATOR . $matches[3] . DIRECTORY_SEPARATOR . $matches[4] . '_' . $matches[5] . '.html';
+				$path = $baseDir . $matches['year'] . DIRECTORY_SEPARATOR . $matches['month'] . DIRECTORY_SEPARATOR . $matches['day'] . '_' . $matches['slug'] . '.html';
 				break;
 			case 'flat':
 			default:
-				$path = $baseDir . $matches[2] . '-' . $matches[3] . '-' . $matches[4] . '_' . $matches[5] . '.html';
+				$path = $baseDir . $matches['year'] . '-' . $matches['month'] . '-' . $matches['day'] . '_' . $matches['slug'] . '.html';
 				break;
 			}
 			$isPost = true;

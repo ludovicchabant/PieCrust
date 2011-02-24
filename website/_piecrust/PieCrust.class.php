@@ -237,12 +237,12 @@ class PieCrust
                         'enable_cache' => false,
 						'enable_gzip' => false,
 						'pretty_urls' => false,
-						'posts_prefix' => '',
 						'posts_urls' => '%year%/%month%/%day%/%slug%',
                         'posts_per_page' => 5,
                         'posts_date_format' => 'F j, Y',
 						'posts_fs' => 'flat',
-						'baked' => false,
+                        'tags_urls' => 'tag/%tag%',
+                        'categories_urls' => '%category%',
                         'debug' => false
                     ),
                     $config['site']);
@@ -265,6 +265,22 @@ class PieCrust
 		}
 		return $config[$category][$key];
 	}
+    
+    /**
+     * Sets a configuration setting.
+     */
+    public function setConfigValue($category, $key, $value)
+    {
+        $this->getConfig();
+        if (!isset($this->config[$category]))
+        {
+            $this->config[$category] = array($key => $value);
+        }
+        else
+        {
+            $this->config[$category][$key] = $value;
+        }
+    }
     
     protected $formattersLoader;
     /**
@@ -365,9 +381,6 @@ class PieCrust
         {
             $this->urlBase = rtrim($urlBase, '/') . '/';
         }
-        
-        date_default_timezone_set('America/Los_Angeles');
-		set_error_handler('piecrust_error_handler');
     }
     
 	/**
@@ -578,4 +591,13 @@ class PieCrust
 	{
 		echo file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
 	}
+    
+    /**
+     * Sets up basic things like the global error handler or the timezone.
+     */
+    public static function setup()
+    {
+        date_default_timezone_set('America/Los_Angeles');
+		set_error_handler('piecrust_error_handler');
+    }
 }
