@@ -6,6 +6,9 @@ require_once 'PieCrust.class.php';
 require_once 'Paginator.class.php';
 
 
+/**
+ * A class that 'bakes' a PieCrust website into a bunch of static HTML files.
+ */
 class PieCrustBaker
 {
 	protected $pieCrust;
@@ -72,13 +75,13 @@ class PieCrustBaker
 	 */
 	public function bake()
 	{
-		echo "====== BAKING: " . $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . " ======\n\n";
+		echo "====== BAKING: " . $this->pieCrust->getUrlBase() . " ======\n\n";
 		echo " Into: " . $this->getBakeDir() . "\n\n";
 		
 		$this->bakePages();
 		$this->bakePosts();
-		$this->bakeTags();
-		$this->bakeCategories();
+		//$this->bakeTags();
+		//$this->bakeCategories();
 	}
 	
 	protected function bakePages()
@@ -92,6 +95,12 @@ class PieCrustBaker
 		{
 			$relativePath = str_replace('\\', '/', substr($path->getPathname(), strlen($pagesDir)));
 			$relativePathInfo = pathinfo($relativePath);
+			if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
+				$relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME)
+			{
+				continue;
+			}
+			
 			$uri = (($relativePathInfo['dirname'] == '.') ? '' : ($relativePathInfo['dirname'] . '/')) . $relativePathInfo['filename'];
 			$uri = str_replace('_index', '', $uri);
 			echo ' > ' . $relativePath;
