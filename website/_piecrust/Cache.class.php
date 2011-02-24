@@ -64,7 +64,7 @@ class Cache
 	
 	protected function getCachePath($uri, $extension)
 	{
-		return $this->baseDir . ltrim($uri, '/\\') . ($extension == null ? '' : ('.' . $extension));
+		return $this->baseDir . $uri . ($extension == null ? '' : ('.' . $extension));
 	}
 }
 
