@@ -30,8 +30,14 @@ class WordpressImporter implements IImporter
 				continue;
 			
 			$title = strval($item->title);
-			$filename = strval($wpChildren->post_name);
 			$date = strval($wpChildren->post_date);
+			$filename = strval($wpChildren->post_name);
+			echo " > " . $filename . "\n";
+			
+			$dcChildren = $item->children('dc', TRUE);
+			$author = strval($dcChildren->creator);
+			
+			$tags = $item->xpath('category[@domain=\'tag\'][@nicename]');
 			
 			$contentChildren = $item->children('content', TRUE);
 			$content = strval($contentChildren->encoded);		
@@ -51,7 +57,9 @@ class WordpressImporter implements IImporter
 			$data = array(
 				'title' => $title,
 				'id' => intval($wpChildren->post_id),
-				'time' => date('H:i:s', $timestamp)
+				'time' => date('H:i:s', $timestamp),
+				'author' => $author,
+				'tags' => array_map(function($n) { return strval($n['nicename']); }, $tags)
 			);
 			if ($excerpt != null && $excerpt != '')
 			{
