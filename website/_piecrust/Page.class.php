@@ -11,7 +11,6 @@ class Page
 {
 	protected $pieCrust;
 	protected $cache;
-	protected $isPost;
 	
 	protected $path;
 	/**
@@ -38,6 +37,26 @@ class Page
 	public function getPageNumber()
 	{
 		return $this->pageNumber;
+	}
+	
+	/**
+	 * Sets the page number.
+	 */
+	public function setPageNumber($pageNumber)
+	{
+		$this->pageNumber = $pageNumber;
+		$this->config = null;
+		$this->contents = null;
+		$this->data = null;
+	}
+	
+	protected $isPost;
+	/**
+	 * Gets whether this page is a blog post.
+	 */
+	public function isPost()
+	{
+		return $this->isPost;
 	}
 	
 	protected $isCached;
@@ -94,6 +113,19 @@ class Page
 		return $this->config;
 	}
 	
+	/**
+	 * Convenience method for accessing a configuration value.
+	 */
+	public function getConfigValue($key)
+	{
+		$config = $this->getConfig();
+		if (!isset($config[$key]))
+		{
+			return null;
+		}
+		return $config[$key];
+	}
+	
 	protected $contents;
 	/**
 	 * Gets the page's formatted contents.
@@ -107,22 +139,27 @@ class Page
 		return $this->contents;
 	}
 	
+	protected $data;
 	/**
 	 * Gets the page's data for rendering.
 	 */
 	public function getPageData()
 	{
-		$config = $this->getConfig();
-		$assetor = new Assetor($this->pieCrust, $this);
-		$paginator = new Paginator($this->pieCrust, $this);
-        $data = array(
-			'page' => $config,
-			'asset'=> $assetor,
-			'pagination' => $paginator
-        );
-		$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
-		$data['page']['slug'] = $this->getUri();
-		return $data;
+		if ($this->data === null)
+		{
+			$config = $this->getConfig();
+			$assetor = new Assetor($this->pieCrust, $this);
+			$paginator = new Paginator($this->pieCrust, $this);
+			$data = array(
+				'page' => $config,
+				'asset'=> $assetor,
+				'pagination' => $paginator
+			);
+			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
+			$data['page']['slug'] = $this->getUri();
+			$this->data = $data;
+		}
+		return $this->data;
     }
 	
 	/**
@@ -154,15 +191,15 @@ class Page
 	}
 	
 	/**
-	 * Creates a new Page instance with some optimizations for posts built from the filesystem.
+	 * Creates a new Page instance with pre-determined properties.
 	 */
-	public static function createPost(PieCrust $pieCrust, $uri, $path)
+	public static function create(PieCrust $pieCrust, $uri, $path, $isPost = false, $pageNumber = 1)
 	{
 		$page = new Page($pieCrust, null);
 		$page->uri = trim($uri, '/');
 		$page->path = $path;
-		$page->pageNumber = 1;
-		$page->isPost = true;
+		$page->pageNumber = $pageNumber;
+		$page->isPost = $isPost;
 		return $page;
 	}
 	
@@ -300,12 +337,14 @@ class Page
     protected function buildValidatedConfig($config)
     {
 		// Add the default page config values.
-		$validatedConfig = array_merge(array(
+		$validatedConfig = array_merge(
+			array(
 				'layout' => ($this->isPost == true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
 				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
 				'content_type' => 'html',
 				'title' => 'Untitled Page'
-			), $config);
+			),
+			$config);
 		return $validatedConfig;
     }
 }

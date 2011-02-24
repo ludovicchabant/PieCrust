@@ -238,9 +238,11 @@ class PieCrust
 						'enable_gzip' => false,
 						'pretty_urls' => false,
 						'posts_prefix' => '',
+						'posts_urls' => '%year%/%month%/%day%/%slug%',
                         'posts_per_page' => 5,
                         'posts_date_format' => 'F j, Y',
 						'posts_fs' => 'flat',
+						'baked' => false,
                         'debug' => false
                     ),
                     $config['site']);
@@ -448,22 +450,39 @@ class PieCrust
 		{
 			$uri = $this->getRequestUri($_SERVER);
 		}
+		
+		if ($this->getConfigValue('site', 'baked') === true)
+		{
+			// We're serving a baked website.
+			$bakedPath = $this->getCacheDir() . 'baked' . $uri;
+			if (is_dir($bakedPath))
+			{
+				PageRenderer::setHeaders('html');
+				$output = file_get_contents($bakedPath . DIRECTORY_SEPARATOR . 'index.html');
+			}
+			else if (is_file($bakedPath))
+			{
+				PageRenderer::setHeaders(pathinfo($bakedPath, PATHINFO_EXTENSION));
+				$output = file_get_contents($bakedPath);
+			}
+			else
+			{
+				throw new PieCrustException('404');
+			}
+		}
+		else
+		{
+			// We're baking this website on demand.
+			$page = new Page($this, $uri);
+			$pageRenderer = new PageRenderer($this);
+			$output = $pageRenderer->get($page, $extraPageData);
+		}
 	
+		// Output with or without GZip compression.
 		$gzipEnabled = (($this->getConfigValue('site', 'enable_gzip') === true) and
 						(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
-		
-		// Get the requested page and render it.
-		$page = new Page($this, $uri);
-		$pageRenderer = new PageRenderer($this);
-		
 		if ($gzipEnabled)
 		{
-			ob_start();
-		}
-		$pageRenderer->render($page, $extraPageData);
-		if ($gzipEnabled)
-		{
-			$output = ob_get_clean();
 			$zippedOutput = gzencode($output);
 			if ($zippedOutput === false)
 			{
@@ -474,6 +493,10 @@ class PieCrust
 				header('Content-Encoding: gzip');
 				echo $zippedOutput;
 			}
+		}
+		else
+		{
+			echo $output;
 		}
 	}
     

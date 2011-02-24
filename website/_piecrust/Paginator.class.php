@@ -1,5 +1,8 @@
 <?php
 
+require_once 'FileSystem.class.php';
+
+
 /**
  * The pagination manager for a page split into sub-pages.
  *
@@ -76,6 +79,14 @@ class Paginator
 		return ($this->paginationData != null);
 	}
 	
+	/**
+	 * Gets whether the current page has more pages to show.
+	 */
+	public function hasMorePages()
+	{
+		return ($this->next_page() != null);
+	}
+	
 	protected $paginationData;
     /**
 	 * Gets the pagination data for rendering.
@@ -86,24 +97,26 @@ class Paginator
 		{
 			$postsData = array();
 			$nextPageIndex = null;
-			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : '';
+			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : null;
 			
 			// Find all HTML posts in the posts directory.
+			$fs = new FileSystem($this->pieCrust);
 			$postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
 			switch ($postsFs)
 			{
 			case 'hierarchy':
-				$postInfos = $this->getHierarchicalPostFiles();
+				$postInfos = $fs->getHierarchicalPostFiles();
 				break;
 			case 'flat':
 			default:
-				$postInfos = $this->getFlatPostFiles();
+				$postInfos = $fs->getFlatPostFiles();
 				break;
 			}
 			if (count($postInfos) > 0)
 			{
 				// Load all the posts for the requested page number (page numbers start at '1').
 				$postsPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
+				$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
 				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
 				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
 				$offset = ($this->pageNumber - 1) * $postsPerPage;
@@ -111,23 +124,25 @@ class Paginator
 				for ($i = $offset; $i < $upperLimit; ++$i)
 				{
 					$postInfo = $postInfos[$i];
-					$post = Page::createPost(
+					// Create the post with all the stuff we already know.
+					$post = Page::create(
 						$this->pieCrust,
-						$postsPrefix . '/' . $postInfo['year'] . '/' . $postInfo['month'] . '/' . $postInfo['day'] . '/' . $postInfo['name'], 
-						$postInfo['path']);
+						Paginator::buildPostUrl($postsPrefix, $postsUrlFormat, $postInfo), 
+						$postInfo['path'],
+						true);
 
-					$postConfig = $post->getConfig();
+					// Build the pagination data entry for this post.
+					$postData = $post->getConfig();
+					$postData['url'] = $post->getUri();
+					
 					$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
+					$postData['date'] = date($postsDateFormat, $postDateTime);
+					
 					$postContents = $post->getContents();
 					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
-					$postUri = $post->getUri();
+					$postData['content'] = $postContentsSplit[0];
 					
-					$postsData[] = array(
-						'title' => $postConfig['title'],
-						'url' => $postUri,
-						'date' => date($postsDateFormat, $postDateTime),
-						'content' => $postContentsSplit[0]
-					);
+					$postsData[] = $postData;
 				}
 				
 				if ($offset + $postsPerPage < count($postInfos))
@@ -139,102 +154,29 @@ class Paginator
 			
 			$this->paginationData = array(
 									'posts' => $postsData,
-									'prev_page' => ($this->pageUri == '_index' && $previousPageIndex == null) ? '' : $this->pageUri . '/' . $previousPageIndex,
+									'prev_page' => ($previousPageIndex == null) ? null : $this->pageUri . '/' . $previousPageIndex,
 									'this_page' => $this->pageUri . '/' . $this->pageNumber,
-									'next_page' => $this->pageUri . '/' . $nextPageIndex
+									'next_page' => ($nextPageIndex == null) ? null : ($this->pageUri . '/' . $nextPageIndex)
 									);
 		}
         return $this->paginationData;
     }
 	
-	protected function getHierarchicalPostFiles()
+	/**
+	 * Builds the URL of a post given a URL format.
+	 */
+	public static function buildPostUrl($postPrefix, $postUrlFormat, $postInfo)
 	{
-		$result = array();
-		
-		$years = array();
-		$yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir());
-		foreach ($yearsIterator as $year)
+		$replacements = array(
+			'%year%' => $postInfo['year'],
+			'%month%' => $postInfo['month'],
+			'%day%' => $postInfo['day'],
+			'%slug%' => $postInfo['name']
+		);
+		if ($postPrefix != '')
 		{
-			if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
-				continue;
-			
-			$thisYear = $year->getFilename();
-			$years[] = $thisYear;
+			$postPrefix = rtrim($postPrefix, '/') . '/';
 		}
-		rsort($years);
-		
-		foreach ($years as $year)
-		{
-			$months = array();
-			$monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year);
-			foreach ($monthsIterator as $month)
-			{
-				if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
-					continue;
-				
-				$thisMonth = $month->getFilename();
-				$months[] = $thisMonth;
-			}
-			rsort($months);
-				
-			foreach ($months as $month)
-			{
-				$days = array();
-				$postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year . DIRECTORY_SEPARATOR . $month);
-				foreach ($postsIterator as $post)
-				{
-					$matches = array();
-					if (preg_match('/^(\d{2})_(.*)\.html$/', $post->getFilename(), $matches) == false)
-						continue;
-					
-					$thisDay = $matches[1];
-					$days[$thisDay] = array('name' => $matches[2], 'path' => $post->getPathname());
-				}
-				krsort($days);
-				
-				foreach ($days as $day => $info)
-				{
-					$result[] = array(
-						'year' => $year,
-						'month' => $month,
-						'day' => $day,
-						'name' => $info['name'],
-						'path' => $info['path']
-					);
-				}
-			}
-		}
-		
-		return $result;
-	}
-	
-	protected function getFlatPostFiles()
-	{
-		$pathPattern = $this->pieCrust->getPostsDir() . '*.html';
-		$paths = glob($pathPattern, GLOB_ERR);
-		if ($paths === false)
-		{
-			throw new PieCrustException('An error occured while reading the posts directory.');
-		}
-		rsort($paths);
-		
-		$result = array();
-		foreach ($paths as $path)
-		{
-			$matches = array();
-			
-			$filename = pathinfo($path, PATHINFO_BASENAME);
-			if (preg_match('/^(\d{4})-(\d{2})-(\d{2})_(.*)\.html$/', $filename, $matches) == false)
-				continue;
-			
-			$result[] = array(
-				'year' => intval($matches[1]),
-				'month' => intval($matches[2]),
-				'day' => intval($matches[3]),
-				'name' => $matches[4],
-				'path' => $path
-			);
-		}
-		return $result;
+		return $postPrefix . str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat);
 	}
 }
