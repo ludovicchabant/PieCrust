@@ -5,24 +5,23 @@ error_reporting(E_ALL ^ E_NOTICE);
 // Utility methods.
 function rmdir_recursive($dir, $level = 0)
 {
-	$dir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR; 
-    $files = glob($dir . '*', GLOB_MARK);
+    $files = new FilesystemIterator($dir);
     foreach ($files as $file)
     {
-    	if ($file == '.' or $file == '..' or $file = '.empty')
+    	if ($file->getFilename() == '.empty')
     	{
     		continue;
     	}
     	
-        if(substr($file, -1) == '/')
+        if($file->isDir())
         {
-            rmdir_recursive($file, $level + 1);
+            rmdir_recursive($file->getPathname(), $level + 1);
         }
         else
         {
             unlink($file);
         }
-    } 
+    }
     
     if ($level > 0 and is_dir($dir))
     {

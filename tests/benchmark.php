@@ -12,19 +12,26 @@ define('PIECRUST_ROOT_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 define('BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
 require_once '../website/_piecrust/PieCrust.class.php';
 
-function run_query($pieCrust, $uri, $bench = null)
+function run_query($pieCrust, $uri)
+{
+	$page = new Page($pieCrust, $uri);	
+	$renderer = new PageRenderer($pieCrust);	
+	return $renderer->get($page, null, false);
+}
+
+function run_detailed_query($bench, $pieCrust, $uri)
 {
 	$page = new Page($pieCrust, $uri);
-	if ($bench != null)
-		$bench->setMarker('Created page');
+	$bench->setMarker('Created page');
+	
+	$page->getConfig();
+	$bench->setMarker('Loaded page config and contents.');
 	
 	$renderer = new PageRenderer($pieCrust);
-	if ($bench != null)
-		$bench->setMarker('Created renderer');
+	$bench->setMarker('Created renderer');
 	
 	$page = $renderer->get($page, null, false);
-	if ($bench != null)
-		$bench->setMarker('Rendered page');
+	$bench->setMarker('Rendered page');
 	
 	return $page;
 }
@@ -49,7 +56,7 @@ $bench->start();
 $pieCrust = new PieCrust();
 $pieCrust->setConfig(array('site' => array('debug' => true, 'enable_cache' => true)));
 $runCount = 100;
-$bench->run($runCount, 'run_query', $pieCrust, '/markdown-syntax', null);
+$bench->run($runCount, 'run_query', $pieCrust, '/markdown-syntax');
 $bench->stop();
 
 function filter_end_marker($value) { return preg_match('/^end_/', $value['name']); }
@@ -61,12 +68,21 @@ echo '<p>Median page query: <strong>'.(median($diffValues)*1000).'ms</strong></p
 echo '<p>Average page query: <strong>'.(average($diffValues)*1000).'ms</strong></p>';
 echo '<p>Max page query: <strong>'.(max($diffValues)*1000).'ms</strong></p>';
 
-// Marked run
+// Marked run (uncached, then cached).
 echo '<h2>Timed Benchmark</h2>';
+
+echo '<h3>Uncached</h3>';
 ensure_cache(BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Timer();
 $bench->start();
-run_query($pieCrust, '/markdown-syntax', $bench);
+run_detailed_query($bench, $pieCrust, '/markdown-syntax');
+$bench->stop();
+$bench->display();
+
+echo '<h3>Cached</h3>';
+$bench = new Benchmark_Timer();
+$bench->start();
+run_detailed_query($bench, $pieCrust, '/markdown-syntax');
 $bench->stop();
 $bench->display();
 
