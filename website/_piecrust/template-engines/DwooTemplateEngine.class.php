@@ -20,7 +20,7 @@ class DwooTemplateEngine implements ITemplateEngine
         $usePrettyUrls = ($pieCrust->getConfigValue('site', 'pretty_urls') === true); 		
 
 		$this->pieCrust = $pieCrust;
-		self::$pathPrefix = ($pieCrust->getHost() . $pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/'));
+		self::$pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/'));
 		
 		$compileDir = $pieCrust->getCacheDir() . 'templates_c';
 		if (!is_dir($compileDir))

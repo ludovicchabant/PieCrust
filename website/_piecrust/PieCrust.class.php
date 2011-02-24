@@ -6,19 +6,19 @@
  */
  
 /**
- * The application directory, where this file lives. There should be very little
- * reason to change this.
+ * The application directory, where this file lives.
  */
-if (!defined(PIECRUST_APP_DIR))
-{
-    define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-}
+define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 
 /**
  * The website directory, where the _cache and _content directories live.
  * You can change this if the PieCrust application directory is in a different
  * location than the website (e.g. you have several websites using the same
- * PieCrust application).
+ * PieCrust application, or you moved the '_piecrust' directory outside of the
+ * website's directory for increased security).
+ *
+ * Note that this is only the default value. You can specify the root directory
+ * by passing it to the PieCrust constructor too.
  */
 if (!defined(PIECRUST_ROOT_DIR))
 {
@@ -29,6 +29,8 @@ if (!defined(PIECRUST_ROOT_DIR))
  * Some default values for various PieCrust things.
  */
 define('PIECRUST_INDEX_PAGE_NAME', '_index');
+define('PIECRUST_CATEGORY_PAGE_NAME', '_category');
+define('PIECRUST_TAG_PAGE_NAME', '_tag');
 define('PIECRUST_CONTENT_DIR', '_content/');
 define('PIECRUST_CONFIG_PATH', PIECRUST_CONTENT_DIR . 'config.yml');
 define('PIECRUST_CONTENT_TEMPLATES_DIR', PIECRUST_CONTENT_DIR . 'templates/');
@@ -69,13 +71,13 @@ class PieCrust
 	 */
     const VERSION = '0.0.2';
 	
-	protected $host;
+	protected $rootDir;
 	/**
-	 * The host of the application.
+	 * The root directory of the website.
 	 */
-	public function getHost()
+	public function getRootDir()
 	{
-		return $this->host;
+		return $this->rootDir();
 	}
     
     protected $urlBase;
@@ -95,7 +97,7 @@ class PieCrust
     {
         if ($this->templatesDir === null)
 		{
-            $this->setTemplatesDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
+            $this->setTemplatesDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
 		}
         return $this->templatesDir;
     }
@@ -120,7 +122,7 @@ class PieCrust
     {
         if ($this->pagesDir === null)
 		{
-            $this->setPagesDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
+            $this->setPagesDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
 		}
         return $this->pagesDir;
     }
@@ -145,7 +147,7 @@ class PieCrust
     {
         if ($this->postsDir === null)
 		{
-            $this->setPostsDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_POSTS_DIR));
+            $this->setPostsDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_POSTS_DIR));
 		}
         return $this->postsDir;
     }
@@ -170,7 +172,7 @@ class PieCrust
     {
         if ($this->cacheDir === null)
 		{
-            $this->setCacheDir(PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_DIR));
+            $this->setCacheDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_DIR));
 		}
         return $this->cacheDir;
     }
@@ -201,7 +203,7 @@ class PieCrust
             try
             {
 				$yamlParser = new sfYamlParser();
-				$config = $yamlParser->parse(file_get_contents(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH));
+				$config = $yamlParser->parse(file_get_contents($this->rootDir . PIECRUST_CONFIG_PATH));
 				$this->config = $this->validateConfig($config);			
             }
             catch (Exception $e)
@@ -232,7 +234,7 @@ class PieCrust
             
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
-						'root' => ($this->host . $this->urlBase),
+						'root' => $this->urlBase,
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'enable_cache' => false,
 						'enable_gzip' => false,
@@ -362,24 +364,30 @@ class PieCrust
 	/**
 	 * Creates a new PieCrust instance with the given base URL.
 	 */
-    public function __construct($host = null, $urlBase = null)
+    public function __construct(array $parameters = null)
     {
-		if ($host === null)
+		if ($parameters == null)
 		{
-			$this->host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+			$parameters = array();
 		}
-		else
-		{
-			$this->host = $host;
-		}
+		$parameters = array_merge(
+			array(
+				'root' => PIECRUST_ROOT_DIR,
+				'url_base' => null
+			),
+			$parameters
+		);
 		
-        if ($urlBase === null)
+		$this->rootDir = rtrim($parameters['root'], '/\\') . DIRECTORY_SEPARATOR;
+		
+        if ($parameters['url_base'] === null)
         {
-			$this->urlBase = dirname($_SERVER['PHP_SELF']) . '/';
+			$host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+			$this->urlBase = $host . dirname($_SERVER['PHP_SELF']) . '/';
         }
         else
         {
-            $this->urlBase = rtrim($urlBase, '/') . '/';
+            $this->urlBase = rtrim($parameters['url_base'], '/') . '/';
         }
     }
     
@@ -573,14 +581,14 @@ class PieCrust
 	
 	protected function isEmptySetup()
 	{
-		if (!is_dir(PIECRUST_ROOT_DIR . PIECRUST_CONTENT_DIR))
+		if (!is_dir($this->rootDir . PIECRUST_CONTENT_DIR))
 			return true;
-		if (!is_file(PIECRUST_ROOT_DIR . PIECRUST_CONFIG_PATH))
+		if (!is_file($this->rootDir . PIECRUST_CONFIG_PATH))
 			return true;
-		$templatesDir = ($this->templatesDir != null) ? $this->templatesDir : (PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
+		$templatesDir = ($this->templatesDir != null) ? $this->templatesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
 		if (!is_dir($templatesDir))
 			return true;
-		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : (PIECRUST_ROOT_DIR . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
+		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
 		if (!is_dir($pagesDir))
 			return true;
 			

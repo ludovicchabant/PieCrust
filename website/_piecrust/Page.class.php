@@ -155,7 +155,7 @@ class Page
 				'asset'=> $assetor,
 				'pagination' => $paginator
 			);
-			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
+			$data['page']['url'] = $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
 			$this->data = $data;
 		}

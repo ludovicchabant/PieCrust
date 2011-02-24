@@ -15,7 +15,7 @@ class PieCrustExtension extends Twig_Extension
         $this->pieCrust = $pieCrust;
         
         $usePrettyUrls = ($pieCrust->getConfigValue('site','pretty_urls') === true);		
-		$this->pathPrefix = ($pieCrust->getHost() . $pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
+		$this->pathPrefix = ($pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/'));
         
         $this->tagUrlFormat = $pieCrust->getConfigValue('site', 'tags_urls');
         $this->categoryUrlFormat = $pieCrust->getConfigValue('site', 'categories_urls');

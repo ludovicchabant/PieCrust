@@ -16,7 +16,7 @@ class Assetor implements ArrayAccess
 	{		
 		$pathParts = pathinfo($page->getPath());
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
-		$this->assetsUrlBase = $pieCrust->getHost() . $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
+		$this->assetsUrlBase = $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
 		
 		if (!is_dir($this->assetsDir))
 		{
