@@ -10,9 +10,9 @@ class PieCrustBaker
 {
 	protected $pieCrust;
 	
-	protected $pages;
 	protected $posts;
 	protected $postTags;
+	protected $postCategories;
 	
 	protected $dependencies;
 	/**
@@ -58,14 +58,13 @@ class PieCrustBaker
 		$this->pieCrust = $pieCrust;
 		// Disable the cache on the PieCrust app because we could be baking
 		// some stuff that's out of date.
-		$config = $pieCrust->getConfig();
-		$config['enable_cache'] = false;
+		$pieCrust->setConfigValue('site', 'enable_cache', false);
 		
 		$this->dependencies = array('images', 'pictures', 'js', 'css', 'styles');
 		
-		$this->pages = array();
 		$this->posts = array();
 		$this->postTags = array();
+		$this->postCategories = array();
 	}
 	
 	/**
@@ -78,6 +77,8 @@ class PieCrustBaker
 		
 		$this->bakePages();
 		$this->bakePosts();
+		$this->bakeTags();
+		$this->bakeCategories();
 	}
 	
 	protected function bakePages()
@@ -125,11 +126,11 @@ class PieCrustBaker
 			break;
 		}
 		
-		$postPrefix = $this->pieCrust->getConfigValue('site', 'posts_prefix');
+		$postIndex = 0;
 		$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
 		foreach ($postInfos as $postInfo)
 		{
-			$uri = Paginator::buildPostUrl($postPrefix, $postsUrlFormat, $postInfo);
+			$uri = Paginator::buildPostUrl($postsUrlFormat, $postInfo);
 			echo ' > ' . $postInfo['name'];
 			
 			$page = Page::create(
@@ -140,7 +141,54 @@ class PieCrustBaker
 			);
 			$this->bakePage($page);
 			
+			$this->posts[] = $postInfo;
+			$tags = $page->getConfigValue('tags');
+			if ($tags != null)
+			{
+				foreach ($tags as $tag)
+				{
+					if (!isset($this->postTags[$tag]))
+					{
+						$this->postTags[$tag] = array();
+					}
+					$this->postTags[$tag][] = $postIndex;
+				}
+			}
+			$category = $page->getConfigValue('category');
+			if ($category != null)
+			{
+				if (!isset($this->postCategories[$category]))
+				{
+					$this->postCategories[$category] = array();
+				}
+				$this->postCategories[$category][] = $postIndex;
+			}
+			$postIndex++;
 			echo "\n";
+		}
+		
+		echo "\n";
+	}
+	
+	protected function bakeTags()
+	{
+		echo "Baking tags:\n";
+		
+		foreach ($this->postTags as $tag => $postIndices)
+		{
+			$posts = array_map(function ($i) { return $this->posts[$i]; }, $postIndices);
+		}
+		
+		echo "\n";
+	}
+	
+	protected function bakeCategories()
+	{
+		echo "Baking categories:\n";
+		
+		foreach ($this->postCategories as $category => $postIndices)
+		{
+			$posts = array_map(function ($i) { return $this->posts[$i]; }, $postIndices);
 		}
 		
 		echo "\n";
