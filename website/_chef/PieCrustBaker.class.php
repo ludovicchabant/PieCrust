@@ -13,7 +13,7 @@ class PieCrustBaker
 {
 	protected $pieCrust;
 	
-	protected $posts;
+	protected $postInfos;
 	protected $postTags;
 	protected $postCategories;
 	
@@ -59,13 +59,11 @@ class PieCrustBaker
 	public function __construct(PieCrust $pieCrust)
 	{
 		$this->pieCrust = $pieCrust;
-		// Disable the cache on the PieCrust app because we could be baking
-		// some stuff that's out of date.
 		$pieCrust->setConfigValue('site', 'enable_cache', false);
 		
 		$this->dependencies = array('images', 'pictures', 'js', 'css', 'styles');
 		
-		$this->posts = array();
+		$this->postInfos = array();
 		$this->postTags = array();
 		$this->postCategories = array();
 	}
@@ -80,8 +78,8 @@ class PieCrustBaker
 		
 		$this->bakePages();
 		$this->bakePosts();
-		//$this->bakeTags();
-		//$this->bakeCategories();
+		$this->bakeTags();
+		$this->bakeCategories();
 	}
 	
 	protected function bakePages()
@@ -150,7 +148,7 @@ class PieCrustBaker
 			);
 			$this->bakePage($page);
 			
-			$this->posts[] = $postInfo;
+			$this->postInfos[] = $postInfo;
 			$tags = $page->getConfigValue('tags');
 			if ($tags != null)
 			{
@@ -181,11 +179,30 @@ class PieCrustBaker
 	
 	protected function bakeTags()
 	{
+		$tagPagePath = $this->pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
+		if (!is_file($tagPagePath)) return;
+		
 		echo "Baking tags:\n";
 		
 		foreach ($this->postTags as $tag => $postIndices)
 		{
-			$posts = array_map(function ($i) { return $this->posts[$i]; }, $postIndices);
+			$postInfos = array();
+			foreach ($postIndices as $i)
+			{
+				$postInfos[] = $this->postInfos[$i];
+			}
+			
+			echo ' > ' . $tag . ' (' . count($postInfos) . ' posts)';
+			
+			$uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tags_urls'), $tag);
+			$page = Page::create(
+				$this->pieCrust,
+				$uri,
+				$tagPagePath
+			);
+			$this->bakePage($page, $postInfos, array('tag' => $tag));
+			
+			echo "\n";
 		}
 		
 		echo "\n";
@@ -193,25 +210,44 @@ class PieCrustBaker
 	
 	protected function bakeCategories()
 	{
+		$categoryPagePath = $this->pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
+		if (!is_file($categoryPagePath)) return;
+		
 		echo "Baking categories:\n";
 		
 		foreach ($this->postCategories as $category => $postIndices)
 		{
-			$posts = array_map(function ($i) { return $this->posts[$i]; }, $postIndices);
+			$postInfos = array();
+			foreach ($postIndices as $i)
+			{
+				$postInfos[] = $this->postInfos[$i];
+			}
+			
+			echo ' > ' . $category . ' (' . count($postInfos) . ' posts)';
+			
+			$uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'categories_urls'), $category);
+			$page = Page::create(
+				$this->pieCrust, 
+				$uri, 
+				$categoryPagePath
+			);
+			$this->bakePage($page, $postInfos, array('category' => $category));
+			
+			echo "\n";
 		}
 		
 		echo "\n";
 	}
 	
-	protected function bakePage(Page $page)
+	protected function bakePage(Page $page, array $postInfos = null, array $extraData = null)
 	{
 		$pageRenderer = new PageRenderer($this->pieCrust);
 		
 		$hasMorePages = true;
 		while ($hasMorePages)
 		{
-			echo '.' . $page->getPageNumber();
-			$hasMorePages = $this->bakeSinglePage($page, $pageRenderer);
+			echo '.';
+			$hasMorePages = $this->bakeSinglePage($page, $pageRenderer, $postInfos, $extraData);
 			if ($hasMorePages)
 			{
 				$page->setPageNumber($page->getPageNumber() + 1);
@@ -219,10 +255,30 @@ class PieCrustBaker
 		}
 	}
 	
-	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer)
+	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
 	{
+		// Merge optional extra data into the page.
+		if ($postInfos != null or $extraData != null)
+		{
+			$mergeData = array();
+			if ($postInfos != null)
+			{
+				$paginator = new Paginator($this->pieCrust, $page);
+				$paginator->buildPaginationData($postInfos);
+				$mergeData['pagination'] = $paginator;
+			}
+			if ($extraData != null)
+			{
+				$mergeData = array_merge($mergeData, $extraData);
+			}
+			$page->setExtraPageData($mergeData);
+		}
+		
+		// Render the page.
 		$bakedContents = $pageRenderer->get($page, null, false);
 		
+		// Bake the page into the correct HTML file, and figure out
+		// if there are more pages to bake for this page.
 		$useDirectory = $page->getConfigValue('pretty_urls');
 		if ($useDirectory == null)
 		{
@@ -250,7 +306,7 @@ class PieCrustBaker
 			$extension = $this->getBakedExtension($page->getConfigValue('content_type'));
 			$bakePath = $this->getBakeDir() . $page->getUri() . '.' . $extension;
 		}
-
+		
 		$this->ensureDirectory(dirname($bakePath));
 		file_put_contents($bakePath, $bakedContents);
 	
@@ -274,6 +330,32 @@ class PieCrustBaker
 		if (!is_dir($dir))
 		{
 			mkdir($dir, 0777, true);
+		}
+	}
+	
+	protected function deleteDirectory($dir, $level = 0)
+	{
+		$files = new FilesystemIterator($dir);
+		foreach ($files as $file)
+		{
+			if ($file->getFilename() == '.empty' or $file->getFilename() == 'empty' or $file->getFilename() == 'empty.txt')
+			{
+				continue;
+			}
+			
+			if($file->isDir())
+			{
+				$this->deleteDirectory($file->getPathname(), $level + 1);
+			}
+			else
+			{
+				unlink($file);
+			}
+		}
+		
+		if ($level > 0 and is_dir($dir))
+		{
+			rmdir($dir);
 		}
 	}
 }

@@ -95,59 +95,66 @@ class Paginator
 	{
 		if ($this->paginationData === null)
 		{
-			$postsData = array();
-			$nextPageIndex = null;
-			$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : null;
-			
-			$postInfos = $this->getPostInfos();
-			if (count($postInfos) > 0)
-			{
-				// Load all the posts for the requested page number (page numbers start at '1').
-				$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
-				$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
-				$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
-				$offset = ($this->pageNumber - 1) * $postsPerPage;
-				$upperLimit = min($offset + $postsPerPage, count($postInfos));
-				for ($i = $offset; $i < $upperLimit; ++$i)
-				{
-					$postInfo = $postInfos[$i];
-					// Create the post with all the stuff we already know.
-					$post = Page::create(
-						$this->pieCrust,
-						Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
-						$postInfo['path'],
-						true);
-
-					// Build the pagination data entry for this post.
-					$postData = $post->getConfig();
-					$postData['url'] = $post->getUri();
-					
-					$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
-					$postData['date'] = date($postsDateFormat, $postDateTime);
-					
-					$postContents = $post->getContents();
-					$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
-					$postData['content'] = $postContentsSplit[0];
-					
-					$postsData[] = $postData;
-				}
-				
-				if ($offset + $postsPerPage < count($postInfos))
-				{
-					// There's another page following this one.
-					$nextPageIndex = $this->pageNumber + 1;
-				}
-			}
-			
-			$this->paginationData = array(
-									'posts' => $postsData,
-									'prev_page' => ($previousPageIndex == null) ? null : $this->pageUri . '/' . $previousPageIndex,
-									'this_page' => $this->pageUri . '/' . $this->pageNumber,
-									'next_page' => ($nextPageIndex == null) ? null : ($this->pageUri . '/' . $nextPageIndex)
-									);
+			$this->buildPaginationData($this->getPostInfos());
 		}
         return $this->paginationData;
     }
+	
+	/**
+	 * Rebuilds the pagination data with the given posts.
+	 */
+	public function buildPaginationData(array $postInfos)
+	{
+		$postsData = array();
+		$nextPageIndex = null;
+		$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : null;
+		
+		if (count($postInfos) > 0)
+		{
+			// Load all the posts for the requested page number (page numbers start at '1').
+			$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
+			$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
+			$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
+			$offset = ($this->pageNumber - 1) * $postsPerPage;
+			$upperLimit = min($offset + $postsPerPage, count($postInfos));
+			for ($i = $offset; $i < $upperLimit; ++$i)
+			{
+				$postInfo = $postInfos[$i];
+				// Create the post with all the stuff we already know.
+				$post = Page::create(
+					$this->pieCrust,
+					Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
+					$postInfo['path'],
+					true);
+
+				// Build the pagination data entry for this post.
+				$postData = $post->getConfig();
+				$postData['url'] = $post->getUri();
+				
+				$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
+				$postData['date'] = date($postsDateFormat, $postDateTime);
+				
+				$postContents = $post->getContents();
+				$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
+				$postData['content'] = $postContentsSplit[0];
+				
+				$postsData[] = $postData;
+			}
+			
+			if ($offset + $postsPerPage < count($postInfos))
+			{
+				// There's another page following this one.
+				$nextPageIndex = $this->pageNumber + 1;
+			}
+		}
+		
+		$this->paginationData = array(
+								'posts' => $postsData,
+								'prev_page' => ($previousPageIndex == null) ? null : $this->pageUri . '/' . $previousPageIndex,
+								'this_page' => $this->pageUri . '/' . $this->pageNumber,
+								'next_page' => ($nextPageIndex == null) ? null : ($this->pageUri . '/' . $nextPageIndex)
+								);
+	}
     
     protected function getPostInfos()
     {

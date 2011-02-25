@@ -147,20 +147,34 @@ class Page
 	{
 		if ($this->data === null)
 		{
-			$config = $this->getConfig();
-			$assetor = new Assetor($this->pieCrust, $this);
-			$paginator = new Paginator($this->pieCrust, $this);
 			$data = array(
-				'page' => $config,
-				'asset'=> $assetor,
-				'pagination' => $paginator
+				'page' => $this->getConfig(),
+				'asset'=> new Assetor($this->pieCrust, $this),
+				'pagination' => new Paginator($this->pieCrust, $this)
 			);
 			$data['page']['url'] = $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
+			
+			if ($this->extraData != null)
+			{
+				$data = array_merge($data, $this->extraData);
+			}
+			
 			$this->data = $data;
 		}
 		return $this->data;
     }
+	
+	protected $extraData;
+	/**
+	 * Adds extra data to the page's data for rendering.
+	 */
+	public function setExtraPageData($data)
+	{
+		if ($this->data != null or $this->config != null or $this->contents != null)
+			throw new PieCrustException("Extra data on a page must be set before the page's configuration, contents and data are loaded.");
+		$this->extraData = $data;
+	}
 	
 	/**
 	 * Creates a new Page instance.
@@ -272,7 +286,7 @@ class Page
         }
         else
         {
-			// Re-format/process the page.		
+			// Re-format/process the page.
 			$rawContents = file_get_contents($this->path);
 			$this->config = $this->parseConfig($rawContents);
 			
