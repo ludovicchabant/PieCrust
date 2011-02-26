@@ -196,6 +196,13 @@ class Page
 				throw new PieCrustException('404');
 			}
 		}
+		else
+		{
+			$this->uri = null;
+			$this->path = null;
+			$this->pageNumber = 1;
+			$this->isPost = false;
+		}
 		
 		$this->cache = null;
 		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
