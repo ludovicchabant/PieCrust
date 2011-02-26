@@ -192,13 +192,13 @@ class Paginator
      */
     public static function buildPostUrlPattern($postUrlFormat)
     {
-        $replacements = array(
+        static $replacements = array(
 			'%year%' => '(?P<year>\d{4})',
 			'%month%' => '(?P<month>\d{2})',
 			'%day%' => '(?P<day>\d{2})',
 			'%slug%' => '(?P<slug>.*?)'
 		);
-        return '/^' . str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat) . '$/';
+        return '/^' . str_replace(array_keys($replacements), array_values($replacements), preg_quote($postUrlFormat, '/')) . '$/';
     }
     
     /**
