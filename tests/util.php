@@ -1,34 +1,13 @@
 <?php
 
+// Setup the environment.
 error_reporting(E_ALL ^ E_NOTICE);
 
-// Utility methods.
-function rmdir_recursive($dir, $level = 0)
-{
-    $files = new FilesystemIterator($dir);
-    foreach ($files as $file)
-    {
-    	if ($file->getFilename() == '.empty')
-    	{
-    		continue;
-    	}
-    	
-        if($file->isDir())
-        {
-            rmdir_recursive($file->getPathname(), $level + 1);
-        }
-        else
-        {
-            unlink($file);
-        }
-    }
-    
-    if ($level > 0 and is_dir($dir))
-    {
-    	rmdir($dir);
-    }
-}
+set_include_path(get_include_path() . PATH_SEPARATOR . 
+				 (dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'website' . DIRECTORY_SEPARATOR . '_piecrust'));
 
+
+// Utility methods.
 function average($values)
 {
 	if (!is_array($values))
@@ -62,6 +41,8 @@ function median($values)
 	}
 }
 
+require_once 'FileSystem.class.php';
+
 function ensure_cache($cacheDir, $ensureClean = true)
 {
 	if ($cacheDir == null or $cacheDir == '')
@@ -69,10 +50,7 @@ function ensure_cache($cacheDir, $ensureClean = true)
 		
 	if ($ensureClean and is_dir($cacheDir))
 	{
-		rmdir_recursive($cacheDir);
+		FileSystem::deleteDirectory($cacheDir);
 	}
-	if (!is_dir($cacheDir))
-	{
-		mkdir($cacheDir);
-	}
+	FileSystem::ensureDirectory($cacheDir);
 }

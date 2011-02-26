@@ -1,0 +1,24 @@
+.stats {
+	padding: 0.4em;
+}
+.stats.success {
+	background: #0a0;
+	color: #000;
+}
+.stats.fail {
+	background: #a00;
+	color: #fff;
+}
+
+span.success { color: #0a0; }
+span.fail { color: #a00; }
+
+.test-report {
+}
+
+.test-suite {
+	margin: 0.5em 1em;
+}
+
+.test-case {
+}

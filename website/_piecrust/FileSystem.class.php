@@ -99,4 +99,40 @@ class FileSystem
 		}
 		return $result;
 	}
+	
+	public static function ensureDirectory($dir)
+	{
+		if (!is_dir($dir))
+		{
+			mkdir($dir, 0777, true);
+		}
+	}
+	
+	public static function deleteDirectory($dir, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
+	{
+		$skippedFiles = false;
+		$files = new FilesystemIterator($dir);
+		foreach ($files as $file)
+		{
+			if ($skipPattern != null and preg_match($skipPattern, $file->getFilename()))
+			{
+				$skippedFiles = true;
+				continue;
+			}
+			
+			if($file->isDir())
+			{
+				FileSystem::deleteDirectory($file->getPathname(), $skipPattern, $level + 1);
+			}
+			else
+			{
+				unlink($file);
+			}
+		}
+		
+		if ($level > 0 and !$skippedFiles and is_dir($dir))
+		{
+			rmdir($dir);
+		}
+	}
 }

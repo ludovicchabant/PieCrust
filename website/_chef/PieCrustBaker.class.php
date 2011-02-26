@@ -4,6 +4,7 @@ define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
 
 require_once 'PieCrust.class.php';
 require_once 'Paginator.class.php';
+require_once 'FileSystem.class.php';
 
 
 /**
@@ -35,7 +36,7 @@ class PieCrustBaker
 		if ($this->bakeDir === null)
 		{
 			$defaultBakeDir = $this->pieCrust->getCacheDir() . 'baked/';
-			$this->ensureDirectory($defaultBakeDir);
+			FileSystem::ensureDirectory($defaultBakeDir);
             $this->setBakeDir($defaultBakeDir);
 		}
 		return $this->bakeDir;
@@ -307,7 +308,7 @@ class PieCrustBaker
 			$bakePath = $this->getBakeDir() . $page->getUri() . '.' . $extension;
 		}
 		
-		$this->ensureDirectory(dirname($bakePath));
+		FileSystem::ensureDirectory(dirname($bakePath));
 		file_put_contents($bakePath, $bakedContents);
 	
 		$hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
@@ -322,40 +323,6 @@ class PieCrustBaker
 				return 'txt';
 			default:
 				return $contentType;
-		}
-	}
-	
-	protected function ensureDirectory($dir)
-	{
-		if (!is_dir($dir))
-		{
-			mkdir($dir, 0777, true);
-		}
-	}
-	
-	protected function deleteDirectory($dir, $level = 0)
-	{
-		$files = new FilesystemIterator($dir);
-		foreach ($files as $file)
-		{
-			if ($file->getFilename() == '.empty' or $file->getFilename() == 'empty' or $file->getFilename() == 'empty.txt')
-			{
-				continue;
-			}
-			
-			if($file->isDir())
-			{
-				$this->deleteDirectory($file->getPathname(), $level + 1);
-			}
-			else
-			{
-				unlink($file);
-			}
-		}
-		
-		if ($level > 0 and is_dir($dir))
-		{
-			rmdir($dir);
 		}
 	}
 }

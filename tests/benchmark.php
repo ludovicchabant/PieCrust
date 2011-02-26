@@ -9,8 +9,8 @@ require_once 'Benchmark/Iterate.php';
 // Include the PieCrust app but with a root directory set
 // to the test website's root dir.
 define('PIECRUST_ROOT_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-define('BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
-require_once '../website/_piecrust/PieCrust.class.php';
+define('PIECRUST_BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
+require_once 'PieCrust.class.php';
 
 function run_query($pieCrust, $uri)
 {
@@ -48,9 +48,11 @@ function run_detailed_query($bench, $pieCrust, $uri)
 
 echo '<h1>Rendering Markdown syntax page</h1>';
 	
+//
 // Iteration benchmark.
+//
 echo '<h2>Iteration Benchmark</h2>';
-ensure_cache(BENCHMARKS_CACHE_DIR, true);
+ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
 $pieCrust = new PieCrust();
@@ -68,11 +70,13 @@ echo '<p>Median page query: <strong>'.(median($diffValues)*1000).'ms</strong></p
 echo '<p>Average page query: <strong>'.(average($diffValues)*1000).'ms</strong></p>';
 echo '<p>Max page query: <strong>'.(max($diffValues)*1000).'ms</strong></p>';
 
+//
 // Marked run (uncached, then cached).
+//
 echo '<h2>Timed Benchmark</h2>';
 
 echo '<h3>Uncached</h3>';
-ensure_cache(BENCHMARKS_CACHE_DIR, true);
+ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Timer();
 $bench->start();
 run_detailed_query($bench, $pieCrust, '/markdown-syntax');
@@ -85,7 +89,6 @@ $bench->start();
 run_detailed_query($bench, $pieCrust, '/markdown-syntax');
 $bench->stop();
 $bench->display();
-
 
 /*echo '<h1>Rendering HTML page</h1>';
 $bench = new Benchmark_Iterate();
