@@ -4,6 +4,7 @@
  *  The main PieCrust app.
  *
  */
+
  
 /**
  * The application directory, where this file lives.
@@ -20,7 +21,7 @@ define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
  * Note that this is only the default value. You can specify the root directory
  * by passing it to the PieCrust constructor too.
  */
-if (!defined(PIECRUST_ROOT_DIR))
+if (!defined('PIECRUST_ROOT_DIR'))
 {
     define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
 }
@@ -79,6 +80,15 @@ class PieCrust
 	{
 		return $this->rootDir();
 	}
+    
+    protected $host;
+    /**
+     * The host of the application.
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
     
     protected $urlBase;
 	/**
@@ -200,15 +210,31 @@ class PieCrust
     {
         if ($this->config === null)
         {
-            try
+            $configPath = $this->rootDir . PIECRUST_CONFIG_PATH;
+            
+            // Always cache a JSON version of the configuration for faster
+            // boot-up time (this saves a couple milliseconds).
+            $cache = new Cache($this->getCacheDir());
+            if ($cache->isValid('config', 'json', filemtime($configPath)))
             {
-				$yamlParser = new sfYamlParser();
-				$config = $yamlParser->parse(file_get_contents($this->rootDir . PIECRUST_CONFIG_PATH));
-				$this->config = $this->validateConfig($config);			
+                $configText = $cache->read('config', 'json');
+                $this->config = json_decode($configText, true);
             }
-            catch (Exception $e)
+            else
             {
-                throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage());
+                try
+                {
+                    $yamlParser = new sfYamlParser();
+                    $config = $yamlParser->parse(file_get_contents($configPath));
+                    $this->config = $this->validateConfig($config);			
+                }
+                catch (Exception $e)
+                {
+                    throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage());
+                }
+                
+                $yamlMarkup = json_encode($this->config);
+                $cache->write('config', 'json', $yamlMarkup);
             }
         }
         return $this->config;
@@ -234,7 +260,7 @@ class PieCrust
             
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
-						'root' => $this->urlBase,
+						'root' => ($this->host . $this->urlBase),
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'enable_cache' => false,
 						'enable_gzip' => false,
@@ -373,6 +399,7 @@ class PieCrust
 		$parameters = array_merge(
 			array(
 				'root' => PIECRUST_ROOT_DIR,
+                'host' => null,
 				'url_base' => null
 			),
 			$parameters
@@ -380,14 +407,22 @@ class PieCrust
 		
 		$this->rootDir = rtrim($parameters['root'], '/\\') . DIRECTORY_SEPARATOR;
 		
-        if ($parameters['url_base'] === null)
+        if ($parameters['host'] === null)
         {
-			$host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-			$this->urlBase = $host . dirname($_SERVER['PHP_SELF']) . '/';
+            $this->host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
         }
         else
         {
-            $this->urlBase = rtrim($parameters['url_base'], '/') . '/';
+            $this->host = rtrim($parameters['host'], '/');
+        }
+        
+        if ($parameters['url_base'] === null)
+        {
+			$this->urlBase = dirname($_SERVER['PHP_SELF']) . '/';
+        }
+        else
+        {
+            $this->urlBase = '/' . trim($parameters['url_base'], '/') . '/';
         }
     }
     
@@ -559,6 +594,10 @@ class PieCrust
 				// query string that we should ignore because we're using 'pretty URLs'.
 				if (strlen($this->urlBase) > 1)
 				{
+                    if (strlen($requestUri) < strlen($this->urlBase))
+                    {
+                        throw new PieCrustException("You're trying to access a resource that's not within the directory served by PieCrust.");
+                    }
 					$requestUri = substr($requestUri, strlen($this->urlBase) - 1);
 				}
 				$questionMark = strpos($requestUri, '?');
@@ -570,7 +609,9 @@ class PieCrust
 		}
         if ($requestUri == null)
         {
-            throw new PieCrustException("PieCrust can't figure out the request URI. It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache).");
+            throw new PieCrustException("PieCrust can't figure out the request URI. " .
+                                        "It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache), " .
+                                        "or just because my code sucks.");
         }
 		if ($requestUri == '/')
 		{
@@ -611,4 +652,17 @@ class PieCrust
 			set_error_handler('piecrust_error_handler');
 		}
     }
+    
+    /**
+     * A utility function that setups and runs PieCrust in one call.
+     */
+    public static function setupAndRun($parameters = null, $uri = null, $profile = 'web')
+    {
+        PieCrust::setup($profile);
+        $pieCrust = new PieCrust($parameters);
+        $pieCrust->run($uri);
+    }
 }
+
+// Get the time this was included so we can display the baking time on the requested page.
+$PIECRUST_START_TIME = microtime(true);

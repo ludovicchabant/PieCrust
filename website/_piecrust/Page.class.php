@@ -152,7 +152,7 @@ class Page
 				'asset'=> new Assetor($this->pieCrust, $this),
 				'pagination' => new Paginator($this->pieCrust, $this)
 			);
-			$data['page']['url'] = $this->pieCrust->getUrlBase() . $this->getUri();
+			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
 			
 			if ($this->extraData != null)

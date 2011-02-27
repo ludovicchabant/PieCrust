@@ -30,14 +30,21 @@ class PageRenderer
 			}
 		}
 		
-		// Set the HTML header and render the page.
+		// Set the HTML header.
 		if ($outputHeaders === true)
 		{
 			PageRenderer::setHeaders($pageConfig['content_type']);
 		}
 		
-		echo "<!-- PieCrust " . PieCrust::VERSION . " - " . ($page->isCached() ? "baked this morning!" : "baked just now!") . " -->\n";
+		// Render the page.
 		$templateEngine->renderFile($templateName, $data);
+		
+		// Add a footer with version, caching and timing information.
+		global $PIECRUST_START_TIME;
+		$timeSpan = microtime(true) - $PIECRUST_START_TIME;
+		echo "<!-- PieCrust " . PieCrust::VERSION . " - " .
+			 ($page->isCached() ? "baked this morning" : "baked just now") .
+			 ", in " . $timeSpan * 1000 . " milliseconds. -->";
 	}
 	
 	public function get(Page $page, $extraData = null, $outputHeaders = true)
