@@ -8,3 +8,10 @@ Support for administrative triggering of HTML caching (similar to Jekyll:
 	http://tatey.com/2009/04/29/jekyll-meets-dreamhost-automated-deployment-for-jekyll-with-git/ and
 	http://appden.com/personal/journey-to-jekyll/ and
 	https://github.com/appden/appden.github.com)
+
+Support more HTML response headers:
+- error 400 for incorrect URL/syntax
+- set Content-Length to length of body
+- set Content-Type to mime type
+- set Cache-Control to either 'no-cache, must-revalidate' (if debug mode), or 'public, max-age=<cache>'
+- set ETag to hash-value (SHA1?) of body
