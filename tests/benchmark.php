@@ -56,7 +56,7 @@ ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
 $pieCrust = new PieCrust();
-$pieCrust->setConfig(array('site' => array('debug' => true, 'enable_cache' => true)));
+$pieCrust->setConfig(array('site' => array('enable_cache' => true)));
 $runCount = 100;
 $bench->run($runCount, 'run_query', $pieCrust, '/markdown-syntax');
 $bench->stop();
