@@ -9,80 +9,80 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 		return array(
 			// Standard QUERY
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => null),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => ''),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => '/'),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => '/blah'),
 				'/blah',
 				false
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => '/some/path'),
 				'/some/path',
 				false
 			),
 			array(
-				array('url_base' => 'host.local/test'),
+				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => null),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local/test'),
+				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => ''),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local/test'),
+				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => '/'),
 				'/_index',
 				false
 			),
 			array(
-				array('url_base' => 'host.local/test'),
+				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => '/blah'),
 				'/blah',
 				false
 			),
 			array(
-				array('url_base' => 'host.local/test'),
+				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => '/some/path'),
 				'/some/path',
 				false
 			),
 			// URL rewriting queries
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => null, 'REQUEST_URI' => '/'),
 				'/_index',
 				true
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => null, 'REQUEST_URI' => '/blah'),
 				'/blah',
 				true
 			),
 			array(
-				array('url_base' => 'host.local'),
+				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => '/something/else', 'REQUEST_URI' => '/blah'),
 				'/blah',
 				true

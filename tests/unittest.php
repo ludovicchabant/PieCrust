@@ -43,7 +43,7 @@ $dashboard = new PHPUnit_WebReport_Dashboard($logFile);
 <?php
 foreach ($output as $line)
 {
-	echo $line . "\n";
+	echo htmlentities($line) . "\n";
 }
 ?>
 		</pre>

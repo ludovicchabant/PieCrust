@@ -257,7 +257,6 @@ class PieCrust
 		{
             $config['site'] = array();
 		}
-            
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
 						'root' => ($this->host . $this->urlBase),
@@ -423,6 +422,7 @@ class PieCrust
         else
         {
             $this->urlBase = '/' . trim($parameters['url_base'], '/') . '/';
+			if ($this->urlBase == '//') $this->urlBase = '/';
         }
     }
     

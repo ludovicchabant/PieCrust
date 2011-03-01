@@ -1,5 +1,6 @@
 <?php
 
+define('PIECRUST_ROOT_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR);
 define('PIECRUST_TEST_DATA_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'test-data' . DIRECTORY_SEPARATOR);
 
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'util.php';
@@ -49,14 +50,23 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
 	 */
 	public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
-        $pc = new PieCrust(array('url_base' => 'host.local'));
+		// Create the page that will load our test file.
+        $pc = new PieCrust();
+		$pc->setConfig(array(
+			'site' => array('default_format' => 'none')
+		));
 		$p = TestPage::create($pc, '/test', $testFilename);
 		
+		// Get the stuff we are expecting.
 		$yamlParser = new sfYamlParser();
 		$expectedResults = $yamlParser->parse(file_get_contents($expectedResultsFilename));
 		$expectedConfig = $p->validateConfig($expectedResults['config']);
 		
+		// Assert!
 		$this->assertEquals($expectedConfig, $p->getConfig());
-		$this->assertEquals($expectedResults['contents'], $p->getContents());
+		$expectedContents = $expectedResults['contents'];
+		$actualContents = $p->getContents();
+		//die("/".$expectedContents."/".$actualContents."/");
+		$this->assertEquals($expectedContents, $actualContents);
     }
 }
