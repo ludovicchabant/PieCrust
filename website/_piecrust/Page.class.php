@@ -283,7 +283,11 @@ class Page
 	
 	protected function loadConfigAndContents()
 	{
-		if ($this->isCached())
+		// Caching must be disabled if we get some extra page data because then this page
+		// is not self-contained anymore.
+		$enableCache = ($this->extraData == null);
+		
+		if ($enableCache and $this->isCached())
 		{
 			// Get the page from the cache.
 			$this->contents = $this->cache->read($this->uri, 'html');
@@ -308,7 +312,7 @@ class Page
 			
 			// Do not cache the page if 'volatile' data was accessed (e.g. the page displays
 			// the latest posts).
-			if ($this->cache != null and $this->wasVolatileDataAccessed($data) == false)
+			if ($enableCache and $this->cache != null and $this->wasVolatileDataAccessed($data) == false)
 			{
 				$this->cache->write($this->uri, 'html', $this->contents);
 				$yamlMarkup = json_encode($this->config);
