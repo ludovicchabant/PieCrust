@@ -6,6 +6,7 @@ require_once 'Report.php';
 class PHPUnit_WebReport_Dashboard
 {
 	public $report;
+	public $errors;
 
 	public function __construct($logFile, $format = 'xml')
 	{
@@ -26,19 +27,32 @@ class PHPUnit_WebReport_Dashboard
 	
 	public function display($headerLevel = 2)
 	{
-		echo '<div class="test-report">';
-		
-		// Summary of the test run.
-		echo '<div class="test-report-summary">';
-		$this->displayStats($this->report);
-		echo '</div>';
-		
-		// Details on test suites that failed.
-		foreach ($this->report->testSuites as $testsuite)
+		if ($this->errors === null)
 		{
-			$this->displayTestSuite($testsuite, true, $headerLevel);
+			echo '<div class="test-report">';
+			
+			// Summary of the test run.
+			echo '<div class="test-report-summary">';
+			$this->displayStats($this->report);
+			echo '</div>';
+			
+			// Details on test suites that failed.
+			foreach ($this->report->testSuites as $testsuite)
+			{
+				$this->displayTestSuite($testsuite, true, $headerLevel);
+			}
+			echo '</div>';
 		}
-		echo '</div>';
+		else
+		{
+			echo '<div class="test-report">';
+			echo '<h' . $headerLevel . '>Error reading PHPUnit log</h' . $headerLevel . '>';
+			foreach ($this->errors as $error)
+			{
+				echo '<p>' . $error . '</p>';
+			}
+			echo '</div>';
+		}
 	}
 	
 	protected function displayStats($stats)
@@ -94,7 +108,7 @@ class PHPUnit_WebReport_Dashboard
 					echo '<div class="failures">';
 					foreach ($testcase->failures as $failure)
 					{
-						echo '<pre>' . $failure . '</pre>';
+						echo '<pre>' . htmlentities($failure) . '</pre>';
 					}
 					echo '</div>';
 				}
@@ -103,7 +117,7 @@ class PHPUnit_WebReport_Dashboard
 					echo '<div class="errors">';
 					foreach ($testcase->errors as $error)
 					{
-						echo '<pre>' . $error . '</pre>';
+						echo '<pre>' . htmlentities($error) . '</pre>';
 					}
 					echo '</div>';
 				}
@@ -123,10 +137,23 @@ class PHPUnit_WebReport_Dashboard
 	{
 		$report = new PHPUnit_WebReport_Report();
 		
+		libxml_use_internal_errors(true);
 		$results = simplexml_load_file($logFile);
-		foreach ($results->testsuite as $ts)
+		if (!$results)
 		{
-			$report->testSuites[] = $this->parseXmlTestSuite($ts);
+			$this->errors = array();
+			foreach (libxml_get_errors() as $error)
+			{
+				$this->errors[] = $error->message . " (in '" . $error->file . "', line " . $error->line . ", column " . $error->column . ")";
+			}
+			libxml_clear_errors();
+		}
+		else
+		{
+			foreach ($results->testsuite as $ts)
+			{
+				$report->testSuites[] = $this->parseXmlTestSuite($ts);
+			}
 		}
 		
 		return $report;
