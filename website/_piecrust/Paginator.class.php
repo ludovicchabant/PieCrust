@@ -112,9 +112,9 @@ class Paginator
 		if (count($postInfos) > 0)
 		{
 			// Load all the posts for the requested page number (page numbers start at '1').
-			$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
-			$postsPerPage = $this->pieCrust->getConfigValue('site', 'posts_per_page');
-			$postsDateFormat = $this->pieCrust->getConfigValue('site', 'posts_date_format');
+			$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_urls');
+			$postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
+			$postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_date_format');
 			$offset = ($this->pageNumber - 1) * $postsPerPage;
 			$upperLimit = min($offset + $postsPerPage, count($postInfos));
 			for ($i = $offset; $i < $upperLimit; ++$i)
@@ -134,7 +134,7 @@ class Paginator
 				$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
 				$postData['date'] = date($postsDateFormat, $postDateTime);
 				
-				$postContents = $post->getContents();
+				$postContents = $post->getContentSegment();
 				$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
 				$postData['content'] = $postContentsSplit[0];
 				
@@ -159,7 +159,7 @@ class Paginator
     protected function getPostInfos()
     {
         $fs = new FileSystem($this->pieCrust);
-        $postsFs = $this->pieCrust->getConfigValue('site', 'posts_fs');
+        $postsFs = $this->pieCrust->getConfigValueUnchecked('site', 'posts_fs');
         switch ($postsFs)
         {
         case 'hierarchy':

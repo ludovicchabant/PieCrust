@@ -61,12 +61,21 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
 		$yamlParser = new sfYamlParser();
 		$expectedResults = $yamlParser->parse(file_get_contents($expectedResultsFilename));
 		$expectedConfig = $p->validateConfig($expectedResults['config']);
+		foreach ($expectedResults as $key => $content) // Add the segment names.
+		{
+			if ($key == 'config') continue;
+			$expectedConfig['segments'][] = $key;
+		}
 		
-		// Assert!
-		$this->assertEquals($expectedConfig, $p->getConfig());
-		$expectedContents = $expectedResults['contents'];
-		$actualContents = $p->getContents();
-		//die("/".$expectedContents."/".$actualContents."/");
-		$this->assertEquals($expectedContents, $actualContents);
+		// Start asserting!
+		$this->assertEquals($expectedConfig, $p->getConfig(), 'The configurations are not equivalent.');
+		$actualSegments = $p->getContentSegments();
+		foreach ($expectedResults as $key => $content)
+		{
+			if ($key == 'config') continue;
+			
+			$this->assertArrayHasKey($key, $actualSegments, 'Expected a content segment named: ' . $key);
+			$this->assertEquals($content, $actualSegments[$key], 'The content segments are not equivalent.');
+		}
     }
 }

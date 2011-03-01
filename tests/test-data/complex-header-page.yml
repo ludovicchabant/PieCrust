@@ -1,0 +1,22 @@
+config:
+  this: is
+  a:
+    somewhat:
+      complicated: header
+      for: a
+    piecrust: page
+  but: that
+  is: not
+  too: bad
+  now: |
+    let's see if
+    ---
+    stuff like this
+    ---
+    won't break the parsing.
+  okay: now it should be good.
+
+content: |
+  Yep, I don't think it's really that complicated, but you never know, it could break.
+  Hopefully it doesn't!
+  

@@ -94,7 +94,7 @@ class Page
 			}
 			else
 			{
-				$this->cacheTime = $this->cache->getCacheTime($this->uri, 'html');
+				$this->cacheTime = $this->cache->getCacheTime($this->uri, 'json');
 			}
 		}
 		return $this->cacheTime;
@@ -118,19 +118,34 @@ class Page
 	 */
 	public function getConfigValue($key)
 	{
-		$config = $this->getConfig();
-		if (!isset($config[$key]))
+		if ($this->config === null)
+		{
+			$this->loadConfigAndContents();
+		}
+		if (!isset($this->config[$key]))
 		{
 			return null;
 		}
-		return $config[$key];
+		return $this->config[$key];
 	}
 	
 	protected $contents;
 	/**
-	 * Gets the page's formatted contents.
+	 * Gets the page's formatted content.
 	 */
-	public function getContents()
+	public function getContentSegment($segment = 'content')
+	{
+		if ($this->contents === null)
+		{
+			$this->loadConfigAndContents();
+		}
+		return $this->contents[$segment];
+	}
+	
+	/**
+	 * Gets all the page's formatted content segments.
+	 */
+	public function getContentSegments()
 	{
 		if ($this->contents === null)
 		{
@@ -205,7 +220,7 @@ class Page
 		}
 		
 		$this->cache = null;
-		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
+		if ($pieCrust->getConfigValueUnchecked('site', 'enable_cache') === true)
 		{
 			$this->cache = new Cache($pieCrust->getCacheDir() . 'pages_r');
 		}
@@ -247,12 +262,12 @@ class Page
 		$path = null;
 		$isPost = false;
 		$matches = array();
-		$postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValue('site', 'posts_urls'));
+		$postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValueUnchecked('site', 'posts_urls'));
 		if (preg_match($postsPattern, $uri, $matches))
 		{
 			// Requesting a post.
 			$baseDir = $pieCrust->getPostsDir();
-			$postsFs = $pieCrust->getConfigValue('site', 'posts_fs');
+			$postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
 			switch ($postsFs)
 			{
 			case 'hierarchy':
@@ -290,10 +305,15 @@ class Page
 		if ($enableCache and $this->isCached())
 		{
 			// Get the page from the cache.
-			$this->contents = $this->cache->read($this->uri, 'html');
 			$configText = $this->cache->read($this->uri, 'json');
 			$config = json_decode($configText, true);
 			$this->config = $this->buildValidatedConfig($config);
+			
+			$this->contents = array();
+			foreach ($this->config['segments'] as $key)
+			{
+				$this->contents[$key] = $this->cache->read($this->uri, $key . '.html');
+			}
         }
         else
         {
@@ -301,22 +321,32 @@ class Page
 			$rawContents = file_get_contents($this->path);
 			$this->config = $this->parseConfig($rawContents);
 			
+			$segments = $this->parseContentSegments($rawContents);
+			$this->contents = array();
 			$data = $this->getPageData();
 			$data = array_merge($data, $this->pieCrust->getSiteData());
 			$templateEngine = $this->pieCrust->getTemplateEngine();
-			ob_start();
-			$templateEngine->renderString($rawContents, $data);
-			$rawContents = ob_get_clean();
-		
-			$this->contents = $this->pieCrust->formatText($rawContents, $this->config['format']);			
+			foreach ($segments as $key => $content)
+			{
+				ob_start();
+				$templateEngine->renderString($content, $data);
+				$renderedContent = ob_get_clean();
+			
+				$this->config['segments'][] = $key;
+				$this->contents[$key] = $this->pieCrust->formatText($renderedContent, $this->config['format']);
+			}
 			
 			// Do not cache the page if 'volatile' data was accessed (e.g. the page displays
 			// the latest posts).
 			if ($enableCache and $this->cache != null and $this->wasVolatileDataAccessed($data) == false)
 			{
-				$this->cache->write($this->uri, 'html', $this->contents);
 				$yamlMarkup = json_encode($this->config);
 				$this->cache->write($this->uri, 'json', $yamlMarkup);
+				
+				foreach (array_keys($segments) as $key)
+				{
+					$this->cache->write($this->uri, $key . '.html', $this->contents);
+				}
 			}
 		}
         if (!isset($this->config) or $this->config == null or 
@@ -334,7 +364,7 @@ class Page
     protected function parseConfig(&$rawContents)
     {
         $yamlHeaderMatches = array();
-        $hasYamlHeader = preg_match('/^(---\s*\n)((.*\n)*?)^(---\s*\n)/m', $rawContents, $yamlHeaderMatches);
+        $hasYamlHeader = preg_match('/\A(---\s*\n)((.*\n)*?)^(---\s*\n)/m', $rawContents, $yamlHeaderMatches);
         if ($hasYamlHeader == true)
         {
 			// Remove the YAML header from the raw contents string.
@@ -358,6 +388,42 @@ class Page
         
         return $this->buildValidatedConfig($config);
     }
+	
+	protected function parseContentSegments($rawContents)
+	{
+		$end = strlen($rawContents);
+		$matches = array();
+		$matchCount = preg_match_all('/^---(\w+)---\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE);
+		if ($matchCount > 0)
+		{
+			$contents = array();
+			
+			if ($matches[0][0][1] > 0)
+			{
+				// There's some default content at the beginning.
+				$contents['content'] = substr($rawContents, 0, $matches[0][0][1]);
+			}
+			
+			for ($i = 0; $i < $matchCount; ++$i)
+			{
+				// Get each segment as the text that's between the end of the current captured string
+				// and the beginning of the next captured string (or the end of the input text if
+				// the current is the last capture).
+				$matchStart = $matches[0][$i][1] + strlen($matches[0][$i][0]);
+				$matchEnd = ($i < $matchCount - 1) ? $matches[0][$i+1][1] : $end;
+				$segmentName = $matches[1][$i][0];
+				$segmentContent = substr($rawContents, $matchStart, $matchEnd - $matchStart);
+				$contents[$segmentName] = $segmentContent;
+			}
+			
+			return $contents;
+		}
+		else
+		{
+			// No segments, just the content.
+			return array('content' => $rawContents);
+		}
+	}
     
     protected function buildValidatedConfig($config)
     {
@@ -365,9 +431,10 @@ class Page
 		$validatedConfig = array_merge(
 			array(
 				'layout' => ($this->isPost == true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
-				'format' => $this->pieCrust->getConfigValue('site', 'default_format'),
+				'format' => $this->pieCrust->getConfigValueUnchecked('site', 'default_format'),
 				'content_type' => 'html',
-				'title' => 'Untitled Page'
+				'title' => 'Untitled Page',
+				'segments' => array()
 			),
 			$config);
 		return $validatedConfig;

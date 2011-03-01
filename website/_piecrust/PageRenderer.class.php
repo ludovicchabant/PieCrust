@@ -16,7 +16,7 @@ class PageRenderer
 		
 		// Get the template engine and the page data.
 		$templateEngine = $this->pieCrust->getTemplateEngine();
-		$data = array('content' => $page->getContents());
+		$data = $page->getContentSegments();
 		$data = array_merge($data, $page->getPageData(), $this->pieCrust->getSiteData());
 		if ($extraData != null)
 		{
@@ -70,7 +70,7 @@ class PageRenderer
 				header("Content-type: text/plain; charset=utf-8");
 				break;
 			case 'css':
-				header('Content-type: text/css; charset=utf-8');
+				header("Content-type: text/css; charset=utf-8");
 				break;
 			case 'atom':
 				header("Content-type: application/atom+xml; charset=utf-8");
@@ -79,7 +79,7 @@ class PageRenderer
 				header("Content-type: application/rss+xml; charset=utf-8");
 				break;
 			case 'json':
-				header('Content-type: application/json; charset=utf-8');
+				header("Content-type: application/json; charset=utf-8");
 				break;
 		}
 	}

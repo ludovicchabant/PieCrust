@@ -19,7 +19,7 @@ class TwigTemplateEngine implements ITemplateEngine
 		$this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs);
         
 		$options = array('cache' => false);
-		if ($pieCrust->getConfigValue('site', 'enable_cache') === true)
+		if ($pieCrust->getConfigValueUnchecked('site', 'enable_cache') === true)
 		{
 			$options['cache'] = $pieCrust->getCacheDir() . 'templates_c';
 			$options['auto_reload'] = true;

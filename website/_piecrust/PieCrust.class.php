@@ -208,6 +208,22 @@ class PieCrust
 	 */
     public function getConfig()
     {
+        $this->ensureConfig();
+        return $this->config;
+    }
+    
+	/**
+	 * Sets the application's configuration.
+	 *
+	 * This is useful for controlled environments like unit-testing.
+	 */
+    public function setConfig($config)
+    {
+        $this->config = $this->validateConfig($config);
+    }
+    
+    protected function ensureConfig()
+    {
         if ($this->config === null)
         {
             $configPath = $this->rootDir . PIECRUST_CONFIG_PATH;
@@ -237,17 +253,6 @@ class PieCrust
                 $cache->write('config', 'json', $yamlMarkup);
             }
         }
-        return $this->config;
-    }
-    
-	/**
-	 * Sets the application's configuration.
-	 *
-	 * This is useful for controlled environments like unit-testing.
-	 */
-    public function setConfig($config)
-    {
-        $this->config = $this->validateConfig($config);
     }
     
     protected function validateConfig($config)
@@ -270,6 +275,8 @@ class PieCrust
 						'posts_fs' => 'flat',
                         'tags_urls' => 'tag/%tag%',
                         'categories_urls' => '%category%',
+                        'cache' => 28800,
+                        'baked' => false,
                         'debug' => false
                     ),
                     $config['site']);
@@ -281,24 +288,34 @@ class PieCrust
 	 */
 	public function getConfigValue($category, $key)
 	{
-		$config = $this->getConfig();
-		if (!isset($config[$category]))
+		$this->ensureConfig();
+		if (!isset($this->config[$category]))
 		{
 			return null;
 		}
-		if (!isset($config[$category][$key]))
+		if (!isset($this->config[$category][$key]))
 		{
 			return null;
 		}
-		return $config[$category][$key];
+		return $this->config[$category][$key];
 	}
+    
+    /**
+     * Helper function for getting a configuration setting, but without checks
+     * for existence or validity.
+     */
+    public function getConfigValueUnchecked($category, $key)
+    {
+        $this->ensureConfig();
+        return $this->config[$category][$key];
+    }
     
     /**
      * Sets a configuration setting.
      */
     public function setConfigValue($category, $key, $value)
     {
-        $this->getConfig();
+        $this->ensureConfig();
         if (!isset($this->config[$category]))
         {
             $this->config[$category] = array($key => $value);
@@ -352,7 +369,7 @@ class PieCrust
     {
 		if ($this->templateEngine === null)
 		{		
-			$templateEngineName = $this->getConfigValue('site', 'template_engine');
+			$templateEngineName = $this->getConfigValueUnchecked('site', 'template_engine');
 			if ($templateEngineName == null)
 			{
 				$templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
@@ -373,9 +390,9 @@ class PieCrust
 	 */
 	public function getSiteData()
 	{
-		$data = $this->getConfig();
+		$this->ensureConfig();
 		$data = array_merge(
-			$data, 
+			$this->config, 
 			array(
 				'piecrust' => array(
 					'version' => self::VERSION,
@@ -437,61 +454,7 @@ class PieCrust
 		}
 		catch (Exception $e)
 		{
-			// Something wrong happened... check that we're not running
-			// some completely brand new and un-configured website.
-			if ($this->isEmptySetup())
-			{
-				$this->showSystemMessage('welcome');
-				exit();
-			}
-			
-			// If debugging is enabled, just display the error and exit.
-			if ($this->getConfigValue('site', 'debug') === true)
-			{
-				include 'FatalError.inc.php';
-				piecrust_fatal_error(array($e));
-				exit();
-			}
-			
-			// Get the URI to the custom error page.
-			$errorPageUri = '_error';
-			if ($e->getMessage() == '404')
-			{
-                header('HTTP/1.0 404 Not Found');
-				$errorPageUri = '_404';
-			}
-			$errorPageUriInfo = Page::parseUri($this, $errorPageUri);
-			if (is_file($errorPageUriInfo['path']))
-			{
-				// We have a custom error page. Show it, or display
-				// the "fatal error" page if even this doesn't work.
-				try
-				{
-					$this->runUnsafe($errorPageUri, array(
-							'error' => array(
-								'code' => $e->getCode(),
-								'message' => $e->getMessage(),
-								'file' => $e->getFile(),
-								'line' => $e->getLine(),
-								'trace' => $e->getTraceAsString(),
-								'debug' => (ini_get('display_errors') == true)
-							)
-						));
-				}
-				catch (Exception $inner)
-				{
-					include 'FatalError.inc.php';
-					piecrust_fatal_error(array($e, $inner));
-					exit();
-				}
-			}
-			else
-			{
-				// We don't have a custom error page. Just show a generic
-				// error page and exit.
-				$this->showSystemMessage(substr($errorPageUri, 1));
-				exit();
-			}
+			$this->handleError($e);
 		}
     }
 	
@@ -507,7 +470,7 @@ class PieCrust
 			$uri = $this->getRequestUri($_SERVER);
 		}
 		
-		if ($this->getConfigValue('site', 'baked') === true)
+		if ($this->getConfigValueUnchecked('site', 'baked') === true)
 		{
 			// We're serving a baked website.
 			$bakedPath = $this->getCacheDir() . 'baked' . $uri;
@@ -535,7 +498,7 @@ class PieCrust
 		}
 	
 		// Output with or without GZip compression.
-		$gzipEnabled = (($this->getConfigValue('site', 'enable_gzip') === true) and
+		$gzipEnabled = (($this->getConfigValueUnchecked('site', 'enable_gzip') === true) and
 						(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
 		if ($gzipEnabled)
 		{
@@ -556,13 +519,76 @@ class PieCrust
 		}
 	}
     
+    /**
+     * Handles an exception by showing an appropriate
+     * error page.
+     */
+    public function handleError(Exception $e)
+    {
+        // First of all, check that we're not running
+        // some completely brand new and un-configured website.
+        if ($this->isEmptySetup())
+        {
+            $this->showSystemMessage('welcome');
+            exit();
+        }
+        
+        // If debugging is enabled, just display the error and exit.
+        if ($this->getConfigValueUnchecked('site', 'debug') === true)
+        {
+            include 'FatalError.inc.php';
+            piecrust_fatal_error(array($e));
+            exit();
+        }
+        
+        // Get the URI to the custom error page.
+        $errorPageUri = '_error';
+        if ($e->getMessage() == '404')
+        {
+            header('HTTP/1.0 404 Not Found');
+            $errorPageUri = '_404';
+        }
+        $errorPageUriInfo = Page::parseUri($this, $errorPageUri);
+        if (is_file($errorPageUriInfo['path']))
+        {
+            // We have a custom error page. Show it, or display
+            // the "fatal error" page if even this doesn't work.
+            try
+            {
+                $this->runUnsafe($errorPageUri, array(
+                        'error' => array(
+                            'code' => $e->getCode(),
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                            'trace' => $e->getTraceAsString(),
+                            'debug' => (ini_get('display_errors') == true)
+                        )
+                    ));
+            }
+            catch (Exception $inner)
+            {
+                include 'FatalError.inc.php';
+                piecrust_fatal_error(array($e, $inner));
+                exit();
+            }
+        }
+        else
+        {
+            // We don't have a custom error page. Just show a generic
+            // error page and exit.
+            $this->showSystemMessage(substr($errorPageUri, 1));
+            exit();
+        }
+    }
+    
 	/**
 	 * Gets the requested PieCrust URI based on given server variables.
 	 */
     public function getRequestUri($server)
     {
 		$requestUri = null;
-        if ($this->getConfigValue('site', 'pretty_urls') !== true)
+        if ($this->getConfigValueUnchecked('site', 'pretty_urls') !== true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
             $requestUri = $server['QUERY_STRING'];
@@ -632,6 +658,8 @@ class PieCrust
 		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
 		if (!is_dir($pagesDir))
 			return true;
+        if (!is_file($pagesDir . PIECRUST_INDEX_PAGE_NAME))
+            return true;
 			
 		return false;
 	}

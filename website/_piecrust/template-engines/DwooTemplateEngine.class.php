@@ -17,7 +17,7 @@ class DwooTemplateEngine implements ITemplateEngine
     {
         require_once(PIECRUST_APP_DIR . 'libs/dwoo/dwooAutoload.php');
 		
-        $usePrettyUrls = ($pieCrust->getConfigValue('site', 'pretty_urls') === true); 		
+        $usePrettyUrls = ($pieCrust->getConfigValueUnchecked('site', 'pretty_urls') === true); 		
 
 		$this->pieCrust = $pieCrust;
 		self::$pathPrefix = ($pieCrust->getHost() . $pieCrust->getUrlBase() . ($usePrettyUrls ? '/' : '/?/'));
