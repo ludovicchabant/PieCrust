@@ -1,13 +1,49 @@
 <?php
 
+/**
+ * The main file for PHPUnit-WebReport.
+ */
+
+// This requires the PEAR PHPUnit package.
+if (!defined('PHPUNIT'))
+{
+	if (isset($_SERVER['PHPRC']))
+	{
+		// Windows: PEAR defines %PHPRC%, which we can use to find phpunit's path.
+		define('PHPUNIT', '"' . $_SERVER['PHPRC'] . DIRECTORY_SEPARATOR . 'php" "' . $_SERVER['PHPRC'] . DIRECTORY_SEPARATOR . 'phpunit"');
+	}
+	else
+	{
+		// Mac/Unix: phpunit would usually be installed in the path.
+		define('PHPUNIT', 'phpunit');
+	}
+}
+
+
 require_once 'Report.php';
 
-
+/**
+ * The dashboard for a PHPUnit test run.
+ */
 class PHPUnit_WebReport_Dashboard
 {
 	public $report;
 	public $errors;
+	
+	/**
+	 * Runs PHPUnit on the given directory.
+	 */
+	public static function run($testsDir, $logFile)
+	{
+		$command = PHPUNIT . ' --log-junit "' . $logFile . '" "' . $testsDir . '"';
+		$output = array();
+		exec($command, $output);
+		return $output;
+	}
 
+	/**
+	 * Creates a new instance of PHPUnit_WebReport_Dashboard.
+	 */
 	public function __construct($logFile, $format = 'xml')
 	{
 		switch ($format)
@@ -20,11 +56,17 @@ class PHPUnit_WebReport_Dashboard
 		}
 	}
 	
+	/**
+	 * Gets the CSS code for the report, for including in a page's <head> section.
+	 */
 	public function getReportCss()
 	{
 		return file_get_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'phpunit_report.css');
 	}
 	
+	/**
+	 * Displays the test run report.
+	 */
 	public function display($headerLevel = 2)
 	{
 		if ($this->errors === null)
