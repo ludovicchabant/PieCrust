@@ -266,6 +266,7 @@ class PieCrust
                         'title' => 'PieCrust Untitled Website',
 						'root' => ($this->host . $this->urlBase),
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
+                        'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
                         'enable_cache' => false,
 						'enable_gzip' => false,
 						'pretty_urls' => false,
@@ -368,7 +369,7 @@ class PieCrust
     public function getTemplateEngine()
     {
 		if ($this->templateEngine === null)
-		{		
+		{
 			$templateEngineName = $this->getConfigValueUnchecked('site', 'template_engine');
 			if ($templateEngineName == null)
 			{
@@ -658,7 +659,7 @@ class PieCrust
 		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
 		if (!is_dir($pagesDir))
 			return true;
-        if (!is_file($pagesDir . PIECRUST_INDEX_PAGE_NAME))
+        if (!is_file($pagesDir . PIECRUST_INDEX_PAGE_NAME . '.html'))
             return true;
 			
 		return false;
