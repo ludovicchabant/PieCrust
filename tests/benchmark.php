@@ -58,7 +58,7 @@ $bench->start();
 $pieCrust = new PieCrust();
 $pieCrust->setConfig(array('site' => array('enable_cache' => true)));
 $runCount = 100;
-$bench->run($runCount, 'run_query', $pieCrust, '/markdown-syntax');
+$bench->run($runCount, 'run_query', $pieCrust, '/empty');
 $bench->stop();
 
 function filter_end_marker($value) { return preg_match('/^end_/', $value['name']); }
@@ -79,14 +79,14 @@ echo '<h3>Uncached</h3>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Timer();
 $bench->start();
-run_detailed_query($bench, $pieCrust, '/markdown-syntax');
+run_detailed_query($bench, $pieCrust, '/empty');
 $bench->stop();
 $bench->display();
 
 echo '<h3>Cached</h3>';
 $bench = new Benchmark_Timer();
 $bench->start();
-run_detailed_query($bench, $pieCrust, '/markdown-syntax');
+run_detailed_query($bench, $pieCrust, '/empty');
 $bench->stop();
 $bench->display();
 
