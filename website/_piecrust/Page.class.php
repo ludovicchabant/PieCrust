@@ -319,9 +319,10 @@ class Page
         {
 			// Re-format/process the page.
 			$rawContents = file_get_contents($this->path);
-			$this->config = $this->parseConfig($rawContents);
+			$headerOffset = 0;
+			$this->config = $this->parseConfig($rawContents, $headerOffset);
 			
-			$segments = $this->parseContentSegments($rawContents);
+			$segments = $this->parseContentSegments($rawContents, $headerOffset);
 			$this->contents = array();
 			$data = $this->getPageData();
 			$data = array_merge($data, $this->pieCrust->getSiteData());
@@ -361,16 +362,13 @@ class Page
 		return $data['pagination']->wasPaginationDataAccessed();
 	}
     
-    protected function parseConfig(&$rawContents)
+    protected function parseConfig($rawContents, &$offset)
     {
         $yamlHeaderMatches = array();
         $hasYamlHeader = preg_match('/\A(---\s*\n)((.*\n)*?)^(---\s*\n)/m', $rawContents, $yamlHeaderMatches);
         if ($hasYamlHeader == true)
         {
-			// Remove the YAML header from the raw contents string.
             $yamlHeader = substr($rawContents, strlen($yamlHeaderMatches[1]), strlen($yamlHeaderMatches[2]));
-            $rawContents = substr($rawContents, strlen($yamlHeaderMatches[0]));
-			// Parse the YAML header.
 			try
 			{
 				$yamlParser = new sfYamlParser();
@@ -380,28 +378,30 @@ class Page
             {
                 throw new PieCrustException('An error occured while reading the YAML header for the requested article: ' . $e->getMessage());
             }
+			$offset = strlen($yamlHeaderMatches[0]);
         }
         else
         {
             $config = array();
+			$offset = 0;
         }
         
         return $this->buildValidatedConfig($config);
     }
 	
-	protected function parseContentSegments($rawContents)
+	protected function parseContentSegments($rawContents, $offset)
 	{
 		$end = strlen($rawContents);
 		$matches = array();
-		$matchCount = preg_match_all('/^---(\w+)---\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE);
+		$matchCount = preg_match_all('/^---(\w+)---\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE, $offset);
 		if ($matchCount > 0)
 		{
 			$contents = array();
 			
-			if ($matches[0][0][1] > 0)
+			if ($matches[0][0][1] > $offset)
 			{
 				// There's some default content at the beginning.
-				$contents['content'] = substr($rawContents, 0, $matches[0][0][1]);
+				$contents['content'] = substr($rawContents, $offset, $matches[0][0][1] - $offset);
 			}
 			
 			for ($i = 0; $i < $matchCount; ++$i)
@@ -421,7 +421,7 @@ class Page
 		else
 		{
 			// No segments, just the content.
-			return array('content' => $rawContents);
+			return array('content' => substr($rawContents, $offset));
 		}
 	}
     
