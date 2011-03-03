@@ -346,7 +346,7 @@ class Page
 				
 				foreach (array_keys($segments) as $key)
 				{
-					$this->cache->write($this->uri . '.' . $key, 'html', $this->contents);
+					$this->cache->write($this->uri . '.' . $key, 'html', $this->contents[$key]);
 				}
 			}
 		}
