@@ -220,7 +220,7 @@ class Page
 		}
 		
 		$this->cache = null;
-		if ($pieCrust->getConfigValueUnchecked('site', 'enable_cache') === true)
+		if ($pieCrust->isCachingEnabled())
 		{
 			$this->cache = new Cache($pieCrust->getCacheDir() . 'pages_r');
 		}
@@ -346,7 +346,7 @@ class Page
 				
 				foreach (array_keys($segments) as $key)
 				{
-					$this->cache->write($this->uri, $key . '.html', $this->contents);
+					$this->cache->write($this->uri . '.' . $key, 'html', $this->contents);
 				}
 			}
 		}

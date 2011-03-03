@@ -99,6 +99,24 @@ class PieCrust
 		return $this->urlBase;
 	}
     
+    protected $cachingEnabled;
+    /**
+     * Gets whether caching is enabled.
+     */
+    public function isCachingEnabled()
+    {
+        return $this->cachingEnabled;
+    }
+    
+    protected $debuggingEnabled;
+    /**
+     * Gets whether debugging is enabled.
+     */
+    public function isDebuggingEnabled()
+    {
+        return $this->debuggingEnabled;
+    }
+    
     protected $templatesDir;
     /**
 	 * Gets the directory that contains templates and layouts ('/_content/templates' by default).
@@ -230,8 +248,8 @@ class PieCrust
             
             // Always cache a JSON version of the configuration for faster
             // boot-up time (this saves a couple milliseconds).
-            $cache = new Cache($this->getCacheDir());
-            if ($cache->isValid('config', 'json', filemtime($configPath)))
+            $cache = $this->cachingEnabled ? new Cache($this->getCacheDir()) : null;
+            if ($cache != null and $cache->isValid('config', 'json', filemtime($configPath)))
             {
                 $configText = $cache->read('config', 'json');
                 $this->config = json_decode($configText, true);
@@ -250,7 +268,7 @@ class PieCrust
                 }
                 
                 $yamlMarkup = json_encode($this->config);
-                $cache->write('config', 'json', $yamlMarkup);
+                if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
             }
         }
     }
@@ -267,7 +285,6 @@ class PieCrust
 						'root' => ($this->host . $this->urlBase),
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
-                        'enable_cache' => false,
 						'enable_gzip' => false,
 						'pretty_urls' => false,
 						'posts_urls' => '%year%/%month%/%day%/%slug%',
@@ -276,9 +293,7 @@ class PieCrust
 						'posts_fs' => 'flat',
                         'tags_urls' => 'tag/%tag%',
                         'categories_urls' => '%category%',
-                        'cache' => 28800,
-                        'baked' => false,
-                        'debug' => false
+                        'cache' => 28800
                     ),
                     $config['site']);
         return $config;
@@ -415,14 +430,18 @@ class PieCrust
 		}
 		$parameters = array_merge(
 			array(
-				'root' => PIECRUST_ROOT_DIR,
                 'host' => null,
-				'url_base' => null
+				'url_base' => null,
+				'root' => PIECRUST_ROOT_DIR,
+                'cache' => true,
+                'debug' => false
 			),
 			$parameters
 		);
 		
 		$this->rootDir = rtrim($parameters['root'], '/\\') . DIRECTORY_SEPARATOR;
+        $this->debuggingEnabled = (bool)$parameters['debug'];
+        $this->cachingEnabled = ((bool)$parameters['cache'] and !$this->debuggingEnabled);
 		
         if ($parameters['host'] === null)
         {
@@ -471,7 +490,7 @@ class PieCrust
 			$uri = $this->getRequestUri($_SERVER);
 		}
 		
-		if ($this->getConfigValueUnchecked('site', 'baked') === true)
+		/*if ($this->getConfigValueUnchecked('site', 'baked') === true)
 		{
 			// We're serving a baked website.
 			$bakedPath = $this->getCacheDir() . 'baked' . $uri;
@@ -490,10 +509,11 @@ class PieCrust
 				throw new PieCrustException('404');
 			}
 		}
-		else
+		else*/
 		{
 			// We're baking this website on demand.
 			$page = new Page($this, $uri);
+            if ($extraPageData != null) $page->setExtraPageData($extraPageData);
 			$pageRenderer = new PageRenderer($this);
 			$output = $pageRenderer->get($page, $extraPageData);
 		}
@@ -526,19 +546,21 @@ class PieCrust
      */
     public function handleError(Exception $e)
     {
+        $displayErrors = ((bool)ini_get('display_errors') or $this->isDebuggingEnabled());
+        
+        // If debugging is enabled, just display the error and exit.
+        if ($displayErrors)
+        {
+            $errorMessage = piecrust_format_errors(array($e), true);
+            $this->showSystemMessage('error', $errorMessage);
+            exit();
+        }
+        
         // First of all, check that we're not running
         // some completely brand new and un-configured website.
         if ($this->isEmptySetup())
         {
             $this->showSystemMessage('welcome');
-            exit();
-        }
-        
-        // If debugging is enabled, just display the error and exit.
-        if ($this->getConfigValueUnchecked('site', 'debug') === true)
-        {
-            include 'FatalError.inc.php';
-            piecrust_fatal_error(array($e));
             exit();
         }
         
@@ -550,27 +572,19 @@ class PieCrust
             $errorPageUri = '_404';
         }
         $errorPageUriInfo = Page::parseUri($this, $errorPageUri);
+        $errorMessage = "<p>We're very sorry but something wrong happened. We'll try to do better next time.</p>";
         if (is_file($errorPageUriInfo['path']))
         {
             // We have a custom error page. Show it, or display
             // the "fatal error" page if even this doesn't work.
             try
             {
-                $this->runUnsafe($errorPageUri, array(
-                        'error' => array(
-                            'code' => $e->getCode(),
-                            'message' => $e->getMessage(),
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine(),
-                            'trace' => $e->getTraceAsString(),
-                            'debug' => (ini_get('display_errors') == true)
-                        )
-                    ));
+                $this->runUnsafe($errorPageUri);
             }
             catch (Exception $inner)
             {
-                include 'FatalError.inc.php';
-                piecrust_fatal_error(array($e, $inner));
+                // Well there's really something wrong.
+                $this->showSystemMessage('error', $errorMessage);
                 exit();
             }
         }
@@ -578,7 +592,7 @@ class PieCrust
         {
             // We don't have a custom error page. Just show a generic
             // error page and exit.
-            $this->showSystemMessage(substr($errorPageUri, 1));
+            $this->showSystemMessage(substr($errorPageUri, 1), $errorMessage);
             exit();
         }
     }
@@ -665,9 +679,14 @@ class PieCrust
 		return false;
 	}
 	
-	protected function showSystemMessage($message)
+	protected function showSystemMessage($message, $details = null)
 	{
-		echo file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
+		$contents = file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
+        if ($details != null)
+        {
+            $contents = str_replace('{{ details }}', $details, $contents);
+        }
+        echo $contents;
 	}
     
     /**

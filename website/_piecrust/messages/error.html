@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>Baking Burns!</title>
+    <title>The Cake Just Burned!</title>
     <meta name="generator" content="PieCrust" />
 	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lobster|Covered+By+Your+Grace">
 	<style>
@@ -27,9 +27,15 @@
 		}
 		code {
 			background: #ddd;
+			padding: 0 0.2em;
 		}
 		#container {
 			margin: 0 20%;
+		}
+		.note {
+			margin: 3em;
+			color: #888;
+			font-style: italic;
 		}
 	</style>
 </head>
@@ -41,9 +47,11 @@
         <hr />
         <div id="content">
             <div id="content-inner">
-				<h2>An Error Occured</h2>
-				<p>We're very sorry but some error occured. We can't really show you any details right now, but if you
-				   administrate this website you can turn on the debugging features in the configuration file.</p>
+				<h2>The Cake Just Burned!</h2>
+				{{ details }}
+				<p class="note">To use your custom error pages, make sure you don't initialize <strong>PieCrust</strong>
+				with the '<code>debug</code>' parameter, and turn off the '<code>display_errors</code>' setting in
+				your <code>php.ini</code>.</p>
 			</div>
 		</div>
 	</div>

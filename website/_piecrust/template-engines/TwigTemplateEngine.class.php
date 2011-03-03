@@ -19,10 +19,13 @@ class TwigTemplateEngine implements ITemplateEngine
 		$this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs);
         
 		$options = array('cache' => false);
-		if ($pieCrust->getConfigValueUnchecked('site', 'enable_cache') === true)
+		if ($pieCrust->isCachingEnabled())
 		{
 			$options['cache'] = $pieCrust->getCacheDir() . 'templates_c';
-			$options['auto_reload'] = true;
+		}
+		if ($pieCrust->isDebuggingEnabled())
+		{
+			$options['debug'] = true;
 		}
         $this->twigEnv = new Twig_Environment($this->twigLoader, $options);
         $this->twigEnv->addExtension(new PieCrustExtension($this->pieCrust));

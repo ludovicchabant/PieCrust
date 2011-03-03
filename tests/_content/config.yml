@@ -1,0 +1,11 @@
+site:
+    title: Test Site
+    enable_cache: true
+
+something:
+    foo: bar
+    blah: blah
+
+author:
+    name: John Doe
+    email: john@doe.com
