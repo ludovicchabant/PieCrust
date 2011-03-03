@@ -90,9 +90,9 @@ class FileSystem
 				continue;
 			
 			$result[] = array(
-				'year' => intval($matches[1]),
-				'month' => intval($matches[2]),
-				'day' => intval($matches[3]),
+				'year' => $matches[1],
+				'month' => $matches[2],
+				'day' => $matches[3],
 				'name' => $matches[4],
 				'path' => $path
 			);
