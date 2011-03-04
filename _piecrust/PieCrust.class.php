@@ -209,7 +209,10 @@ class PieCrust
 		$this->cacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
 		if (is_writable($this->cacheDir) === false)
 		{
-			throw new PieCrustException('The cache directory must be writable: ' . $this->cacheDir);
+			if (!is_dir($this->cacheDir) or !@chmod($this->cacheDir, 0744))
+			{
+				throw new PieCrustException('The cache directory must be writable: ' . $this->cacheDir);
+			}
 		}
     }
     
@@ -445,18 +448,20 @@ class PieCrust
         }
         else
         {
-            $this->host = rtrim($parameters['host'], '/');
+            $this->host = $parameters['host'];
         }
+		$this->host = rtrim($this->host, '/');
         
         if ($parameters['url_base'] === null)
         {
-			$this->urlBase = dirname($_SERVER['PHP_SELF']) . '/';
+			$this->urlBase = dirname($_SERVER['PHP_SELF']);
         }
         else
         {
-            $this->urlBase = '/' . trim($parameters['url_base'], '/') . '/';
-			if ($this->urlBase == '//') $this->urlBase = '/';
+            $this->urlBase = $parameters['url_base'];
         }
+		$this->urlBase = '/' . trim($this->urlBase, '/') . '/';
+		if ($this->urlBase == '//') $this->urlBase = '/';
     }
     
 	/**
