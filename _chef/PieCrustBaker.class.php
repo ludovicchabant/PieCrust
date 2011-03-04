@@ -74,8 +74,17 @@ class PieCrustBaker
 	 */
 	public function bake()
 	{
+		echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
+		echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
+		echo "  Into:    " . $this->getBakeDir() . "\n";
+		echo "  For URL: " . $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . "\n";
+		echo "\n\n";
+	
+		echo "====== CLEANING CACHE ======\n\n";
+		FileSystem::deleteDirectory($this->pieCrust->getCacheDir(), true);
+		echo "\n\n";
+		
 		echo "====== BAKING: " . $this->pieCrust->getUrlBase() . " ======\n\n";
-		echo " Into: " . $this->getBakeDir() . "\n\n";
 		
 		$this->bakePages();
 		$this->bakePosts();
