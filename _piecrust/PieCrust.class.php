@@ -74,7 +74,7 @@ class PieCrust
 	 */
 	public function getRootDir()
 	{
-		return $this->rootDir();
+		return $this->rootDir;
 	}
     
     protected $host;
@@ -242,7 +242,7 @@ class PieCrust
         {
             $configPath = $this->rootDir . PIECRUST_CONFIG_PATH;
             
-            // Always cache a JSON version of the configuration for faster
+            // Cache a validated JSON version of the configuration for faster
             // boot-up time (this saves a couple milliseconds).
             $cache = $this->cachingEnabled ? new Cache($this->getCacheDir()) : null;
             if ($cache != null and $cache->isValid('config', 'json', filemtime($configPath)))
