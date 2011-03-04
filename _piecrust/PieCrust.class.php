@@ -5,12 +5,6 @@
  *
  */
 
- 
-/**
- * The application directory, where this file lives.
- */
-define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-
 /**
  * The website directory, where the _cache and _content directories live.
  * You can change this if the PieCrust application directory is in a different
@@ -23,12 +17,14 @@ define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
  */
 if (!defined('PIECRUST_ROOT_DIR'))
 {
-    define('PIECRUST_ROOT_DIR', dirname(PIECRUST_APP_DIR) . DIRECTORY_SEPARATOR);
+	if (!isset($_SERVER['SCRIPT_FILENAME'])) throw new PieCrustException("Can't figure out the root directory for the website.");
+    define('PIECRUST_ROOT_DIR', dirname($_SERVER['SCRIPT_FILENAME']));
 }
 
 /**
- * Some default values for various PieCrust things.
+ * Various PieCrust things.
  */
+define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 define('PIECRUST_INDEX_PAGE_NAME', '_index');
 define('PIECRUST_CATEGORY_PAGE_NAME', '_category');
 define('PIECRUST_TAG_PAGE_NAME', '_tag');

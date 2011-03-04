@@ -1,6 +1,6 @@
 <?php
 
-require_once '../website/_piecrust/PieCrust.class.php';
+require_once 'PieCrust.class.php';
 
 class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 {
