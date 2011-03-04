@@ -289,7 +289,7 @@ class PieCrust
 						'posts_fs' => 'flat',
                         'tags_urls' => 'tag/%tag%',
                         'categories_urls' => '%category%',
-                        'cache' => 28800
+                        'cache_time' => 28800
                     ),
                     $config['site']);
         return $config;
@@ -462,11 +462,11 @@ class PieCrust
 	/**
 	 * Runs PieCrust on the given URI.
 	 */
-    public function run($uri = null)
+    public function run($uri = null, $server = null)
     {
 		try
 		{
-			$this->runUnsafe($uri);
+			$this->runUnsafe($uri, $server);
 		}
 		catch (Exception $e)
 		{
@@ -478,55 +478,70 @@ class PieCrust
 	 * Runs PieCrust on the given URI with the given extra page rendering data,
 	 * but without any error handling.
 	 */
-	public function runUnsafe($uri = null, $extraPageData = null)
+	public function runUnsafe($uri = null, $server = null, $extraPageData = null)
 	{
 		// Get the resource URI and corresponding physical path.
+		if ($server == null)
+		{
+			$server = $_SERVER;
+		}
 		if ($uri == null)
 		{
-			$uri = $this->getRequestUri($_SERVER);
+			$uri = $this->getRequestUri($server);
 		}
+
+		// Do the heavy lifting.
+		$page = new Page($this, $uri);
+		if ($extraPageData != null) $page->setExtraPageData($extraPageData);
+		$pageRenderer = new PageRenderer($this);
+		$output = $pageRenderer->get($page, $extraPageData);
 		
-		/*if ($this->getConfigValueUnchecked('site', 'baked') === true)
+		// Handle caching.
+		$hash = md5($output);
+		header('Etag: "' . $hash . '"');
+		$clientHash = null;
+		if (isset($server['HTTP_IF_NONE_MATCH']))
 		{
-			// We're serving a baked website.
-			$bakedPath = $this->getCacheDir() . 'baked' . $uri;
-			if (is_dir($bakedPath))
+			$clientHash = $server['HTTP_IF_NONE_MATCH'];
+		}
+		if ($clientHash != null)
+		{
+			$clientHash = trim($clientHash, '"');
+			if (strval($hash) == $clientHash)
 			{
-				PageRenderer::setHeaders('html');
-				$output = file_get_contents($bakedPath . DIRECTORY_SEPARATOR . 'index.html');
-			}
-			else if (is_file($bakedPath))
-			{
-				PageRenderer::setHeaders(pathinfo($bakedPath, PATHINFO_EXTENSION));
-				$output = file_get_contents($bakedPath);
-			}
-			else
-			{
-				throw new PieCrustException('404');
+				header('HTTP/1.1 304 Not Modified');
+				header('Content-Length: 0');
+				return;
 			}
 		}
-		else*/
+		if ($this->isDebuggingEnabled())
 		{
-			// We're baking this website on demand.
-			$page = new Page($this, $uri);
-            if ($extraPageData != null) $page->setExtraPageData($extraPageData);
-			$pageRenderer = new PageRenderer($this);
-			$output = $pageRenderer->get($page, $extraPageData);
+			header('Cache-Control: no-cache, must-revalidate');
+		}
+		else
+		{
+			$cacheTime = $this->getConfigValue('site', 'cache_time');
+			if ($cacheTime != null)
+			{
+				header('Cache-Control: public, max-age=' . $cacheTime);
+			}
 		}
 	
 		// Output with or without GZip compression.
 		$gzipEnabled = (($this->getConfigValueUnchecked('site', 'enable_gzip') === true) and
-						(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
+						(strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
 		if ($gzipEnabled)
 		{
 			$zippedOutput = gzencode($output);
 			if ($zippedOutput === false)
 			{
+				header('Content-Length: ' . strlen($output));
 				echo $output;
 			}
 			else
 			{
 				header('Content-Encoding: gzip');
+				header('Content-Length: ' . strlen($zippedOutput));
 				echo $zippedOutput;
 			}
 		}
