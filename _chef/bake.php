@@ -27,10 +27,17 @@ $parser->addOption('output', array(
     'default'     => PIECRUST_ROOT_DIR,
 	'help_name'   => 'OUTPUT_DIR'
 ));
+$parser->addOption('host', array(
+	'short_name'  => '-h',
+    'long_name'   => '--host',
+    'description' => "The host name of the website.",
+    'default'     => '/',
+	'help_name'   => 'HOST'
+));
 $parser->addOption('url_base', array(
 	'short_name'  => '-u',
     'long_name'   => '--urlbase',
-    'description' => "The base URL for all links and references.",
+    'description' => "The base URL of the website, if not at the root of the host.",
     'default'     => '/',
 	'help_name'   => 'URL_BASE'
 ));
@@ -68,7 +75,7 @@ if (!is_dir($outputDir) or !is_writable($outputDir))
 
 // Start baking!
 PieCrust::setup('shell');
-$pieCrust = new PieCrust(array('root' => $rootDir, 'url_base' => $result->options['url_base']));
+$pieCrust = new PieCrust(array('root' => $rootDir, 'host' => $result->options['host'], 'url_base' => $result->options['url_base']));
 $baker = new PieCrustBaker($pieCrust);
 if (isset($result->options['templates_dir']))
 {
