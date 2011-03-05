@@ -24,7 +24,7 @@ $parser->addOption('output', array(
     'short_name'  => '-o',
     'long_name'   => '--output',
     'description' => "The directory to put all the baked HTML files in.",
-    'default'     => PIECRUST_ROOT_DIR,
+    'default'     => null,
 	'help_name'   => 'OUTPUT_DIR'
 ));
 $parser->addOption('host', array(
@@ -67,6 +67,7 @@ if (!is_dir($rootDir))
 	die();
 }
 $outputDir = $result->options['output'];
+if ($outputDir == null) $outputDir = $rootDir;
 if (!is_dir($outputDir) or !is_writable($outputDir))
 {
     $parser->displayError("No such destination directory, or directory can't be written to: " . $outputDir, 1);
