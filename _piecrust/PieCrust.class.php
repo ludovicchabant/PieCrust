@@ -512,11 +512,11 @@ class PieCrust
 		if ($clientHash != null)
 		{
 			$clientHash = trim($clientHash, '"');
-			if (strval($hash) == $clientHash)
+			if ($hash == $clientHash)
 			{
 				header('HTTP/1.1 304 Not Modified');
 				header('Content-Length: 0');
-				return;
+				exit();
 			}
 		}
 		if ($this->isDebuggingEnabled())
