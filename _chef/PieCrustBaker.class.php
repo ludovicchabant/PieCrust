@@ -1,6 +1,7 @@
 <?php
 
 define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
+define('PIECRUST_BAKE_TIMESTAMP', 'bakestamp.txt');
 
 require_once 'PieCrust.class.php';
 require_once 'Paginator.class.php';
@@ -14,9 +15,13 @@ class PieCrustBaker
 {
 	protected $pieCrust;
 	
+	protected $parameters;
+	
 	protected $postInfos;
 	protected $postTags;
 	protected $postCategories;
+	protected $tagsToBake;
+	protected $categoriesToBake;
 	
 	protected $dependencies;
 	/**
@@ -53,7 +58,29 @@ class PieCrustBaker
 			throw new PieCrustException('The bake directory must be writable: ' . $this->bakeDir);
 		}
 	}
-
+	
+	protected $lastBakeTime;
+	/**
+	 *
+	 */
+	public function getLastBakeTime()
+	{
+		if ($this->lastBakeTime === null)
+		{
+			$bakestampPath = $this->getBakeDir() . PIECRUST_BAKE_TIMESTAMP;
+			if (is_file($bakestampPath))
+			{
+				$bakestamp = file_get_contents($bakestampPath);
+				$this->lastBakeTime = intval($bakestamp);
+			}
+			else
+			{
+				$this->lastBakeTime = false;
+			}
+		}
+		return $this->lastBakeTime;
+	}
+	
 	/**
 	 * Creates a new instance of the PieCrustBaker.
 	 */
@@ -67,13 +94,19 @@ class PieCrustBaker
 		$this->postInfos = array();
 		$this->postTags = array();
 		$this->postCategories = array();
+		$this->tagsToBake = array();
+		$this->categoriesToBake = array();
 	}
 	
 	/**
 	 * Bakes the website.
 	 */
-	public function bake()
+	public function bake(array $parameters = array())
 	{
+		$this->parameters = array_merge(array(
+			'smart' => true
+		), $parameters);
+		
 		echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
 		echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
 		echo "  Into:    " . $this->getBakeDir() . "\n";
@@ -90,6 +123,8 @@ class PieCrustBaker
 		$this->bakePosts();
 		$this->bakeTags();
 		$this->bakeCategories();
+		
+		$this->writeLastBakeTime(time());
 	}
 	
 	protected function bakePages()
@@ -104,7 +139,8 @@ class PieCrustBaker
 			$relativePath = str_replace('\\', '/', substr($path->getPathname(), strlen($pagesDir)));
 			$relativePathInfo = pathinfo($relativePath);
 			if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
-				$relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME)
+				$relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
+				$relativePathInfo['extension'] != 'html')
 			{
 				continue;
 			}
@@ -148,15 +184,21 @@ class PieCrustBaker
 		foreach ($postInfos as $postInfo)
 		{
 			$uri = Paginator::buildPostUrl($postsUrlFormat, $postInfo);
-			echo ' > ' . $postInfo['name'];
-			
 			$page = Page::create(
 				$this->pieCrust,
 				$uri,
 				$postInfo['path'],
 				true
 			);
-			$this->bakePage($page);
+			
+			$pageWasBaked = false;
+			if ($this->shouldRebakeFile($postInfo['path']))
+			{
+				echo ' > ' . $postInfo['name'];
+				$this->bakePage($page);
+				$pageWasBaked = true;
+				echo "\n";
+			}
 			
 			$this->postInfos[] = $postInfo;
 			$tags = $page->getConfigValue('tags');
@@ -169,6 +211,8 @@ class PieCrustBaker
 						$this->postTags[$tag] = array();
 					}
 					$this->postTags[$tag][] = $postIndex;
+					
+					if ($pageWasBaked) $this->tagsToBake[$tag] = true;
 				}
 			}
 			$category = $page->getConfigValue('category');
@@ -179,9 +223,10 @@ class PieCrustBaker
 					$this->postCategories[$category] = array();
 				}
 				$this->postCategories[$category][] = $postIndex;
+				
+				if ($pageWasBaked) $this->categoriesToBake[$category] = true;
 			}
 			$postIndex++;
-			echo "\n";
 		}
 		
 		echo "\n";
@@ -194,8 +239,10 @@ class PieCrustBaker
 		
 		echo "Baking tags:\n";
 		
-		foreach ($this->postTags as $tag => $postIndices)
+		foreach (array_keys($this->tagsToBake) as $tag)
 		{
+			$postIndices = $this->postTags[$tag];
+			
 			$postInfos = array();
 			foreach ($postIndices as $i)
 			{
@@ -225,8 +272,10 @@ class PieCrustBaker
 		
 		echo "Baking categories:\n";
 		
-		foreach ($this->postCategories as $category => $postIndices)
+		foreach (array_keys($this->categoriesToBake) as $category)
 		{
+			$postIndices = $this->postCategories[$category];
+			
 			$postInfos = array();
 			foreach ($postIndices as $i)
 			{
@@ -350,5 +399,23 @@ class PieCrustBaker
 			default:
 				return $contentType;
 		}
+	}
+	
+	protected function shouldRebakeFile($path)
+	{
+		if ($this->parameters['smart'] and $this->getLastBakeTime() !== false)
+		{
+			if (filemtime($path) < $this->getLastBakeTime())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected function writeLastBakeTime($time)
+	{
+		$bakestampPath = $this->getBakeDir() . PIECRUST_BAKE_TIMESTAMP;
+		file_put_contents($bakestampPath, $time);
 	}
 }
