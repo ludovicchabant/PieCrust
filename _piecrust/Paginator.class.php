@@ -14,8 +14,7 @@ require_once 'FileSystem.class.php';
 class Paginator
 {
     protected $pieCrust;
-	protected $pageUri;
-	protected $pageNumber;
+	protected $page;
     
 	/**
 	 * Creates a new Paginator instance.
@@ -23,8 +22,7 @@ class Paginator
     public function __construct(PieCrust $pieCrust, Page $page)
     {
         $this->pieCrust = $pieCrust;
-		$this->pageUri = $page->getUri();
-		$this->pageNumber = $page->getPageNumber();
+		$this->page = $page;
     }
 	
 	/**
@@ -107,7 +105,7 @@ class Paginator
 	{
 		$postsData = array();
 		$nextPageIndex = null;
-		$previousPageIndex = ($this->pageNumber > 2) ? $this->pageNumber - 1 : null;
+		$previousPageIndex = ($this->page->getPageNumber() > 2) ? $this->page->getPageNumber() - 1 : null;
 		
 		if (count($postInfos) > 0)
 		{
@@ -115,7 +113,7 @@ class Paginator
 			$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_urls');
 			$postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
 			$postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_date_format');
-			$offset = ($this->pageNumber - 1) * $postsPerPage;
+			$offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
 			$upperLimit = min($offset + $postsPerPage, count($postInfos));
 			for ($i = $offset; $i < $upperLimit; ++$i)
 			{
@@ -126,6 +124,7 @@ class Paginator
 					Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
 					$postInfo['path'],
 					true);
+				$post->setAssetUrlBaseRemap($this->page->getAssetUrlBaseRemap());
 
 				// Build the pagination data entry for this post.
 				$postData = $post->getConfig();
@@ -144,15 +143,15 @@ class Paginator
 			if ($offset + $postsPerPage < count($postInfos))
 			{
 				// There's another page following this one.
-				$nextPageIndex = $this->pageNumber + 1;
+				$nextPageIndex = $this->page->getPageNumber() + 1;
 			}
 		}
 		
 		$this->paginationData = array(
 								'posts' => $postsData,
-								'prev_page' => ($previousPageIndex == null) ? null : $this->pageUri . '/' . $previousPageIndex,
-								'this_page' => $this->pageUri . '/' . $this->pageNumber,
-								'next_page' => ($nextPageIndex == null) ? null : ($this->pageUri . '/' . $nextPageIndex)
+								'prev_page' => ($previousPageIndex == null) ? null : $this->page->getUri() . '/' . $previousPageIndex,
+								'this_page' => $this->page->getUri() . '/' . $this->page->getPageNumber(),
+								'next_page' => ($nextPageIndex == null) ? null : ($this->page->getUri() . '/' . $nextPageIndex)
 								);
 	}
     
