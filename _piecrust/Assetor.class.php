@@ -1,5 +1,7 @@
 <?php
 
+define('PIECRUST_ASSET_DIR_SUFFIX', '-assets');
+
 /**
  * The asset manager for PieCrust pages.
  *
@@ -45,7 +47,7 @@ class Assetor implements ArrayAccess
 	public function __construct(PieCrust $pieCrust, Page $page)
 	{		
 		$pathParts = pathinfo($page->getPath());
-		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
+		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'] . PIECRUST_ASSET_DIR_SUFFIX;
 		if (!is_dir($this->assetsDir))
 		{
 			$this->assetsDir = false;
