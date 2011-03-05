@@ -111,8 +111,11 @@ class Paginator
 		{
 			// Load all the posts for the requested page number (page numbers start at '1').
 			$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_urls');
-			$postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
-			$postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_date_format');
+			$postsPerPage = $this->page->getConfigValue('posts_per_page');
+			if (!$postsPerPage) $postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
+			$postsDateFormat = $this->page->getConfigValue('posts_date_format');
+			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_date_format');
+			
 			$offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
 			$upperLimit = min($offset + $postsPerPage, count($postInfos));
 			for ($i = $offset; $i < $upperLimit; ++$i)
@@ -130,7 +133,10 @@ class Paginator
 				$postData = $post->getConfig();
 				$postData['url'] = $post->getUri();
 				
-				$postDateTime = strtotime($postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day']);
+				$postDateTimeStr = $postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day'];
+				if ($post->getConfigValue('time')) $postDateTimeStr .= ' ' . $postDateTimeStr;
+				$postDateTime = strtotime($postDateTimeStr);
+				$postData['timestamp'] = $postDateTime;
 				$postData['date'] = date($postsDateFormat, $postDateTime);
 				
 				$postContents = $post->getContentSegment();
@@ -141,7 +147,8 @@ class Paginator
 				$postsData[] = $postData;
 			}
 			
-			if ($offset + $postsPerPage < count($postInfos))
+			if ($offset + $postsPerPage < count($postInfos) and
+				!($this->page->getConfigValue('single_page')))
 			{
 				// There's another page following this one.
 				$nextPageIndex = $this->page->getPageNumber() + 1;
