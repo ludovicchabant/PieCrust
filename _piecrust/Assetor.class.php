@@ -10,17 +10,51 @@
 class Assetor implements ArrayAccess
 {
 	protected $assetsDir;
-	protected $assetsUrlBase;
+	protected $assetsCache;
 	
+	protected $urlBase;
+	/**
+	 * Gets the base URL for the assets.
+	 */
+	public function getUrlBase()
+	{
+		return $this->urlBase;
+	}
+	
+	/**
+	 * Sets the base URL for the assets.
+	 */
+	public function setUrlBase($urlBase)
+	{
+		if ($this->assetsCache != null) throw new PieCrustException("The base URL can only be set before the assets are loaded.");
+		$this->urlBase = rtrim($urlBase, '/');
+	}
+	
+	/**
+	 * Gets all the asset path-names.
+	 */
+	public function getAssetPathnames()
+	{
+		if ($this->assetsDir === false) return null;
+		return new FilesystemIterator($this->assetsDir, FilesystemIterator::CURRENT_AS_PATHNAME | FilesystemIterator::SKIP_DOTS);
+	}
+	
+	/**
+	 * Creates a new instance of Assetor.
+	 */
 	public function __construct(PieCrust $pieCrust, Page $page)
 	{		
 		$pathParts = pathinfo($page->getPath());
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'];
-		$this->assetsUrlBase = $pieCrust->getHost() . $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
-		
 		if (!is_dir($this->assetsDir))
 		{
 			$this->assetsDir = false;
+		}
+		
+		$this->urlBase = $pieCrust->getHost() . $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
+		if ($this->assetsDir !== false and $page->getAssetUrlBaseRemap() != null)
+		{
+			$this->urlBase = Assetor::buildUrlBase($pieCrust, $page);
 		}
 	}
 	
@@ -56,8 +90,6 @@ class Assetor implements ArrayAccess
 		throw new PieCrustException('Assetor is read-only.');
 	}
 	
-	protected $assetsCache;
-	
 	protected function ensureAssetsCache()
 	{
 		if ($this->assetsCache === null)
@@ -71,9 +103,19 @@ class Assetor implements ArrayAccess
 				{
 					$filename = $p->getFilename();
 					$key = str_replace('.', '_', $filename);
-					$this->assetsCache[$key] = $this->assetsUrlBase . '/' . $filename;
+					$this->assetsCache[$key] = $this->urlBase . '/' . $filename;
 				}
 			}
 		}
 	}
+	
+	protected static function buildUrlBase(PieCrust $pieCrust, Page $page)
+    {
+        $replacements = array(
+			'%host%' => $pieCrust->getHost(),
+			'%url_base%' => $pieCrust->getUrlBase(),
+			'%uri%' => $page->getUri()
+		);
+        return str_replace(array_keys($replacements), array_values($replacements), $page->getAssetUrlBaseRemap());
+    }
 }

@@ -48,6 +48,8 @@ class Page
 		$this->config = null;
 		$this->contents = null;
 		$this->data = null;
+		$this->assetor = null;
+		$this->paginator = null;
 	}
 	
 	protected $isPost;
@@ -164,8 +166,8 @@ class Page
 		{
 			$data = array(
 				'page' => $this->getConfig(),
-				'asset'=> new Assetor($this->pieCrust, $this),
-				'pagination' => new Paginator($this->pieCrust, $this)
+				'asset'=> $this->getAssetor(),
+				'pagination' => $this->getPaginator()
 			);
 			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
@@ -189,6 +191,49 @@ class Page
 		if ($this->data != null or $this->config != null or $this->contents != null)
 			throw new PieCrustException("Extra data on a page must be set before the page's configuration, contents and data are loaded.");
 		$this->extraData = $data;
+	}
+	
+	protected $assetUrlBaseRemap;
+	/**
+	 * Gets the asset URL base remapping pattern.
+	 */
+	public function getAssetUrlBaseRemap()
+	{
+		return $this->assetUrlBaseRemap;
+	}
+	
+	/**
+	 * Sets the asset URL base remapping pattern.
+	 */
+	public function setAssetUrlBaseRemap($remap)
+	{
+		$this->assetUrlBaseRemap = $remap;
+	}
+	
+	protected $paginator;
+	/**
+	 * Gets the paginator.
+	 */
+	public function getPaginator()
+	{
+		if ($this->paginator === null)
+		{
+			$this->paginator = new Paginator($this->pieCrust, $this);
+		}
+		return $this->paginator;
+	}
+	
+	protected $assetor;
+	/**
+	 * Gets the assetor.
+	 */
+	public function getAssetor()
+	{
+		if ($this->assetor === null)
+		{
+			$this->assetor = new Assetor($this->pieCrust, $this);
+		}
+		return $this->assetor;
 	}
 	
 	/**

@@ -261,28 +261,22 @@ class PieCrustBaker
 			if ($hasMorePages)
 			{
 				$page->setPageNumber($page->getPageNumber() + 1);
+				// setPageNumber() resets the page's data, so when we enter bakeSinglePage again
+				// in the next loop, we have to re-set the extraData and all other stuff.
 			}
 		}
 	}
 	
 	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
 	{
-		// Merge optional extra data into the page.
-		if ($postInfos != null or $extraData != null)
-		{
-			$mergeData = array();
-			if ($postInfos != null)
-			{
-				$paginator = new Paginator($this->pieCrust, $page);
-				$paginator->buildPaginationData($postInfos);
-				$mergeData['pagination'] = $paginator;
-			}
-			if ($extraData != null)
-			{
-				$mergeData = array_merge($mergeData, $extraData);
-			}
-			$page->setExtraPageData($mergeData);
-		}
+		// Set the extraData and asset URL remapping before the page's data is computed.
+		$page->setAssetUrlBaseRemap("%host%%url_base%%uri%");
+		if ($extraData != null) $page->setExtraPageData($extraData);
+		
+		// Set the custom stuff.
+		$assetor = $page->getAssetor();
+		$paginator = $page->getPaginator();
+		if ($postInfos != null) $paginator->buildPaginationData($postInfos);
 		
 		// Render the page.
 		$bakedContents = $pageRenderer->get($page, null, false);
@@ -292,10 +286,9 @@ class PieCrustBaker
 		$useDirectory = $page->getConfigValue('pretty_urls');
 		if ($useDirectory == null)
 		{
-			$useDirectory = ($this->pieCrust->getConfigValue('site', 'pretty_urls') === true);
+			$useDirectory = ($this->pieCrust->getConfigValue('site', 'pretty_urls') == true);
 		}
-		$pageData = $page->getPageData();
-		$paginator = $pageData['pagination'];
+		
 		if ($paginator->wasPaginationDataAccessed())
 		{
 			// If pagination data was accessed, there may be sub-pages for this page,
@@ -303,6 +296,7 @@ class PieCrustBaker
 			$useDirectory = true;
 		}
 		
+		// Figure out the output file/directory for the page.
 		if ($useDirectory)
 		{
 			$bakePath = ($this->getBakeDir() . 
@@ -317,9 +311,32 @@ class PieCrustBaker
 			$bakePath = $this->getBakeDir() . $page->getUri() . '.' . $extension;
 		}
 		
+		// Copy the page.
 		FileSystem::ensureDirectory(dirname($bakePath));
 		file_put_contents($bakePath, $bakedContents);
-	
+		
+		// Copy any used assets.
+		if ($useDirectory)
+		{
+			$bakeAssetDir = dirname($bakePath) . DIRECTORY_SEPARATOR;
+		}
+		else
+		{
+			$bakePathInfo = pathinfo($bakePath);
+			$bakeAssetDir = $bakePathInfo['dirname'] . DIRECTORY_SEPARATOR . 
+							(($page->getUri() == '') ? '' : $bakePathInfo['filename']) . DIRECTORY_SEPARATOR;
+			FileSystem::ensureDirectory($bakeAssetDir);
+		}
+		$assetPaths = $assetor->getAssetPathnames();
+		if ($assetPaths != null)
+		{
+			foreach ($assetPaths as $assetPath)
+			{
+				$assetPathInfo = pathinfo($assetPath);
+				copy($assetPath, ($bakeAssetDir . $assetPathInfo['basename']));
+			}
+		}
+
 		$hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
 		return $hasMorePages;
 	}
