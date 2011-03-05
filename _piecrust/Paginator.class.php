@@ -136,6 +136,7 @@ class Paginator
 				$postContents = $post->getContentSegment();
 				$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
 				$postData['content'] = $postContentsSplit[0];
+				if (count($postContentsSplit) > 1) $postData['has_more'] = true;
 				
 				$postsData[] = $postData;
 			}
