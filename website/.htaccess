@@ -12,3 +12,7 @@ RewriteRule ^.*$ - [NC,L]
 
 # Rewrite all the rest through the gateway.
 RewriteRule ^.*$ index.php [NC,L]
+
+# Various other configuration stuff.
+SetEnv TZ Canada/Vancouver
+AddType text/css .less
