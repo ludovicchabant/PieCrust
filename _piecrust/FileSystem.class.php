@@ -9,6 +9,19 @@ class FileSystem
 		$this->pieCrust = $pieCrust;
 	}
 	
+	public function getPostFiles()
+	{
+		$postsFs = $this->pieCrust->getConfigValueUnchecked('site', 'posts_fs');
+		switch ($postsFs)
+		{
+		case 'hierarchy':
+			return $this->getHierarchicalPostFiles();
+		case 'flat':
+		default:
+			return $this->getFlatPostFiles();
+		}
+	}
+	
 	public function getHierarchicalPostFiles()
 	{
 		$result = array();

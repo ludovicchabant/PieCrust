@@ -93,7 +93,8 @@ class Paginator
 	{
 		if ($this->paginationData === null)
 		{
-			$this->buildPaginationData($this->getPostInfos());
+			$fs = new FileSystem($this->pieCrust);
+			$this->buildPaginationData($fs->getPostFiles());
 		}
         return $this->paginationData;
     }
@@ -162,23 +163,6 @@ class Paginator
 								'next_page' => ($nextPageIndex == null) ? null : ($this->page->getUri() . '/' . $nextPageIndex)
 								);
 	}
-    
-    protected function getPostInfos()
-    {
-        $fs = new FileSystem($this->pieCrust);
-        $postsFs = $this->pieCrust->getConfigValueUnchecked('site', 'posts_fs');
-        switch ($postsFs)
-        {
-        case 'hierarchy':
-            $postInfos = $fs->getHierarchicalPostFiles();
-            break;
-        case 'flat':
-        default:
-            $postInfos = $fs->getFlatPostFiles();
-            break;
-        }
-        return $postInfos;
-    }
 	
 	/**
 	 * Builds the URL of a post given a URL format.
