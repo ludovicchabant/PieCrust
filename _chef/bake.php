@@ -54,6 +54,14 @@ $parser->addOption('page', array(
 	'default'     => null,
 	'help_name'   => 'PAGE_PATH'
 ));
+$parser->addOption('force', array(
+	'short_name'  => '-f',
+	'long_name'   => '--force',
+	'description' => "Force re-baking the entire website.",
+	'default'     => false,
+	'action'	  => 'StoreTrue',
+	'help_name'   => 'FORCE'
+));
 
 // Parse the command line.
 try
@@ -84,7 +92,7 @@ if (!is_dir($outputDir) or !is_writable($outputDir))
 // Start baking!
 PieCrust::setup('shell');
 $pieCrust = new PieCrust(array('root' => $rootDir, 'host' => $result->options['host'], 'url_base' => $result->options['url_base']));
-$baker = new PieCrustBaker($pieCrust);
+$baker = new PieCrustBaker($pieCrust, array('smart' => !$result->options['force']));
 if (isset($result->options['templates_dir']))
 {
 	$pieCrust->getTemplateEngine()->addTemplatesPaths($result->options['templates_dir']);

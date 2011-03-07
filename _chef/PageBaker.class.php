@@ -7,6 +7,24 @@ class PageBaker
 {
     protected $pieCrust;
     protected $bakeDir;
+	
+	protected $wasPaginationDataAccessed;
+	/**
+	 *
+	 */
+	public function wasPaginationDataAccessed()
+	{
+		return $this->wasPaginationDataAccessed;
+	}
+	
+	protected $pageCount;
+	/**
+	 *
+	 */
+	public function getPageCount()
+	{
+		return $this->pageCount;
+	}
     
     /**
      *
@@ -22,6 +40,9 @@ class PageBaker
      */
     public function bake(Page $page, array $postInfos = null, array $extraData = null)
 	{
+		$this->pageCount = 0;
+		$this->wasPaginationDataAccessed = false;
+		
 		$pageRenderer = new PageRenderer($this->pieCrust);
 		
 		$hasMorePages = true;
@@ -36,6 +57,8 @@ class PageBaker
 				// in the next loop, we have to re-set the extraData and all other stuff.
 			}
 		}
+		
+		$this->pageCount = $page->getPageNumber();
 	}
 	
 	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
@@ -108,6 +131,7 @@ class PageBaker
 			}
 		}
 
+		$this->wasPaginationDataAccessed = ($this->wasPaginationDataAccessed or $paginator->wasPaginationDataAccessed());
 		$hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
 		return $hasMorePages;
 	}
