@@ -4,6 +4,11 @@
  *  The main PieCrust app.
  *
  */
+if (!defined('PHP_VERSION_ID') or PHP_VERSION_ID < 50300)
+{
+    die("You need PHP 5.3+ to use PieCrust.");
+}
+
 
 /**
  * The website directory, where the _cache and _content directories live.
@@ -438,7 +443,7 @@ class PieCrust
 			$parameters
 		);
 		
-		$this->rootDir = rtrim($parameters['root'], '/\\') . DIRECTORY_SEPARATOR;
+		$this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
         $this->debuggingEnabled = (bool)$parameters['debug'];
         $this->cachingEnabled = ((bool)$parameters['cache'] and !$this->debuggingEnabled);
 		
