@@ -47,6 +47,13 @@ $parser->addOption('templates_dir', array(
     'description' => "An optional additional templates directory.",
 	'help_name'   => 'TEMPLATES_DIR'
 ));
+$parser->addOption('page', array(
+	'short_name'  => '-p',
+	'long_name'   => '--page',
+	'description' => "The path to a specific page to bake instead of the whole website.",
+	'default'     => null,
+	'help_name'   => 'PAGE_PATH'
+));
 
 // Parse the command line.
 try
@@ -83,4 +90,14 @@ if (isset($result->options['templates_dir']))
 	$pieCrust->getTemplateEngine()->addTemplatesPaths($result->options['templates_dir']);
 }
 $baker->setBakeDir($outputDir);
-$baker->bake();
+if ($result->options['page'] == null)
+{
+	$baker->bake();
+}
+else
+{
+	if ($baker->bakePage($result->options['page']) === false)
+	{
+		echo "Page " . $result->options['page'] . " was not baked.\n";
+	}
+}

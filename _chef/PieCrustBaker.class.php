@@ -6,6 +6,7 @@ define('PIECRUST_BAKE_TIMESTAMP', 'bakestamp.txt');
 require_once 'PieCrust.class.php';
 require_once 'Paginator.class.php';
 require_once 'FileSystem.class.php';
+require_once 'PageBaker.class.php';
 
 
 /**
@@ -125,6 +126,45 @@ class PieCrustBaker
 		$this->bakeCategories();
 		
 		$this->writeLastBakeTime(time());
+		
+		$this->parameters = array();
+	}
+	
+	/**
+	 * Bake one specific page only.
+	 */
+	public function bakePage($path)
+	{
+		$path = realpath($path);
+		if (!is_file($path))
+		{
+			throw new PieCrustException("The given page path does not exist.");
+		}
+		
+		$pagesDir = $this->pieCrust->getPagesDir();
+		$relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
+		$relativePathInfo = pathinfo($relativePath);
+		if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
+			$relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
+			$relativePathInfo['extension'] != 'html')
+		{
+			return false;
+		}
+		
+		$uri = (($relativePathInfo['dirname'] == '.') ? '' : ($relativePathInfo['dirname'] . '/')) . $relativePathInfo['filename'];
+		$uri = str_replace('_index', '', $uri);
+		
+		echo ' > ' . $relativePath;
+		$page = Page::create(
+				$this->pieCrust,
+				$uri,
+				$path
+			);
+		$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
+		$baker->bake($page);
+		echo PHP_EOL;
+		
+		return true;
 	}
 	
 	protected function bakePages()
@@ -136,30 +176,10 @@ class PieCrustBaker
 		$iterator = new RecursiveIteratorIterator($directory);
 		foreach ($iterator as $path)
 		{
-			$relativePath = str_replace('\\', '/', substr($path->getPathname(), strlen($pagesDir)));
-			$relativePathInfo = pathinfo($relativePath);
-			if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
-				$relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
-				$relativePathInfo['extension'] != 'html')
-			{
-				continue;
-			}
-			
-			$uri = (($relativePathInfo['dirname'] == '.') ? '' : ($relativePathInfo['dirname'] . '/')) . $relativePathInfo['filename'];
-			$uri = str_replace('_index', '', $uri);
-			echo ' > ' . $relativePath;
-			
-			$page = Page::create(
-				$this->pieCrust,
-				$uri,
-				$path->getPathname()
-			);
-			$this->bakePage($page);
-			
-			echo "\n";
+			$this->bakePage($path->getPathname());
 		}
 		
-		echo "\n";
+		echo PHP_EOL;
 	}
 	
 	protected function bakePosts()
@@ -195,9 +215,10 @@ class PieCrustBaker
 			if ($this->shouldRebakeFile($postInfo['path']))
 			{
 				echo ' > ' . $postInfo['name'];
-				$this->bakePage($page);
+				$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
+				$baker->bake($page);
 				$pageWasBaked = true;
-				echo "\n";
+				echo PHP_EOL;
 			}
 			
 			$this->postInfos[] = $postInfo;
@@ -206,10 +227,7 @@ class PieCrustBaker
 			{
 				foreach ($tags as $tag)
 				{
-					if (!isset($this->postTags[$tag]))
-					{
-						$this->postTags[$tag] = array();
-					}
+					if (!isset($this->postTags[$tag])) $this->postTags[$tag] = array();
 					$this->postTags[$tag][] = $postIndex;
 					
 					if ($pageWasBaked) $this->tagsToBake[$tag] = true;
@@ -218,10 +236,7 @@ class PieCrustBaker
 			$category = $page->getConfigValue('category');
 			if ($category != null)
 			{
-				if (!isset($this->postCategories[$category]))
-				{
-					$this->postCategories[$category] = array();
-				}
+				if (!isset($this->postCategories[$category])) $this->postCategories[$category] = array();
 				$this->postCategories[$category][] = $postIndex;
 				
 				if ($pageWasBaked) $this->categoriesToBake[$category] = true;
@@ -229,7 +244,7 @@ class PieCrustBaker
 			$postIndex++;
 		}
 		
-		echo "\n";
+		echo PHP_EOL;
 	}
 	
 	protected function bakeTags()
@@ -257,12 +272,13 @@ class PieCrustBaker
 				$uri,
 				$tagPagePath
 			);
-			$this->bakePage($page, $postInfos, array('tag' => $tag));
+			$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
+			$baker->bake($page, $postInfos, array('tag' => $tag));
 			
-			echo "\n";
+			echo PHP_EOL;
 		}
 		
-		echo "\n";
+		echo PHP_EOL;
 	}
 	
 	protected function bakeCategories()
@@ -290,115 +306,13 @@ class PieCrustBaker
 				$uri, 
 				$categoryPagePath
 			);
-			$this->bakePage($page, $postInfos, array('category' => $category));
+			$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
+			$baker->bake($page, $postInfos, array('category' => $category));
 			
-			echo "\n";
+			echo PHP_EOL;
 		}
 		
-		echo "\n";
-	}
-	
-	protected function bakePage(Page $page, array $postInfos = null, array $extraData = null)
-	{
-		$pageRenderer = new PageRenderer($this->pieCrust);
-		
-		$hasMorePages = true;
-		while ($hasMorePages)
-		{
-			echo '.';
-			$hasMorePages = $this->bakeSinglePage($page, $pageRenderer, $postInfos, $extraData);
-			if ($hasMorePages)
-			{
-				$page->setPageNumber($page->getPageNumber() + 1);
-				// setPageNumber() resets the page's data, so when we enter bakeSinglePage again
-				// in the next loop, we have to re-set the extraData and all other stuff.
-			}
-		}
-	}
-	
-	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
-	{
-		// Set the extraData and asset URL remapping before the page's data is computed.
-		$page->setAssetUrlBaseRemap("%host%%url_base%%uri%");
-		if ($extraData != null) $page->setExtraPageData($extraData);
-		
-		// Set the custom stuff.
-		$assetor = $page->getAssetor();
-		$paginator = $page->getPaginator();
-		if ($postInfos != null) $paginator->buildPaginationData($postInfos);
-		
-		// Render the page.
-		$bakedContents = $pageRenderer->get($page, null, false);
-		
-		// Bake the page into the correct HTML file, and figure out
-		// if there are more pages to bake for this page.
-		$useDirectory = $page->getConfigValue('pretty_urls');
-		if ($useDirectory == null)
-		{
-			$useDirectory = ($this->pieCrust->getConfigValue('site', 'pretty_urls') == true);
-		}
-		
-		if ($paginator->wasPaginationDataAccessed())
-		{
-			// If pagination data was accessed, there may be sub-pages for this page,
-			// so we need the 'directory' naming scheme to store them.
-			$useDirectory = true;
-		}
-		
-		// Figure out the output file/directory for the page.
-		if ($useDirectory)
-		{
-			$bakePath = ($this->getBakeDir() . 
-						 $page->getUri() . 
-						 (($page->getUri() == '') ? '' : DIRECTORY_SEPARATOR) . 
-						 (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . DIRECTORY_SEPARATOR)) .
-						 PIECRUST_BAKE_INDEX_DOCUMENT);
-		}
-		else
-		{
-			$extension = $this->getBakedExtension($page->getConfigValue('content_type'));
-			$bakePath = $this->getBakeDir() . $page->getUri() . '.' . $extension;
-		}
-		
-		// Copy the page.
-		FileSystem::ensureDirectory(dirname($bakePath));
-		file_put_contents($bakePath, $bakedContents);
-		
-		// Copy any used assets.
-		if ($useDirectory)
-		{
-			$bakeAssetDir = dirname($bakePath) . DIRECTORY_SEPARATOR;
-		}
-		else
-		{
-			$bakePathInfo = pathinfo($bakePath);
-			$bakeAssetDir = $bakePathInfo['dirname'] . DIRECTORY_SEPARATOR . 
-							(($page->getUri() == '') ? '' : $bakePathInfo['filename']) . DIRECTORY_SEPARATOR;
-			FileSystem::ensureDirectory($bakeAssetDir);
-		}
-		$assetPaths = $assetor->getAssetPathnames();
-		if ($assetPaths != null)
-		{
-			foreach ($assetPaths as $assetPath)
-			{
-				$assetPathInfo = pathinfo($assetPath);
-				copy($assetPath, ($bakeAssetDir . $assetPathInfo['basename']));
-			}
-		}
-
-		$hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
-		return $hasMorePages;
-	}
-	
-	protected function getBakedExtension($contentType)
-	{
-		switch ($contentType)
-		{
-			case 'text':
-				return 'txt';
-			default:
-				return $contentType;
-		}
+		echo PHP_EOL;
 	}
 	
 	protected function shouldRebakeFile($path)
