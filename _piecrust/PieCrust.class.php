@@ -214,9 +214,20 @@ class PieCrust
 		$this->cacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
 		if (is_writable($this->cacheDir) === false)
 		{
-			if (!is_dir($this->cacheDir) or !@chmod($this->cacheDir, 0744))
+			try
 			{
-				throw new PieCrustException('The cache directory must be writable: ' . $this->cacheDir);
+				if (!is_dir($this->cacheDir))
+				{
+					mkdir($dir, 0777, true);
+				}
+				else
+				{
+					chmod($this->cacheDir, 0777);
+				}
+			}
+			catch (Exception $e)
+			{
+				throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it ro change the permissions ourselves: ' . $this->cacheDir);
 			}
 		}
     }
@@ -274,6 +285,8 @@ class PieCrust
                 $yamlMarkup = json_encode($this->config);
                 if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
             }
+			
+			$this->debuggingEnabled = ($this->debuggingEnabled or $this->getConfigValue('site', 'debug'));
         }
     }
     
@@ -416,7 +429,7 @@ class PieCrust
 			array(
 				'piecrust' => array(
 					'version' => self::VERSION,
-					'branding' => 'Baked with <em><a href="http://piecrustphp.com">PieCrust</a> ' . self::VERSION . '</em>.'
+					'branding' => 'Baked with <em><a href="http://bolt80.com/piecrust/">PieCrust</a> ' . self::VERSION . '</em>.'
 				)
 			)
 		);
