@@ -285,7 +285,7 @@ class PieCrust
                 $yamlMarkup = json_encode($this->config);
                 if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
             }
-			
+
 			$this->debuggingEnabled = ($this->debuggingEnabled or $this->getConfigValue('site', 'debug'));
         }
     }
@@ -304,12 +304,12 @@ class PieCrust
                         'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
 						'enable_gzip' => false,
 						'pretty_urls' => false,
-						'posts_urls' => '%year%/%month%/%day%/%slug%',
                         'posts_per_page' => 5,
-                        'posts_date_format' => 'F j, Y',
 						'posts_fs' => 'flat',
-                        'tags_urls' => 'tag/%tag%',
-                        'categories_urls' => '%category%',
+                        'post_date_format' => 'F j, Y',
+						'post_url' => '%year%/%month%/%day%/%slug%',
+                        'tag_url' => 'tag/%tag%',
+                        'category_url' => '%category%',
                         'cache_time' => 28800
                     ),
                     $config['site']);
@@ -458,7 +458,7 @@ class PieCrust
 		
 		$this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
         $this->debuggingEnabled = (bool)$parameters['debug'];
-        $this->cachingEnabled = ((bool)$parameters['cache'] and !$this->debuggingEnabled);
+        $this->cachingEnabled = ((bool)$parameters['cache'] and !$this->debuggingEnabled and !isset($_GET['nocache']));
 		
         if ($parameters['host'] === null)
         {
@@ -504,14 +504,8 @@ class PieCrust
 	public function runUnsafe($uri = null, $server = null, $extraPageData = null)
 	{
 		// Get the resource URI and corresponding physical path.
-		if ($server == null)
-		{
-			$server = $_SERVER;
-		}
-		if ($uri == null)
-		{
-			$uri = $this->getRequestUri($server);
-		}
+		if ($server == null) $server = $_SERVER;
+		if ($uri == null) $uri = $this->getRequestUri($server);
 
 		// Do the heavy lifting.
 		$page = new Page($this, $uri);
@@ -731,6 +725,7 @@ class PieCrust
         date_default_timezone_set('America/Los_Angeles');
 		if ($profile == 'web')
 		{
+			//ini_set('display_errors', false);
 			set_error_handler('piecrust_error_handler');
 		}
     }

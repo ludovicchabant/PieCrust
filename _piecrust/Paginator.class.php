@@ -111,23 +111,17 @@ class Paginator
 		if (count($postInfos) > 0)
 		{
 			// Load all the posts for the requested page number (page numbers start at '1').
-			$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_urls');
 			$postsPerPage = $this->page->getConfigValue('posts_per_page');
 			if (!$postsPerPage) $postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
-			$postsDateFormat = $this->page->getConfigValue('posts_date_format');
-			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'posts_date_format');
+			$postsDateFormat = $this->page->getConfigValue('post_date_format');
+			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_date_format');
 			
-			$offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-			$upperLimit = min($offset + $postsPerPage, count($postInfos));
-			for ($i = $offset; $i < $upperLimit; ++$i)
+			$hasMorePages = false;
+			$postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $postsPerPage, $hasMorePages);
+			foreach ($postInfosWithPages as $postInfo)
 			{
-				$postInfo = $postInfos[$i];
 				// Create the post with all the stuff we already know.
-				$post = Page::create(
-					$this->pieCrust,
-					Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
-					$postInfo['path'],
-					true);
+				$post = $postInfo['page'];
 				$post->setAssetUrlBaseRemap($this->page->getAssetUrlBaseRemap());
 
 				// Build the pagination data entry for this post.
@@ -148,8 +142,7 @@ class Paginator
 				$postsData[] = $postData;
 			}
 			
-			if ($offset + $postsPerPage < count($postInfos) and
-				!($this->page->getConfigValue('single_page')))
+			if ($hasMorePages and !($this->page->getConfigValue('single_page')))
 			{
 				// There's another page following this one.
 				$nextPageIndex = $this->page->getPageNumber() + 1;
@@ -162,6 +155,75 @@ class Paginator
 								'this_page' => $this->page->getUri() . '/' . $this->page->getPageNumber(),
 								'next_page' => ($nextPageIndex == null) ? null : ($this->page->getUri() . '/' . $nextPageIndex)
 								);
+	}
+	
+	protected function getRelevantPostInfosWithPages(array $postInfos, $postsPerPage, &$hasMorePages)
+	{
+		$offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
+		$upperLimit = min($offset + $postsPerPage, count($postInfos));
+		$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_url');
+		
+		if ($this->page->isTag() or $this->page->isCategory())
+		{
+			// This is a tag or category listing: that's tricky because we
+			// need to filter posts in that tag or category from the start to
+			// know what offset to start from. This is not very efficient and
+			// at this point the user might as well bake his website but hey,
+			// this can still be useful for debugging.
+			$filteredPostInfos = array();
+			foreach ($postInfos as $postInfo)
+			{
+				$post = Page::create(
+					$this->pieCrust,
+					Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
+					$postInfo['path'],
+					PIECRUST_PAGE_POST);
+				
+				$isMatch = false;
+				switch ($this->page->getPageType())
+				{
+				case PIECRUST_PAGE_TAG:
+					$postTags = $post->getConfigValue('tags');
+					$isMatch = ($postTags != null and in_array($this->page->getPageKey(), $postTags));
+					break;
+				case PIECRUST_PAGE_CATEGORY:
+					$isMatch = ($this->page->getPageKey() == $post->getConfigValue('category'));
+					break;
+				}
+				
+				if ($isMatch)
+				{
+					$postInfo['page'] = $post;
+					$filteredPostInfos[] = $postInfo;
+				}
+			}
+			
+			// Now get the slice of the filtered post infos that is relevant
+			// for the current page number.
+			$relevantPostInfos = array_slice($filteredPostInfos, $offset, $upperLimit - $offset);
+			$hasMorePages =($offset + $postsPerPage < count($filteredPostInfos));
+			return $relevantPostInfos;
+		}
+		else
+		{
+			// This is a normal page: easy, we just return the portion of the
+			// posts-infos array that is relevant to the current page. We just
+			// need to add the built page objects.
+			$relevantSlice = array_slice($postInfos, $offset, $upperLimit - $offset);
+			
+			$relevantPostInfos = array();
+			foreach ($relevantSlice as $postInfo)
+			{
+				$postInfo['page'] = Page::create(
+					$this->pieCrust,
+					Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
+					$postInfo['path'],
+					PIECRUST_PAGE_POST);
+				$relevantPostInfos[] = $postInfo;
+			}
+			$hasMorePages =($offset + $postsPerPage < count($postInfos));
+			return $relevantPostInfos;
+		}
 	}
 	
 	/**
@@ -199,6 +261,14 @@ class Paginator
     {
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
+	
+	/**
+	 * Builds the regex pattern to match the given URL format.
+	 */
+	public static function buildTagUrlPattern($tagUrlFormat)
+	{
+        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-]+)', preg_quote($tagUrlFormat, '/')) . '$/';
+	}
     
     /**
      * Builds the URL of a category listing.
@@ -207,4 +277,12 @@ class Paginator
     {
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
+	
+	/**
+	 * Builds the regex pattern to match the given URL format.
+	 */
+	public static function buildCategoryUrlPattern($categoryUrlFormat)
+	{
+        return '/^' . str_replace('%category%', '(?P<cat>[\w\-]+)', preg_quote($categoryUrlFormat, '/')) . '$/';
+	}
 }

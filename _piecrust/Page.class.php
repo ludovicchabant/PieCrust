@@ -1,5 +1,10 @@
 <?php
 
+define('PIECRUST_PAGE_REGULAR', 1);
+define('PIECRUST_PAGE_POST', 2);
+define('PIECRUST_PAGE_TAG', 3);
+define('PIECRUST_PAGE_CATEGORY', 4);
+
 require_once 'Assetor.class.php';
 require_once 'Paginator.class.php';
 
@@ -52,13 +57,54 @@ class Page
 		$this->paginator = null;
 	}
 	
-	protected $isPost;
+	protected $type;
+	/**
+	 * Gets the page type.
+	 */
+	public function getPageType()
+	{
+		return $this->type;
+	}
+	
+	/**
+	 * Gets whether this page is a regular page.
+	 */
+	public function isRegular()
+	{
+		return $this->type == PIECRUST_PAGE_REGULAR;
+	}
+	
 	/**
 	 * Gets whether this page is a blog post.
 	 */
 	public function isPost()
 	{
-		return $this->isPost;
+		return $this->type == PIECRUST_PAGE_POST;
+	}
+	
+	/**
+	 * Gets whether this page is a tag listing.
+	 */
+	public function isTag()
+	{
+		return $this->type == PIECRUST_PAGE_TAG;
+	}
+	
+	/**
+	 * Gets whether this page is a category listing.
+	 */
+	public function isCategory()
+	{
+		return $this->type == PIECRUST_PAGE_CATEGORY;
+	}
+	
+	protected $key;
+	/**
+	 * Gets the page key (e.g. the tag or category)
+	 */
+	public function getPageKey()
+	{
+		return $this->key;
 	}
 	
 	protected $isCached;
@@ -172,6 +218,16 @@ class Page
 			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
 			
+			switch ($this->type)
+			{
+				case PIECRUST_PAGE_TAG:
+					$data['tag'] = $this->key;
+					break;
+				case PIECRUST_PAGE_CATEGORY:
+					$data['category'] = $this->key;
+					break;
+			}
+			
 			if ($this->extraData != null)
 			{
 				$data = array_merge($data, $this->extraData);
@@ -248,20 +304,24 @@ class Page
 			
 			$this->uri = $uriInfo['uri'];
 			$this->pageNumber = $uriInfo['page'];
-			$this->isPost = ($uriInfo['isPost'] === true);
+			$this->type = $uriInfo['type'];
+			$this->key = $uriInfo['key'];
 			$this->path = $uriInfo['path'];
 			
-			if (!is_file($this->path))
+			if (!$uriInfo['was_path_checked'] and !is_file($this->path))
 			{
+				if ($this->type == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
+				if ($this->type == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
 				throw new PieCrustException('404');
 			}
 		}
 		else
 		{
 			$this->uri = null;
-			$this->path = null;
 			$this->pageNumber = 1;
-			$this->isPost = false;
+			$this->type = PIECRUST_PAGE_REGULAR;
+			$this->key = null;
+			$this->path = null;
 		}
 		
 		$this->cache = null;
@@ -274,13 +334,14 @@ class Page
 	/**
 	 * Creates a new Page instance with pre-determined properties.
 	 */
-	public static function create(PieCrust $pieCrust, $uri, $path, $isPost = false, $pageNumber = 1)
+	public static function create(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null)
 	{
 		$page = new Page($pieCrust, null);
 		$page->uri = trim($uri, '/');
 		$page->path = $path;
+		$page->type = $pageType;
 		$page->pageNumber = $pageNumber;
-		$page->isPost = $isPost;
+		$page->key = $pageKey;
 		return $page;
 	}
 	
@@ -303,41 +364,70 @@ class Page
 			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
 			$pageNumber = intval($matches[1]);
 		}
-
-		$path = null;
-		$isPost = false;
-		$matches = array();
-		$postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValueUnchecked('site', 'posts_urls'));
-		if (preg_match($postsPattern, $uri, $matches))
+		
+		// Try first with a regular page path.
+		$key = null;
+		$type = PIECRUST_PAGE_REGULAR;
+		$path = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+		$pathWasChecked = false;
+		if (!is_file($path))
 		{
-			// Requesting a post.
-			$baseDir = $pieCrust->getPostsDir();
-			$postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
-			switch ($postsFs)
+			$matches = array();
+			
+			// Try with a post.
+			$postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValueUnchecked('site', 'post_url'));
+			if (preg_match($postsPattern, $uri, $matches))
 			{
-			case 'hierarchy':
-				$path = $baseDir . $matches['year'] . DIRECTORY_SEPARATOR . $matches['month'] . DIRECTORY_SEPARATOR . $matches['day'] . '_' . $matches['slug'] . '.html';
-				break;
-			case 'flat':
-			default:
-				$path = $baseDir . $matches['year'] . '-' . $matches['month'] . '-' . $matches['day'] . '_' . $matches['slug'] . '.html';
-				break;
+				// Requesting a post.
+				$type = PIECRUST_PAGE_POST;
+				$baseDir = $pieCrust->getPostsDir();
+				$postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
+				switch ($postsFs)
+				{
+				case 'hierarchy':
+					$path = $baseDir . $matches['year'] . DIRECTORY_SEPARATOR . $matches['month'] . DIRECTORY_SEPARATOR . $matches['day'] . '_' . $matches['slug'] . '.html';
+					break;
+				case 'flat':
+				default:
+					$path = $baseDir . $matches['year'] . '-' . $matches['month'] . '-' . $matches['day'] . '_' . $matches['slug'] . '.html';
+					break;
+				}
 			}
-			$isPost = true;
+			else
+			{
+				// Try with a tag page.
+				$tagsPattern = Paginator::buildTagUrlPattern($pieCrust->getConfigValueUnchecked('site', 'tag_url'));
+				if (preg_match($tagsPattern, $uri, $matches))
+				{
+					$key = $matches['tag'];
+					$type = PIECRUST_PAGE_TAG;
+					$path = $pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
+				}
+				else
+				{
+					// Try with a category page.
+					$categoryPattern = Paginator::buildCategoryUrlPattern($pieCrust->getConfigValueUnchecked('site', 'category_url'));
+					if (preg_match($categoryPattern, $uri, $matches))
+					{
+						$key = $matches['cat'];
+						$type = PIECRUST_PAGE_CATEGORY;
+						$path = $pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
+					}
+				}
+			}
 		}
 		else
 		{
-			// Requesting a page.
-			$baseDir = $pieCrust->getPagesDir();
-			$path = $baseDir . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
-			$isPost = false;
+			$pathWasChecked = true;
 		}
 		
 		return array(
 			'uri' => $uri,
 			'page' => $pageNumber,
-			'isPost' => $isPost,
-			'path' => $path
+			'type' => $type,
+			'key' => $key,
+			'path' => $path,
+			'was_path_checked' => $pathWasChecked
 		);
     }
 	
@@ -475,7 +565,7 @@ class Page
 		// Add the default page config values.
 		$validatedConfig = array_merge(
 			array(
-				'layout' => ($this->isPost == true) ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
+				'layout' => $this->isPost() ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
 				'format' => $this->pieCrust->getConfigValueUnchecked('site', 'default_format'),
 				'content_type' => 'html',
 				'title' => 'Untitled Page',
