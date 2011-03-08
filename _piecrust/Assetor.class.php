@@ -1,6 +1,10 @@
 <?php
 
 define('PIECRUST_ASSET_DIR_SUFFIX', '-assets');
+if (!defined('PIECRUST_ASSET_URL_SUFFIX'))
+{
+	define ('PIECRUST_ASSET_URL_SUFFIX', PIECRUST_ASSET_DIR_SUFFIX);
+}
 
 /**
  * The asset manager for PieCrust pages.
@@ -105,7 +109,7 @@ class Assetor implements ArrayAccess
 				{
 					$filename = $p->getFilename();
 					$key = str_replace('.', '_', $filename);
-					$this->assetsCache[$key] = $this->urlBase . '/' . $filename;
+					$this->assetsCache[$key] = $this->urlBase . PIECRUST_ASSET_URL_SUFFIX . '/' . $filename;
 				}
 			}
 		}
