@@ -42,11 +42,7 @@ class PageRenderer
 		if ($this->pieCrust->isDebuggingEnabled())
 		{
 			// Add a footer with version, caching and timing information.
-			global $PIECRUST_START_TIME;
-			$timeSpan = microtime(true) - $PIECRUST_START_TIME;
-			echo "<!-- PieCrust " . PieCrust::VERSION . " - " .
-				 ($page->isCached() ? "baked this morning" : "baked just now") .
-				 ", in " . $timeSpan * 1000 . " milliseconds. -->";
+			$this->renderStatsFooter($page);
 		}
 	}
 	
@@ -55,6 +51,15 @@ class PageRenderer
 		ob_start();
 		$this->render($page, $extraData, $outputHeaders);
 		return ob_get_clean();
+	}
+	
+	public function renderStatsFooter(Page $page)
+	{
+		global $PIECRUST_START_TIME;
+		$timeSpan = microtime(true) - $PIECRUST_START_TIME;
+		echo "<!-- PieCrust " . PieCrust::VERSION . " - " .
+			 ($page->isCached() ? "baked this morning" : "baked just now") .
+			 ", in " . $timeSpan * 1000 . " milliseconds. -->";
 	}
 	
 	public static function setHeaders($contentType)
