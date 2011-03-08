@@ -1,8 +1,9 @@
-RewriteEngine on
+# Uncomment this if you want to set 'pretty_urls' to 'true'.
+#RewriteEngine on
 
 # If you're running from a sub-directory, uncomment the RewriteBase statement and
 # change it to the sub-directory name you're using.
-RewriteBase /piecrust
+#RewriteBase /piecrust
 
 # Don't rewrite requests to stuff that physically exists.
 RewriteCond %{REQUEST_FILENAME} -f [OR]

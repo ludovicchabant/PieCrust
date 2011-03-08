@@ -1,10 +1,7 @@
 site:
-    title: PieCrust Demo
-    enable_cache: false
+    title: Your New PieCrust Website
     enable_gzip: true
-    pretty_urls: true
     debug: true
-    posts_per_page: 3
 
 markdown:
     use_markdown_extra: true
