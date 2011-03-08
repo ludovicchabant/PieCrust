@@ -1,11 +1,3 @@
 site:
     title: Your New PieCrust Website
     enable_gzip: true
-    debug: true
-
-markdown:
-    use_markdown_extra: true
-
-smartypants:
-    enable: true
-    use_smartypants_typographer: true

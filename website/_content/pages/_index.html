@@ -2,14 +2,7 @@
 title: 
 ---
 
-This is the demo website for [PieCrust]. It has lots of good tasty bits...
+Welcome to your new website powered by [PieCrust]. You just need to add the tasty bits!
 
-{% for post in pagination.posts %}
-{% include 'partial_post.html' %}
-{% endfor %}
+[PieCrust]: http://bolt80.com/piecrust/
 
-&laquo; [Newer Entries][prev_page] - [Older Entries][next_page] &raquo;
-
-[PieCrust]: http://piecrustphp.com
-[prev_page]: {{ pcurl(pagination.prev_page) }}
-[next_page]: {{ pcurl(pagination.next_page) }}

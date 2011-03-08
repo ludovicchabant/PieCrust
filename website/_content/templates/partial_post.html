@@ -1,8 +1,23 @@
 <div class="post">
 	<h2><a href="{{ pcurl(post.url) }}">{{ post.title }}</a></h2>
-	<div class="post-date">{{ post.date }}</div>
+	<div class="post-meta">
+		<span class="post-date">{{ post.date }}&nbsp;{{ post.time }}</span>
+		{% if post.tags %}
+			&mdash;
+			<span class="post-tags">
+				{% for tag in post.tags %}
+				<a href="{{ pctagurl(tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+				{% endfor %}
+			</span>
+		{% endif %}
+	</div>
 
 	{{ post.content|raw }}
 
+	{% if post.has_more %}
+		<div class="post-more">
+			<a href="{{ pcurl(post.url) }}">Read more...</a>
+		</div>
+	{% endif %}
 	<hr />
 </div>

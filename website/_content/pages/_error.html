@@ -1,14 +1,12 @@
 ---
 title: Oops, something went wrong
 ---
-<h2>Oops, something went wrong</h2>
-<p>{{ error.message }}</p>
-{% if error.debug %}
-<p>Error: <code>{{ error.code }}</code><br/>
-   File: <code>{{ error.file }}</code><br/>
-   Line <code>{{ error.line }}</code></p>
-<blockquote>
-    <pre>{{ error.trace }}</ppre>
-</blockquote>
-{% endif %}
-{{ content|raw }}
+
+## Oops, we broke some eggs!
+
+![the eggs are broken][egg]
+
+We're very sorry but something unexpected happened. We're gonna have to clean the floor
+and buy more eggs.
+
+  [egg]: {{ asset.broken_egg_jpg }}
