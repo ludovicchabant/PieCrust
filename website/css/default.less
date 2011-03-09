@@ -66,17 +66,10 @@ blockquote {
 		text-decoration: none;
 		padding: 0.1em 0.2em;
 		
-		&:link {
-		}
-		&:visited {
-			color: darken(@medium_dark, 20%);
-		}
-		&:hover {
-			color: @light;
-			background: @dark;
-		}
-		&:active {
-		}
+		&:link {}
+		&:visited { color: darken(@medium_dark, 20%); }
+		&:hover { color: @light; background: @dark; }
+		&:active {}
 	}
 }
 
@@ -92,6 +85,13 @@ blockquote {
 		text-align: center;
 		font-weight: bold;
 		color: @dark;
+	}
+	h1 a {
+		color: @dark;
+		&:link {}
+		&:visited { color: @dark; }
+		&:hover { background: none; color: @dark; }
+		&:active {}
 	}
 }
 
@@ -119,6 +119,10 @@ blockquote {
 #content {
     #content-inner {
 		margin: 1em 2em;
+	}
+	
+	p a {
+		border-bottom: 1px dotted @medium_dark;
 	}
 	
 	h2 {
