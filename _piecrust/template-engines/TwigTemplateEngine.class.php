@@ -23,7 +23,7 @@ class TwigTemplateEngine implements ITemplateEngine
 		{
 			$options['cache'] = $pieCrust->getCacheDir() . 'templates_c';
 		}
-		if ($pieCrust->isDebuggingEnabled())
+		if ($pieCrust->getConfigValue('twig', 'nodebug') !== true)
 		{
 			$options['debug'] = true;
 		}
