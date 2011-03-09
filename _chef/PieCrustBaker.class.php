@@ -204,6 +204,7 @@ class PieCrustBaker
 				$postInfo['path'],
 				PIECRUST_PAGE_POST
 			);
+			$page->setDate($postInfo);
 			
 			$pageWasBaked = false;
 			if ($this->shouldRebakeFile($postInfo['path']))

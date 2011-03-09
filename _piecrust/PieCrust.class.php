@@ -306,10 +306,10 @@ class PieCrust
 						'pretty_urls' => false,
                         'posts_per_page' => 5,
 						'posts_fs' => 'flat',
-                        'post_date_format' => 'F j, Y',
 						'post_url' => '%year%/%month%/%day%/%slug%',
                         'tag_url' => 'tag/%tag%',
                         'category_url' => '%category%',
+                        'date_format' => 'F j, Y',
                         'cache_time' => 28800
                     ),
                     $config['site']);
@@ -514,21 +514,24 @@ class PieCrust
 		$output = $pageRenderer->get($page, $extraPageData);
 		
 		// Handle caching.
-		$hash = md5($output);
-		header('Etag: "' . $hash . '"');
-		$clientHash = null;
-		if (isset($server['HTTP_IF_NONE_MATCH']))
+		if (!$this->isDebuggingEnabled())
 		{
-			$clientHash = $server['HTTP_IF_NONE_MATCH'];
-		}
-		if ($clientHash != null)
-		{
-			$clientHash = trim($clientHash, '"');
-			if ($hash == $clientHash)
+			$hash = md5($output);
+			header('Etag: "' . $hash . '"');
+			$clientHash = null;
+			if (isset($server['HTTP_IF_NONE_MATCH']))
 			{
-				header('HTTP/1.1 304 Not Modified');
-				header('Content-Length: 0');
-				exit();
+				$clientHash = $server['HTTP_IF_NONE_MATCH'];
+			}
+			if ($clientHash != null)
+			{
+				$clientHash = trim($clientHash, '"');
+				if ($hash == $clientHash)
+				{
+					header('HTTP/1.1 304 Not Modified');
+					header('Content-Length: 0');
+					exit();
+				}
 			}
 		}
 		if ($this->isDebuggingEnabled())

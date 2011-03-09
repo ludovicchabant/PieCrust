@@ -126,8 +126,8 @@ class Paginator
 			// Load all the posts for the requested page number (page numbers start at '1').
 			$postsPerPage = $this->page->getConfigValue('posts_per_page');
 			if (!$postsPerPage) $postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
-			$postsDateFormat = $this->page->getConfigValue('post_date_format');
-			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_date_format');
+			$postsDateFormat = $this->page->getConfigValue('date_format');
+			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'date_format');
 			
 			$hasMorePages = false;
 			$postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $filterPostInfos, $postsPerPage, $hasMorePages);
@@ -136,16 +136,16 @@ class Paginator
 				// Create the post with all the stuff we already know.
 				$post = $postInfo['page'];
 				$post->setAssetUrlBaseRemap($this->page->getAssetUrlBaseRemap());
+				$post->setDate($postInfo);
 
 				// Build the pagination data entry for this post.
 				$postData = $post->getConfig();
 				$postData['url'] = $post->getUri();
 				
-				$postDateTimeStr = $postInfo['year'] . '-' . $postInfo['month'] . '-' . $postInfo['day'];
-				if ($post->getConfigValue('time')) $postDateTimeStr .= ' ' . $postDateTimeStr;
-				$postDateTime = strtotime($postDateTimeStr);
-				$postData['timestamp'] = $postDateTime;
-				$postData['date'] = date($postsDateFormat, $postDateTime);
+				$timestamp = $post->getDate();
+				if ($post->getConfigValue('time')) $timestamp = strtotime($post->getConfigValue('time'), $timestamp);
+				$postData['timestamp'] = $timestamp;
+				$postData['date'] = date($postsDateFormat, $post->getDate());
 				
 				$postContents = $post->getContentSegment();
 				$postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
@@ -177,7 +177,7 @@ class Paginator
 		$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_url');
 		
 		if ($filterPostInfos and ($this->page->isTag() or $this->page->isCategory()))
-		{die("NO!");
+		{
 			// This is a tag or category listing: that's tricky because we
 			// need to filter posts in that tag or category from the start to
 			// know what offset to start from. This is not very efficient and

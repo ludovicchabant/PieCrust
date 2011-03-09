@@ -57,6 +57,38 @@ class Page
 		$this->paginator = null;
 	}
 	
+	protected $date;
+	/**
+	 * Gets the date this page was created.
+	 */
+	public function getDate()
+	{
+		if ($this->date === null)
+		{
+			$this->date = filemtime($this->path);
+		}
+		return $this->date;
+	}
+	
+	/**
+	 * Sets the date this page was created.
+	 */
+	public function setDate($date)
+	{
+		if (is_int($date))
+		{
+			$this->date = $date;
+		}
+		else if (is_array($date))
+		{
+			$this->date = mktime(0, 0, 0, intval($date['month']), intval($date['day']), intval($date['year']));
+		}
+		else
+		{
+			throw new PieCrustException("The date must be an integer or an array.");
+		}
+	}
+	
 	protected $type;
 	/**
 	 * Gets the page type.
@@ -218,6 +250,12 @@ class Page
 			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
 			
+			$timestamp = $this->getDate();
+			if ($this->getConfigValue('time')) $timestamp = strtotime($this->getConfigValue('time'), $timestamp);
+			$data['page']['timestamp'] = $timestamp;
+			$dateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'date_format');
+			$data['page']['date'] = date($dateFormat, $this->getDate());
+			
 			switch ($this->type)
 			{
 				case PIECRUST_PAGE_TAG:
@@ -304,6 +342,7 @@ class Page
 			
 			$this->uri = $uriInfo['uri'];
 			$this->pageNumber = $uriInfo['page'];
+			$this->date = $uriInfo['date'];
 			$this->type = $uriInfo['type'];
 			$this->key = $uriInfo['key'];
 			$this->path = $uriInfo['path'];
@@ -319,6 +358,7 @@ class Page
 		{
 			$this->uri = null;
 			$this->pageNumber = 1;
+			$this->date = null;
 			$this->type = PIECRUST_PAGE_REGULAR;
 			$this->key = null;
 			$this->path = null;
@@ -356,6 +396,7 @@ class Page
 		}
 		
         $uri = trim($uri, '/');
+		$date = null;
 		$pageNumber = 1;
 		$matches = array();
 		if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
@@ -392,6 +433,7 @@ class Page
 					$path = $baseDir . $matches['year'] . '-' . $matches['month'] . '-' . $matches['day'] . '_' . $matches['slug'] . '.html';
 					break;
 				}
+				$date = mktime(0, 0, 0, intval($matches['month']), intval($matches['day']), intval($matches['year']));
 			}
 			else
 			{
@@ -426,6 +468,7 @@ class Page
 			'page' => $pageNumber,
 			'type' => $type,
 			'key' => $key,
+			'date' => $date,
 			'path' => $path,
 			'was_path_checked' => $pathWasChecked
 		);
