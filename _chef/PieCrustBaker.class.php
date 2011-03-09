@@ -3,6 +3,10 @@
 define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
 define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
 
+// When baking, we copy the assets to the page's output directory so we don't need
+// a suffix in the URL.
+define ('PIECRUST_ASSET_URL_SUFFIX', '');
+
 require_once 'PieCrust.class.php';
 require_once 'Paginator.class.php';
 require_once 'FileSystem.class.php';
@@ -190,15 +194,15 @@ class PieCrustBaker
 		$postInfos = $fs->getPostFiles();
 		
 		$hasBaked = false;
-		$postsUrlFormat = $this->pieCrust->getConfigValue('site', 'posts_urls');
+		$postUrlFormat = $this->pieCrust->getConfigValue('site', 'post_url');
 		foreach ($postInfos as $postInfo)
 		{
-			$uri = Paginator::buildPostUrl($postsUrlFormat, $postInfo);
+			$uri = Paginator::buildPostUrl($postUrlFormat, $postInfo);
 			$page = Page::create(
 				$this->pieCrust,
 				$uri,
 				$postInfo['path'],
-				true
+				PIECRUST_PAGE_POST
 			);
 			
 			$pageWasBaked = false;
@@ -238,14 +242,17 @@ class PieCrustBaker
 			$postInfos = $this->bakeRecord->getPostsTagged($tag);
 			echo ' > ' . $tag . ' (' . count($postInfos) . ' posts)';
 			
-			$uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tags_urls'), $tag);
+			$uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
 			$page = Page::create(
 				$this->pieCrust,
 				$uri,
-				$tagPagePath
+				$tagPagePath,
+				PIECRUST_PAGE_TAG,
+				1,
+				$tag
 			);
 			$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
-			$baker->bake($page, $postInfos, array('tag' => $tag));
+			$baker->bake($page, $postInfos);
 			$hasBaked = true;
 			
 			echo PHP_EOL;
@@ -272,14 +279,17 @@ class PieCrustBaker
 			$postInfos = $this->getPostsInCategory($category);
 			echo ' > ' . $category . ' (' . count($postInfos) . ' posts)';
 			
-			$uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'categories_urls'), $category);
+			$uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'category_url'), $category);
 			$page = Page::create(
 				$this->pieCrust, 
 				$uri, 
-				$categoryPagePath
+				$categoryPagePath,
+				PIECRUST_PAGE_CATEGORY,
+				1,
+				$category
 			);
 			$baker = new PageBaker($this->pieCrust, $this->getBakeDir());
-			$baker->bake($page, $postInfos, array('category' => $category));
+			$baker->bake($page, $postInfos);
 			$hasBaked = true;
 			
 			echo PHP_EOL;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * A class responsible for baking a PieCrust page.
  */
 class PageBaker
 {
@@ -10,7 +10,7 @@ class PageBaker
 	
 	protected $wasPaginationDataAccessed;
 	/**
-	 *
+	 * Gets whether pagination data was accessed during baking.
 	 */
 	public function wasPaginationDataAccessed()
 	{
@@ -19,7 +19,7 @@ class PageBaker
 	
 	protected $pageCount;
 	/**
-	 *
+	 * Gets the number of baked pages.
 	 */
 	public function getPageCount()
 	{
@@ -27,7 +27,7 @@ class PageBaker
 	}
     
     /**
-     *
+     * Creates a new instance of PageBaker.
      */
     public function __construct(PieCrust $pieCrust, $bakeDir)
     {
@@ -36,7 +36,8 @@ class PageBaker
     }
     
     /**
-     *
+     * Bakes the given page. Additional template data can be provided, along with
+	 * a specific set of posts for the pagination data.
      */
     public function bake(Page $page, array $postInfos = null, array $extraData = null)
 	{
@@ -70,7 +71,7 @@ class PageBaker
 		// Set the custom stuff.
 		$assetor = $page->getAssetor();
 		$paginator = $page->getPaginator();
-		if ($postInfos != null) $paginator->buildPaginationData($postInfos);
+		if ($postInfos != null) $paginator->setPaginationDataSource($postInfos);
 		
 		// Render the page.
 		$bakedContents = $pageRenderer->get($page, null, false);

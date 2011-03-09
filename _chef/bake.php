@@ -2,7 +2,6 @@
 <?php
 
 require_once 'ChefEnvironment.inc.php';
-require_once 'PieCrust.class.php';
 require_once 'PieCrustBaker.class.php';
 
 require_once 'Console/CommandLine.php';

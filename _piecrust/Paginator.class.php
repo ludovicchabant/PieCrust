@@ -93,21 +93,34 @@ class Paginator
 	{
 		if ($this->paginationData === null)
 		{
-			$fs = new FileSystem($this->pieCrust);
-			$this->buildPaginationData($fs->getPostFiles());
+			$this->buildPaginationData();
 		}
         return $this->paginationData;
     }
 	
+	protected $paginationDataSource;
 	/**
-	 * Rebuilds the pagination data with the given posts.
+	 * Specifies that the pagination data should be build from the given posts.
 	 */
-	public function buildPaginationData(array $postInfos)
+	public function setPaginationDataSource(array $postInfos)
 	{
+		$this->paginationDataSource = $postInfos;
+	}
+	
+	protected function buildPaginationData()
+	{
+		$filterPostInfos = false;
+		$postInfos = $this->paginationDataSource;
+		if ($postInfos === null)
+		{
+			$fs = new FileSystem($this->pieCrust);
+			$postInfos = $fs->getPostFiles();
+			$filterPostInfos = true;
+		}
+	
 		$postsData = array();
 		$nextPageIndex = null;
 		$previousPageIndex = ($this->page->getPageNumber() > 2) ? $this->page->getPageNumber() - 1 : null;
-		
 		if (count($postInfos) > 0)
 		{
 			// Load all the posts for the requested page number (page numbers start at '1').
@@ -117,7 +130,7 @@ class Paginator
 			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_date_format');
 			
 			$hasMorePages = false;
-			$postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $postsPerPage, $hasMorePages);
+			$postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $filterPostInfos, $postsPerPage, $hasMorePages);
 			foreach ($postInfosWithPages as $postInfo)
 			{
 				// Create the post with all the stuff we already know.
@@ -157,14 +170,14 @@ class Paginator
 								);
 	}
 	
-	protected function getRelevantPostInfosWithPages(array $postInfos, $postsPerPage, &$hasMorePages)
+	protected function getRelevantPostInfosWithPages(array $postInfos, $filterPostInfos, $postsPerPage, &$hasMorePages)
 	{
 		$offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
 		$upperLimit = min($offset + $postsPerPage, count($postInfos));
 		$postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_url');
 		
-		if ($this->page->isTag() or $this->page->isCategory())
-		{
+		if ($filterPostInfos and ($this->page->isTag() or $this->page->isCategory()))
+		{die("NO!");
 			// This is a tag or category listing: that's tricky because we
 			// need to filter posts in that tag or category from the start to
 			// know what offset to start from. This is not very efficient and
@@ -206,9 +219,9 @@ class Paginator
 		}
 		else
 		{
-			// This is a normal page: easy, we just return the portion of the
-			// posts-infos array that is relevant to the current page. We just
-			// need to add the built page objects.
+			// This is a normal page, or a situation where we don't do any filtering.
+			// That's easy, we just return the portion of the posts-infos array that
+			// is relevant to the current page. We just need to add the built page objects.
 			$relevantSlice = array_slice($postInfos, $offset, $upperLimit - $offset);
 			
 			$relevantPostInfos = array();
