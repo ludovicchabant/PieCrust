@@ -1,9 +1,9 @@
 <?php
 
 /**
- *  The main PieCrust app.
- *
- */
+*  The main PieCrust app.
+*
+*/
 if (!defined('PHP_VERSION_ID') or PHP_VERSION_ID < 50300)
 {
     die("You need PHP 5.3+ to use PieCrust.");
@@ -11,24 +11,24 @@ if (!defined('PHP_VERSION_ID') or PHP_VERSION_ID < 50300)
 
 
 /**
- * The website directory, where the _cache and _content directories live.
- * You can change this if the PieCrust application directory is in a different
- * location than the website (e.g. you have several websites using the same
- * PieCrust application, or you moved the '_piecrust' directory outside of the
- * website's directory for increased security).
- *
- * Note that this is only the default value. You can specify the root directory
- * by passing it to the PieCrust constructor too.
- */
+* The website directory, where the _cache and _content directories live.
+* You can change this if the PieCrust application directory is in a different
+* location than the website (e.g. you have several websites using the same
+* PieCrust application, or you moved the '_piecrust' directory outside of the
+* website's directory for increased security).
+*
+* Note that this is only the default value. You can specify the root directory
+* by passing it to the PieCrust constructor too.
+*/
 if (!defined('PIECRUST_ROOT_DIR'))
 {
-	if (!isset($_SERVER['SCRIPT_FILENAME'])) throw new PieCrustException("Can't figure out the root directory for the website.");
+    if (!isset($_SERVER['SCRIPT_FILENAME'])) throw new PieCrustException("Can't figure out the root directory for the website.");
     define('PIECRUST_ROOT_DIR', dirname($_SERVER['SCRIPT_FILENAME']));
 }
 
 /**
- * Various PieCrust things.
- */
+* Various PieCrust things.
+*/
 define('PIECRUST_APP_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 define('PIECRUST_INDEX_PAGE_NAME', '_index');
 define('PIECRUST_CATEGORY_PAGE_NAME', '_category');
@@ -46,8 +46,8 @@ define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
 define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
 
 /**
- * Include all the classes we need.
- */
+* Include all the classes we need.
+*/
 require_once 'IFormatter.class.php';
 require_once 'ITemplateEngine.class.php';
 require_once 'Page.class.php';
@@ -61,49 +61,49 @@ require_once 'libs/sfyaml/lib/sfYamlDumper.php';
 
 
 /**
- * The main PieCrust application class.
- *
- * This class contains the application's configuration and directory setup information,
- * and handles, among other things, routing and errors.
- */
+* The main PieCrust application class.
+*
+* This class contains the application's configuration and directory setup information,
+* and handles, among other things, routing and errors.
+*/
 class PieCrust
 {
-	/**
-	 * The current version of PieCrust.
-	 */
+    /**
+    * The current version of PieCrust.
+    */
     const VERSION = '0.0.2';
-	
-	protected $rootDir;
-	/**
-	 * The root directory of the website.
-	 */
-	public function getRootDir()
-	{
-		return $this->rootDir;
-	}
+    
+    protected $rootDir;
+    /**
+    * The root directory of the website.
+    */
+    public function getRootDir()
+    {
+        return $this->rootDir;
+    }
     
     protected $host;
     /**
-     * The host of the application.
-     */
+    * The host of the application.
+    */
     public function getHost()
     {
         return $this->host;
     }
     
     protected $urlBase;
-	/**
-	 * The base URL of the application ('/' most of the time).
-	 */
-	public function getUrlBase()
-	{
-		return $this->urlBase;
-	}
+    /**
+    * The base URL of the application ('/' most of the time).
+    */
+    public function getUrlBase()
+    {
+        return $this->urlBase;
+    }
     
     protected $cachingEnabled;
     /**
-     * Gets whether caching is enabled.
-     */
+    * Gets whether caching is enabled.
+    */
     public function isCachingEnabled()
     {
         return $this->cachingEnabled;
@@ -111,8 +111,8 @@ class PieCrust
     
     protected $debuggingEnabled;
     /**
-     * Gets whether debugging is enabled.
-     */
+    * Gets whether debugging is enabled.
+    */
     public function isDebuggingEnabled()
     {
         return $this->debuggingEnabled;
@@ -120,136 +120,136 @@ class PieCrust
     
     protected $templatesDir;
     /**
-	 * Gets the directory that contains templates and layouts ('/_content/templates' by default).
-	 */
+    * Gets the directory that contains templates and layouts ('/_content/templates' by default).
+    */
     public function getTemplatesDir()
     {
         if ($this->templatesDir === null)
-		{
+        {
             $this->setTemplatesDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
-		}
+        }
         return $this->templatesDir;
     }
     
-	/**
-	 * Sets the directory that contains templates and layouts.
-	 */
+    /**
+    * Sets the directory that contains templates and layouts.
+    */
     public function setTemplatesDir($dir)
     {
-		$this->templatesDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+        $this->templatesDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
         if (is_dir($this->templatesDir) === false)
-		{
+        {
             throw new PieCrustException('The templates directory doesn\'t exist: ' . $this->templatesDir);
-		}
+        }
     }
     
     protected $pagesDir;
     /**
-	 * Gets the directory that contains the pages and their assets ('/_content/pages' by default).
-	 */
+    * Gets the directory that contains the pages and their assets ('/_content/pages' by default).
+    */
     public function getPagesDir()
     {
         if ($this->pagesDir === null)
-		{
+        {
             $this->setPagesDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
-		}
+        }
         return $this->pagesDir;
     }
     
-	/**
-	 * Sets the directory that contains the pages and their assets.
-	 */
+    /**
+    * Sets the directory that contains the pages and their assets.
+    */
     public function setPagesDir($dir)
     {
         $this->pagesDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
         if (is_dir($this->pagesDir) === false)
-		{
+        {
             throw new PieCrustException('The pages directory doesn\'t exist: ' . $this->pagesDir);
-		}
+        }
     }
     
     protected $postsDir;
     /**
-	 * Gets the directory that contains the posts and their assets ('/_content/posts' by default).
-	 */
+    * Gets the directory that contains the posts and their assets ('/_content/posts' by default).
+    */
     public function getPostsDir()
     {
         if ($this->postsDir === null)
-		{
+        {
             $this->setPostsDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_POSTS_DIR));
-		}
+        }
         return $this->postsDir;
     }
     
-	/**
-	 * Sets the directory that contains the posts and their assets.
-	 */
+    /**
+    * Sets the directory that contains the posts and their assets.
+    */
     public function setPostsDir($dir)
     {
         $this->postsDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
         if (is_dir($this->postsDir) === false)
-		{
+        {
             throw new PieCrustException('The posts directory doesn\'t exist: ' . $this->postsDir);
-		}
+        }
     }
-	
-	protected $cacheDir;
-	/**
-	 * Gets the cache directory ('/_cache' by default).
-	 */
-	public function getCacheDir()
+    
+    protected $cacheDir;
+    /**
+    * Gets the cache directory ('/_cache' by default).
+    */
+    public function getCacheDir()
     {
         if ($this->cacheDir === null)
-		{
+        {
             $this->setCacheDir($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CACHE_DIR));
-		}
+        }
         return $this->cacheDir;
     }
     
-	/**
-	 * Sets the cache directory ('/_cache' by default).
-	 */
+    /**
+    * Sets the cache directory ('/_cache' by default).
+    */
     public function setCacheDir($dir)
     {
-		$this->cacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-		if (is_writable($this->cacheDir) === false)
-		{
-			try
-			{
-				if (!is_dir($this->cacheDir))
-				{
-					mkdir($dir, 0777, true);
-				}
-				else
-				{
-					chmod($this->cacheDir, 0777);
-				}
-			}
-			catch (Exception $e)
-			{
-				throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it ro change the permissions ourselves: ' . $this->cacheDir);
-			}
-		}
+        $this->cacheDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+        if (is_writable($this->cacheDir) === false)
+        {
+            try
+            {
+                if (!is_dir($this->cacheDir))
+                {
+                    mkdir($dir, 0777, true);
+                }
+                else
+                {
+                    chmod($this->cacheDir, 0777);
+                }
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it ro change the permissions ourselves: ' . $this->cacheDir);
+            }
+        }
     }
     
     protected $config;
     /**
-	 * Gets the application's configuration.
-	 *
-	 * This function lazy-loads the '/_content/config.yml' file unless the configuration was
-	 * specifically set by setConfig().
-	 */
+    * Gets the application's configuration.
+    *
+    * This function lazy-loads the '/_content/config.yml' file unless the configuration was
+    * specifically set by setConfig().
+    */
     public function getConfig()
     {
         $this->ensureConfig();
         return $this->config;
     }
     
-	/**
-	 * Sets the application's configuration.
-	 *
-	 * This is useful for controlled environments like unit-testing.
-	 */
+    /**
+    * Sets the application's configuration.
+    *
+    * This is useful for controlled environments like unit-testing.
+    */
     public function setConfig($config)
     {
         $this->config = $this->validateConfig($config);
@@ -286,7 +286,7 @@ class PieCrust
                 if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
             }
 
-			$this->debuggingEnabled = ($this->debuggingEnabled or $this->getConfigValue('site', 'debug'));
+            $this->debuggingEnabled = ($this->debuggingEnabled or $this->getConfigValue('site', 'debug'));
         }
     }
     
@@ -294,19 +294,19 @@ class PieCrust
     {
         // Add the default values.
         if (!isset($config['site']))
-		{
+        {
             $config['site'] = array();
-		}
+        }
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
-						'root' => ($this->host . $this->urlBase),
+                        'root' => ($this->host . $this->urlBase),
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
-						'enable_gzip' => false,
-						'pretty_urls' => false,
+                        'enable_gzip' => false,
+                        'pretty_urls' => false,
                         'posts_per_page' => 5,
-						'posts_fs' => 'flat',
-						'post_url' => '%year%/%month%/%day%/%slug%',
+                        'posts_fs' => 'flat',
+                        'post_url' => '%year%/%month%/%day%/%slug%',
                         'tag_url' => 'tag/%tag%',
                         'category_url' => '%category%',
                         'date_format' => 'F j, Y',
@@ -315,28 +315,28 @@ class PieCrust
                     $config['site']);
         return $config;
     }
-	
-	/**
-	 * Helper function for getting a configuration setting, or null if it doesn't exist.
-	 */
-	public function getConfigValue($category, $key)
-	{
-		$this->ensureConfig();
-		if (!isset($this->config[$category]))
-		{
-			return null;
-		}
-		if (!isset($this->config[$category][$key]))
-		{
-			return null;
-		}
-		return $this->config[$category][$key];
-	}
     
     /**
-     * Helper function for getting a configuration setting, but without checks
-     * for existence or validity.
-     */
+    * Helper function for getting a configuration setting, or null if it doesn't exist.
+    */
+    public function getConfigValue($category, $key)
+    {
+        $this->ensureConfig();
+        if (!isset($this->config[$category]))
+        {
+            return null;
+        }
+        if (!isset($this->config[$category][$key]))
+        {
+            return null;
+        }
+        return $this->config[$category][$key];
+    }
+    
+    /**
+    * Helper function for getting a configuration setting, but without checks
+    * for existence or validity.
+    */
     public function getConfigValueUnchecked($category, $key)
     {
         $this->ensureConfig();
@@ -344,8 +344,8 @@ class PieCrust
     }
     
     /**
-     * Sets a configuration setting.
-     */
+    * Sets a configuration setting.
+    */
     public function setConfigValue($category, $key, $value)
     {
         $this->ensureConfig();
@@ -361,8 +361,8 @@ class PieCrust
     
     protected $formattersLoader;
     /**
-	 * Gets the PluginLoader for the page formatters.
-	 */
+    * Gets the PluginLoader for the page formatters.
+    */
     public function getFormattersLoader()
     {
         if ($this->formattersLoader === null)
@@ -375,9 +375,9 @@ class PieCrust
         return $this->formattersLoader;
     }
     
-	/**
-	 * Formats a given text using the registered page formatters.
-	 */
+    /**
+    * Formats a given text using the registered page formatters.
+    */
     public function formatText($text, $format)
     {
         $unformatted = true;
@@ -393,73 +393,73 @@ class PieCrust
         }
         return $formattedText;
     }
-	
-	protected $templateEngine;
+    
+    protected $templateEngine;
     /**
-	 * Gets the template engine.
-	 */
+    * Gets the template engine.
+    */
     public function getTemplateEngine()
     {
-		if ($this->templateEngine === null)
-		{
-			$templateEngineName = $this->getConfigValueUnchecked('site', 'template_engine');
-			if ($templateEngineName == null)
-			{
-				$templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
-			}
-				
-			$templateEngineClass = $templateEngineName . 'TemplateEngine';
-			require_once(PIECRUST_APP_DIR . 'template-engines' . DIRECTORY_SEPARATOR . $templateEngineClass . '.class.php');
-			
-			$reflector = new ReflectionClass($templateEngineClass);
-			$this->templateEngine = $reflector->newInstance();
-			$this->templateEngine->initialize($this);
-		}
+        if ($this->templateEngine === null)
+        {
+            $templateEngineName = $this->getConfigValueUnchecked('site', 'template_engine');
+            if ($templateEngineName == null)
+            {
+                $templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
+            }
+                
+            $templateEngineClass = $templateEngineName . 'TemplateEngine';
+            require_once(PIECRUST_APP_DIR . 'template-engines' . DIRECTORY_SEPARATOR . $templateEngineClass . '.class.php');
+            
+            $reflector = new ReflectionClass($templateEngineClass);
+            $this->templateEngine = $reflector->newInstance();
+            $this->templateEngine->initialize($this);
+        }
         return $this->templateEngine;
     }
-	
-	/**
-	 * Gets the application's data for page rendering.
-	 */
-	public function getSiteData()
-	{
-		$this->ensureConfig();
-		$data = array_merge(
-			$this->config, 
-			array(
-				'piecrust' => array(
-					'version' => self::VERSION,
-					'branding' => 'Baked with <em><a href="http://bolt80.com/piecrust/">PieCrust</a> ' . self::VERSION . '</em>.'
-				)
-			)
-		);
-		return $data;
-	}
     
-	/**
-	 * Creates a new PieCrust instance with the given base URL.
-	 */
+    /**
+    * Gets the application's data for page rendering.
+    */
+    public function getSiteData()
+    {
+        $this->ensureConfig();
+        $data = array_merge(
+            $this->config, 
+            array(
+                'piecrust' => array(
+                    'version' => self::VERSION,
+                    'branding' => 'Baked with <em><a href="http://bolt80.com/piecrust/">PieCrust</a> ' . self::VERSION . '</em>.'
+                )
+            )
+        );
+        return $data;
+    }
+    
+    /**
+    * Creates a new PieCrust instance with the given base URL.
+    */
     public function __construct(array $parameters = null)
     {
-		if ($parameters == null)
-		{
-			$parameters = array();
-		}
-		$parameters = array_merge(
-			array(
+        if ($parameters == null)
+        {
+            $parameters = array();
+        }
+        $parameters = array_merge(
+            array(
                 'host' => null,
-				'url_base' => null,
-				'root' => PIECRUST_ROOT_DIR,
+                'url_base' => null,
+                'root' => PIECRUST_ROOT_DIR,
                 'cache' => true,
                 'debug' => false
-			),
-			$parameters
-		);
-		
-		$this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
-        $this->debuggingEnabled = (bool)$parameters['debug'];
-        $this->cachingEnabled = ((bool)$parameters['cache'] and !$this->debuggingEnabled and !isset($_GET['nocache']));
-		
+            ),
+            $parameters
+        );
+
+        $this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
+        $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
+        $this->cachingEnabled = (!$this->debuggingEnabled and (bool)$parameters['cache'] and !isset($_GET['!nocache']));
+        
         if ($parameters['host'] === null)
         {
             $this->host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
@@ -468,113 +468,114 @@ class PieCrust
         {
             $this->host = $parameters['host'];
         }
-		$this->host = rtrim($this->host, '/');
+        $this->host = rtrim($this->host, '/');
         
         if ($parameters['url_base'] === null)
         {
-			$this->urlBase = dirname($_SERVER['PHP_SELF']);
+            $this->urlBase = dirname($_SERVER['PHP_SELF']);
         }
         else
         {
             $this->urlBase = $parameters['url_base'];
         }
-		$this->urlBase = '/' . trim($this->urlBase, '/') . '/';
-		if ($this->urlBase == '//') $this->urlBase = '/';
+        $this->urlBase = '/' . trim($this->urlBase, '/') . '/';
+        if ($this->urlBase == '//') $this->urlBase = '/';
     }
-    
-	/**
-	 * Runs PieCrust on the given URI.
-	 */
-    public function run($uri = null, $server = null)
-    {
-		try
-		{
-			$this->runUnsafe($uri, $server);
-		}
-		catch (Exception $e)
-		{
-			$this->handleError($e);
-		}
-    }
-	
-	/**
-	 * Runs PieCrust on the given URI with the given extra page rendering data,
-	 * but without any error handling.
-	 */
-	public function runUnsafe($uri = null, $server = null, $extraPageData = null)
-	{
-		// Get the resource URI and corresponding physical path.
-		if ($server == null) $server = $_SERVER;
-		if ($uri == null) $uri = $this->getRequestUri($server);
-
-		// Do the heavy lifting.
-		$page = new Page($this, $uri);
-		if ($extraPageData != null) $page->setExtraPageData($extraPageData);
-		$pageRenderer = new PageRenderer($this);
-		$output = $pageRenderer->get($page, $extraPageData);
-		
-		// Handle caching.
-		if (!$this->isDebuggingEnabled())
-		{
-			$hash = md5($output);
-			header('Etag: "' . $hash . '"');
-			$clientHash = null;
-			if (isset($server['HTTP_IF_NONE_MATCH']))
-			{
-				$clientHash = $server['HTTP_IF_NONE_MATCH'];
-			}
-			if ($clientHash != null)
-			{
-				$clientHash = trim($clientHash, '"');
-				if ($hash == $clientHash)
-				{
-					header('HTTP/1.1 304 Not Modified');
-					header('Content-Length: 0');
-					exit();
-				}
-			}
-		}
-		if ($this->isDebuggingEnabled())
-		{
-			header('Cache-Control: no-cache, must-revalidate');
-		}
-		else
-		{
-			$cacheTime = $this->getConfigValue('site', 'cache_time');
-			if ($cacheTime != null)
-			{
-				header('Cache-Control: public, max-age=' . $cacheTime);
-			}
-		}
-	
-		// Output with or without GZip compression.
-		$gzipEnabled = (($this->getConfigValueUnchecked('site', 'enable_gzip') === true) and
-						(strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
-		if ($gzipEnabled)
-		{
-			$zippedOutput = gzencode($output);
-			if ($zippedOutput === false)
-			{
-				header('Content-Length: ' . strlen($output));
-				echo $output;
-			}
-			else
-			{
-				header('Content-Encoding: gzip');
-				header('Content-Length: ' . strlen($zippedOutput));
-				echo $zippedOutput;
-			}
-		}
-		else
-		{
-			echo $output;
-		}
-	}
     
     /**
-     * Handles an exception by showing an appropriate
-     * error page.
-     */
+    * Runs PieCrust on the given URI.
+    */
+    public function run($uri = null, $server = null)
+    {
+        try
+        {
+            $this->runUnsafe($uri, $server);
+        }
+        catch (Exception $e)
+        {
+            $this->handleError($e);
+        }
+    }
+    
+    /**
+    * Runs PieCrust on the given URI with the given extra page rendering data,
+    * but without any error handling.
+    */
+    public function runUnsafe($uri = null, $server = null, $extraPageData = null)
+    {
+        // Get the resource URI and corresponding physical path.
+        if ($server == null) $server = $_SERVER;
+        if ($uri == null) $uri = $this->getRequestUri($server);
+
+        // Do the heavy lifting.
+        $page = new Page($this, $uri);
+        if ($extraPageData != null) $page->setExtraPageData($extraPageData);
+        $pageRenderer = new PageRenderer($this);
+        $output = $pageRenderer->get($page, $extraPageData);
+        
+        // Handle caching.
+        if (!$this->isDebuggingEnabled())
+        {
+            $hash = md5($output);
+            header('Etag: "' . $hash . '"');
+            $clientHash = null;
+            if (isset($server['HTTP_IF_NONE_MATCH']))
+            {
+                $clientHash = $server['HTTP_IF_NONE_MATCH'];
+            }
+            if ($clientHash != null)
+            {
+                $clientHash = trim($clientHash, '"');
+                if ($hash == $clientHash)
+                {
+                    header('HTTP/1.1 304 Not Modified');
+                    header('Content-Length: 0');
+                    exit();
+                }
+            }
+        }
+        if ($this->isDebuggingEnabled())
+        {
+            header('Cache-Control: no-cache, must-revalidate');
+        }
+        else
+        {
+            $cacheTime = $page->getConfigValue('cache_time');
+            if ($cacheTime === null) $cacheTime = $this->getConfigValue('site', 'cache_time');
+            if ($cacheTime)
+            {
+                header('Cache-Control: public, max-age=' . $cacheTime);
+            }
+        }
+    
+        // Output with or without GZip compression.
+        $gzipEnabled = (($this->getConfigValueUnchecked('site', 'enable_gzip') === true) and
+                        (strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
+        if ($gzipEnabled)
+        {
+            $zippedOutput = gzencode($output);
+            if ($zippedOutput === false)
+            {
+                header('Content-Length: ' . strlen($output));
+                echo $output;
+            }
+            else
+            {
+                header('Content-Encoding: gzip');
+                header('Content-Length: ' . strlen($zippedOutput));
+                echo $zippedOutput;
+            }
+        }
+        else
+        {
+            echo $output;
+        }
+    }
+    
+    /**
+    * Handles an exception by showing an appropriate
+    * error page.
+    */
     public function handleError(Exception $e)
     {
         $displayErrors = ((bool)ini_get('display_errors') or $this->isDebuggingEnabled());
@@ -628,114 +629,114 @@ class PieCrust
         }
     }
     
-	/**
-	 * Gets the requested PieCrust URI based on given server variables.
-	 */
+    /**
+    * Gets the requested PieCrust URI based on given server variables.
+    */
     public function getRequestUri($server)
     {
-		$requestUri = null;
+        $requestUri = null;
         if ($this->getConfigValueUnchecked('site', 'pretty_urls') !== true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
             $requestUri = $server['QUERY_STRING'];
-			if ($requestUri == null or $requestUri == '')
-			{
-				$requestUri = '/';
-			}
+            if ($requestUri == null or $requestUri == '')
+            {
+                $requestUri = '/';
+            }
         }
-		else
-		{
-			// Get the requested URI via URL rewriting.
-			if (isset($server['IIS_WasUrlRewritten']) &&
-				$server['IIS_WasUrlRewritten'] == '1' &&
-				isset($server['UNENCODED_URL']) &&
-				$server['UNENCODED_URL'] != '')
-			{
-				// IIS7 rewriting module.
-				$requestUri = $server['UNENCODED_URL'];
-			}
-			elseif (isset($server['REQUEST_URI']))
-			{
-				// Apache mod_rewrite.
-				$requestUri = $server['REQUEST_URI'];
-			}
-			
-			if ($requestUri != null)
-			{
-				// Clean up by removing the base URL of the application, and the trailing
-				// query string that we should ignore because we're using 'pretty URLs'.
-				if (strlen($this->urlBase) > 1)
-				{
+        else
+        {
+            // Get the requested URI via URL rewriting.
+            if (isset($server['IIS_WasUrlRewritten']) &&
+                $server['IIS_WasUrlRewritten'] == '1' &&
+                isset($server['UNENCODED_URL']) &&
+                $server['UNENCODED_URL'] != '')
+            {
+                // IIS7 rewriting module.
+                $requestUri = $server['UNENCODED_URL'];
+            }
+            elseif (isset($server['REQUEST_URI']))
+            {
+                // Apache mod_rewrite.
+                $requestUri = $server['REQUEST_URI'];
+            }
+            
+            if ($requestUri != null)
+            {
+                // Clean up by removing the base URL of the application, and the trailing
+                // query string that we should ignore because we're using 'pretty URLs'.
+                if (strlen($this->urlBase) > 1)
+                {
                     if (strlen($requestUri) < strlen($this->urlBase))
                     {
                         throw new PieCrustException("You're trying to access a resource that's not within the directory served by PieCrust.");
                     }
-					$requestUri = substr($requestUri, strlen($this->urlBase) - 1);
-				}
-				$questionMark = strpos($requestUri, '?');
-				if ($questionMark !== false)
-				{
-					$requestUri = substr($requestUri, 0, $questionMark);
-				}
-			}
-		}
+                    $requestUri = substr($requestUri, strlen($this->urlBase) - 1);
+                }
+                $questionMark = strpos($requestUri, '?');
+                if ($questionMark !== false)
+                {
+                    $requestUri = substr($requestUri, 0, $questionMark);
+                }
+            }
+        }
         if ($requestUri == null)
         {
             throw new PieCrustException("PieCrust can't figure out the request URI. " .
                                         "It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache), " .
                                         "or just because my code sucks.");
         }
-		if ($requestUri == '/')
-		{
-			$requestUri = '/' . PIECRUST_INDEX_PAGE_NAME;
-		}
+        if ($requestUri == '/')
+        {
+            $requestUri = '/' . PIECRUST_INDEX_PAGE_NAME;
+        }
         return $requestUri;
     }
-	
-	protected function isEmptySetup()
-	{
-		if (!is_dir($this->rootDir . PIECRUST_CONTENT_DIR))
-			return true;
-		if (!is_file($this->rootDir . PIECRUST_CONFIG_PATH))
-			return true;
-		$templatesDir = ($this->templatesDir != null) ? $this->templatesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
-		if (!is_dir($templatesDir))
-			return true;
-		$pagesDir = ($this->pagesDir != null) ? $this->pagesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
-		if (!is_dir($pagesDir))
-			return true;
+    
+    protected function isEmptySetup()
+    {
+        if (!is_dir($this->rootDir . PIECRUST_CONTENT_DIR))
+            return true;
+        if (!is_file($this->rootDir . PIECRUST_CONFIG_PATH))
+            return true;
+        $templatesDir = ($this->templatesDir != null) ? $this->templatesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_TEMPLATES_DIR));
+        if (!is_dir($templatesDir))
+            return true;
+        $pagesDir = ($this->pagesDir != null) ? $this->pagesDir : ($this->rootDir . str_replace('/', DIRECTORY_SEPARATOR, PIECRUST_CONTENT_PAGES_DIR));
+        if (!is_dir($pagesDir))
+            return true;
         if (!is_file($pagesDir . PIECRUST_INDEX_PAGE_NAME . '.html'))
             return true;
-			
-		return false;
-	}
-	
-	protected function showSystemMessage($message, $details = null)
-	{
-		$contents = file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
+            
+        return false;
+    }
+    
+    protected function showSystemMessage($message, $details = null)
+    {
+        $contents = file_get_contents(PIECRUST_APP_DIR . 'messages/' . $message . '.html');
         if ($details != null)
         {
             $contents = str_replace('{{ details }}', $details, $contents);
         }
         echo $contents;
-	}
-    
-    /**
-     * Sets up basic things like the global error handler or the timezone.
-     */
-    public static function setup($profile = 'web')
-    {
-        date_default_timezone_set('America/Los_Angeles');
-		if ($profile == 'web')
-		{
-			//ini_set('display_errors', false);
-			set_error_handler('piecrust_error_handler');
-		}
     }
     
     /**
-     * A utility function that setups and runs PieCrust in one call.
-     */
+    * Sets up basic things like the global error handler or the timezone.
+    */
+    public static function setup($profile = 'web')
+    {
+        date_default_timezone_set('America/Los_Angeles');
+        if ($profile == 'web')
+        {
+            //ini_set('display_errors', false);
+            set_error_handler('piecrust_error_handler');
+        }
+    }
+    
+    /**
+    * A utility function that setups and runs PieCrust in one call.
+    */
     public static function setupAndRun($parameters = null, $uri = null, $profile = 'web')
     {
         PieCrust::setup($profile);
