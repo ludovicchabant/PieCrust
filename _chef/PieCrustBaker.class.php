@@ -139,7 +139,7 @@ class PieCrustBaker
 			}
 		}
 		
-		$uri = (($relativePathInfo['dirname'] == '.') ? '' : ($relativePathInfo['dirname'] . '/')) . $relativePathInfo['filename'];
+		$uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
 		$uri = str_replace('_index', '', $uri);
 		
 		echo ' > ' . $relativePath;
