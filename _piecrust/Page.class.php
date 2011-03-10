@@ -5,6 +5,7 @@ define('PIECRUST_PAGE_POST', 2);
 define('PIECRUST_PAGE_TAG', 3);
 define('PIECRUST_PAGE_CATEGORY', 4);
 
+require_once 'Linker.class.php';
 require_once 'Assetor.class.php';
 require_once 'Paginator.class.php';
 
@@ -55,6 +56,7 @@ class Page
 		$this->data = null;
 		$this->assetor = null;
 		$this->paginator = null;
+		$this->linker = null;
 	}
 	
 	protected $date;
@@ -245,7 +247,8 @@ class Page
 			$data = array(
 				'page' => $this->getConfig(),
 				'asset'=> $this->getAssetor(),
-				'pagination' => $this->getPaginator()
+				'pagination' => $this->getPaginator(),
+				'link' => $this->getLinker()
 			);
 			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
@@ -328,6 +331,19 @@ class Page
 			$this->assetor = new Assetor($this->pieCrust, $this);
 		}
 		return $this->assetor;
+	}
+	
+	protected $linker;
+	/**
+	 * Gets the linker.
+	 */
+	public function getLinker()
+	{
+		if ($this->linker === null)
+		{
+			$this->linker = new Linker($this->pieCrust, dirname($this->path) . DIRECTORY_SEPARATOR);
+		}
+		return $this->linker;
 	}
 	
 	/**
