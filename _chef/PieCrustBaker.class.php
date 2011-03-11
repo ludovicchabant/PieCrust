@@ -81,7 +81,7 @@ class PieCrustBaker
 		echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
 		echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
 		echo "  Into:    " . $this->getBakeDir() . "\n";
-		echo "  For URL: " . $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . "\n";
+		echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
 		echo "\n\n";
 	
 		echo "====== CLEANING CACHE ======\n\n";

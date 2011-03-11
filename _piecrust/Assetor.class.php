@@ -57,7 +57,7 @@ class Assetor implements ArrayAccess
 			$this->assetsDir = false;
 		}
 		
-		$this->urlBase = $pieCrust->getHost() . $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
+		$this->urlBase = $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
 		if ($this->assetsDir !== false and $page->getAssetUrlBaseRemap() != null)
 		{
 			$this->urlBase = Assetor::buildUrlBase($pieCrust, $page);
@@ -118,7 +118,6 @@ class Assetor implements ArrayAccess
 	protected static function buildUrlBase(PieCrust $pieCrust, Page $page)
     {
         $replacements = array(
-			'%host%' => $pieCrust->getHost(),
 			'%url_base%' => $pieCrust->getUrlBase(),
 			'%uri%' => $page->getUri()
 		);

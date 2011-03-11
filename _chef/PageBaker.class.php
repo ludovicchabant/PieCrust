@@ -65,7 +65,7 @@ class PageBaker
 	protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
 	{
 		// Set the extraData and asset URL remapping before the page's data is computed.
-		$page->setAssetUrlBaseRemap("%host%%url_base%%uri%");
+		$page->setAssetUrlBaseRemap("%url_base%%uri%");
 		if ($extraData != null) $page->setExtraPageData($extraData);
 		
 		// Set the custom stuff.

@@ -128,6 +128,8 @@ class Paginator
 			if (!$postsPerPage) $postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
 			$postsDateFormat = $this->page->getConfigValue('date_format');
 			if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'date_format');
+			$usePrettyUrls = ($this->pieCrust->getConfigValueUnchecked('site','pretty_urls') === true);
+			$pathPrefix = $this->pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/');
 			
 			$hasMorePages = false;
 			$postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $filterPostInfos, $postsPerPage, $hasMorePages);
@@ -140,7 +142,8 @@ class Paginator
 
 				// Build the pagination data entry for this post.
 				$postData = $post->getConfig();
-				$postData['url'] = $post->getUri();
+				$postData['url'] = $pathPrefix . $post->getUri();
+				$postData['slug'] = $post->getUri();
 				
 				$timestamp = $post->getDate();
 				if ($post->getConfigValue('time')) $timestamp = strtotime($post->getConfigValue('time'), $timestamp);

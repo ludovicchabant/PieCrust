@@ -250,7 +250,10 @@ class Page
 				'pagination' => $this->getPaginator(),
 				'link' => $this->getLinker()
 			);
-			$data['page']['url'] = $this->pieCrust->getHost() . $this->pieCrust->getUrlBase() . $this->getUri();
+			
+			$usePrettyUrls = ($this->pieCrust->getConfigValueUnchecked('site','pretty_urls') === true);
+			$pathPrefix = $this->pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/');
+			$data['page']['url'] = $pathPrefix . $this->getUri();
 			$data['page']['slug'] = $this->getUri();
 			
 			$timestamp = $this->getDate();
@@ -489,6 +492,18 @@ class Page
 			'was_path_checked' => $pathWasChecked
 		);
     }
+	
+	/**
+	 * Get the URI of a page given a path.
+	 */
+	public static function buildUri(PieCrust $pieCrust, $path, $stripIndex = true)
+	{
+		$pagesDir = $pieCrust->getPagesDir();
+		$relativePath = str_replace('\\', '/', substr(realpath($path), strlen($pagesDir)));
+		$uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+		if ($stipIndex) $uri = str_replace('_index', '', $uri);
+		return $uri;
+	}
 	
 	protected function loadConfigAndContents()
 	{

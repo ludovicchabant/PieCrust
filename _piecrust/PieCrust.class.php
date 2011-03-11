@@ -82,15 +82,6 @@ class PieCrust
         return $this->rootDir;
     }
     
-    protected $host;
-    /**
-    * The host of the application.
-    */
-    public function getHost()
-    {
-        return $this->host;
-    }
-    
     protected $urlBase;
     /**
     * The base URL of the application ('/' most of the time).
@@ -275,7 +266,7 @@ class PieCrust
                 {
                     $yamlParser = new sfYamlParser();
                     $config = $yamlParser->parse(file_get_contents($configPath));
-                    $this->config = $this->validateConfig($config);			
+                    $this->config = $this->validateConfig($config);
                 }
                 catch (Exception $e)
                 {
@@ -299,7 +290,7 @@ class PieCrust
         }
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
-                        'root' => ($this->host . $this->urlBase),
+                        'root' => $this->urlBase,
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
                         'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
@@ -447,7 +438,6 @@ class PieCrust
         }
         $parameters = array_merge(
             array(
-                'host' => null,
                 'url_base' => null,
                 'root' => PIECRUST_ROOT_DIR,
                 'cache' => true,
@@ -460,26 +450,16 @@ class PieCrust
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
         $this->cachingEnabled = (!$this->debuggingEnabled and (bool)$parameters['cache'] and !isset($_GET['!nocache']));
         
-        if ($parameters['host'] === null)
-        {
-            $this->host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-        }
-        else
-        {
-            $this->host = $parameters['host'];
-        }
-        $this->host = rtrim($this->host, '/');
-        
         if ($parameters['url_base'] === null)
         {
-            $this->urlBase = dirname($_SERVER['PHP_SELF']);
+            $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+            $folder = dirname($_SERVER['PHP_SELF']) .'/';
+            $this->urlBase = $host . $folder;
         }
         else
         {
-            $this->urlBase = $parameters['url_base'];
+            $this->urlBase = rtrim($parameters['url_base'], '/') . '/';
         }
-        $this->urlBase = '/' . trim($this->urlBase, '/') . '/';
-        if ($this->urlBase == '//') $this->urlBase = '/';
     }
     
     /**
