@@ -385,6 +385,25 @@ class PieCrust
         return $formattedText;
     }
     
+    protected $pathPrefix;
+    protected $pathSuffix;
+    /**
+     * Gets a formatted page URL.
+     */
+    public function formatUri($uri)
+    {
+        if ($this->pathPrefix === null or $this->pathSuffix === null)
+        {
+            $isBaking = ($this->getConfigValue('baker', 'is_baking') === true);
+            $isPretty = ($this->getConfigValueUnchecked('site','pretty_urls') === true);
+            $this->pathPrefix = $this->getUrlBase() . (($isPretty or $isBaking) ? '' : '?/');
+            $this->pathSuffix = ($isBaking and !$isPretty) ? '.html' : '';
+        }
+        
+        return $this->pathPrefix . $uri . $this->pathSuffix;
+    }
+    
+    
     protected $templateEngine;
     /**
     * Gets the template engine.

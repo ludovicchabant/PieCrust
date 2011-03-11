@@ -6,16 +6,12 @@ require_once (PIECRUST_APP_DIR . 'Paginator.class.php');
 class PieCrustExtension extends Twig_Extension
 {
     protected $pieCrust;
-	protected $pathPrefix;
     protected $tagUrlFormat;
     protected $categoryUrlFormat;
     
     public function __construct(PieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
-        
-        $usePrettyUrls = ($pieCrust->getConfigValueUnchecked('site','pretty_urls') === true);		
-		$this->pathPrefix = $pieCrust->getUrlBase() . ($usePrettyUrls ? '' : '?/');
         
         $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked('site', 'tag_url');
         $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked('site', 'category_url');
@@ -37,16 +33,16 @@ class PieCrustExtension extends Twig_Extension
     
     public function getUrl($value)
     {
-        return $this->pathPrefix . $value;
+        return $this->pieCrust->formatUri($value);
     }
     
     public function getTagUrl($value)
     {
-        return $this->pathPrefix . Paginator::buildTagUrl($this->tagUrlFormat, $value);
+        return $this->pieCrust->formatUri(Paginator::buildTagUrl($this->tagUrlFormat, $value));
     }
     
     public function getCategoryUrl($value)
     {
-        return $this->pathPrefix . Paginator::buildCategoryUrl($this->categoryUrlFormat, $value);
+        return $this->pieCrust->formatUri(Paginator::buildCategoryUrl($this->categoryUrlFormat, $value));
     }
 }
