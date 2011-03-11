@@ -27,6 +27,17 @@ class Page
 		return $this->path;
 	}
 	
+	/**
+	 * Gets the relative file-system path from the app root.
+	 */
+	public function getRelativePath($stripExtension = false)
+	{
+		$rootDir = $this->pieCrust->getRootDir();
+		$relativePath = substr($this->path, strlen($rootDir));
+		if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+		return $relativePath;
+	}
+	
 	protected $uri;
 	/**
 	 * Gets the PieCrust URI to the page.
@@ -397,7 +408,7 @@ class Page
 	{
 		$page = new Page($pieCrust, null);
 		$page->uri = trim($uri, '/');
-		$page->path = $path;
+		$page->path = realpath($path);
 		$page->type = $pageType;
 		$page->pageNumber = $pageNumber;
 		$page->key = $pageKey;
@@ -494,14 +505,32 @@ class Page
     }
 	
 	/**
-	 * Get the URI of a page given a path.
+	 * Gets the URI of a page given a path.
 	 */
-	public static function buildUri(PieCrust $pieCrust, $path, $stripIndex = true)
+	public static function buildPageUri(PieCrust $pieCrust, $path, $stripIndex = true)
 	{
 		$pagesDir = $pieCrust->getPagesDir();
-		$relativePath = str_replace('\\', '/', substr(realpath($path), strlen($pagesDir)));
+		return Page::buildUri($pagesDir, $path, $stripIndex);
+	}
+	
+	/**
+	 * Gets the URI of a post given a path.
+	 */
+	public static function buildPostUri(PieCrust $pieCrust, $path, $stripIndex = true)
+	{
+		$postsDir = $pieCrust->getPostsDir();
+		return Page::buildUri($postsDir, $path, $stripIndex);
+	}
+	
+	/**
+	 * Gets the URI of a page given a path and a base directory (probably the pages
+	 * or posts directory).
+	 */
+	public static function buildUri($baseDir, $path, $stripIndex = true)
+	{
+		$relativePath = str_replace('\\', '/', substr(realpath($path), strlen($baseDir)));
 		$uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-		if ($stipIndex) $uri = str_replace('_index', '', $uri);
+		if ($stripIndex) $uri = str_replace('_index', '', $uri);
 		return $uri;
 	}
 	
