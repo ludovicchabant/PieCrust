@@ -218,7 +218,7 @@ class PieCrust
             }
             catch (Exception $e)
             {
-                throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it ro change the permissions ourselves: ' . $this->cacheDir);
+                throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->cacheDir);
             }
         }
     }
@@ -618,7 +618,7 @@ class PieCrust
         if ($this->getConfigValueUnchecked('site', 'pretty_urls') !== true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
-            $requestUri = $server['QUERY_STRING'];
+            $requestUri = strstr($server['QUERY_STRING'], '&', true);
             if ($requestUri == null or $requestUri == '')
             {
                 $requestUri = '/';
