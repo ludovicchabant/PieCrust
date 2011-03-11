@@ -49,18 +49,25 @@ class Assetor implements ArrayAccess
 	 * Creates a new instance of Assetor.
 	 */
 	public function __construct(PieCrust $pieCrust, Page $page)
-	{		
+	{
 		$pathParts = pathinfo($page->getPath());
 		$this->assetsDir = $pathParts['dirname'] . DIRECTORY_SEPARATOR . $pathParts['filename'] . PIECRUST_ASSET_DIR_SUFFIX;
-		if (!is_dir($this->assetsDir))
+		if (is_dir($this->assetsDir))
+		{
+			if ($page->getAssetUrlBaseRemap() != null)
+			{
+				$this->urlBase = Assetor::buildUrlBase($pieCrust, $page);
+			}
+			else
+			{
+				$relativePath = str_replace('\\', '/', $page->getRelativePath(true));
+				$this->urlBase = $pieCrust->getUrlBase() . $relativePath . PIECRUST_ASSET_DIR_SUFFIX;
+			}
+		}
+		else
 		{
 			$this->assetsDir = false;
-		}
-		
-		$this->urlBase = $pieCrust->getUrlBase() . PIECRUST_CONTENT_PAGES_DIR . $page->getUri();
-		if ($this->assetsDir !== false and $page->getAssetUrlBaseRemap() != null)
-		{
-			$this->urlBase = Assetor::buildUrlBase($pieCrust, $page);
+			$this->urlBase = false;
 		}
 	}
 	
@@ -109,7 +116,7 @@ class Assetor implements ArrayAccess
 				{
 					$filename = $p->getFilename();
 					$key = str_replace('.', '_', $filename);
-					$this->assetsCache[$key] = $this->urlBase . PIECRUST_ASSET_URL_SUFFIX . '/' . $filename;
+					$this->assetsCache[$key] = $this->urlBase . '/' . $filename;
 				}
 			}
 		}
@@ -119,6 +126,7 @@ class Assetor implements ArrayAccess
     {
         $replacements = array(
 			'%url_base%' => $pieCrust->getUrlBase(),
+			'%path' => $page->getRelativePath(true),
 			'%uri%' => $page->getUri()
 		);
         return str_replace(array_keys($replacements), array_values($replacements), $page->getAssetUrlBaseRemap());
