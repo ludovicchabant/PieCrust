@@ -353,7 +353,7 @@ class Page
     {
         if ($this->linker === null)
         {
-            $this->linker = new Linker($this->pieCrust, dirname($this->path) . DIRECTORY_SEPARATOR);
+            $this->linker = new Linker($this->pieCrust, $this);
         }
         return $this->linker;
     }
