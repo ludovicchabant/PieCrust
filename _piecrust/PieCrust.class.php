@@ -645,13 +645,14 @@ class PieCrust
             {
                 // Clean up by removing the base URL of the application, and the trailing
                 // query string that we should ignore because we're using 'pretty URLs'.
-                if (strlen($this->urlBase) > 1)
+                $rootDirectory = dirname($server['PHP_SELF']) . '/';
+                if (strlen($rootDirectory) > 1)
                 {
-                    if (strlen($requestUri) < strlen($this->urlBase))
+                    if (strlen($requestUri) < strlen($rootDirectory))
                     {
                         throw new PieCrustException("You're trying to access a resource that's not within the directory served by PieCrust.");
                     }
-                    $requestUri = substr($requestUri, strlen($this->urlBase) - 1);
+                    $requestUri = substr($requestUri, strlen($rootDirectory) - 1);
                 }
                 $questionMark = strpos($requestUri, '?');
                 if ($questionMark !== false)
