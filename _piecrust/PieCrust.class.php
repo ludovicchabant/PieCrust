@@ -637,10 +637,14 @@ class PieCrust
         if ($this->getConfigValueUnchecked('site', 'pretty_urls') !== true)
         {
             // Using standard query (no pretty URLs / URL rewriting)
-            $requestUri = strstr($server['QUERY_STRING'], '&', true);
+            $requestUri = $server['QUERY_STRING'];
             if ($requestUri == null or $requestUri == '')
             {
                 $requestUri = '/';
+            }
+            else if (strpos($requestUri, '&') !== false)
+            {
+                $requestUri = strstr($requestUri, '&', true);
             }
         }
         else
