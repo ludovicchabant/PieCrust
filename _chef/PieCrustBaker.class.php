@@ -191,6 +191,7 @@ class PieCrustBaker
         $iterator = new RecursiveIteratorIterator($directory);
         foreach ($iterator as $path)
         {
+			if ($iterator->isDot()) continue;
             $hasBaked |= $this->bakePage($path->getPathname(), true);
         }
         if (!$hasBaked)
