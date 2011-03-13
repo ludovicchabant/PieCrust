@@ -31,7 +31,7 @@ class SmartyPantsFormatter implements IFormatter
     
     public function supportsFormat($format, $isUnformatted)
     {
-        return $this->enabled;
+        return $format != 'none' and $this->enabled;
     }
     
     public function format($text)
