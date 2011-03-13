@@ -433,6 +433,14 @@ class Page
             $uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
             $pageNumber = intval($matches[1]);
         }
+		$matches = array();
+		if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
+		{
+			// There's an extension specified. Strip it
+			// (the extension is probably because the page has a `content_type` different than HTML, which means
+			//  it would be baked into a static file with that extension).
+			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+		}
         
         // Try first with a regular page path.
         $key = null;
