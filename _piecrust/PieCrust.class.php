@@ -43,7 +43,7 @@ define('PIECRUST_CACHE_DIR', '_cache/');
 define('PIECRUST_DEFAULT_FORMAT', 'markdown');
 define('PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME', 'default');
 define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
-define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'Twig');
+define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'twig');
 
 /**
 * Include all the classes we need.
@@ -361,7 +361,12 @@ class PieCrust
             $this->formattersLoader = new PluginLoader(
                                             'IFormatter',
                                             PIECRUST_APP_DIR . 'formatters',
-                                            create_function('$p1, $p2', 'return $p1->getPriority() < $p2->getPriority();'));
+                                            create_function('$p1, $p2', 'return $p1->getPriority() < $p2->getPriority();')
+                                            );
+            foreach ($this->formattersLoader->getPlugins() as $formatter)
+            {
+                $formatter->initialize($this);
+            }
         }
         return $this->formattersLoader;
     }
@@ -375,7 +380,6 @@ class PieCrust
         $formattedText = $text;
         foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
         {
-            $formatter->initialize($this);
             if ($formatter->supportsFormat($format, $unformatted))
             {
                 $formattedText = $formatter->format($formattedText);
@@ -403,29 +407,31 @@ class PieCrust
         return $this->pathPrefix . $uri . $this->pathSuffix;
     }
     
-    
-    protected $templateEngine;
+    protected $templateEngines;
     /**
-    * Gets the template engine.
+    * Gets the template engine associated with the given extension.
     */
-    public function getTemplateEngine()
+    public function getTemplateEngine($extension = 'html')
     {
-        if ($this->templateEngine === null)
+        if ($this->templateEngines === null)
         {
-            $templateEngineName = $this->getConfigValueUnchecked('site', 'template_engine');
-            if ($templateEngineName == null)
+            $loader = new PluginLoader(
+                                        'ITemplateEngine',
+                                        PIECRUST_APP_DIR . 'template-engines'
+                                        );
+            $this->templateEngines = array();
+            foreach ($loader->getPlugins() as $engine)
             {
-                $templateEngineName = PIECRUST_DEFAULT_TEMPLATE_ENGINE;
+                $engine->initialize($this);
+                $this->templateEngines[$engine->getExtension()] = $engine;
             }
-                
-            $templateEngineClass = $templateEngineName . 'TemplateEngine';
-            require_once(PIECRUST_APP_DIR . 'template-engines' . DIRECTORY_SEPARATOR . $templateEngineClass . '.class.php');
-            
-            $reflector = new ReflectionClass($templateEngineClass);
-            $this->templateEngine = $reflector->newInstance();
-            $this->templateEngine->initialize($this);
         }
-        return $this->templateEngine;
+        
+        if ($extension == 'html')
+        {
+            $extension = $this->getConfigValueUnchecked('site', 'template_engine');
+        }
+        return $this->templateEngines[$extension];
     }
     
     /**

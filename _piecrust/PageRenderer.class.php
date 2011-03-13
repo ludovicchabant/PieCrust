@@ -12,32 +12,53 @@ class PageRenderer
     public function render(Page $page, $extraData = null, $outputHeaders = true)
     {
         $pageConfig = $page->getConfig();
-        $templateName = $pageConfig['layout'] . '.html';
-        
-        // Get the template engine and the page data.
-        $templateEngine = $this->pieCrust->getTemplateEngine();
-        $data = $page->getContentSegments();
-        $data = array_merge($this->pieCrust->getSiteData(), $page->getPageData(), $data);
-        if ($extraData != null)
-        {
-            if (is_array($extraData))
-            {
-                $data = array_merge($data, $extraData);
-            }
-            else
-            {
-                $data['extra'] = $extraData;
-            }
-        }
         
         // Set the HTML header.
         if ($outputHeaders === true)
         {
             PageRenderer::setHeaders($pageConfig['content_type']);
         }
+		
+		// Get the template name.
+		$templateName = $pageConfig['layout'];
+		if ($templateName == null or $templateName == '' or $templateName == 'none')
+		{
+			$templateName = false;
+		}
+		else
+		{
+			if (!preg_match('/\.[a-zA-Z0-9]+$/', $templateName))
+			{
+				$templateName .= '.html';
+			}
+		}
         
-        // Render the page.
-        $templateEngine->renderFile($templateName, $data);
+		if ($templateName !== false)
+		{
+			// Get the template engine and the page data.
+			$extension = pathinfo($templateName, PATHINFO_EXTENSION);
+			$templateEngine = $this->pieCrust->getTemplateEngine($extension);
+			$data = $page->getContentSegments();
+			$data = array_merge($this->pieCrust->getSiteData(), $page->getPageData(), $data);
+			if ($extraData != null)
+			{
+				if (is_array($extraData))
+				{
+					$data = array_merge($data, $extraData);
+				}
+				else
+				{
+					$data['extra'] = $extraData;
+				}
+			}
+			
+			// Render the page.
+			$templateEngine->renderFile($templateName, $data);
+		}
+		else
+		{
+			echo $page->getContentSegment();
+		}
         
         if ($this->pieCrust->isDebuggingEnabled())
         {
