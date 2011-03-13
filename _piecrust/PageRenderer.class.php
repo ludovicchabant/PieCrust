@@ -9,15 +9,9 @@ class PageRenderer
         $this->pieCrust = $pieCrust;
     }
     
-    public function render(Page $page, $extraData = null, $outputHeaders = true)
+    public function render(Page $page, $extraData = null)
     {
         $pageConfig = $page->getConfig();
-        
-        // Set the HTML header.
-        if ($outputHeaders === true)
-        {
-            PageRenderer::setHeaders($pageConfig['content_type']);
-        }
 		
 		// Get the template name.
 		$templateName = $pageConfig['layout'];
@@ -67,10 +61,10 @@ class PageRenderer
         }
     }
     
-    public function get(Page $page, $extraData = null, $outputHeaders = true)
+    public function get(Page $page, $extraData = null)
     {
         ob_start();
-        $this->render($page, $extraData, $outputHeaders);
+        $this->render($page, $extraData);
         return ob_get_clean();
     }
     
@@ -83,34 +77,57 @@ class PageRenderer
              ", in " . $timeSpan * 1000 . " milliseconds. -->";
     }
     
-    public static function setHeaders($contentType)
+    public static function setHeaders($contentType, $server = null)
     {
+		$mimeType = null;
         switch ($contentType)
         {
             case 'html':
-            default:
-                header("Content-type: text/html; charset=utf-8");
+				$mimeType = 'text/html';
                 break;
             case 'xml':
-                header("Content-type: text/xml; charset=utf-8");
+				$mimeType = 'text/xml';
                 break;
             case 'txt':
             case 'text':
-                header("Content-type: text/plain; charset=utf-8");
+			default:
+				$mimeType = 'text/plain';
                 break;
             case 'css':
-                header("Content-type: text/css; charset=utf-8");
+				$mimeType = 'text/css';
                 break;
+			case 'xhtml':
+				$mimeType = 'application/xhtml+xml';
+				break;
             case 'atom':
-                header("Content-type: application/atom+xml; charset=utf-8");
+				if ($server == null or strpos($server['HTTP_ACCEPT'], 'application/atom+xml') !== false)
+                {
+					$mimeType = 'application/atom+xml';
+				}
+				else
+				{
+					$mimeType = 'text/xml';
+				}
                 break;
             case 'rss':
-                header("Content-type: application/rss+xml; charset=utf-8");
+				if ($server == null or strpos($server['HTTP_ACCEPT'], 'application/rss+xml') !== false)
+                {
+					$mimeType = 'application/rss+xml';
+				}
+				else
+				{
+					$mimeType = 'text/xml';
+				}
                 break;
             case 'json':
-                header("Content-type: application/json; charset=utf-8");
+                $mimeType = 'application/json';
                 break;
         }
+		
+		if ($mimeType != null)
+		{
+			header('Content-type: ' . $mimeType. '; charset=utf-8');
+		}
     }
 }
 

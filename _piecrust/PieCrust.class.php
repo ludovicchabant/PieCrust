@@ -255,7 +255,8 @@ class PieCrust
             // Cache a validated JSON version of the configuration for faster
             // boot-up time (this saves a couple milliseconds).
             $cache = $this->cachingEnabled ? new Cache($this->getCacheDir()) : null;
-            if ($cache != null and $cache->isValid('config', 'json', filemtime($configPath)))
+            $configOrCodeTime = max(filemtime($configPath), filemtime(__FILE__));
+            if ($cache != null and $cache->isValid('config', 'json', $configOrCodeTime))
             {
                 $configText = $cache->read('config', 'json');
                 $this->config = json_decode($configText, true);
@@ -517,6 +518,9 @@ class PieCrust
         if ($extraPageData != null) $page->setExtraPageData($extraPageData);
         $pageRenderer = new PageRenderer($this);
         $output = $pageRenderer->get($page, $extraPageData);
+        
+        // Set the HTML headers.
+        PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
         
         // Handle caching.
         if (!$this->isDebuggingEnabled())
