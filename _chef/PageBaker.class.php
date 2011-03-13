@@ -81,20 +81,28 @@ class PageBaker
         if ($postInfos != null) $paginator->setPaginationDataSource($postInfos);
         
         // Render the page.
-        $bakedContents = $pageRenderer->get($page, null, false);
+        $bakedContents = $pageRenderer->get($page);
         
-        // Bake the page into the correct HTML file, and figure out
-        // if there are more pages to bake for this page.
+        // Figure out the output HTML path.
         $useDirectory = $page->getConfigValue('pretty_urls');
         if ($useDirectory == null)
         {
-            $useDirectory = ($this->pieCrust->getConfigValue('site', 'pretty_urls') == true);
+            $useDirectory = $this->pieCrust->getConfigValue('site', 'pretty_urls');
         }
+		
+		$contentType = $page->getConfigValue('content_type');
+		if ($contentType != 'html')
+		{
+			// If this is not an HTML file, don't use a directory as the output
+			// (since this would bake it to an 'index.html' file).
+			$useDirectory = false;
+		}
         
-        if ($paginator->wasPaginationDataAccessed())
+        if ($paginator->wasPaginationDataAccessed() and !$page->getConfigValue('single_page'))
         {
             // If pagination data was accessed, there may be sub-pages for this page,
-            // so we need the 'directory' naming scheme to store them.
+            // so we need the 'directory' naming scheme to store them (unless this
+			// page is forced to a single page).
             $useDirectory = true;
         }
         
@@ -109,7 +117,7 @@ class PageBaker
         }
         else
         {
-            $extension = $this->getBakedExtension($page->getConfigValue('content_type'));
+            $extension = $this->getBakedExtension($contentType);
             $bakePath = $this->bakeDir . (($page->getUri() == '') ? 'index' : $page->getUri()) . '.' . $extension;
         }
         
