@@ -28,6 +28,11 @@ class TestPage extends Page
 
 class PageContentsParsingTest extends PHPUnit_Framework_TestCase
 {
+	public static function setUpBeforeClass()
+    {
+        date_default_timezone_set('America/Los_Angeles');
+    }
+	
 	public function parsePageContentsDataProvider()
 	{
 		$data = array();
