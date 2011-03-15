@@ -539,7 +539,7 @@ class PieCrust
                 {
                     header('HTTP/1.1 304 Not Modified');
                     header('Content-Length: 0');
-                    exit();
+                    return;
                 }
             }
         }
@@ -577,6 +577,7 @@ class PieCrust
         }
         else
         {
+			header('Content-Length: ' . strlen($output));
             echo $output;
         }
     }
@@ -594,7 +595,7 @@ class PieCrust
         {
             $errorMessage = piecrust_format_errors(array($e), true);
             $this->showSystemMessage('error', $errorMessage);
-            exit();
+            return;
         }
         
         // First of all, check that we're not running
@@ -602,7 +603,7 @@ class PieCrust
         if ($this->isEmptySetup())
         {
             $this->showSystemMessage('welcome');
-            exit();
+            return;
         }
         
         // Get the URI to the custom error page.
@@ -626,7 +627,6 @@ class PieCrust
             {
                 // Well there's really something wrong.
                 $this->showSystemMessage('error', $errorMessage);
-                exit();
             }
         }
         else
@@ -634,7 +634,6 @@ class PieCrust
             // We don't have a custom error page. Just show a generic
             // error page and exit.
             $this->showSystemMessage(substr($errorPageUri, 1), $errorMessage);
-            exit();
         }
     }
     
@@ -699,10 +698,6 @@ class PieCrust
             throw new PieCrustException("PieCrust can't figure out the request URI. " .
                                         "It may be because you're running a non supported web server (PieCrust currently supports IIS 7.0+ and Apache), " .
                                         "or just because my code sucks.");
-        }
-        if ($requestUri == '/')
-        {
-            $requestUri = '/' . PIECRUST_INDEX_PAGE_NAME;
         }
         return $requestUri;
     }

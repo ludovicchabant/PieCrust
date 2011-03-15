@@ -424,6 +424,8 @@ class Page
         }
         
         $uri = trim($uri, '/');
+		if ($uri == '') $uri = PIECRUST_INDEX_PAGE_NAME;
+		
         $date = null;
         $pageNumber = 1;
         $matches = array();
