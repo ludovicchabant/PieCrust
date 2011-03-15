@@ -507,26 +507,38 @@ class PieCrust
     * Runs PieCrust on the given URI with the given extra page rendering data,
     * but without any error handling.
     */
-    public function runUnsafe($uri = null, $server = null, $extraPageData = null)
+    public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null)
     {
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
         if ($uri == null) $uri = $this->getRequestUri($server);
-
+		
         // Do the heavy lifting.
         $page = new Page($this, $uri);
         if ($extraPageData != null) $page->setExtraPageData($extraPageData);
         $pageRenderer = new PageRenderer($this);
         $output = $pageRenderer->get($page, $extraPageData);
         
-        // Set the HTML headers.
-        PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
+        // Set or return the HTML headers.
+		if ($headers === null)
+		{
+			PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
+		}
+		else
+		{
+			$pageHeaders = PageRenderer::getHeaders($page->getConfigValue('content_type'), $server);
+			foreach ($pageHeaders as $h)
+			{
+				$headers[] = $h;
+			}
+		}
         
         // Handle caching.
         if (!$this->isDebuggingEnabled())
         {
             $hash = md5($output);
-            header('Etag: "' . $hash . '"');
+			self::setOrAddHeader('Etag: "' . $hash . '"', $headers);
+			
             $clientHash = null;
             if (isset($server['HTTP_IF_NONE_MATCH']))
             {
@@ -537,15 +549,15 @@ class PieCrust
                 $clientHash = trim($clientHash, '"');
                 if ($hash == $clientHash)
                 {
-                    header('HTTP/1.1 304 Not Modified');
-                    header('Content-Length: 0');
+					self::setOrAddHeader('HTTP/1.1 304 Not Modified', $headers);
+					self::setOrAddHeader('Content-Length: 0', $headers);
                     return;
                 }
             }
         }
         if ($this->isDebuggingEnabled())
         {
-            header('Cache-Control: no-cache, must-revalidate');
+            self::setOrAddHeader('Cache-Control: no-cache, must-revalidate', $headers);
         }
         else
         {
@@ -553,7 +565,7 @@ class PieCrust
             if ($cacheTime === null) $cacheTime = $this->getConfigValue('site', 'cache_time');
             if ($cacheTime)
             {
-                header('Cache-Control: public, max-age=' . $cacheTime);
+                self::setOrAddHeader('Cache-Control: public, max-age=' . $cacheTime, $headers);
             }
         }
     
@@ -565,19 +577,19 @@ class PieCrust
             $zippedOutput = gzencode($output);
             if ($zippedOutput === false)
             {
-                header('Content-Length: ' . strlen($output));
+                self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
                 echo $output;
             }
             else
             {
-                header('Content-Encoding: gzip');
-                header('Content-Length: ' . strlen($zippedOutput));
+                self::setOrAddHeader('Content-Encoding: gzip', $headers);
+                self::setOrAddHeader('Content-Length: ' . strlen($zippedOutput), $headers);
                 echo $zippedOutput;
             }
         }
         else
         {
-			header('Content-Length: ' . strlen($output));
+			self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
             echo $output;
         }
     }
@@ -729,6 +741,18 @@ class PieCrust
         }
         echo $contents;
     }
+	
+	protected static function setOrAddHeader($header, array &$headers)
+	{
+		if ($headers === null)
+		{
+			header($header);
+		}
+		else
+		{
+			$headers[] = $header;
+		}
+	}
     
     /**
     * Sets up basic things like the global error handler or the timezone.

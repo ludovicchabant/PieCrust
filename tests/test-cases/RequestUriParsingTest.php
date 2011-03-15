@@ -11,19 +11,19 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 			array(
 				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => null),
-				'/_index',
+				'/',
 				false
 			),
 			array(
 				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => ''),
-				'/_index',
+				'/',
 				false
 			),
 			array(
 				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => '/'),
-				'/_index',
+				'/',
 				false
 			),
 			array(
@@ -41,19 +41,19 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 			array(
 				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => null),
-				'/_index',
+				'/',
 				false
 			),
 			array(
 				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => ''),
-				'/_index',
+				'/',
 				false
 			),
 			array(
 				array('host' => 'host.local', 'url_base' => '/test'),
 				array('QUERY_STRING' => '/'),
-				'/_index',
+				'/',
 				false
 			),
 			array(
@@ -72,7 +72,7 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 			array(
 				array('host' => 'host.local', 'url_base' => '/'),
 				array('QUERY_STRING' => null, 'REQUEST_URI' => '/'),
-				'/_index',
+				'/',
 				true
 			),
 			array(

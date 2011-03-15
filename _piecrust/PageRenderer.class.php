@@ -78,6 +78,18 @@ class PageRenderer
     }
     
     public static function setHeaders($contentType, $server = null)
+	{
+		$headers = self::getHeaders($contentType, $server);
+		if ($headers != null)
+		{
+			foreach ($headers as $h)
+			{
+				header($h);
+			}
+		}
+	}
+	
+	public static function getHeaders($contentType, $server = null)
     {
 		$mimeType = null;
         switch ($contentType)
@@ -126,8 +138,9 @@ class PageRenderer
 		
 		if ($mimeType != null)
 		{
-			header('Content-type: ' . $mimeType. '; charset=utf-8');
+			return array('Content-type: ' . $mimeType. '; charset=utf-8');
 		}
+		return null;
     }
 }
 

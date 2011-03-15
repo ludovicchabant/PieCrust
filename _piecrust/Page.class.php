@@ -375,7 +375,7 @@ class Page
             $this->key = $uriInfo['key'];
             $this->path = $uriInfo['path'];
             
-            if (!$uriInfo['was_path_checked'] and !is_file($this->path))
+            if ($this->path == null or (!$uriInfo['was_path_checked'] and !is_file($this->path)))
             {
                 if ($this->type == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
                 if ($this->type == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
@@ -426,7 +426,6 @@ class Page
         $uri = trim($uri, '/');
 		if ($uri == '') $uri = PIECRUST_INDEX_PAGE_NAME;
 		
-        $date = null;
         $pageNumber = 1;
         $matches = array();
         if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
@@ -436,18 +435,20 @@ class Page
             $pageNumber = intval($matches[1]);
         }
 		$matches = array();
+		$uriWithoutExtension = $uri;
 		if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
 		{
 			// There's an extension specified. Strip it
 			// (the extension is probably because the page has a `content_type` different than HTML, which means
 			//  it would be baked into a static file with that extension).
-			$uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+			$uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
 		}
         
         // Try first with a regular page path.
         $key = null;
+		$date = null;
         $type = PIECRUST_PAGE_REGULAR;
-        $path = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uri) . '.html';
+        $path = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uriWithoutExtension) . '.html';
         $pathWasChecked = false;
         if (!is_file($path))
         {
@@ -493,6 +494,10 @@ class Page
                         $type = PIECRUST_PAGE_CATEGORY;
                         $path = $pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
                     }
+					else
+					{
+						$path = null;
+					}
                 }
             }
         }

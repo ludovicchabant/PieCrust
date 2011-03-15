@@ -263,9 +263,9 @@ class Paginator
             '%year%' => '(?P<year>\d{4})',
             '%month%' => '(?P<month>\d{2})',
             '%day%' => '(?P<day>\d{2})',
-            '%slug%' => '(?P<slug>.*?)'
+            '%slug%' => '(?P<slug>.*)'
         );
-        return '/^' . str_replace(array_keys($replacements), array_values($replacements), preg_quote($postUrlFormat, '/')) . '$/';
+        return '/^' . str_replace(array_keys($replacements), array_values($replacements), preg_quote($postUrlFormat, '/')) . '\/?$/';
     }
     
     /**
@@ -281,7 +281,7 @@ class Paginator
      */
     public static function buildTagUrlPattern($tagUrlFormat)
     {
-        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-]+)', preg_quote($tagUrlFormat, '/')) . '$/';
+        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-]+)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
     
     /**
@@ -297,6 +297,6 @@ class Paginator
      */
     public static function buildCategoryUrlPattern($categoryUrlFormat)
     {
-        return '/^' . str_replace('%category%', '(?P<cat>[\w\-]+)', preg_quote($categoryUrlFormat, '/')) . '$/';
+        return '/^' . str_replace('%category%', '(?P<cat>[\w\-]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
     }
 }
