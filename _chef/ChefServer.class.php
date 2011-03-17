@@ -38,7 +38,7 @@ class ChefServer
      */
     public function run()
     {
-        $this->server->run();
+        $this->server->run(array('run_browser' => true));
     }
     
     /**
@@ -55,6 +55,7 @@ class ChefServer
                                         )
                                   );
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
+        $pieCrust->setConfigValue('server', 'is_hosting', true);
         
         $pieCrustError = null;
         $pieCrustHeaders = array();

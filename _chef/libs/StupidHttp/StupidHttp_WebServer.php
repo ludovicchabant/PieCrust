@@ -156,9 +156,21 @@ class StupidHttp_WebServer
     /**
      * Runs the server.
      */
-    public function run()
+    public function run(array $options = null)
     {
+        if ($options == null) $options = array();
+        $options = array_merge(
+            array('run_browser' => false),
+            $options
+        );
+        
         $this->setupNetworking();
+        
+        if ($options['run_browser'] === true)
+        {
+            $this->runBrowser();
+        }
+        
         do
         {
             if (($msgsock = socket_accept($this->sock)) === false)
@@ -208,6 +220,7 @@ class StupidHttp_WebServer
             }
             
             socket_close($msgsock);
+            gc_collect_cycles();
         }
         while (true);
     }
@@ -232,6 +245,21 @@ class StupidHttp_WebServer
         echo "\n";
         echo "STUPID-HTTP SERVER\n\n";
         echo "Listening on " . $this->address . ":" . $this->port . "...\n\n";
+    }
+    
+    protected function runBrowser()
+    {
+        switch (PHP_OS)
+        {
+            case 'Windows':
+            case 'WINNT':
+            case 'WIN32':
+                exec('start http://' . $this->address . ':' . $this->port);
+                break;
+            default:
+                exec('open http://' . $this->address . ':' . $this->port);
+                break;
+        }
     }
     
     protected function processRequest($sock, StupidHttp_WebRequest $request)
@@ -352,8 +380,9 @@ class StupidHttp_WebServer
         if (!is_int($code)) throw new StupidHttp_WebException('The given HTTP return code was not an integer: ' . $code, 500);
         
         echo '  ->  ' . self::getHttpStatusHeader($code) . PHP_EOL;
+        echo '    : ' . memory_get_usage() / (1024.0 * 1024.0) . 'Mb' . PHP_EOL;
         
-        $response = "HTTP/1.1 " . $code . PHP_EOL;
+        $response = "HTTP/1.1 " . self::getHttpStatusHeader($code) . PHP_EOL;
         $response .= "Server: PieCrust Chef Server\n";
         $response .= "Connection: close\n";
         $response .= "Date: " . date("D, d M Y H:i:s T") . PHP_EOL;
