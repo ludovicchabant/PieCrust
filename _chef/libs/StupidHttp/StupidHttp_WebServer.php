@@ -196,7 +196,7 @@ class StupidHttp_WebServer
         }
         
         echo "\n";
-        echo "StupidHttp Server\n\n";
+        echo "STUPID-HTTP SERVER\n\n";
         echo "Listening on " . $this->address . ":" . $this->port . "...\n\n";
     }
     
@@ -219,53 +219,58 @@ class StupidHttp_WebServer
         if (is_file($documentPath))
         {
             // Serve existing file.
+            $contents = file_get_contents($documentPath);
+            $contentsHash = md5($contents);
             $extension = pathinfo($documentPath, PATHINFO_EXTENSION);
             $headers = array(
-                'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain')
+                'Cache-Control: public',
+                'Content-MD5: ' . base64_encode($contentsHash),
+                'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain'),
+                'ETag: ' . $contentsHash,
+                'Last-Modified: ' . date("D, d M Y H:i:s T", filemtime($documentPath))
             );
-            $contents = file_get_contents($documentPath);
             $this->returnResponse($sock, '200 OK', $headers, $contents);
+        }
+        else if (isset($this->requestHandlers[$method]))
+        {
+            // Run the request handlers.
+            $handled = false;
+            foreach ($this->requestHandlers[$method] as $handler)
+            {
+                if ($handler->_isMatch($uri))
+                {
+                    $server = $this->buildServerVariables($method, $uri, $request);
+                    $response = new StupidHttp_WebResponse($uri, $server);
+                    ob_start();
+                    $handled = $handler->_run($response);
+                    $body = ob_get_clean();
+                    if ($handled)
+                    {
+                        $this->returnResponse(
+                            $sock,
+                            $response->getStatus(),
+                            $response->getHeaders(),
+                            $body
+                        );
+                        $log = $response->getLog();
+                        if (!empty($log))
+                        {
+                            echo PHP_EOL;
+                            echo $log;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!$handled)
+            {
+                $this->returnResponse($sock, '404 Not Found');
+            }
         }
         else
         {
-            // Run request handler.
-            if (isset($this->requestHandlers[$method]))
-            {
-                $handlerRun = false;
-                foreach ($this->requestHandlers[$method] as $handler)
-                {
-                    if ($handler->_isMatch($uri))
-                    {
-                        $server = $this->buildServerVariables($method, $uri, $request);
-                        $response = new StupidHttp_WebResponse($uri, $server);
-                        if ($handler->_run($response))
-                        {
-                            $this->returnResponse(
-                                $sock,
-                                $response->getStatus(),
-                                $response->getHeaders(),
-                                $response->getBody()
-                            );
-                            $log = $response->getLog();
-                            if (!empty($log))
-                            {
-                                echo PHP_EOL;
-                                echo $log;
-                            }
-                            $handlerRun = true;
-                            break;
-                        }
-                    }
-                }
-                if (!$handlerRun)
-                {
-                    $this->returnResponse($sock, '404 Not Found');
-                }
-            }
-            else
-            {
-                $this->returnResponse($sock, '405 Method Not Allowed');
-            }
+            // Nothing to do for this method.
+            $this->returnResponse($sock, '501 Not Implemented');
         }
         
         echo PHP_EOL;
@@ -301,6 +306,7 @@ class StupidHttp_WebServer
         $response = "HTTP/1.1 " . $code . PHP_EOL;
         $response .= "Server: PieCrust Chef Server\n";
         $response .= "Connection: close\n";
+        $response .= "Date: " . date("D, d M Y H:i:s T") . PHP_EOL;
         if ($headers != null)
         {
             foreach ($headers as $header)
@@ -308,6 +314,7 @@ class StupidHttp_WebServer
                 $response .= $header . PHP_EOL;
             }
         }
+        
         if ($contents != null)
         {
             $response .= PHP_EOL;

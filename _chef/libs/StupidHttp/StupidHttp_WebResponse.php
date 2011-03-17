@@ -49,18 +49,6 @@ class StupidHttp_WebResponse
         $this->headers[] = $header;
     }
     
-    protected $body;
-    
-    public function getBody()
-    {
-        return $this->body;
-    }
-    
-    public function setBody($body)
-    {
-        $this->body = $body;
-    }
-    
     protected $log;
     
     public function getLog()

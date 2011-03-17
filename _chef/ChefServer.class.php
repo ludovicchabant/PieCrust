@@ -52,7 +52,6 @@ class ChefServer
                                   );
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
         
-        ob_start();
         $pieCrustError = null;
         $pieCrustHeaders = array();
         try
@@ -63,7 +62,6 @@ class ChefServer
         {
             $pieCrustError = $e->getMessage();
         }
-        $contents = ob_get_clean();
         
         $code = ($pieCrustError == null) ? '200 OK' :
                     (
@@ -75,7 +73,6 @@ class ChefServer
         {
             $response->addHeader($h);
         }
-        $response->setBody($contents);
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
