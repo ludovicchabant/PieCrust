@@ -106,6 +106,10 @@ class HamlTemplateEngine implements ITemplateEngine
         require $outputPath;
     }
     
+    public function clearInternalCache()
+    {
+    }
+    
     protected function ensureLoaded()
     {
         if ($this->haml === null)

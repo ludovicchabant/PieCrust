@@ -43,4 +43,12 @@ interface ITemplateEngine
 	 * calls to addTemplatePaths().
 	 */
     public function renderFile($templateName, $data);
+	
+	/**
+	 * Clears any in-memory cache the template engine may have.
+	 *
+	 * This is mostly used for the ChefServer hosted application, where PieCrust
+	 * is kept alive between requests.
+	 */
+	public function clearInternalCache();
 }

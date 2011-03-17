@@ -42,6 +42,10 @@ class DwooTemplateEngine implements ITemplateEngine
 		$this->dwoo->output($tpl, $data);
 	}
 	
+	public function clearInternalCache()
+	{
+	}
+	
 	protected function ensureLoaded()
 	{
 		if ($this->dwoo === null)

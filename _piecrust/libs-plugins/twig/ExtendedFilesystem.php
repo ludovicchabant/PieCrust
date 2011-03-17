@@ -2,11 +2,13 @@
 
 class Twig_Loader_ExtendedFilesystem extends Twig_Loader_Filesystem implements Twig_LoaderInterface
 {
+	protected $useTimeInCacheKey;
 	protected $templateStrings;
 	
-	public function __construct($paths)
+	public function __construct($paths, $useTimeInCacheKey = false)
 	{
 		parent::__construct($paths);
+		$this->useTimeInCacheKey = $useTimeInCacheKey;
 		$this->templateStrings = array();
 	}
 
@@ -25,8 +27,18 @@ class Twig_Loader_ExtendedFilesystem extends Twig_Loader_Filesystem implements T
 	public function getCacheKey($name)
 	{
 		if (isset($this->templateStrings[$name]))
+		{
 			return $this->templateStrings[$name];
-		return parent::getCacheKey($name);
+		}
+
+		$cacheKey = parent::getCacheKey($name);
+		if ($this->useTimeInCacheKey)
+		{
+			$path = $this->findTemplate($name);
+			$lastModified = filemtime($path);
+			$cacheKey .= $lastModified;
+		}
+		return $cacheKey;
 	}
 	
 	public function isFresh($name, $time)

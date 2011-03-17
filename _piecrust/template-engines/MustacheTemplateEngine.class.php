@@ -33,6 +33,10 @@ class MustacheTemplateEngine implements ITemplateEngine
 		$this->renderString($content, $data);
 	}
 	
+	public function clearInternalCache()
+	{
+	}
+	
 	protected function ensureLoaded()
 	{
 		if ($this->mustache === null)
