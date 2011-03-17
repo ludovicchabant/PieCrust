@@ -1,6 +1,8 @@
 <?php
 
+
 require_once 'StupidHttp_WebException.php';
+require_once 'StupidHttp_WebRequest.php';
 require_once 'StupidHttp_WebRequestHandler.php';
 require_once 'StupidHttp_WebResponse.php';
 
@@ -15,7 +17,7 @@ class StupidHttp_WebServer
  
     protected $documentRoot;   
     /**
-     *
+     * Gets the root directory for the served documents.
      */
     public function getDocumentRoot()
     {
@@ -24,7 +26,7 @@ class StupidHttp_WebServer
     
     protected $address;
     /**
-     *
+     * Gets the IP address (or host name) of the server.
      */
     public function getAddress()
     {
@@ -33,7 +35,7 @@ class StupidHttp_WebServer
     
     protected $port;
     /**
-     *
+     * Gets the port of the server.
      */
     public function getPort()
     {
@@ -42,7 +44,10 @@ class StupidHttp_WebServer
     
     protected $mimeTypes;
     /**
+     * Gets the mime types used by the server.
      *
+     * This is an associative array where file extensions are keys and
+     * HTTP mime types are values.
      */
     public function getMimeTypes()
     {
@@ -50,11 +55,19 @@ class StupidHttp_WebServer
     }
     
     /**
-     *
+     * Sets the mime types to be used by the server.
      */
     public function setMimeTypes($mimeTypes)
     {
         $this->mimeTypes = $mimeTypes;
+    }
+    
+    /**
+     * Sets a specific mime type for a given file extension.
+     */
+    public function setMimeType($extension, $mimeType)
+    {
+        $this->mimeTypes[$extension] = $mimeType;
     }
     
     /**
@@ -103,7 +116,7 @@ class StupidHttp_WebServer
     }
     
     /**
-     *
+     * Destructor for the StupidHttp_WebServer.
      */
     public function __destruct()
     {
@@ -114,6 +127,9 @@ class StupidHttp_WebServer
         }
     }
     
+    /**
+     * Adds a route to match requests against, and returns the handler.
+     */
     public function on($method, $uri)
     {
         $uri = '/' . trim($uri, '/');
@@ -121,6 +137,9 @@ class StupidHttp_WebServer
         return $this->onPattern($method, $uriPattern);
     }
     
+    /**
+     * Adds a route pattern to match requests against, and returns the handler.
+     */
     public function onPattern($method, $uriPattern)
     {
         $method = strtoupper($method);
@@ -135,7 +154,7 @@ class StupidHttp_WebServer
     }
 
     /**
-     *
+     * Runs the server.
      */
     public function run()
     {
@@ -148,7 +167,7 @@ class StupidHttp_WebServer
             }
         
             $emptyCount = 0;
-            $request = array();
+            $rawRequest = array();
             do
             {
                 if (false === ($buf = socket_read($msgsock, 2048, PHP_NORMAL_READ)))
@@ -166,12 +185,27 @@ class StupidHttp_WebServer
                 else
                 {
                     $emptyCount = 0;
-                    $request[] = $buf;
+                    $rawRequest[] = $buf;
                 }
             }
             while (true);
     
-            $this->processRequest($msgsock, $request);
+            try
+            {
+                $request = new StupidHttp_WebRequest($rawRequest);
+                $this->processRequest($msgsock, $request);
+            }
+            catch (StupidHttp_WebException $e)
+            {
+                if ($e->getCode() != 0)
+                {
+                    $this->returnResponse($msgsock, $e->getCode());
+                }
+                else
+                {
+                    $this->returnResponse($msgsock, 500);
+                }
+            }
             
             socket_close($msgsock);
         }
@@ -200,47 +234,60 @@ class StupidHttp_WebServer
         echo "Listening on " . $this->address . ":" . $this->port . "...\n\n";
     }
     
-    protected function processRequest($sock, array $request)
+    protected function processRequest($sock, StupidHttp_WebRequest $request)
     {
-        echo '> ' . $request[0];
+        echo '> ' . $request->getMethod() . ' ' . $request->getUri();
         
-        $matches = array();
-        if (!preg_match('/([A-Z]+)\s+([^\s]+)\s+HTTP\/1\.\d/', $request[0], $matches))
-        {
-            echo "Got bad request: " . $request[0] . PHP_EOL;
-            $this->returnResponse($sock, '400 Bad Request');
-            echo PHP_EOL;
-            return;
-        }
-        
-        $method = $matches[1];
-        $uri = $matches[2];
-        $documentPath = $this->getDocumentPath($uri);
+        $documentPath = $this->getDocumentPath($request->getUri());
         if (is_file($documentPath))
         {
-            // Serve existing file.
+            // Serve existing file...
+            // ...but check for timestamp first if possible.
+            $serverTimestamp = filemtime($documentPath);
+            $ifModifiedSince = $request->getHeader('If-Modified-Since');
+            if ($ifModifiedSince != null)
+            {
+                $clientTimestamp = strtotime($ifModifiedSince);
+                if ($clientTimestamp > $serverTimestamp)
+                {
+                    $this->returnResponse($sock, 304);
+                    return;
+                }
+            }
+            
+            // ...otherwise, check for similar checksum.
             $contents = file_get_contents($documentPath);
             $contentsHash = md5($contents);
+            $ifNoneMatch = $request->getHeader('If-None-Match');
+            if ($ifNoneMatch != null)
+            {
+                if ($ifNoneMatch == $contentsHash)
+                {
+                    $this->returnResponse($sock, 304);
+                    return;
+                }
+            }
+            
+            // ...ok, let's send the file.
             $extension = pathinfo($documentPath, PATHINFO_EXTENSION);
             $headers = array(
-                'Cache-Control: public',
                 'Content-MD5: ' . base64_encode($contentsHash),
                 'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain'),
                 'ETag: ' . $contentsHash,
                 'Last-Modified: ' . date("D, d M Y H:i:s T", filemtime($documentPath))
             );
-            $this->returnResponse($sock, '200 OK', $headers, $contents);
+            $this->returnResponse($sock, 200, $headers, $contents);
         }
-        else if (isset($this->requestHandlers[$method]))
+        else if (isset($this->requestHandlers[$request->getMethod()]))
         {
             // Run the request handlers.
             $handled = false;
-            foreach ($this->requestHandlers[$method] as $handler)
+            foreach ($this->requestHandlers[$request->getMethod()] as $handler)
             {
-                if ($handler->_isMatch($uri))
+                if ($handler->_isMatch($request->getUri()))
                 {
-                    $server = $this->buildServerVariables($method, $uri, $request);
-                    $response = new StupidHttp_WebResponse($uri, $server);
+                    $server = $this->buildServerVariables($request);
+                    $response = new StupidHttp_WebResponse($request->getUri(), $server);
                     ob_start();
                     $handled = $handler->_run($response);
                     $body = ob_get_clean();
@@ -255,8 +302,11 @@ class StupidHttp_WebServer
                         $log = $response->getLog();
                         if (!empty($log))
                         {
-                            echo PHP_EOL;
-                            echo $log;
+                            $logLines = explode('\n', $log);
+                            foreach ($logLines as $l)
+                            {
+                                echo '    : ' . $l . PHP_EOL;
+                            }
                         }
                         break;
                     }
@@ -264,16 +314,14 @@ class StupidHttp_WebServer
             }
             if (!$handled)
             {
-                $this->returnResponse($sock, '404 Not Found');
+                $this->returnResponse($sock, 404);
             }
         }
         else
         {
             // Nothing to do for this method.
-            $this->returnResponse($sock, '501 Not Implemented');
+            $this->returnResponse($sock, 501);
         }
-        
-        echo PHP_EOL;
     }
     
     protected function getDocumentPath($uri)
@@ -301,7 +349,9 @@ class StupidHttp_WebServer
     
     protected function returnResponse($sock, $code, $headers = null, $contents = null)
     {
-        echo '  ->  ' . $code;
+        if (!is_int($code)) throw new StupidHttp_WebException('The given HTTP return code was not an integer: ' . $code, 500);
+        
+        echo '  ->  ' . self::getHttpStatusHeader($code) . PHP_EOL;
         
         $response = "HTTP/1.1 " . $code . PHP_EOL;
         $response .= "Server: PieCrust Chef Server\n";
@@ -328,32 +378,80 @@ class StupidHttp_WebServer
         socket_write($sock, $response, strlen($response));
     }
     
-    protected function buildServerVariables($method, $uri, $request)
+    protected function buildServerVariables(StupidHttp_WebRequest $request)
     {
         $server = array();
         
-        $server['REQUEST_METHOD'] = $method;
+        $server['REQUEST_METHOD'] = $request->getMethod();
         $server['SERVER_NAME'] = $this->address;
         $server['SERVER_PORT'] = $this->port;
         $server['SERVER_PROTOCOL'] = 'HTTP/1.1';
-        $server['QUERY_STRING'] = $uri;
-        $server['REQUEST_URI'] = $uri;
+        $server['QUERY_STRING'] = $request->getUri();
+        $server['REQUEST_URI'] = $request->getUri();
         $server['REQUEST_TIME'] = time();
         $server['argv'] = array();
         $server['argc'] = 0;
         
-        foreach ($request as $entry)
+        $headers = $request->getHeaders();
+        foreach ($headers as $key => $value)
         {
-            $matches = array();
-            if (preg_match('/^([\w\-]+):\s+(.*)$/', $entry, $matches))
-            {
-                $key = $matches[1];
-                $value = $matches[2];
-                $serverKey = 'HTTP_' . str_replace('-', '_', strtoupper($key));
-                $server[$serverKey] = $value;
-            }
+            $serverKey = 'HTTP_' . str_replace('-', '_', strtoupper($key));
+            $server[$serverKey] = $value;
         }
+        
         return $server;
     }
+    
+    /**
+     * Gets the full HTTP header for a given status code.
+     */
+    public static function getHttpStatusHeader($code)
+    {
+        static $headers = array(100 => "100 Continue",
+                                200 => "200 OK",
+                                201 => "201 Created",
+                                204 => "204 No Content",
+                                206 => "206 Partial Content",
+                                300 => "300 Multiple Choices",
+                                301 => "301 Moved Permanently",
+                                302 => "302 Found",
+                                303 => "303 See Other",
+                                304 => "304 Not Modified",
+                                307 => "307 Temporary Redirect",
+                                400 => "400 Bad Request",
+                                401 => "401 Unauthorized",
+                                403 => "403 Forbidden",
+                                404 => "404 Not Found",
+                                405 => "405 Method Not Allowed",
+                                406 => "406 Not Acceptable",
+                                408 => "408 Request Timeout",
+                                410 => "410 Gone",
+                                413 => "413 Request Entity Too Large",
+                                414 => "414 Request URI Too Long",
+                                415 => "415 Unsupported Media Type",
+                                416 => "416 Requested Range Not Satisfiable",
+                                417 => "417 Expectation Failed",
+                                500 => "500 Internal Server Error",
+                                501 => "501 Method Not Implemented",
+                                503 => "503 Service Unavailable",
+                                506 => "506 Variant Also Negotiates");
+        return $headers[$code];
+    }
 }
+
+
+
+// Global stuff.
+
+// Test compatibility of current system.
+$shady_functions = array("socket_create");
+foreach ($shady_functions as $name)
+{
+    if (!is_callable($name))
+    {
+        errexit("StupidHttp: Function '" . $name. "' is not available on your system.");
+    }
+}
+
+
 

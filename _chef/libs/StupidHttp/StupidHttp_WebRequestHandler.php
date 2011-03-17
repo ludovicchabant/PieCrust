@@ -1,6 +1,10 @@
 <?php
 
 
+/**
+ * A class that handles a set of specific requests given
+ * a URI pattern and a callback.
+ */
 class StupidHttp_WebRequestHandler
 {
     protected $server;
@@ -8,6 +12,9 @@ class StupidHttp_WebRequestHandler
     protected $uriPatternMatches;
     protected $callback;
     
+    /**
+     * Creates a new StupidHttp_WebRequestHandler.
+     */
     public function __construct(StupidHttp_WebServer $server, $uriPattern)
     {
         $this->server = $server;
@@ -15,6 +22,9 @@ class StupidHttp_WebRequestHandler
         $this->uriPatternMatches = array();
     }
     
+    /**
+     * Specifies the callback to use if a matching HTTP request comes up.
+     */
     public function call($callback)
     {
         if (!is_callable($callback))
@@ -25,11 +35,18 @@ class StupidHttp_WebRequestHandler
         return $this;
     }
     
+    /**
+     * Internal use only.
+     */
     public function _isMatch($uri)
     {
+        if ($this->callback == null) return false;
         return preg_match($this->uriPattern, $uri, $this->uriPatternMatches);
     }
     
+    /**
+     * Internal use only.
+     */
     public function _run($response)
     {
         $callback = $this->callback;

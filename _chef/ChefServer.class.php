@@ -7,14 +7,14 @@ require_once 'PieCrustException.class.php';
 require_once 'StupidHttp/StupidHttp_WebServer.php';
 
 /**
- *
+ * The PieCrust chef server.
  */
 class ChefServer
 {
     protected $server;
     
     /**
-     *
+     * Creates a new chef server.
      */
     public function __construct($appDir, $port = 8080)
     {
@@ -25,6 +25,7 @@ class ChefServer
         $self = $this; // Workaround for $this not being capturable in closures.
         $appDir = rtrim(realpath($appDir), '/\\');
         $this->server = new StupidHttp_WebServer($appDir, $port);
+        $this->server->setMimeType('less', 'text/css');
         $this->server->onPattern('GET', '.*')
                      ->call(function($response) use ($self)
                             {
@@ -33,13 +34,16 @@ class ChefServer
     }
 
     /**
-     *
+     * Runs the chef server.
      */
     public function run()
     {
         $this->server->run();
     }
     
+    /**
+     * For internal use only.
+     */
     public function runPieCrustRequest(StupidHttp_WebResponse $response)
     {
         $startTime = microtime(true);
@@ -63,9 +67,9 @@ class ChefServer
             $pieCrustError = $e->getMessage();
         }
         
-        $code = ($pieCrustError == null) ? '200 OK' :
+        $code = ($pieCrustError == null) ? 200 :
                     (
-                        ($pieCrustError == '404') ? '404 Not Found' : '500 Internal Server Error'
+                        ($pieCrustError == '404') ? 404 : 500
                     );
                     
         $response->setStatus($code);
@@ -76,7 +80,7 @@ class ChefServer
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
-        $response->addLog("    : Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        $response->addLog("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
         
         return true;
     }
