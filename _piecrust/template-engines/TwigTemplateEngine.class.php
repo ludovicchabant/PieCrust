@@ -57,10 +57,11 @@ class TwigTemplateEngine implements ITemplateEngine
     {
         if ($this->twigEnv === null or $this->twigLoader === null)
         {
-            require_once(PIECRUST_APP_DIR . 'libs/twig/lib/Twig/Autoloader.php');
+            require_once 'libs/twig/lib/Twig/Autoloader.php';
             Twig_Autoloader::register();
-            require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/ExtendedFilesystem.php');
-            require_once(PIECRUST_APP_DIR . 'libs-plugins/twig/PieCrustExtension.php');
+            require_once 'libs-plugins/twig/ExtendedFilesystem.php';
+            require_once 'libs-plugins/twig/PieCrustExtension.php';
+            require_once 'libs-plugins/twig/GeshiExtension.php';
             
             $dirs = array(rtrim($this->pieCrust->getTemplatesDir(), DIRECTORY_SEPARATOR));
             $useTimeInCacheKey = ($this->pieCrust->getConfigValue('server', 'is_hosting') === true);
@@ -77,6 +78,7 @@ class TwigTemplateEngine implements ITemplateEngine
             }
             $this->twigEnv = new Twig_Environment($this->twigLoader, $options);
             $this->twigEnv->addExtension(new PieCrustExtension($this->pieCrust));
+            $this->twigEnv->addExtension(new GeshiExtension());
         }
     }
 }
