@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?php
 
+error_reporting(E_ALL);
+
 require_once 'ChefEnvironment.inc.php';
 require_once 'PieCrustBaker.class.php';
 
