@@ -28,6 +28,14 @@ class StupidHttp_WebRequest
     }
     
     /**
+     * Gets the HTTP version used ('HTTP/1.0' or 'HTTP/1.1').
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+    
+    /**
      * Gets the headers for the request.
      *
      * This is an associative array with the header names as keys
