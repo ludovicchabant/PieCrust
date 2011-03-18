@@ -26,10 +26,11 @@ class StupidHttp_WebResponse
     /**
      * Creates a new instance of StupidHttp_WebResponse.
      */
-    public function __construct($uri, $serverVariables)
+    public function __construct($uri, $serverVariables, $log)
     {
         $this->uri = $uri;
         $this->serverVariables = $serverVariables;
+        $this->log = $log;
     }
     
     protected $status;
@@ -59,6 +60,14 @@ class StupidHttp_WebResponse
     }
     
     /**
+     * Gets a specific HTTP header.
+     */
+    public function getHeader($header)
+    {
+        return $this->headers[$header];
+    }
+    
+    /**
      * Adds an HTTP header to return.
      */
     public function addHeader($header)
@@ -73,14 +82,6 @@ class StupidHttp_WebResponse
     public function getLog()
     {
         return $this->log;
-    }
-    
-    /**
-     * Adds a line of text to be logged by the StupidHttp_WebServer.
-     */
-    public function addLog($log)
-    {
-        $this->log .= $log . PHP_EOL;
     }
 }
 

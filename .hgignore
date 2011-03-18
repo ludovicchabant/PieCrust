@@ -7,17 +7,21 @@ Thumbs\.db
 ^website/_cache/.*?\.(?!empty)
 
 # Libs files we don't need.
-^website/_piecrust/libs/geshi/docs/
-^website/_piecrust/libs/sfyaml/doc/
-^website/_piecrust/libs/sfyaml/test/
-^website/_piecrust/libs/twig/bin/
-^website/_piecrust/libs/twig/doc/
-^website/_piecrust/libs/twig/test/
-^website/_piecrust/libs/twig/phpunit\.xml
-^website/_piecrust/libs/lessphp/docs/
-^website/_piecrust/libs/lessphp/tests/
-^website/_piecrust/libs/lessphp/\.gitignore
-^website/_piecrust/libs/mustache/\.gitmodules
-^website/_piecrust/libs/mustache/examples/
-^website/_piecrust/libs/mustache/test/
+.gitignore
+.gitmodules
+^_piecrust/libs/geshi/docs/
+^_piecrust/libs/sfyaml/doc/
+^_piecrust/libs/sfyaml/test/
+^_piecrust/libs/twig/bin/
+^_piecrust/libs/twig/doc/
+^_piecrust/libs/twig/test/
+^_piecrust/libs/twig/phpunit\.xml
+^_piecrust/libs/lessphp/docs/
+^_piecrust/libs/lessphp/tests/
+^_piecrust/libs/mustache/examples/
+^_piecrust/libs/mustache/test/
+^_chef/libs/Log/docs/
+^_chef/libs/Log/examples/
+^_chef/libs/Log/misc/
+^_chef/libs/Log/tests/
 tests/_cache

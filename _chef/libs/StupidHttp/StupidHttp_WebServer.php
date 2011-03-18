@@ -1,10 +1,10 @@
 <?php
 
-
-require_once 'StupidHttp_WebException.php';
+require_once 'StupidHttp_Log.php';
 require_once 'StupidHttp_WebRequest.php';
-require_once 'StupidHttp_WebRequestHandler.php';
 require_once 'StupidHttp_WebResponse.php';
+require_once 'StupidHttp_WebException.php';
+require_once 'StupidHttp_WebRequestHandler.php';
 
 
 /**
@@ -70,6 +70,23 @@ class StupidHttp_WebServer
         $this->mimeTypes[$extension] = $mimeType;
     }
     
+    protected $log;
+    /**
+     * Gets the current log system.
+     */
+    public function getLog()
+    {
+        return $this->log;
+    }
+    
+    /**
+     * Sets the log system.
+     */
+    public function setLog(StupidHttp_Log $log)
+    {
+        $this->log = $log;
+    }
+    
     /**
      * Create a new instance of the stupid HTTP web server.
      */
@@ -79,6 +96,7 @@ class StupidHttp_WebServer
         
         $this->address = $address;
         $this->port = $port;
+        $this->log = null;
         
         if (!is_dir($documentRoot))
         {
@@ -122,7 +140,8 @@ class StupidHttp_WebServer
     {
         if ($this->sock !== null)
         {
-            echo "Shutting server down...\n\n";
+            $this->logInfo("Shutting server down...");
+            $this->logInfo("");
             socket_close($this->sock);
         }
     }
@@ -156,9 +175,21 @@ class StupidHttp_WebServer
     /**
      * Runs the server.
      */
-    public function run(array $options = null)
+    public function run(array $options = array())
     {
-        if ($options == null) $options = array();
+        try
+        {
+            $this->runUnsafe($options);
+        }
+        catch (Exception $e)
+        {
+            $this->logCritical($e->getMessage());
+            $this->logCritical("Shutting down server...");
+        }
+    }
+    
+    protected function runUnsafe(array $options = array())
+    {
         $options = array_merge(
             array('run_browser' => false),
             $options
@@ -171,80 +202,140 @@ class StupidHttp_WebServer
             $this->runBrowser();
         }
         
+        $msgsock = false;
         do
         {
-            if (($msgsock = socket_accept($this->sock)) === false)
+            if ($msgsock === false)
             {
-                throw new StupidHttp_WebException("Failed accepting connection: " . socket_strerror(socket_last_error($this->sock)));
+                $this->logDebug("Opening connection...");
+                if (($msgsock = @socket_accept($this->sock)) === false)
+                {
+                    throw new StupidHttp_WebException("Failed accepting connection: " . socket_strerror(socket_last_error($this->sock)));
+                }
+                
+                $timeout = array('sec' => 5, 'usec' => 0);
+                if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
+                {
+                    throw new StupidHttp_WebException("Failed setting timeout value: " . socket_strerror(socket_last_error($msgsock)));
+                }
             }
         
             $emptyCount = 0;
             $rawRequest = array();
+            $closeSocket = true;
+            $processRequest = false;
             do
             {
-                if (false === ($buf = socket_read($msgsock, 2048, PHP_NORMAL_READ)))
+                if (false === ($buf = @socket_read($msgsock, 2048, PHP_NORMAL_READ)))
                 {
-                    throw new StupidHttp_WebException("Error while reading request: " . socket_strerror(socket_last_error($msgsock)));
+                    if (socket_last_error($msgsock) === SOCKET_ETIMEDOUT)
+                    {
+                        // Kept-alive connection probably timed out. Just close it.
+                        $closeSocket = true;
+                        $processRequest = false;
+                        if (!empty($rawRequest))
+                        {
+                            $this->logError("Timed out while receiving request.");
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        $this->logError("Error reading request from connection: " . socket_strerror(socket_last_error($msgsock)));
+                        $closeSocket = true;
+                        $processRequest = false;
+                        break;
+                    }
                 }
                 if (!$buf = trim($buf))
                 {
                     $emptyCount++;
                     if ($emptyCount >= 2)
                     {
+                        $processRequest = true;
                         break;
                     }
                 }
                 else
                 {
+                    $this->logDebug("Got: " . $buf);
                     $emptyCount = 0;
                     $rawRequest[] = $buf;
                 }
             }
             while (true);
-    
-            try
+            
+            if ($processRequest)
             {
-                $request = new StupidHttp_WebRequest($rawRequest);
-                $this->processRequest($msgsock, $request);
-            }
-            catch (StupidHttp_WebException $e)
-            {
-                if ($e->getCode() != 0)
+                try
                 {
-                    $this->returnResponse($msgsock, $e->getCode());
+                    $request = new StupidHttp_WebRequest($rawRequest);
+                    $this->processRequest($msgsock, $request);
+                    switch ($request->getVersion())
+                    {
+                    case 'HTTP/1.0':
+                    default:
+                        // Always close, unless asked to keep alive.
+                        $closeSocket = ($request->getHeader('Connection') != 'keep-alive');
+                        break;
+                    case 'HTTP/1.1':
+                        // Always keep alive, unless asked to close.
+                        $closeSocket = ($request->getHeader('Connection') == 'close');
+                        break;
+                    }
                 }
-                else
+                catch (StupidHttp_WebException $e)
                 {
+                    $this->logError($e->getCode() . ': ' . $e->getMessage());
+                    if ($e->getCode() != 0)
+                    {
+                        $this->returnResponse($msgsock, $e->getCode());
+                    }
+                    else
+                    {
+                        $this->returnResponse($msgsock, 500);
+                    }
+                }
+                catch (Exception $e)
+                {
+                    $this->logError($e->getCode() . ': ' . $e->getMessage());
                     $this->returnResponse($msgsock, 500);
                 }
             }
             
-            socket_close($msgsock);
-            gc_collect_cycles();
+            if ($closeSocket)
+            {
+                $this->logDebug("Closing connection.");
+                socket_close($msgsock);
+                $msgsock = false;
+                gc_collect_cycles();
+            }
         }
         while (true);
     }
     
     protected function setupNetworking()
     {
-        if (($this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false)
+        if (($this->sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false)
         {
             throw new StupidHttp_WebException("Can't create socket: " . socket_strerror(socket_last_error()));
         }
         
-        if (socket_bind($this->sock, $this->address, $this->port) === false)
+        if (@socket_bind($this->sock, $this->address, $this->port) === false)
         {
             throw new StupidHttp_WebException("Can't bind socket to " . $this->address . ":" . $this->port . ": " . socket_strerror(socket_last_error($this->sock)));
         }
         
-        if (socket_listen($this->sock, 5) === false)
+        if (@socket_listen($this->sock) === false)
         {
             throw new StupidHttp_WebException("Failed listening to socket on " . $this->address . ":" . $this->port . ": " . socket_strerror(socket_last_error($this->sock)));
         }
         
-        echo "\n";
-        echo "STUPID-HTTP SERVER\n\n";
-        echo "Listening on " . $this->address . ":" . $this->port . "...\n\n";
+        $this->logInfo("");
+        $this->logInfo("STUPID-HTTP SERVER");
+        $this->logInfo("");
+        $this->logInfo("Listening on " . $this->address . ":" . $this->port . "...");
+        $this->logInfo("");
     }
     
     protected function runBrowser()
@@ -264,7 +355,7 @@ class StupidHttp_WebServer
     
     protected function processRequest($sock, StupidHttp_WebRequest $request)
     {
-        echo '> ' . $request->getMethod() . ' ' . $request->getUri();
+        $this->logInfo('> ' . $request->getMethod() . ' ' . $request->getUri());
         
         $documentPath = $this->getDocumentPath($request->getUri());
         if (is_file($documentPath))
@@ -284,7 +375,14 @@ class StupidHttp_WebServer
             }
             
             // ...otherwise, check for similar checksum.
-            $contents = file_get_contents($documentPath);
+            $documentSize = filesize($documentPath);
+            $documentHandle = fopen($documentPath, "rb");
+            $contents = fread($documentHandle, $documentSize);
+            fclose($documentHandle);
+            if ($contents === false)
+            {
+                throw new StupidHttp_WebException('Error reading file: ' . $documentPath, 500);
+            }
             $contentsHash = md5($contents);
             $ifNoneMatch = $request->getHeader('If-None-Match');
             if ($ifNoneMatch != null)
@@ -299,6 +397,7 @@ class StupidHttp_WebServer
             // ...ok, let's send the file.
             $extension = pathinfo($documentPath, PATHINFO_EXTENSION);
             $headers = array(
+                'Content-Length: ' . $documentSize,
                 'Content-MD5: ' . base64_encode($contentsHash),
                 'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain'),
                 'ETag: ' . $contentsHash,
@@ -315,7 +414,7 @@ class StupidHttp_WebServer
                 if ($handler->_isMatch($request->getUri()))
                 {
                     $server = $this->buildServerVariables($request);
-                    $response = new StupidHttp_WebResponse($request->getUri(), $server);
+                    $response = new StupidHttp_WebResponse($request->getUri(), $server, $this->log);
                     ob_start();
                     $handled = $handler->_run($response);
                     $body = ob_get_clean();
@@ -327,15 +426,6 @@ class StupidHttp_WebServer
                             $response->getHeaders(),
                             $body
                         );
-                        $log = $response->getLog();
-                        if (!empty($log))
-                        {
-                            $logLines = explode('\n', $log);
-                            foreach ($logLines as $l)
-                            {
-                                echo '    : ' . $l . PHP_EOL;
-                            }
-                        }
                         break;
                     }
                 }
@@ -379,12 +469,11 @@ class StupidHttp_WebServer
     {
         if (!is_int($code)) throw new StupidHttp_WebException('The given HTTP return code was not an integer: ' . $code, 500);
         
-        echo '  ->  ' . self::getHttpStatusHeader($code) . PHP_EOL;
-        echo '    : ' . memory_get_usage() / (1024.0 * 1024.0) . 'Mb' . PHP_EOL;
+        $this->logInfo('    ->  ' . self::getHttpStatusHeader($code));
+        $this->logDebug('    : ' . memory_get_usage() / (1024.0 * 1024.0) . 'Mb');
         
         $response = "HTTP/1.1 " . self::getHttpStatusHeader($code) . PHP_EOL;
         $response .= "Server: PieCrust Chef Server\n";
-        $response .= "Connection: close\n";
         $response .= "Date: " . date("D, d M Y H:i:s T") . PHP_EOL;
         if ($headers != null)
         {
@@ -429,6 +518,43 @@ class StupidHttp_WebServer
         }
         
         return $server;
+    }
+    
+    protected function log($message, $type)
+    {
+        if ($this->log != null)
+        {
+            $this->log->log($message, $type);
+        }
+        if ($type <= StupidHttp_Log::TYPE_INFO)
+        {
+            echo StupidHttp_Log::messageTypeToString($type) . ': ' . $message . PHP_EOL;
+        }
+    }
+    
+    protected function logCritical($message)
+    {
+        $this->log($message, StupidHttp_Log::TYPE_CRITICAL);
+    }
+    
+    protected function logError($message)
+    {
+        $this->log($message, StupidHttp_Log::TYPE_ERROR);
+    }
+    
+    protected function logWarning($message)
+    {
+        $this->log($message, StupidHttp_Log::TYPE_WARNING);
+    }
+    
+    protected function logInfo($message)
+    {
+        $this->log($message, StupidHttp_Log::TYPE_INFO);
+    }
+    
+    protected function logDebug($message)
+    {
+        $this->log($message, StupidHttp_Log::TYPE_DEBUG);
     }
     
     /**
@@ -481,6 +607,3 @@ foreach ($shady_functions as $name)
         errexit("StupidHttp: Function '" . $name. "' is not available on your system.");
     }
 }
-
-
-

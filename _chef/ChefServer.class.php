@@ -5,6 +5,8 @@ require_once 'PieCrust.class.php';
 require_once 'PieCrustException.class.php';
 
 require_once 'StupidHttp/StupidHttp_WebServer.php';
+require_once 'StupidHttp/StupidHttp_PearLog.php';
+
 
 /**
  * The PieCrust chef server.
@@ -26,6 +28,7 @@ class ChefServer
         $self = $this; // Workaround for $this not being capturable in closures.
         $appDir = rtrim(realpath($appDir), '/\\');
         $this->server = new StupidHttp_WebServer($appDir, $port);
+        $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
         $this->server->setMimeType('less', 'text/css');
         $this->server->onPattern('GET', '.*')
                      ->call(function($response) use ($self)
@@ -95,7 +98,7 @@ class ChefServer
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
-        $response->addLog("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        $response->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
         
         return true;
     }
