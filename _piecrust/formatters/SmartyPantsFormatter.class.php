@@ -36,7 +36,7 @@ class SmartyPantsFormatter implements IFormatter
     
     public function format($text)
     {
-        require_once(dirname(__FILE__) . '/../libs/' . $this->smartypantsLibDir . '/smartypants.php');
+        require_once ('libs/' . $this->smartypantsLibDir . '/smartypants.php');
         return SmartyPants($text);
     }
 }

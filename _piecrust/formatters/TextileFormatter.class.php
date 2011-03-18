@@ -18,7 +18,7 @@ class TextileFormatter implements IFormatter
     
     public function format($text)
     {
-        require_once(dirname(__FILE__) . '/../libs/textile/classTextile.php');
+        require_once 'libs/textile/classTextile.php';
         
         $textile = new Textile();
         return $textile->TextileThis($text);

@@ -26,7 +26,7 @@ class MarkdownFormatter implements IFormatter
     
     public function format($text)
     {
-        require_once(dirname(__FILE__) . '/../libs/' . $this->markdownLibDir . '/markdown.php');
+        require_once ('libs/' . $this->markdownLibDir . '/markdown.php');
         return Markdown($text);
     }
 }
