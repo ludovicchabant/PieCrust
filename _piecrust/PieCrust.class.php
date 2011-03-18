@@ -45,6 +45,12 @@ define('PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME', 'default');
 define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
 define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'twig');
 
+
+/**
+ * Set the include path
+ */
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__));
+
 /**
 * Include all the classes we need.
 */
@@ -512,7 +518,7 @@ class PieCrust
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
         if ($uri == null) $uri = $this->getRequestUri($server);
-		
+        
         // Do the heavy lifting.
         $page = new Page($this, $uri);
         if ($extraPageData != null) $page->setExtraPageData($extraPageData);
@@ -520,25 +526,25 @@ class PieCrust
         $output = $pageRenderer->get($page, $extraPageData);
         
         // Set or return the HTML headers.
-		if ($headers === null)
-		{
-			PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
-		}
-		else
-		{
-			$pageHeaders = PageRenderer::getHeaders($page->getConfigValue('content_type'), $server);
-			foreach ($pageHeaders as $h)
-			{
-				$headers[] = $h;
-			}
-		}
+        if ($headers === null)
+        {
+            PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
+        }
+        else
+        {
+            $pageHeaders = PageRenderer::getHeaders($page->getConfigValue('content_type'), $server);
+            foreach ($pageHeaders as $h)
+            {
+                $headers[] = $h;
+            }
+        }
         
         // Handle caching.
         if (!$this->isDebuggingEnabled())
         {
             $hash = md5($output);
-			self::setOrAddHeader('Etag: "' . $hash . '"', $headers);
-			
+            self::setOrAddHeader('Etag: "' . $hash . '"', $headers);
+            
             $clientHash = null;
             if (isset($server['HTTP_IF_NONE_MATCH']))
             {
@@ -549,8 +555,8 @@ class PieCrust
                 $clientHash = trim($clientHash, '"');
                 if ($hash == $clientHash)
                 {
-					self::setOrAddHeader('HTTP/1.1 304 Not Modified', $headers);
-					self::setOrAddHeader('Content-Length: 0', $headers);
+                    self::setOrAddHeader('HTTP/1.1 304 Not Modified', $headers);
+                    self::setOrAddHeader('Content-Length: 0', $headers);
                     return;
                 }
             }
@@ -589,7 +595,7 @@ class PieCrust
         }
         else
         {
-			self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
+            self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
             echo $output;
         }
     }
@@ -741,18 +747,18 @@ class PieCrust
         }
         echo $contents;
     }
-	
-	protected static function setOrAddHeader($header, array &$headers)
-	{
-		if ($headers === null)
-		{
-			header($header);
-		}
-		else
-		{
-			$headers[] = $header;
-		}
-	}
+    
+    protected static function setOrAddHeader($header, &$headers)
+    {
+        if ($headers === null)
+        {
+            header($header);
+        }
+        else
+        {
+            $headers[] = $header;
+        }
+    }
     
     /**
     * Sets up basic things like the global error handler or the timezone.
