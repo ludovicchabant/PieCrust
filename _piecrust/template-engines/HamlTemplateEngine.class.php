@@ -125,7 +125,7 @@ class HamlTemplateEngine implements ITemplateEngine
             $appConfig = $this->pieCrust->getConfig();
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
             else $hamlOptions = array();
-            require_once PIECRUST_APP_DIR . 'libs/phamlp/haml/HamlParser.php';
+            require_once 'libs/phamlp/haml/HamlParser.php';
             $this->haml = new HamlParser($hamlOptions);
         }
     }

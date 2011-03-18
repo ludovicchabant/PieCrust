@@ -41,7 +41,7 @@ class MustacheTemplateEngine implements ITemplateEngine
 	{
 		if ($this->mustache === null)
 		{
-			require_once(PIECRUST_APP_DIR . 'libs/mustache/Mustache.php');
+			require_once 'libs/mustache/Mustache.php';
 			$this->mustache = new Mustache();
 		}
 	}

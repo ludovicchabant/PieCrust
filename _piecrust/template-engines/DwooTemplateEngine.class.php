@@ -57,7 +57,7 @@ class DwooTemplateEngine implements ITemplateEngine
 			$cacheDir = $this->pieCrust->getCacheDir() . 'templates';
 			if (!is_dir($cacheDir)) mkdir($cacheDir, 0777, true);
 		
-			require_once(PIECRUST_APP_DIR . 'libs/dwoo/dwooAutoload.php');
+			require_once 'libs/dwoo/dwooAutoload.php';
 			$this->dwoo = new Dwoo($compileDir, $cacheDir);
 			$this->dwoo->getLoader()->addDirectory(PIECRUST_APP_DIR . 'libs-plugins/dwoo/');
 		}
