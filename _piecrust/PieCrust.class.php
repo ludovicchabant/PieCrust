@@ -526,24 +526,13 @@ class PieCrust
         $output = $pageRenderer->get($page, $extraPageData);
         
         // Set or return the HTML headers.
-        if ($headers === null)
-        {
-            PageRenderer::setHeaders($page->getConfigValue('content_type'), $server);
-        }
-        else
-        {
-            $pageHeaders = PageRenderer::getHeaders($page->getConfigValue('content_type'), $server);
-            foreach ($pageHeaders as $h)
-            {
-                $headers[] = $h;
-            }
-        }
+        self::setOrAddHeaders(PageRenderer::getHeaders($page->getConfigValue('content_type'), $server), $headers);
         
         // Handle caching.
         if (!$this->isDebuggingEnabled())
         {
             $hash = md5($output);
-            self::setOrAddHeader('Etag: "' . $hash . '"', $headers);
+            self::setOrAddHeader('Etag', '"' . $hash . '"', $headers);
             
             $clientHash = null;
             if (isset($server['HTTP_IF_NONE_MATCH']))
@@ -555,15 +544,15 @@ class PieCrust
                 $clientHash = trim($clientHash, '"');
                 if ($hash == $clientHash)
                 {
-                    self::setOrAddHeader('HTTP/1.1 304 Not Modified', $headers);
-                    self::setOrAddHeader('Content-Length: 0', $headers);
+                    self::setOrAddHeader(0, 304, $headers);
+                    self::setOrAddHeader('Content-Length', '0', $headers);
                     return;
                 }
             }
         }
         if ($this->isDebuggingEnabled())
         {
-            self::setOrAddHeader('Cache-Control: no-cache, must-revalidate', $headers);
+            self::setOrAddHeader('Cache-Control', 'no-cache, must-revalidate', $headers);
         }
         else
         {
@@ -571,7 +560,7 @@ class PieCrust
             if ($cacheTime === null) $cacheTime = $this->getConfigValue('site', 'cache_time');
             if ($cacheTime)
             {
-                self::setOrAddHeader('Cache-Control: public, max-age=' . $cacheTime, $headers);
+                self::setOrAddHeader('Cache-Control', 'public, max-age=' . $cacheTime, $headers);
             }
         }
     
@@ -583,19 +572,19 @@ class PieCrust
             $zippedOutput = gzencode($output);
             if ($zippedOutput === false)
             {
-                self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
+                self::setOrAddHeader('Content-Length', strlen($output), $headers);
                 echo $output;
             }
             else
             {
-                self::setOrAddHeader('Content-Encoding: gzip', $headers);
-                self::setOrAddHeader('Content-Length: ' . strlen($zippedOutput), $headers);
+                self::setOrAddHeader('Content-Encoding', 'gzip', $headers);
+                self::setOrAddHeader('Content-Length', strlen($zippedOutput), $headers);
                 echo $zippedOutput;
             }
         }
         else
         {
-            self::setOrAddHeader('Content-Length: ' . strlen($output), $headers);
+            self::setOrAddHeader('Content-Length', strlen($output), $headers);
             echo $output;
         }
     }
@@ -748,16 +737,64 @@ class PieCrust
         echo $contents;
     }
     
-    protected static function setOrAddHeader($header, &$headers)
+    protected static function setOrAddHeader($header, $value, &$headers)
     {
         if ($headers === null)
         {
-            header($header);
+            if ($header === 0)
+            {
+                header("HTTP/1.1 " . self::getHttpStatusHeader($value));
+            }
+            else
+            {
+                header($header . ': ' . $value);
+            }
         }
         else
         {
-            $headers[] = $header;
+            $headers[$header] = $value;
         }
+    }
+    
+    protected static function setOrAddHeaders($headersAndValues, &$headers)
+    {
+        foreach ($headersAndValues as $h => $v)
+        {
+            self::setOrAddHeader($h, $v, $headers);
+        }
+    }
+    
+    protected static function getHttpStatusHeader($code)
+    {
+        static $headers = array(100 => "100 Continue",
+                                200 => "200 OK",
+                                201 => "201 Created",
+                                204 => "204 No Content",
+                                206 => "206 Partial Content",
+                                300 => "300 Multiple Choices",
+                                301 => "301 Moved Permanently",
+                                302 => "302 Found",
+                                303 => "303 See Other",
+                                304 => "304 Not Modified",
+                                307 => "307 Temporary Redirect",
+                                400 => "400 Bad Request",
+                                401 => "401 Unauthorized",
+                                403 => "403 Forbidden",
+                                404 => "404 Not Found",
+                                405 => "405 Method Not Allowed",
+                                406 => "406 Not Acceptable",
+                                408 => "408 Request Timeout",
+                                410 => "410 Gone",
+                                413 => "413 Request Entity Too Large",
+                                414 => "414 Request URI Too Long",
+                                415 => "415 Unsupported Media Type",
+                                416 => "416 Requested Range Not Satisfiable",
+                                417 => "417 Expectation Failed",
+                                500 => "500 Internal Server Error",
+                                501 => "501 Method Not Implemented",
+                                503 => "503 Service Unavailable",
+                                506 => "506 Variant Also Negotiates");
+        return $headers[$code];
     }
     
     /**

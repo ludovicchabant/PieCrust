@@ -63,10 +63,10 @@ class ChefServer
         $pieCrust = new PieCrust(array(
                                         'url_base' => 'http://' . $this->server->getAddress() . ':' . $this->server->getPort(),
                                         'root' => $this->server->getDocumentRoot(),
-                                        'cache' => true,
-                                        'debug' => true
+                                        'cache' => true
                                         )
                                   );
+        $pieCrust->setConfigValue('site', 'cache_time', false);
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
         $pieCrust->setConfigValue('server', 'is_hosting', true);
         if ($this->additionalTemplatesDir != null)
@@ -85,15 +85,23 @@ class ChefServer
             $pieCrustError = $e->getMessage();
         }
         
-        $code = ($pieCrustError == null) ? 200 :
-                    (
-                        ($pieCrustError == '404') ? 404 : 500
-                    );
-                    
-        $response->setStatus($code);
-        foreach ($pieCrustHeaders as $h)
+        if (isset($pieCrustHeaders[0]))
         {
-            $response->addHeader($h);
+            $code = $pieCrustHeaders[0];
+            unset($pieCrustHeaders[0]); // Unset so we can iterate on headers more easily later.
+        }
+        else
+        {
+            $code = ($pieCrustError == null) ? 200 :
+                        (
+                            ($pieCrustError == '404') ? 404 : 500
+                        );
+        }
+        $response->setStatus($code);
+        
+        foreach ($pieCrustHeaders as $h => $v)
+        {
+            $response->setHeader($h, $v);
         }
         
         $endTime = microtime(true);

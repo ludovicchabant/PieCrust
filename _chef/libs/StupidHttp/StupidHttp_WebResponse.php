@@ -31,6 +31,7 @@ class StupidHttp_WebResponse
         $this->uri = $uri;
         $this->serverVariables = $serverVariables;
         $this->log = $log;
+        $this->headers = array();
     }
     
     protected $status;
@@ -60,6 +61,19 @@ class StupidHttp_WebResponse
     }
     
     /**
+     * Gets a formatted version of the HTTP headers that should be returned.
+     */
+    public function getFormattedHeaders()
+    {
+        $res = array();
+        foreach ($this->headers as $header => $value)
+        {
+            $res[] = $header . ': ' . $value;
+        }
+        return $res;
+    }
+    
+    /**
      * Gets a specific HTTP header.
      */
     public function getHeader($header)
@@ -68,11 +82,11 @@ class StupidHttp_WebResponse
     }
     
     /**
-     * Adds an HTTP header to return.
+     * Sets an HTTP header to return.
      */
-    public function addHeader($header)
+    public function setHeader($header, $value)
     {
-        $this->headers[] = $header;
+        $this->headers[$header] = $value;
     }
     
     protected $log;

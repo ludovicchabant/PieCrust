@@ -423,7 +423,7 @@ class StupidHttp_WebServer
                         $this->returnResponse(
                             $sock,
                             $response->getStatus(),
-                            $response->getHeaders(),
+                            $response->getFormattedHeaders(),
                             $body
                         );
                         break;
