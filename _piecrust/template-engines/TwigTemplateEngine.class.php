@@ -32,9 +32,16 @@ class TwigTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         
-        $this->twigLoader->setTemplateSource('__string_tpl__', $content);
-        $tpl = $this->twigEnv->loadTemplate('__string_tpl__');
-        $tpl->display($data);
+        // Temporarily disable caching in Twig to prevent the _cache folder from
+        // becoming enormous.
+        $cache = $this->twigEnv->getCache();
+        $this->twigEnv->setCache(false);
+        {
+            $this->twigLoader->setTemplateSource('__string_tpl__', $content);
+            $tpl = $this->twigEnv->loadTemplate('__string_tpl__');
+            $tpl->display($data);
+        }
+        $this->twigEnv->setCache($cache);
     }
     
     public function renderFile($templateName, $data)
