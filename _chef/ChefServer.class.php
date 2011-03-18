@@ -12,6 +12,7 @@ require_once 'StupidHttp/StupidHttp_WebServer.php';
 class ChefServer
 {
     protected $server;
+    protected $additionalTemplatesDir;
     
     /**
      * Creates a new chef server.
@@ -36,9 +37,18 @@ class ChefServer
     /**
      * Runs the chef server.
      */
-    public function run()
+    public function run(array $options = null)
     {
-        $this->server->run(array('run_browser' => true));
+        if ($options != null)
+        {
+            $this->additionalTemplatesDir = $options['templates_dir'];
+        }
+        else
+        {
+            $this->additionalTemplatesDir = null;
+        }
+        
+        $this->server->run($options);
     }
     
     /**
@@ -56,6 +66,10 @@ class ChefServer
                                   );
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
         $pieCrust->setConfigValue('server', 'is_hosting', true);
+        if ($this->additionalTemplatesDir != null)
+        {
+            $pieCrust->getTemplateEngine()->addTemplatesPaths($this->additionalTemplatesDir);
+        }
         
         $pieCrustError = null;
         $pieCrustHeaders = array();
