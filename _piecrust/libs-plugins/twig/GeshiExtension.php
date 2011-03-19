@@ -17,4 +17,17 @@ class GeshiExtension extends Twig_Extension
             new GeshiTokenParser(),
         );
     }
+    
+    public function getFunctions()
+    {
+        return array(
+            'geshi_css' => new Twig_Function_Method($this, 'getGeshiCss')
+        );
+    }
+    
+    public function getGeshiCss($value)
+    {
+        $geshi = new Geshi('', $value);
+        return $geshi->get_stylesheet(false);
+    }
 }
