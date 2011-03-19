@@ -8,6 +8,16 @@ class DwooTemplateEngine implements ITemplateEngine
     {
         return self::$currentApp->formatUri($uri);
     }
+	
+	public static function getTagUrlFormat()
+	{
+		return self::$currentApp->getConfigValueUnchecked('site', 'tag_url');
+	}
+	
+	public static function getCategoryUrlFormat()
+	{
+        return self::$currentApp->getConfigValueUnchecked('site', 'category_url');
+	}
     
 	protected $pieCrust;
     protected $dwoo;
