@@ -6,7 +6,23 @@
  */
 interface IImporter
 {
+	/**
+	 * Opens the file/database/whatever.
+	 */
+	public function open($connection);
+	
+	/**
+	 * Imports the pages into the given directory.
+	 */
 	public function importPages($pagesDir);
-	public function importPosts($postsDir);
+	
+	/**
+	 * Imports posts into the given directory using the given format.
+	 */
+	public function importPosts($postsDir, $mode);
+	
+	/**
+	 * Closes any open resources.
+	 */
 	public function close();
 }

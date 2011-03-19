@@ -19,7 +19,7 @@ class WordpressImporter implements IImporter
 	{
 	}
 	
-	public function importPosts($postsDir, $mode = 'flat')
+	public function importPosts($postsDir, $mode)
 	{
 		foreach ($this->xml->channel->item as $item)
 		{

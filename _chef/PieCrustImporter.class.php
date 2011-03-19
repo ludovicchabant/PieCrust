@@ -2,7 +2,6 @@
 
 require_once 'IImporter.class.php';
 
-define('PIECRUST_IMPORT_DIR', '_import');
 
 /**
  * A class that bootstraps the importer classes to import content into a PieCrust website.
@@ -10,31 +9,6 @@ define('PIECRUST_IMPORT_DIR', '_import');
 class PieCrustImporter
 {
 	protected $pieCrust;
-	
-	protected $importDir;
-	/**
-	 * Gets the import directory.
-	 */
-	public function getImportDir()
-	{
-		if ($this->importDir === null)
-		{
-            $this->setImportDir($this->pieCrust()->getRootDir() . PIECRUST_IMPORT_DIR);
-		}
-        return $this->importDir;
-	}
-	
-	/**
-	 * Sets the import directory.
-	 */
-	public function setImportDir($dir)
-	{
-		$this->importDir = $dir;
-		if (is_dir($this->importDir) === false)
-		{
-            throw new PieCrustException('The import directory doesn\'t exist: ' . $this->importDir);
-		}
-	}
 	
 	/**
 	 * Creates a new instance of PieCrustImporter.
@@ -45,23 +19,26 @@ class PieCrustImporter
 	}
 	
 	/**
-	 * Imports content found in the import directory.
+	 * Imports content at the given source, using the given importer format.
 	 */
-	public function import()
+	public function import($format, $source)
 	{
-		$files = new FilesystemIterator($this->getImportDir());
-		foreach ($files as $f)
+		$format = ucfirst(strtolower($format));
+		$type = $format . 'Importer';
+		try
 		{
-			echo 'Importing: ' . $f->getFilename() . "\n";
-			
-			$fi = pathinfo($f->getFilename());
-			$type = $fi['filename'] . 'Importer';
-			
-			require_once ('importers' . DIRECTORY_SEPARATOR . $type . '.class.php');
-			$importer = new $type();
-			$importer->open($f->getPathname());
-			$importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfigValue('site', 'posts_fs'));
-			$importer->close();
+			include_once ('importers/' . $type . '.class.php');
 		}
+		catch (Exception $e)
+		{
+			throw new Exception('Importer format "' . $format . '" is unknown: ' . $e->getMessage());
+		}
+		
+		echo 'Importing "' . $source . '" using format "' . $format . '".' . PHP_EOL;
+		$importer = new $type();
+		$importer->open($source);
+		$importer->importPages($this->pieCrust()->getPagesDir());
+		$importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfigValue('site', 'posts_fs'));
+		$importer->close();
 	}
 }
