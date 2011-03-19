@@ -683,7 +683,7 @@ class Page
             array(
                 'layout' => $this->isPost() ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
                 'format' => $this->pieCrust->getConfigValueUnchecked('site', 'default_format'),
-				'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'template_engine'),
+				'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',
                 'title' => 'Untitled Page',
                 'segments' => array()

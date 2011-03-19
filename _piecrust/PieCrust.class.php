@@ -299,7 +299,7 @@ class PieCrust
                         'title' => 'PieCrust Untitled Website',
                         'root' => $this->urlBase,
                         'default_format' => PIECRUST_DEFAULT_FORMAT,
-                        'template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
+                        'default_template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
                         'pretty_urls' => false,
                         'posts_per_page' => 5,
@@ -436,7 +436,7 @@ class PieCrust
         
         if ($extension == 'html')
         {
-            $extension = $this->getConfigValueUnchecked('site', 'template_engine');
+            $extension = $this->getConfigValueUnchecked('site', 'default_template_engine');
         }
         return $this->templateEngines[$extension];
     }
