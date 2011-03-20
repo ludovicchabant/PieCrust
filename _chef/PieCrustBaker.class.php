@@ -20,7 +20,6 @@ require_once 'PageBaker.class.php';
 class PieCrustBaker
 {
     protected $pieCrust;
-    
     protected $bakeRecord;
     
     protected $parameters;
@@ -70,7 +69,21 @@ class PieCrustBaker
         $this->bakeDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
         if (is_writable($this->bakeDir) === false)
         {
-            throw new PieCrustException('The bake directory must be writable: ' . $this->bakeDir);
+			try
+            {
+                if (!is_dir($this->bakeDir))
+                {
+                    mkdir($dir, 0777, true);
+                }
+                else
+                {
+                    chmod($this->bakeDir, 0777);
+                }
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException('The bake directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->bakeDir);
+            }
         }
     }
     
@@ -84,7 +97,8 @@ class PieCrustBaker
         
         $this->parameters = array_merge(array(
             'smart' => true,
-            'copy_assets' => false
+            'copy_assets' => false,
+			'copy_misc' => false
         ), $parameters);
         
         $this->dependencies = array('images', 'pictures', 'js', 'css', 'styles');
@@ -120,69 +134,10 @@ class PieCrustBaker
         $this->bakeRecord = null;
     }
     
-    /**
-     * Bake one specific page only.
-     */
-    public function bakePage($path, $smart = false)
-    {
-        $path = realpath($path);
-        if (!is_file($path))
-        {
-            throw new PieCrustException("The given page path does not exist.");
-        }
-        if ($this->bakeRecord == null and $smart)
-        {
-            throw new PieCrustException("Can't bake a page in 'smart' mode without a bake-record active.");
-        }
-        
-        $pagesDir = $this->pieCrust->getPagesDir();
-        $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
-        $relativePathInfo = pathinfo($relativePath);
-        if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
-            $relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
-            $relativePathInfo['extension'] != 'html')
-        {
-            return false;
-        }
-        if ($smart)
-        {
-            // Don't bake this file if it is up-to-date and is not using any posts (if any was rebaked).
-            if (!$this->shouldRebakeFile($path) and 
-                    (!$this->bakeRecord->wasAnyPostBaked() or 
-                     !$this->bakeRecord->isPageUsingPosts($relativePath))
-               )
-            {
-                return false;
-            }
-        }
-        
-        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-        $uri = str_replace('_index', '', $uri);
-        
-        echo ' > ' . $relativePath;
-        $page = Page::create(
-                $this->pieCrust,
-                $uri,
-                $path
-            );
-        $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
-        $baker->bake($page);
-        
-        if ($smart)
-        {
-            if ($baker->wasPaginationDataAccessed())
-            {
-                $this->bakeRecord->addPageUsingPosts($relativePath);
-            }
-        }
-        
-        echo PHP_EOL;
-        
-        return true;
-    }
-    
     protected function bakePages()
     {
+		if ($this->bakeRecord == null) throw new PieCrustException("Can't bake pages without a bake-record active.");
+		
         echo "Baking pages:\n";
         
         $hasBaked = false;
@@ -192,7 +147,7 @@ class PieCrustBaker
         foreach ($iterator as $path)
         {
 			if ($iterator->isDot()) continue;
-            $hasBaked |= $this->bakePage($path->getPathname(), true);
+            $hasBaked |= $this->bakePage($path->getPathname());
         }
         if (!$hasBaked)
         {
@@ -201,9 +156,51 @@ class PieCrustBaker
         
         echo PHP_EOL;
     }
+	
+	protected function bakePage($path)
+    {
+        $path = realpath($path);
+        $pagesDir = $this->pieCrust->getPagesDir();
+        $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
+        $relativePathInfo = pathinfo($relativePath);
+        if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
+            $relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
+            $relativePathInfo['extension'] != 'html')
+        {
+            return false;
+        }
+
+		// Don't bake this file if it is up-to-date and is not using any posts (if any was rebaked).
+		if (!$this->shouldRebakeFile($path) and 
+				(!$this->bakeRecord->wasAnyPostBaked() or 
+				 !$this->bakeRecord->isPageUsingPosts($relativePath))
+		   )
+		{
+			return false;
+		}
+        
+		echo ' > ' . $relativePath;
+        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+        $uri = str_replace('_index', '', $uri);
+        $page = Page::create(
+                $this->pieCrust,
+                $uri,
+                $path
+            );
+        $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+        $baker->bake($page);
+		if ($baker->wasPaginationDataAccessed())
+		{
+			$this->bakeRecord->addPageUsingPosts($relativePath);
+		}
+        echo PHP_EOL;
+        
+        return true;
+    }
     
     protected function bakePosts()
     {
+		if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
         echo "Baking posts:\n";
@@ -249,6 +246,8 @@ class PieCrustBaker
     
     protected function bakeTags()
     {
+		if (!$this->hasPosts()) return;
+		
         $tagPagePath = $this->pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
         if (!is_file($tagPagePath)) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
@@ -286,6 +285,8 @@ class PieCrustBaker
     
     protected function bakeCategories()
     {
+		if (!$this->hasPosts()) return;
+		
         $categoryPagePath = $this->pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
         if (!is_file($categoryPagePath)) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
@@ -320,6 +321,19 @@ class PieCrustBaker
         
         echo PHP_EOL;
     }
+	
+	protected function hasPosts()
+	{
+		try
+		{
+			$dir = $this->pieCrust->getPostsDir();
+			return true;
+		}
+		catch (Exception $e)
+		{
+			return false;
+		}
+	}
     
     protected function shouldRebakeFile($path)
     {
