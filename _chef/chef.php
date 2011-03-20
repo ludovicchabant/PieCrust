@@ -8,32 +8,40 @@ require_once 'Console/CommandLine.php';
 require_once 'PieCrust.class.php';
 
 
+function _chef_add_common_command_options_and_args($parser)
+{
+    $parser->addOption('url_base', array(
+        'short_name'  => '-u',
+        'long_name'   => '--urlbase',
+        'description' => "The base URL of the website.",
+        'default'     => '/',
+        'help_name'   => 'URL_BASE'
+    ));
+    $parser->addOption('templates_dir', array(
+        'short_name'  => '-t',
+        'long_name'   => '--templates',
+        'description' => "An optional additional templates directory.",
+        'help_name'   => 'TEMPLATES_DIR'
+    ));
+    $parser->addOption('pretty_urls', array(
+        'short_name'  => '-r',
+        'long_name'   => '--prettyurls',
+        'description' => "Overrides the 'site/pretty_urls' configuration setting.",
+        'default'     => false,
+        'action'      => 'StoreTrue',
+        'help_name'   => 'PRETTY_URLS'
+    ));
+    $parser->addArgument('root', array(
+        'description' => "The directory in which we'll find '_content' and other such directories.",
+        'help_name'   => 'ROOT_DIR',
+        'optional'    => false
+    ));
+}
+
 // Set up the command line parser.
 $parser = new Console_CommandLine(array(
     'description' => 'The PieCrust chef manages your website.',
     'version' => PieCrust::VERSION
-));
-// Global options & arguments.
-$parser->addOption('url_base', array(
-    'short_name'  => '-u',
-    'long_name'   => '--urlbase',
-    'description' => "The base URL of the website.",
-    'default'     => '/',
-    'help_name'   => 'URL_BASE'
-));
-$parser->addOption('templates_dir', array(
-    'short_name'  => '-t',
-    'long_name'   => '--templates',
-    'description' => "An optional additional templates directory.",
-    'help_name'   => 'TEMPLATES_DIR'
-));
-$parser->addOption('pretty_urls', array(
-    'short_name'  => '-r',
-    'long_name'   => '--prettyurls',
-    'description' => "Overrides the 'site/pretty_urls' configuration setting.",
-    'default'     => false,
-    'action'      => 'StoreTrue',
-    'help_name'   => 'PRETTY_URLS'
 ));
 
 
@@ -63,11 +71,7 @@ $bakerParser->addOption('force', array(
     'action'      => 'StoreTrue',
     'help_name'   => 'FORCE'
 ));
-$bakerParser->addArgument('root', array(
-    'description' => "The directory in which we'll find '_content' and other such directories.",
-    'help_name'   => 'ROOT_DIR',
-    'optional'    => false
-));
+_chef_add_common_command_options_and_args($bakerParser);
 
 
 // Server command
@@ -82,11 +86,7 @@ $serverParser->addOption('run_browser', array(
     'action'      => 'StoreFalse',
     'help_name'   => 'RUN_BROWSER'
 ));
-$serverParser->addArgument('root', array(
-    'description' => "The directory in which we'll find '_content' and other such directories.",
-    'help_name'   => 'ROOT_DIR',
-    'optional'    => false
-));
+_chef_add_common_command_options_and_args($serverParser);
 
 
 // Import command
@@ -105,11 +105,7 @@ $importParser->addOption('source', array(
     'description' => 'The path or resource string for the source data.',
     'help_name'   => 'SOURCE'
 ));
-$importParser->addArgument('root', array(
-    'description' => "The directory in which we'll find '_content' and other such directories.",
-    'help_name'   => 'ROOT_DIR',
-    'optional'    => false
-));
+_chef_add_common_command_options_and_args($importParser);
 
 
 // Parse the command line.
@@ -125,6 +121,14 @@ catch (Exception $exc)
 
 
 // Run the command.
-require ('chef_' . $result->command_name . '.inc.php');
-_chef_run_command($parser, $result);
+if (!empty($result->command_name))
+{
+    require ('chef_' . $result->command_name . '.inc.php');
+    _chef_run_command($parser, $result);
+}
+else
+{
+    $parser->displayUsage();
+    die();
+}
 

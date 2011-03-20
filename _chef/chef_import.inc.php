@@ -7,7 +7,7 @@ require_once 'PieCrustImporter.class.php';
 function _chef_run_command($parser, $result)
 {
     // Validate arguments.
-    $rootDir = $result->command->args['root'];
+    $rootDir = realpath($result->command->args['root']);
     if (!is_dir($rootDir))
     {
         $parser->displayError("No such root directory: " . $rootDir, 1);
