@@ -13,7 +13,6 @@ function _chef_run_command($parser, $result)
         die();
     }
     $outputDir = $result->command->options['output'];
-    if ($outputDir == null) $outputDir = $rootDir;
     
     // Start baking!
     PieCrust::setup('shell');
@@ -27,16 +26,9 @@ function _chef_run_command($parser, $result)
     {
         $pieCrust->getTemplateEngine()->addTemplatesPaths($result->command->options['templates_dir']);
     }
-    $baker->setBakeDir($outputDir);
-    if ($result->command->options['page'] == null)
+    if ($outputDir != null)
     {
-        $baker->bake();
+        $baker->setBakeDir($outputDir);
     }
-    else
-    {
-        if ($baker->bakePage($result->command->options['page']) === false)
-        {
-            echo "Page " . $result->command->options['page'] . " was not baked.\n";
-        }
-    }
+    $baker->bake();
 }

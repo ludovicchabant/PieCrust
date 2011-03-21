@@ -12,6 +12,7 @@ require_once 'Paginator.class.php';
 require_once 'FileSystem.class.php';
 require_once 'BakeRecord.class.php';
 require_once 'PageBaker.class.php';
+require_once 'DirectoryBaker.class.php';
 
 
 /**
@@ -73,11 +74,11 @@ class PieCrustBaker
             {
                 if (!is_dir($this->bakeDir))
                 {
-                    mkdir($dir, 0777, true);
+                    @mkdir($dir, 0777, true);
                 }
                 else
                 {
-                    chmod($this->bakeDir, 0777);
+                    @chmod($this->bakeDir, 0777);
                 }
             }
             catch (Exception $e)
@@ -109,52 +110,52 @@ class PieCrustBaker
      */
     public function bake()
     {
+		$overallStart = microtime(true);
+		
         echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
         echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
         echo "  Into:    " . $this->getBakeDir() . "\n";
         echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
         echo "\n\n";
-    
-        echo "====== CLEANING CACHE ======\n\n";
-        FileSystem::deleteDirectory($this->pieCrust->getCacheDir(), true);
-        echo "\n\n";
-        
-        echo "====== BAKING: " . $this->pieCrust->getUrlBase() . " ======\n\n";
-        
-        $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
+		
+		$bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($bakeInfoPath);
+		
+		if ($this->bakeRecord->getLast('url_base') != $this->pieCrust->getUrlBase())
+		{
+			$start = microtime(true);
+			FileSystem::deleteDirectory($this->pieCrust->getCacheDir(), true);
+			echo self::formatTimed($start, 'Clean cache') . PHP_EOL;
+		}
         
         $this->bakePosts();
         $this->bakePages();
         $this->bakeTags();
         $this->bakeCategories();
+		
+		$dirBaker = new DirectoryBaker($this->getBakeDir());
+		$dirBaker->bake($this->pieCrust->getRootDir() . '_stuff');
         
-        $this->bakeRecord->saveBakeInfo($bakeInfoPath);
+        $this->bakeRecord->saveBakeInfo($bakeInfoPath, array('url_base' => $this->pieCrust->getUrlBase()));
         unset($this->bakeRecord);
         $this->bakeRecord = null;
+		
+		echo '-------------------------------' . PHP_EOL;
+		echo self::formatTimed($overallStart, 'Done baking') . PHP_EOL;
     }
     
     protected function bakePages()
     {
 		if ($this->bakeRecord == null) throw new PieCrustException("Can't bake pages without a bake-record active.");
-		
-        echo "Baking pages:\n";
         
-        $hasBaked = false;
         $pagesDir = $this->pieCrust->getPagesDir();
         $directory = new RecursiveDirectoryIterator($pagesDir);
         $iterator = new RecursiveIteratorIterator($directory);
         foreach ($iterator as $path)
         {
 			if ($iterator->isDot()) continue;
-            $hasBaked |= $this->bakePage($path->getPathname());
+            $this->bakePage($path->getPathname());
         }
-        if (!$hasBaked)
-        {
-            echo "   (nothing to bake)\n";
-        }
-        
-        echo PHP_EOL;
     }
 	
 	protected function bakePage($path)
@@ -179,7 +180,7 @@ class PieCrustBaker
 			return false;
 		}
         
-		echo ' > ' . $relativePath;
+		$start = microtime(true);
         $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
         $uri = str_replace('_index', '', $uri);
         $page = Page::create(
@@ -193,8 +194,8 @@ class PieCrustBaker
 		{
 			$this->bakeRecord->addPageUsingPosts($relativePath);
 		}
-        echo PHP_EOL;
-        
+		
+        echo self::formatTimed($start, $relativePath) . PHP_EOL;
         return true;
     }
     
@@ -203,12 +204,9 @@ class PieCrustBaker
 		if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
-        echo "Baking posts:\n";
-        
         $fs = new FileSystem($this->pieCrust);
         $postInfos = $fs->getPostFiles();
         
-        $hasBaked = false;
         $postUrlFormat = $this->pieCrust->getConfigValue('site', 'post_url');
         foreach ($postInfos as $postInfo)
         {
@@ -224,24 +222,18 @@ class PieCrustBaker
             $pageWasBaked = false;
             if ($this->shouldRebakeFile($postInfo['path']))
             {
-                echo ' > ' . $postInfo['name'];
+				$start = microtime(true);
                 $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page);
                 $pageWasBaked = true;
                 $hasBaked = true;
-                echo PHP_EOL;
+                echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
             }
             
             $postInfo['tags'] = $page->getConfigValue('tags');
             $postInfo['category'] = $page->getConfigValue('category');
             $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
         }
-        if (!$hasBaked)
-        {
-            echo "   (nothing to bake)\n";
-        }
-        
-        echo PHP_EOL;
     }
     
     protected function bakeTags()
@@ -252,14 +244,10 @@ class PieCrustBaker
         if (!is_file($tagPagePath)) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
         
-        echo "Baking tags:\n";
-        
-        $hasBaked = false;
         foreach ($this->bakeRecord->getTagsToBake() as $tag)
         {
+			$start = microtime(true);
             $postInfos = $this->bakeRecord->getPostsTagged($tag);
-            echo ' > ' . $tag . ' (' . count($postInfos) . ' posts)';
-            
             $uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
             $page = Page::create(
                 $this->pieCrust,
@@ -271,16 +259,8 @@ class PieCrustBaker
             );
             $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
             $baker->bake($page, $postInfos);
-            $hasBaked = true;
-            
-            echo PHP_EOL;
+            echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts)') . PHP_EOL;
         }
-        if (!$hasBaked)
-        {
-            echo "   (nothing to bake)\n";
-        }
-        
-        echo PHP_EOL;
     }
     
     protected function bakeCategories()
@@ -291,14 +271,10 @@ class PieCrustBaker
         if (!is_file($categoryPagePath)) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
         
-        echo "Baking categories:\n";
-        
-        $hasBaked = false;
         foreach ($this->bakeRecord->getCategoriesToBake() as $category)
         {
+			$start = microtime(true);
             $postInfos = $this->getPostsInCategory($category);
-            echo ' > ' . $category . ' (' . count($postInfos) . ' posts)';
-            
             $uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'category_url'), $category);
             $page = Page::create(
                 $this->pieCrust, 
@@ -310,16 +286,8 @@ class PieCrustBaker
             );
             $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
             $baker->bake($page, $postInfos);
-            $hasBaked = true;
-            
-            echo PHP_EOL;
+            echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts)') . PHP_EOL;
         }
-        if (!$hasBaked)
-        {
-            echo "   (nothing to bake)\n";
-        }
-        
-        echo PHP_EOL;
     }
 	
 	protected function hasPosts()
@@ -351,4 +319,10 @@ class PieCrustBaker
     {
         return array('copy_assets' => $this->parameters['copy_assets']);
     }
+	
+	public static function formatTimed($startTime, $message)
+	{
+		$endTime = microtime(true);
+		return sprintf('[%8.1f ms] ', ($endTime - $startTime)*1000.0) . $message;
+	}
 }

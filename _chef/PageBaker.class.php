@@ -53,7 +53,6 @@ class PageBaker
         $hasMorePages = true;
         while ($hasMorePages)
         {
-            echo '.';
             $this->bakeSinglePage($page, $pageRenderer, $postInfos, $extraData);
             
             $paginator = $page->getPaginator();

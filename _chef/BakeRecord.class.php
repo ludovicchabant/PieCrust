@@ -136,14 +136,27 @@ class BakeRecord
 	{
 		return $this->lastBakeInfo['time'];
 	}
+	
+	/**
+	 *
+	 */
+	public function getLast($what)
+	{
+		return $this->lastBakeInfo[$what];
+	}
 
 	/**
 	 *
 	 */
-	public function saveBakeInfo($bakeInfoPath, $time = null)
+	public function saveBakeInfo($bakeInfoPath, array $infos = array())
 	{
-		if ($time == null) $time = time();
-		$this->lastBakeInfo['time'] = $time;
+		$infos = array_merge(
+			array('time' => time(), 'url_base' => '/'),
+			$infos
+		);
+		
+		$this->lastBakeInfo['time'] = $infos['time'];
+		$this->lastBakeInfo['url_base'] = $infos['url_base'];
 		
 		$jsonMarkup = json_encode($this->lastBakeInfo);
 		file_put_contents($bakeInfoPath, $jsonMarkup);
@@ -153,6 +166,7 @@ class BakeRecord
 	{
 		$bakeInfo = array(
 			'time' => false,
+			'url_base' => '/',
 			'pagesUsingPosts' => array()
 		);
 	
