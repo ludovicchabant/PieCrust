@@ -361,49 +361,20 @@ class StupidHttp_WebServer
         if (is_file($documentPath))
         {
             // Serve existing file...
-            // ...but check for timestamp first if possible.
-            $serverTimestamp = filemtime($documentPath);
-            $ifModifiedSince = $request->getHeader('If-Modified-Since');
-            if ($ifModifiedSince != null)
+            $this->serveDocument($sock, $request, $documentPath);
+        }
+        else if (is_dir($documentPath))
+        {
+            // Look for an 'index' document in this directory...
+            $indexPath = $this->getIndexDocument($documentPath);
+            if ($indexPath != null)
             {
-                $clientTimestamp = strtotime($ifModifiedSince);
-                if ($clientTimestamp > $serverTimestamp)
-                {
-                    $this->returnResponse($sock, 304);
-                    return;
-                }
+                $this->serveDocument($sock, $request, $documentPath);
             }
-            
-            // ...otherwise, check for similar checksum.
-            $documentSize = filesize($documentPath);
-            $documentHandle = fopen($documentPath, "rb");
-            $contents = fread($documentHandle, $documentSize);
-            fclose($documentHandle);
-            if ($contents === false)
+            else
             {
-                throw new StupidHttp_WebException('Error reading file: ' . $documentPath, 500);
+                $this->serveDirectory($sock, $request, $documentPath);
             }
-            $contentsHash = md5($contents);
-            $ifNoneMatch = $request->getHeader('If-None-Match');
-            if ($ifNoneMatch != null)
-            {
-                if ($ifNoneMatch == $contentsHash)
-                {
-                    $this->returnResponse($sock, 304);
-                    return;
-                }
-            }
-            
-            // ...ok, let's send the file.
-            $extension = pathinfo($documentPath, PATHINFO_EXTENSION);
-            $headers = array(
-                'Content-Length: ' . $documentSize,
-                'Content-MD5: ' . base64_encode($contentsHash),
-                'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain'),
-                'ETag: ' . $contentsHash,
-                'Last-Modified: ' . date("D, d M Y H:i:s T", filemtime($documentPath))
-            );
-            $this->returnResponse($sock, 200, $headers, $contents);
         }
         else if (isset($this->requestHandlers[$request->getMethod()]))
         {
@@ -440,6 +411,71 @@ class StupidHttp_WebServer
             // Nothing to do for this method.
             $this->returnResponse($sock, 501);
         }
+    }
+    
+    protected function serveDocument($sock, StupidHttp_WebRequest $request, $documentPath)
+    {
+        // First, check for timestamp if possible.
+        $serverTimestamp = filemtime($documentPath);
+        $ifModifiedSince = $request->getHeader('If-Modified-Since');
+        if ($ifModifiedSince != null)
+        {
+            $clientTimestamp = strtotime($ifModifiedSince);
+            if ($clientTimestamp > $serverTimestamp)
+            {
+                $this->returnResponse($sock, 304);
+                return;
+            }
+        }
+        
+        // ...otherwise, check for similar checksum.
+        $documentSize = filesize($documentPath);
+        $documentHandle = fopen($documentPath, "rb");
+        $contents = fread($documentHandle, $documentSize);
+        fclose($documentHandle);
+        if ($contents === false)
+        {
+            throw new StupidHttp_WebException('Error reading file: ' . $documentPath, 500);
+        }
+        $contentsHash = md5($contents);
+        $ifNoneMatch = $request->getHeader('If-None-Match');
+        if ($ifNoneMatch != null)
+        {
+            if ($ifNoneMatch == $contentsHash)
+            {
+                $this->returnResponse($sock, 304);
+                return;
+            }
+        }
+        
+        // ...ok, let's send the file.
+        $extension = pathinfo($documentPath, PATHINFO_EXTENSION);
+        $headers = array(
+            'Content-Length: ' . $documentSize,
+            'Content-MD5: ' . base64_encode($contentsHash),
+            'Content-Type: ' . (isset($this->mimeTypes[$extension]) ? $this->mimeTypes[$extension] : 'text/plain'),
+            'ETag: ' . $contentsHash,
+            'Last-Modified: ' . date("D, d M Y H:i:s T", filemtime($documentPath))
+        );
+        $this->returnResponse($sock, 200, $headers, $contents);
+    }
+    
+    protected function serveDirectory($sock, StupidHttp_WebRequest $request, $documentPath)
+    {
+        $contents = '<ul>' . PHP_EOL;
+        foreach (new DirectoryIterator($documentPath) as $entry)
+        {
+            $contents .= '<li>' . $entry->getFilename() . '</li>' . PHP_EOL;
+        }
+        $contents = '</ul>' . PHP_EOL;
+        
+        $replacements = array(
+            'path' => $documentPath,
+            'contents' => $contents
+        );
+        $body = file_get_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'directory-listing.html');
+        $body = str_replace(array_keys($replacements), array_values($replacements), $body);
+        $this->returnResponse($sock, 200, null, $body);
     }
     
     protected function getDocumentPath($uri)
