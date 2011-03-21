@@ -424,8 +424,8 @@ class Page
         }
         
         $uri = trim($uri, '/');
-		if ($uri == '') $uri = PIECRUST_INDEX_PAGE_NAME;
-		
+        if ($uri == '') $uri = PIECRUST_INDEX_PAGE_NAME;
+        
         $pageNumber = 1;
         $matches = array();
         if (preg_match('/\/(\d+)\/?$/', $uri, $matches))
@@ -434,19 +434,19 @@ class Page
             $uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
             $pageNumber = intval($matches[1]);
         }
-		$matches = array();
-		$uriWithoutExtension = $uri;
-		if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
-		{
-			// There's an extension specified. Strip it
-			// (the extension is probably because the page has a `content_type` different than HTML, which means
-			//  it would be baked into a static file with that extension).
-			$uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
-		}
+        $matches = array();
+        $uriWithoutExtension = $uri;
+        if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
+        {
+            // There's an extension specified. Strip it
+            // (the extension is probably because the page has a `content_type` different than HTML, which means
+            //  it would be baked into a static file with that extension).
+            $uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+        }
         
         // Try first with a regular page path.
         $key = null;
-		$date = null;
+        $date = null;
         $type = PIECRUST_PAGE_REGULAR;
         $path = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uriWithoutExtension) . '.html';
         $pathWasChecked = false;
@@ -494,10 +494,10 @@ class Page
                         $type = PIECRUST_PAGE_CATEGORY;
                         $path = $pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
                     }
-					else
-					{
-						$path = null;
-					}
+                    else
+                    {
+                        $path = null;
+                    }
                 }
             }
         }
@@ -683,7 +683,7 @@ class Page
             array(
                 'layout' => $this->isPost() ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
                 'format' => $this->pieCrust->getConfigValueUnchecked('site', 'default_format'),
-				'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
+                'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',
                 'title' => 'Untitled Page',
                 'segments' => array()

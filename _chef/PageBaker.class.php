@@ -88,20 +88,20 @@ class PageBaker
         {
             $useDirectory = $this->pieCrust->getConfigValue('site', 'pretty_urls');
         }
-		
-		$contentType = $page->getConfigValue('content_type');
-		if ($contentType != 'html')
-		{
-			// If this is not an HTML file, don't use a directory as the output
-			// (since this would bake it to an 'index.html' file).
-			$useDirectory = false;
-		}
+        
+        $contentType = $page->getConfigValue('content_type');
+        if ($contentType != 'html')
+        {
+            // If this is not an HTML file, don't use a directory as the output
+            // (since this would bake it to an 'index.html' file).
+            $useDirectory = false;
+        }
         
         if ($paginator->wasPaginationDataAccessed() and !$page->getConfigValue('single_page'))
         {
             // If pagination data was accessed, there may be sub-pages for this page,
             // so we need the 'directory' naming scheme to store them (unless this
-			// page is forced to a single page).
+            // page is forced to a single page).
             $useDirectory = true;
         }
         
