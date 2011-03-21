@@ -363,18 +363,10 @@ class StupidHttp_WebServer
             // Serve existing file...
             $this->serveDocument($sock, $request, $documentPath);
         }
-        else if (is_dir($documentPath))
+        else if (is_dir($documentPath) and ($indexPath = $this->getIndexDocument($documentPath)) != null)
         {
-            // Look for an 'index' document in this directory...
-            $indexPath = $this->getIndexDocument($documentPath);
-            if ($indexPath != null)
-            {
-                $this->serveDocument($sock, $request, $documentPath);
-            }
-            else
-            {
-                $this->serveDirectory($sock, $request, $documentPath);
-            }
+			// Serve a directory's index file... 
+            $this->serveDocument($sock, $request, $documentPath);
         }
         else if (isset($this->requestHandlers[$request->getMethod()]))
         {
@@ -430,12 +422,17 @@ class StupidHttp_WebServer
         
         // ...otherwise, check for similar checksum.
         $documentSize = filesize($documentPath);
+		if ($documentSize == 0)
+		{
+			$this->returnResponse($sock, 200);
+			return;
+		}
         $documentHandle = fopen($documentPath, "rb");
         $contents = fread($documentHandle, $documentSize);
         fclose($documentHandle);
         if ($contents === false)
         {
-            throw new StupidHttp_WebException('Error reading file: ' . $documentPath, 500);
+        	throw new StupidHttp_WebException('Error reading file: ' . $documentPath, 500);
         }
         $contentsHash = md5($contents);
         $ifNoneMatch = $request->getHeader('If-None-Match');
