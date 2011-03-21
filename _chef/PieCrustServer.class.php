@@ -107,6 +107,7 @@ class ChefServer
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
         $response->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        if ($pieCrustError != null) $response->getLog()->logError("    PieCrust error: " . $pieCrustError);
         
         return true;
     }
