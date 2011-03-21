@@ -1,10 +1,8 @@
 <?php
 
 define('PIECRUST_ASSET_DIR_SUFFIX', '-assets');
-if (!defined('PIECRUST_ASSET_URL_SUFFIX'))
-{
-    define ('PIECRUST_ASSET_URL_SUFFIX', PIECRUST_ASSET_DIR_SUFFIX);
-}
+define ('PIECRUST_ASSET_URL_SUFFIX', PIECRUST_ASSET_DIR_SUFFIX);
+
 
 /**
  * The asset manager for PieCrust pages.
