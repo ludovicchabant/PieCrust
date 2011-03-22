@@ -27,12 +27,16 @@ class ChefServer
         date_default_timezone_set('America/Los_Angeles');
         
         $this->rootDir = rtrim(realpath($appDir), '/\\');
+        
+        $mountContent = false;
         $documentRoot = $this->rootDir;
-        if (is_dir($documentRoot . DIRECTORY_SEPARATOR . '_stuff'))
+        if (is_dir($this->rootDir . DIRECTORY_SEPARATOR . '_stuff'))
         {
-            $documentRoot = $documentRoot . DIRECTORY_SEPARATOR . '_stuff';
+            $mountContent = true;
+            $documentRoot = $this->rootDir . DIRECTORY_SEPARATOR . '_stuff';
         }
         $this->server = new StupidHttp_WebServer($documentRoot, $port);
+        if ($mountContent) $this->server->mount($this->rootDir . DIRECTORY_SEPARATOR . '_content', '_content');
         $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
         $this->server->setMimeType('less', 'text/css');
         $self = $this; // Workaround for $this not being capturable in closures.

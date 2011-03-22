@@ -16,7 +16,7 @@ class StupidHttp_WebServer
     protected $sock;
     protected $requestHandlers;
  
-    protected $documentRoot;   
+    protected $documentRoot;
     /**
      * Gets the root directory for the served documents.
      */
@@ -103,7 +103,8 @@ class StupidHttp_WebServer
         {
             throw new StupidHttp_WebException("The given document root is not valid: " . $documentRoot);
         }
-        $this->documentRoot = $documentRoot;
+        $this->documentRoot = rtrim($documentRoot, '/\\');
+        $this->mounts = array();
         
         $mimeTypesPath = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'mime.types';
         $handle = @fopen($mimeTypesPath, "r");
@@ -171,6 +172,15 @@ class StupidHttp_WebServer
         $handler = new StupidHttp_WebRequestHandler($this, $uriPattern);
         $this->requestHandlers[$method][] = $handler;
         return $handler;
+    }
+    
+    protected $mounts;
+    /**
+     * Mounts a directory into the document root.
+     */
+    public function mount($directory, $alias)
+    {
+        $this->mounts[$alias] = rtrim($directory, '/\\');
     }
 
     /**
@@ -507,8 +517,19 @@ class StupidHttp_WebServer
     
     protected function getDocumentPath($uri)
     {
-        if ($this->getDocumentRoot() == null) return false;
-        return $this->getDocumentRoot() . str_replace('/', DIRECTORY_SEPARATOR, $uri);
+        $root = $this->getDocumentRoot();
+        $secondSlash = strpos($uri, '/', 1);
+        if ($secondSlash !== false)
+        {
+            $firstDir = substr($uri, 1, $secondSlash - 1);
+            if (isset($this->mounts[$firstDir]))
+            {
+                $root = $this->mounts[$firstDir];
+                $uri = substr($uri, $secondSlash);
+            }
+        }
+        if ($root === false) return false;
+        return $root . str_replace('/', DIRECTORY_SEPARATOR, $uri);
     }
     
     protected function getIndexDocument($path)
