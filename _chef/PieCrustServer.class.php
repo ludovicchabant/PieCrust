@@ -14,6 +14,7 @@ require_once 'StupidHttp/StupidHttp_PearLog.php';
 class ChefServer
 {
     protected $server;
+    protected $rootDir;
     protected $additionalTemplatesDir;
     
     /**
@@ -25,11 +26,16 @@ class ChefServer
         error_reporting(E_ALL);
         date_default_timezone_set('America/Los_Angeles');
         
-        $self = $this; // Workaround for $this not being capturable in closures.
-        $appDir = rtrim(realpath($appDir), '/\\');
-        $this->server = new StupidHttp_WebServer($appDir, $port);
+        $this->rootDir = rtrim(realpath($appDir), '/\\');
+        $documentRoot = $this->rootDir;
+        if (is_dir($documentRoot . DIRECTORY_SEPARATOR . '_stuff'))
+        {
+            $documentRoot = $documentRoot . DIRECTORY_SEPARATOR . '_stuff';
+        }
+        $this->server = new StupidHttp_WebServer($documentRoot, $port);
         $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
         $this->server->setMimeType('less', 'text/css');
+        $self = $this; // Workaround for $this not being capturable in closures.
         $this->server->onPattern('GET', '.*')
                      ->call(function($response) use ($self)
                             {
@@ -62,7 +68,7 @@ class ChefServer
         $startTime = microtime(true);
         $pieCrust = new PieCrust(array(
                                         'url_base' => 'http://' . $this->server->getAddress() . ':' . $this->server->getPort(),
-                                        'root' => $this->server->getDocumentRoot(),
+                                        'root' => $this->rootDir,
                                         'cache' => true
                                         )
                                   );
