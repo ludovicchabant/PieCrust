@@ -33,7 +33,7 @@ class ChefServer
         $this->server->onPattern('GET', '.*')
                      ->call(function($response) use ($self)
                             {
-                                return $self->runPieCrustRequest($response);
+                                $self->runPieCrustRequest($response);
                             });
     }
 
@@ -57,7 +57,7 @@ class ChefServer
     /**
      * For internal use only.
      */
-    public function runPieCrustRequest(StupidHttp_WebResponse $response)
+    public function runPieCrustRequest(StupidHttp_HandlerContext $context)
     {
         $startTime = microtime(true);
         $pieCrust = new PieCrust(array(
@@ -78,7 +78,7 @@ class ChefServer
         $pieCrustHeaders = array();
         try
         {
-            $pieCrust->runUnsafe($response->getUri(), $response->getServerVariables(), null, $pieCrustHeaders);
+            $pieCrust->runUnsafe($context->getRequest()->getUri(), $context->getRequest()->getServerVariables(), null, $pieCrustHeaders);
         }
         catch (Exception $e)
         {
@@ -97,18 +97,16 @@ class ChefServer
                             ($pieCrustError == '404') ? 404 : 500
                         );
         }
-        $response->setStatus($code);
+        $context->getResponse()->setStatus($code);
         
         foreach ($pieCrustHeaders as $h => $v)
         {
-            $response->setHeader($h, $v);
+            $context->getResponse()->setHeader($h, $v);
         }
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
-        $response->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
-        if ($pieCrustError != null) $response->getLog()->logError("    PieCrust error: " . $pieCrustError);
-        
-        return true;
+        $context->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        if ($pieCrustError != null) $context->getLog()->logError("    PieCrust error: " . $pieCrustError);
     }
 }

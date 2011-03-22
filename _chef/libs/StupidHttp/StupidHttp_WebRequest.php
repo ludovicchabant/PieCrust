@@ -6,6 +6,7 @@
  */
 class StupidHttp_WebRequest
 {
+    protected $server;
     protected $method;
     protected $uri;
     protected $version;
@@ -55,10 +56,23 @@ class StupidHttp_WebRequest
         return null;
     }
     
+    protected $serverVariables;
+    /**
+     * Gets the server variables (emulated $_SERVER) for the request.
+     */
+    public function getServerVariables()
+    {
+        if ($this->serverVariables === null)
+        {
+            $this->serverVariables = $this->buildServerVariables();
+        }
+        return $this->serverVariables;
+    }
+    
     /**
      * Creates a new instance of StupidHttp_WebRequest.
      */
-    public function __construct($rawLines)
+    public function __construct(StupidHttp_WebServer $server, $rawLines)
     {
         if (count($rawLines) < 1) throw new StupidHttp_WebException('The raw request must contain at least one line.', 0, '400 Bad Request');
         
@@ -68,7 +82,7 @@ class StupidHttp_WebRequest
             throw new StupidHttp_WebException('Unexpected request header format.', 0, '400 Bad Request');
         }
         $this->method = $matches[1];
-        $this->uri = $matches[2];
+        $this->uri = ($matches[2] == '/' ? '/' : rtrim($matches[2], '/'));
         $this->version = $matches[3];
         
         $this->headers = array();
@@ -77,5 +91,31 @@ class StupidHttp_WebRequest
             $header = explode(':', $rawLines[$i]);
             $this->headers[trim($header[0])] = trim($header[1]);
         }
+        
+        $this->server = $server;
+    }
+    
+    protected function buildServerVariables()
+    {
+        $server = array();
+        
+        $server['REQUEST_METHOD'] = $this->getMethod();
+        $server['SERVER_NAME'] = $this->server->getAddress();
+        $server['SERVER_PORT'] = $this->server->getPort();
+        $server['SERVER_PROTOCOL'] = 'HTTP/1.1';
+        $server['QUERY_STRING'] = $this->getUri();
+        $server['REQUEST_URI'] = $this->getUri();
+        $server['REQUEST_TIME'] = time();
+        $server['argv'] = array();
+        $server['argc'] = 0;
+        
+        $headers = $this->getHeaders();
+        foreach ($headers as $key => $value)
+        {
+            $serverKey = 'HTTP_' . str_replace('-', '_', strtoupper($key));
+            $server[$serverKey] = $value;
+        }
+        
+        return $server;
     }
 }

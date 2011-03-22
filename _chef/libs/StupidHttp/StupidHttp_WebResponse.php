@@ -5,35 +5,6 @@
  */
 class StupidHttp_WebResponse
 {
-    protected $uri;
-    /**
-     * Gets the requested URI.
-     */
-    public function getUri()
-    {
-        return $this->uri;
-    }
-    
-    protected $serverVariables;
-    /**
-     * Gets the server variables (emulated $_SERVER) for the request.
-     */
-    public function getServerVariables()
-    {
-        return $this->serverVariables;
-    }
-    
-    /**
-     * Creates a new instance of StupidHttp_WebResponse.
-     */
-    public function __construct($uri, $serverVariables, $log)
-    {
-        $this->uri = $uri;
-        $this->serverVariables = $serverVariables;
-        $this->log = $log;
-        $this->headers = array();
-    }
-    
     protected $status;
     /**
      * Gets the HTTP status code that should be returned.
@@ -66,9 +37,12 @@ class StupidHttp_WebResponse
     public function getFormattedHeaders()
     {
         $res = array();
-        foreach ($this->headers as $header => $value)
+        if ($this->headers != null)
         {
-            $res[] = $header . ': ' . $value;
+            foreach ($this->headers as $header => $value)
+            {
+                $res[] = $header . ': ' . $value;
+            }
         }
         return $res;
     }
@@ -89,13 +63,31 @@ class StupidHttp_WebResponse
         $this->headers[$header] = $value;
     }
     
-    protected $log;
+    protected $body;
     /**
-     * Gets the text that will be logged by the StupidHttp_WebServer.
+     * Gets the response body.
      */
-    public function getLog()
+    public function getBody()
     {
-        return $this->log;
+        return $this->body;
+    }
+    
+    /**
+     * Sets the response body.
+     */
+    public function setBody($body)
+    {
+        $this->body = $body;
+    }
+    
+    /**
+     * Creates a new instance of StupidHttp_WebResponse.
+     */
+    public function __construct($status = 200, array $headers = array(), $body = null)
+    {
+        $this->status = $status;
+        $this->headers = $headers;
+        $this->body = $body;
     }
 }
 
