@@ -52,6 +52,7 @@ class StupidHttp_WebResponse
      */
     public function getHeader($header)
     {
+        if (!isset($this->headers[$header])) return null;
         return $this->headers[$header];
     }
     
