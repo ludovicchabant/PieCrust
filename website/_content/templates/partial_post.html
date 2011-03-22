@@ -1,5 +1,5 @@
 <div class="post">
-	<h2><a href="{{ pcurl(post.url) }}">{{ post.title }}</a></h2>
+	<h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
 	<div class="post-meta">
 		<span class="post-date">{{ post.date }}&nbsp;{{ post.time }}</span>
 		{% if post.tags %}
@@ -16,7 +16,7 @@
 
 	{% if post.has_more %}
 		<div class="post-more">
-			<a href="{{ pcurl(post.url) }}">Read more...</a>
+			<a href="{{ post.url }}">Read more...</a>
 		</div>
 	{% endif %}
 	<hr />
