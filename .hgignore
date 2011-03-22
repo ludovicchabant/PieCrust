@@ -25,3 +25,6 @@ Thumbs\.db
 ^_chef/libs/Log/misc/
 ^_chef/libs/Log/tests/
 tests/_cache
+
+syntax:glob
+*.log
