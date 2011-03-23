@@ -1,0 +1,16 @@
+#!/bin/sh
+
+POSSIBLES=('/usr/bin/php' '/usr/local/bin/php')
+for CUR in $POSSIBLES; do
+    if [ -x $CUR ]; then
+        PHP=$CUR
+        break
+    fi
+done
+if [ -z "$PHP" ]; then
+    echo "Couldn't find PHP in any of the known locations."
+    exit 1
+fi
+
+CHEF_DIR=`dirname $0`
+$PHP $CHEF_DIR/chef.php $@
