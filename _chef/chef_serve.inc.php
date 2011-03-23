@@ -12,9 +12,10 @@ function _chef_run_command($parser, $result)
         $parser->displayError("No such root directory: " . $rootDir, 1);
         die();
     }
+    $port = intval($result->command->options['port']);
     
     // Start serving!
-    $server = new ChefServer($rootDir);
+    $server = new ChefServer($rootDir, $port);
     $server->run(array(
                        'list_directories' => false,
                        'run_browser' => $result->command->options['run_browser'],

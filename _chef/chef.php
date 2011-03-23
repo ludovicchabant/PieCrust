@@ -86,6 +86,13 @@ $serverParser->addOption('run_browser', array(
     'action'      => 'StoreFalse',
     'help_name'   => 'RUN_BROWSER'
 ));
+$serverParser->addOption('port', array(
+    'short_name'  => '-p',
+    'long_name'   => '--port',
+    'description' => "Sets the port for the server.",
+    'default'     => 8080,
+    'help_name'   => 'PORT'
+));
 _chef_add_common_command_options_and_args($serverParser);
 
 
