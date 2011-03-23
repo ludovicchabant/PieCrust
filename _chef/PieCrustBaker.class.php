@@ -1,5 +1,6 @@
 <?php
 
+define('PIECRUST_BAKE_DIR', '_counter');
 define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
 define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
 
@@ -52,7 +53,7 @@ class PieCrustBaker
     {
         if ($this->bakeDir === null)
         {
-            $defaultBakeDir = $this->pieCrust->getRootDir();
+            $defaultBakeDir = $this->pieCrust->getRootDir() . PIECRUST_BAKE_DIR;
             $this->setBakeDir($defaultBakeDir);
         }
         return $this->bakeDir;
@@ -128,7 +129,7 @@ class PieCrustBaker
         $this->bakeCategories();
         
         $dirBaker = new DirectoryBaker($this->getBakeDir());
-        $dirBaker->bake($this->pieCrust->getRootDir() . '_stuff');
+        $dirBaker->bake($this->pieCrust->getRootDir());
         
         $this->bakeRecord->saveBakeInfo($bakeInfoPath, array('url_base' => $this->pieCrust->getUrlBase()));
         unset($this->bakeRecord);
