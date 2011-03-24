@@ -239,6 +239,7 @@ class StupidHttp_WebServer
             $rawRequest = array();
             $closeSocket = true;
             $processRequest = false;
+            $profilingInfo = array();
             do
             {
                 if (false === ($buf = @socket_read($msgsock, 2048, PHP_NORMAL_READ)))
@@ -248,7 +249,11 @@ class StupidHttp_WebServer
                         // Kept-alive connection probably timed out. Just close it.
                         $closeSocket = true;
                         $processRequest = false;
-                        if (!empty($rawRequest))
+                        if (empty($rawRequest))
+                        {
+                            $this->logDebug("    : Timed out... ending conversation.");
+                        }
+                        else
                         {
                             $this->logError("Timed out while receiving request.");
                         }
@@ -262,6 +267,7 @@ class StupidHttp_WebServer
                         break;
                     }
                 }
+                if (empty($rawRequest)) $profilingInfo['receive.start'] = microtime(true);
                 if (!$buf = trim($buf))
                 {
                     $emptyCount++;
@@ -279,8 +285,10 @@ class StupidHttp_WebServer
             }
             while (true);
             
+            $profilingInfo['receive.end'] = microtime(true);
             if ($processRequest)
             {
+                $profilingInfo['process.start'] = microtime(true);
                 $request = new StupidHttp_WebRequest($this, $rawRequest);
                 
                 // Process the request, get the response.
@@ -330,6 +338,9 @@ class StupidHttp_WebServer
                     if ($response->getBody() != null) $response->setHeader('Content-Length', strlen($response->getBody()));
                     else $response->setHeader('Content-Length', 0);
                 }
+                
+                $profilingInfo['process.end'] = microtime(true);
+                $profilingInfo['send.start'] = microtime(true);
                 try
                 {
                     $this->sendResponse($msgsock, $response);
@@ -339,8 +350,11 @@ class StupidHttp_WebServer
                     $this->logError('Error sending response:');
                     $this->logError($e->getCode() . ': ' . $e->getMessage());
                 }
+                $profilingInfo['send.end'] = microtime(true);
             }
-    
+            
+            $this->logProfilingInfo($profilingInfo);
+            
             if ($closeSocket)
             {
                 $this->logDebug("Closing connection.");
@@ -576,6 +590,22 @@ class StupidHttp_WebServer
         }
         
         socket_write($sock, $responseStr, strlen($responseStr));
+    }
+    
+    protected function logProfilingInfo(array $profilingInfo)
+    {
+        if (isset($profilingInfo['receive.start']) and isset($profilingInfo['receive.end']))
+        {
+            $this->logDebug('    : received request in ' . ($profilingInfo['receive.end'] - $profilingInfo['receive.start'])*1000.0 . ' ms.');
+        }
+        if (isset($profilingInfo['process.start']) and isset($profilingInfo['process.end']))
+        {
+            $this->logDebug('    : processed in ' . ($profilingInfo['process.end'] - $profilingInfo['process.start'])*1000.0 . ' ms.');
+        }
+        if (isset($profilingInfo['send.start']) and isset($profilingInfo['send.end']))
+        {
+            $this->logDebug('    : sent request in ' . ($profilingInfo['send.end'] - $profilingInfo['send.start'])*1000.0 . ' ms.');
+        }
     }
     
     protected function log($message, $type)
