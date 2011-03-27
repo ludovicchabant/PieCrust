@@ -12,15 +12,17 @@ class PluginLoader
     protected $baseDir;
     protected $plugins;
     protected $pluginSortFunc;
+	protected $pluginFilterFunc;
     
 	/**
 	 * Creates a new PluginLoader instance.
 	 */
-    public function __construct($interfaceName, $baseDir, $pluginSortFunc = null)
+    public function __construct($interfaceName, $baseDir, $pluginSortFunc = null, $pluginFilterFunc = null)
     {
         $this->interfaceName = $interfaceName;
         $this->baseDir = rtrim($baseDir, '/\\') . DIRECTORY_SEPARATOR;
         $this->pluginSortFunc = $pluginSortFunc;
+		$this->pluginFilterFunc = $pluginFilterFunc;
     }
     
 	/**
@@ -32,6 +34,10 @@ class PluginLoader
         if ($this->plugins == null)
         {
             $this->plugins = $this->loadPlugins();
+			if ($this->pluginFilterFunc != null)
+			{
+				$this->plugins = array_filter($this->plugins, $this->pluginFilterFunc);
+			}
             if ($this->pluginSortFunc != null)
             {
                 usort($this->plugins, $this->pluginSortFunc);
