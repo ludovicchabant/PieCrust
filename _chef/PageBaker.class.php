@@ -136,15 +136,15 @@ class PageBaker
                 $bakePathInfo = pathinfo($bakePath);
                 $bakeAssetDir = $bakePathInfo['dirname'] . DIRECTORY_SEPARATOR . 
                                 (($page->getUri() == '') ? '' : $bakePathInfo['filename']) . DIRECTORY_SEPARATOR;
-                FileSystem::ensureDirectory($bakeAssetDir);
             }
             
             $assetPaths = $assetor->getAssetPathnames();
             if ($assetPaths != null)
             {
+                FileSystem::ensureDirectory($bakeAssetDir);
                 foreach ($assetPaths as $assetPath)
                 {
-                    copy($assetPath, ($bakeAssetDir . basename($assetPath)));
+                    @copy($assetPath, ($bakeAssetDir . basename($assetPath)));
                 }
             }
         }
