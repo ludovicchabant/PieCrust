@@ -236,10 +236,12 @@ class PieCrust
     * This function lazy-loads the '/_content/config.yml' file unless the configuration was
     * specifically set by setConfig().
     */
-    public function getConfig()
+    public function getConfig($category = null)
     {
         $this->ensureConfig();
-        return $this->config;
+        if ($category == null) return $this->config;
+        if (isset($this->config[$category])) return $this->config[$category];
+        return null;
     }
     
     /**
@@ -368,7 +370,7 @@ class PieCrust
             $this->formattersLoader = new PluginLoader(
                                             'IFormatter',
                                             PIECRUST_APP_DIR . 'formatters',
-                                            create_function('$p1, $p2', 'return $p1->getPriority() < $p2->getPriority();')
+											function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
                                             );
             foreach ($this->formattersLoader->getPlugins() as $formatter)
             {
