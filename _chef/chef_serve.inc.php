@@ -13,12 +13,21 @@ function _chef_run_command($parser, $result)
         die();
     }
     $port = intval($result->command->options['port']);
+    $autobakeDir = $result->command->options['autobake'];
+    $fullFirstBake = $result->command->options['full_first_bake'];
+    $templatesDir = $result->command->options['templates_dir'];
+    $runBrowser = $result->command->options['run_browser'];
     
     // Start serving!
-    $server = new ChefServer($rootDir, $port);
+    $server = new PieCrustServer($rootDir,
+                                 array(
+                                    'port' => $port,
+                                    'templates_dir' => $templatesDir,
+                                    'autobake' => (($autobakeDir != null) ? $autobakeDir : false),
+                                    'full_first_bake' => $fullFirstBake
+                                 ));
     $server->run(array(
                        'list_directories' => false,
-                       'run_browser' => $result->command->options['run_browser'],
-                       'templates_dir' => $result->command->options['templates_dir']
+                       'run_browser' => $runBrowser
                        ));
 }

@@ -3,6 +3,7 @@
 require_once 'ChefEnvironment.inc.php';
 require_once 'PieCrust.class.php';
 require_once 'PieCrustException.class.php';
+require_once 'PieCrustBaker.class.php';
 
 require_once 'StupidHttp/StupidHttp_WebServer.php';
 require_once 'StupidHttp/StupidHttp_PearLog.php';
@@ -11,86 +12,137 @@ require_once 'StupidHttp/StupidHttp_PearLog.php';
 /**
  * The PieCrust chef server.
  */
-class ChefServer
+class PieCrustServer
 {
     protected $server;
     protected $rootDir;
     protected $additionalTemplatesDir;
+    protected $autobake;
+    protected $fullFirstBake;
     
     /**
      * Creates a new chef server.
      */
-    public function __construct($appDir, $port = 8080)
+    public function __construct($appDir, array $options = array())
     {
         set_time_limit(0);
         error_reporting(E_ALL);
         date_default_timezone_set('America/Los_Angeles');
         
+        $options = array_merge(
+            array(
+                  'port' => 8080,
+                  'templates_dir' => null,
+                  'autobake' => false,
+                  'mime_types' => array('less' => 'text/css')
+                  ),
+            $options
+        );
+        $this->additionalTemplatesDir = $options['templates_dir'];
+        $this->autobake = (is_string($options['autobake']) ? $options['autobake'] : false);
+        $this->fullFirstBake = $options['full_first_bake'];
         $this->rootDir = rtrim(realpath($appDir), '/\\');
         
-        $this->server = new StupidHttp_WebServer($this->rootDir, $port);
+        $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
+        $port = $options['port'];
+        $this->server = new StupidHttp_WebServer($documentRoot, $port);
         $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
-        $this->server->setMimeType('less', 'text/css');
+        foreach ($options['mime_types'] as $ext => $mime)
+        {
+            $this->server->setMimeType($ext, $mime);
+        }
         $self = $this; // Workaround for $this not being capturable in closures.
-        $this->server->onPattern('GET', '.*')
-                     ->call(function($response) use ($self)
-                            {
-                                $self->runPieCrustRequest($response);
-                            });
+        if ($this->autobake === false)
+        {
+            $this->server->onPattern('GET', '.*')
+                         ->call(function($response) use ($self)
+                                {
+                                    $self->_runPieCrustRequest($response);
+                                });
+        }
+        else
+        {
+            $this->server->setPreprocess(function($response) use ($self)
+                                         {
+                                            $self->_bake(true);
+                                         });
+        }
     }
 
     /**
      * Runs the chef server.
      */
-    public function run(array $options = null)
+    public function run(array $options = array())
     {
-        if ($options != null)
+        if ($this->autobake !== false and $this->fullFirstBake)
         {
-            $this->additionalTemplatesDir = $options['templates_dir'];
-        }
-        else
-        {
-            $this->additionalTemplatesDir = null;
+            $this->_bake(false, true);
         }
         
         $this->server->run($options);
     }
     
-    /**
-     * For internal use only.
-     */
-    public function runPieCrustRequest(StupidHttp_HandlerContext $context)
+    protected function createPieCrustApp()
     {
-        $startTime = microtime(true);
         $pieCrust = new PieCrust(array(
                                         'url_base' => 'http://' . $this->server->getAddress() . ':' . $this->server->getPort(),
                                         'root' => $this->rootDir,
                                         'cache' => true
-                                        )
-                                  );
-        $pieCrust->setConfigValue('site', 'cache_time', false);
-        $pieCrust->setConfigValue('site', 'pretty_urls', true);
-        $pieCrust->setConfigValue('server', 'is_hosting', true);
+                                      )
+                                );
         if ($this->additionalTemplatesDir != null)
         {
             $pieCrust->getTemplateEngine()->addTemplatesPaths($this->additionalTemplatesDir);
         }
+        return $pieCrust;
+    }
+    
+    /**
+     * For internal use only.
+     */
+    public function _bake($smart, $showBanner = false)
+    {
+        $pieCrust = $this->createPieCrustApp();
+        $baker = new PieCrustBaker($pieCrust, array('smart' => $smart, 'show_banner' => $showBanner));
+        $baker->setBakeDir($this->autobake);
+        $baker->bake();
+    }
+    
+    /**
+     * For internal use only.
+     */
+    public function _runPieCrustRequest(StupidHttp_HandlerContext $context)
+    {
+        $startTime = microtime(true);
         
+        // Run PieCrust dynamically.
+        $pieCrust = $this->createPieCrustApp();
+        $pieCrust->setConfigValue('site', 'cache_time', false);
+        $pieCrust->setConfigValue('site', 'pretty_urls', true);
+        $pieCrust->setConfigValue('server', 'is_hosting', true);
+        
+        $headers = array();
         $pieCrustError = null;
-        $pieCrustHeaders = array();
         try
         {
-            $pieCrust->runUnsafe($context->getRequest()->getUri(), $context->getRequest()->getServerVariables(), null, $pieCrustHeaders);
+            $pieCrust->runUnsafe(
+                                 $context->getRequest()->getUri(),
+                                 $context->getRequest()->getServerVariables(),
+                                 null,
+                                 $headers
+                                 );
         }
         catch (Exception $e)
         {
             $pieCrustError = $e->getMessage();
         }
         
-        if (isset($pieCrustHeaders[0]))
+        $code = 500;
+        if (isset($headers[0]))
         {
-            $code = $pieCrustHeaders[0];
-            unset($pieCrustHeaders[0]); // Unset so we can iterate on headers more easily later.
+            // The HTTP return code is set by PieCrust in the '0'-th header most of the time.
+            $code = $headers[0];
+            unset($headers[0]); // Unset so we can iterate on headers more easily later.
         }
         else
         {
@@ -99,6 +151,7 @@ class ChefServer
                             ($pieCrustError == '404') ? 404 : 500
                         );
         }
+        
         $context->getResponse()->setStatus($code);
         
         foreach ($pieCrustHeaders as $h => $v)

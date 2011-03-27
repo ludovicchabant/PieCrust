@@ -93,6 +93,21 @@ $serverParser->addOption('port', array(
     'default'     => 8080,
     'help_name'   => 'PORT'
 ));
+$serverParser->addOption('autobake', array(
+    'short_name'  => '-b',
+    'long_name'   => '--autobake',
+    'description' => 'Auto-bakes the website to the specified directory, and serve that directory instead of running PieCrust on-demand.',
+    'default'     => null,
+    'help_name'   => 'OUTPUT_PATH'
+));
+$serverParser->addOption('full_first_bake', array(
+    'short_name'  => '-f',
+    'long_name'   => '--forcefirstbake',
+    'description' => 'When \'autobake\' is turned on, do a full first bake before running the server.',
+    'default'     => false,
+    'action'      => 'StoreTrue',
+    'help_name'   => 'FORCE'
+));
 _chef_add_common_command_options_and_args($serverParser);
 
 

@@ -1,31 +1,61 @@
 <?php
 
+require_once 'ChefEnvironment.inc.php';
+require_once 'IFileProcessor.class.php';
+require_once 'SimpleFileProcessor.class.php';
+require_once 'PluginLoader.class.php';
+
 
 /**
  * A class responsible for baking non-PieCrust content.
  */
 class DirectoryBaker
 {
-    /**
-     * The default files to skip (Windows & MacOS system files, Git & Mercurial special files,
-     * and anything starting with an underscore).
-     */
-    const DEFAULT_SKIP_PATTERN = '/(^_)|(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)/';
-    
+    protected $pieCrust;
+    protected $rootDirLength;
     protected $bakeDir;
-    protected $skipPattern;
+    protected $parameters;
+    
+    protected $processorsLoader;
+    /**
+    * Gets the PluginLoader for the file processors.
+    */
+    public function getProcessorsLoader()
+    {
+        if ($this->processorsLoader === null)
+        {
+            $processorsToFilter = $this->parameters['processors'];
+            $this->processorsLoader = new PluginLoader(
+                                            'IFileProcessor',
+                                            PIECRUST_CHEF_DIR . 'processors',
+                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
+                                            function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); }
+                                            );
+            foreach ($this->processorsLoader->getPlugins() as $proc)
+            {
+                $proc->initialize($this->pieCrust);
+            }
+        }
+        return $this->processorsLoader;
+    }
     
     /**
      * Creates a new instance of DirectoryBaker.
      */
-    public function __construct($bakeDir, $skipPattern = null)
+    public function __construct(PieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
+        $this->pieCrust = $pieCrust;
         $this->bakeDir = rtrim(realpath($bakeDir), '/\\') . DIRECTORY_SEPARATOR;
-        $this->skipPattern = $skipPattern;
-        if ($this->skipPattern == null)
-        {
-            $this->skipPattern = self::DEFAULT_SKIP_PATTERN;
-        }
+        $this->parameters = array_merge(
+                                        array(
+                                              'skip_patterns' => array(),
+                                              'processors' => array('copy')
+                                              ),
+                                        $parameters
+                                        );
+        
+        $rootDir = $this->pieCrust->getRootDir();
+        $this->rootDirLength = strlen($rootDir);
         
         if (!is_dir($this->bakeDir) or !is_writable($this->bakeDir))
         {
@@ -36,15 +66,12 @@ class DirectoryBaker
     /**
      * Bakes the given directory and all its files and sub-directories.
      */
-    public function bake($rootDir)
+    public function bake()
     {
-        $rootDir = rtrim(realpath($rootDir), '/\\') . DIRECTORY_SEPARATOR;
-        $rootDirLength = strlen($rootDir);
-        
-        $this->bakeDirectory($rootDir, $rootDirLength, $rootDir, 0);
+        $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
     }
     
-    protected function bakeDirectory($rootDir, $rootDirLength, $currentDir, $level)
+    protected function bakeDirectory($currentDir, $level)
     {
         $it = new DirectoryIterator($currentDir);
         foreach ($it as $i)
@@ -53,28 +80,63 @@ class DirectoryBaker
             {
                 continue;
             }
-            if (preg_match($this->skipPattern, $i->getFilename()))
+            $shouldSkip = false;
+            foreach ($this->parameters['skip_patterns'] as $p)
             {
-                continue;
+                if (preg_match($p, $i->getFilename()))
+                {
+                    $shouldSkip = true;
+                    break;
+                }
             }
+            if ($shouldSkip) continue;
             
-            $relative = substr($i->getPathname(), $rootDirLength);
-            $destination = $this->bakeDir . $relative;
+            $relative = substr($i->getPathname(), $this->rootDirLength);
             if ($i->isDir())
             {
+                $destination = $this->bakeDir . $relative;
                 if (!is_dir($destination))
                 {
                     @mkdir($destination, 0777, true);
                 }
-                $this->bakeDirectory($rootDir, $rootDirLength, $i->getPathname(), $level + 1);
+                $this->bakeDirectory($i->getPathname(), $level + 1);
             }
             else if ($i->isFile())
             {
-                if (!is_file($destination) or $i->getMTime() >= filemtime($destination))
+                $fileProcessor = null;
+                foreach ($this->getProcessorsLoader()->getPlugins() as $proc)
                 {
-                    $start = microtime(true);
-                    @copy($i->getPathname(), $destination);
-                    echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
+                    if ($proc->supportsExtension(pathinfo($i->getFilename(), PATHINFO_EXTENSION)))
+                    {
+                        $fileProcessor = $proc;
+                        break;
+                    }
+                }
+                if ($fileProcessor != null)
+                {
+                    $isUpToDate = true;
+                    $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
+                    $outputFilenames = $fileProcessor->getOutputFilenames($i->getFilename());
+                    if (!is_array($outputFilenames)) $outputFilenames = array($outputFilenames);
+                    foreach ($outputFilenames as $f)
+                    {
+                        $destination = $destinationDir . $f;
+                        if (!is_file($destination) or $i->getMTime() >= filemtime($destination))
+                        {
+                            $isUpToDate = false;
+                            break;
+                        }
+                    }
+                    if (!$isUpToDate)
+                    {
+                        $start = microtime(true);
+                        $fileProcessor->process($i->getPathname(), $destinationDir);
+                        echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
+                    }
+                }
+                else
+                {
+                    echo "Warning: no processor for " . $relative . PHP_EOL;
                 }
             }
         }

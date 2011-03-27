@@ -91,12 +91,19 @@ class PieCrustBaker
     public function __construct(PieCrust $pieCrust, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->pieCrust->setConfigValue('baker', 'is_baking', true);
-        
+        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+		
+		$appParams = $this->pieCrust->getConfig('baker');
         $this->parameters = array_merge(array(
-            'smart' => true,
-            'copy_assets' => true
-        ), $parameters);
+											'show_banner' => false,
+											'smart' => true,
+											'copy_assets' => true,
+											'skip_pattern' => '/^_/',
+											'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
+											'processors' => array('less', 'sass', 'copy')
+										),
+										$appParams,
+										$parameters);
     }
     
     /**
@@ -106,11 +113,16 @@ class PieCrustBaker
     {
         $overallStart = microtime(true);
         
-        echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
-        echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
-        echo "  Into:    " . $this->getBakeDir() . "\n";
-        echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
-        echo "\n\n";
+		if ($this->parameters['show_banner'])
+		{
+			echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
+			echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
+			echo "  Into:    " . $this->getBakeDir() . "\n";
+			echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
+			echo "\n\n";
+		}
+		
+		$this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($bakeInfoPath);
@@ -128,15 +140,26 @@ class PieCrustBaker
         $this->bakeTags();
         $this->bakeCategories();
         
-        $dirBaker = new DirectoryBaker($this->getBakeDir());
-        $dirBaker->bake($this->pieCrust->getRootDir());
+        $dirBaker = new DirectoryBaker($this->pieCrust,
+									   $this->getBakeDir(),
+									   array(
+											'skip_patterns' => array($this->parameters['skip_pattern'], $this->parameters['skip_system']),
+											'processors' => $this->parameters['processors']
+											)
+									   );
+        $dirBaker->bake();
         
         $this->bakeRecord->saveBakeInfo($bakeInfoPath, array('url_base' => $this->pieCrust->getUrlBase()));
         unset($this->bakeRecord);
         $this->bakeRecord = null;
+		
+		$this->pieCrust->setConfigValue('baker', 'is_baking', false);
         
-        echo '-------------------------------' . PHP_EOL;
-        echo self::formatTimed($overallStart, 'Done baking') . PHP_EOL;
+		if ($this->parameters['show_banner'])
+		{
+			echo '-------------------------------' . PHP_EOL;
+			echo self::formatTimed($overallStart, 'Done baking') . PHP_EOL;
+		}
     }
     
     protected function bakePages()

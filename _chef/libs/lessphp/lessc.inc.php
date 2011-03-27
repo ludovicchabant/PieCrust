@@ -78,6 +78,25 @@ class lessc {
 	public $importDisabled = false;
 	public $importDir = '';
 
+	public $compat = false; // lessjs compatibility mode, does nothing right now
+	protected $currentProperty; // current property being parsed, needed for lessjs compat
+
+	/**
+	 * if we are in an expression then we don't need to worry about parsing font shorthand
+	 * $inExp becomes true after the first value in an expression, or if we enter parens
+	 */
+	protected $inExp = false;
+
+	/**
+	 * if we are in parens we can be more liberal with whitespace around operators because 
+	 * it must evaluate to a single value and thus is less ambiguous.
+	 *
+	 * Consider:
+	 *     property1: 10 -5; // is two numbers, 10 and -5
+	 *     property2: (10 -5); // should evaluate to 5
+	 */
+	protected $inParens = false;
+
 	/**
 	 * Parse a single chunk off the head of the buffer and place it.
 	 * @return false when the buffer is empty, or there is an error
@@ -128,9 +147,10 @@ class lessc {
 	function parseChunk() {
 		if (empty($this->buffer)) return false;
 		$s = $this->seek();
+		$this->currentProperty = null;
 
 		// a property
-		if ($this->keyword($key) && $this->assign() && $this->propertyValue($value) && $this->end()) {
+		if ($this->keyword($key) && $this->assign($key) && $this->propertyValue($value) && $this->end()) {
 			// look for important prefix
 			if ($key{0} == $this->imPrefix && strlen($key) > 1) {
 				$key = substr($key, 1);
@@ -145,6 +165,7 @@ class lessc {
 		} else {
 			$this->seek($s);
 		}
+
 
 		// look for special css @ directives
 		if ($this->env->parent == null && $this->literal('@', false)) {
@@ -339,37 +360,58 @@ class lessc {
 		return true;
 	}
 
-	// a single expression
+	/**
+	 * Attempt to consume an expression.
+	 * @link http://en.wikipedia.org/wiki/Operator-precedence_parser#Pseudo-code
+	 */
 	function expression(&$out) {
 		$s = $this->seek();
-		$needWhite = true;
-		if ($this->literal('(') && $this->expression($exp) && $this->literal(')')) {
+		if ($this->literal('(') && ($this->inExp = $this->inParens = true) &&$this->expression($exp) && $this->literal(')')) {
 			$lhs = $exp;
-			$needWhite = false;
 		} elseif ($this->seek($s) && $this->value($val)) {
 			$lhs = $val;
 		} else {
+			$this->inParens = $this->inExp = false;
+			$this->seek($s);
 			return false;
 		}
 
-		$out = $this->expHelper($lhs, 0, $needWhite);
+		$out = $this->expHelper($lhs, 0);
+		$this->inParens = $this->inExp = false;
 		return true;
 	}
 
-	// recursively parse infix equation with $lhs at precedence $minP
-	function expHelper($lhs, $minP, $needWhite = true) {
+	/**
+	 * recursively parse infix equation with $lhs at precedence $minP
+	 */
+	function expHelper($lhs, $minP) {
+		$this->inExp = true;
 		$ss = $this->seek();
-		// try to find a valid operator
-		while ($this->match(self::$operatorString.($needWhite ? '\s+' : ''), $m) && self::$precedence[$m[1]] >= $minP) {
+
+		// if the if there was whitespace before the operator, then we require whitespace after
+		// the operator for it to be a mathematical operator.
+
+		$needWhite = false;
+		if (!$this->inParens && preg_match('/\s/', $this->buffer{$this->count - 1})) {
 			$needWhite = true;
+		}
+
+		// try to find a valid operator
+		while ($this->match(self::$operatorString.($needWhite ? '\s' : ''), $m) && self::$precedence[$m[1]] >= $minP) {
 			// get rhs
 			$s = $this->seek();
-			if ($this->literal('(') && $this->expression($exp) && $this->literal(')')) {
-				$needWhite = false;
+			$p = $this->inParens;
+			if ($this->literal('(') && ($this->inParens = true) && $this->expression($exp) && $this->literal(')')) {
+				$this->inParens = $p;
 				$rhs = $exp;
-			} elseif ($this->seek($s) && $this->value($val)) {
-				$rhs = $val;
-			} else break;
+			} else {
+				$this->inParens = $p;
+				if ($this->seek($s) && $this->value($val)) {
+					$rhs = $val;
+				} else {
+					break;
+				}
+			}
 
 			// peek for next operator to see what to do with rhs
 			if ($this->peek(self::$operatorString, $next) && self::$precedence[$next[1]] > $minP) {
@@ -383,6 +425,11 @@ class lessc {
 				$lhs = $this->evaluate($m[1], $lhs, $rhs);
 
 			$ss = $this->seek();
+
+			$needWhite = false;
+			if (!$this->inParens && preg_match('/\s/', $this->buffer{$this->count - 1})) {
+				$needWhite = true;
+			}
 		}
 		$this->seek($ss);
 
@@ -556,7 +603,11 @@ class lessc {
 		return true;
 	}
 
-	// a numerical unit
+	/**
+	 * Consume a number and optionally a unit.
+	 * Can also consume a font shorthand if it is a simple case.
+	 * $allowed restricts the types that are matched.
+	 */
 	function unit(&$unit, $allowed = null) {
 		$simpleCase = $allowed == null;
 		if (!$allowed) $allowed = self::$units;
@@ -568,7 +619,7 @@ class lessc {
 			// check for size/height font unit.. should this even be here?
 			if ($simpleCase) {
 				$s = $this->seek();
-				if ($this->literal('/', false) && $this->unit($right, self::$units)) {
+				if (!$this->inExp && $this->literal('/', false) && $this->unit($right, self::$units)) {
 					$unit = array('keyword', $this->compileValue($unit).'/'.$this->compileValue($right));
 				} else {
 					// get rid of whitespace
@@ -757,8 +808,12 @@ class lessc {
 		return false;
 	}
 
-	// consume an assignment operator
-	function assign() {
+	/**
+	 * Consume an assignment operator
+	 * Can optionally take a name that will be set to the current property name
+	 */
+	function assign($name = null) {
+		if ($name) $this->currentProperty = $name;
 		return $this->literal(':') || $this->literal('=');
 	}
 
@@ -1035,6 +1090,11 @@ class lessc {
 		return $out;
 	}
 
+	// alias for unquote
+	function lib_e($arg) {
+		return $this->lib_unquote($arg);
+	}
+
 	function lib_floor($arg) {
 		$arg = $this->reduce($arg);
 		return floor($arg[1]);
@@ -1052,31 +1112,225 @@ class lessc {
 		else return false;
 	}
 
-	// convert rgb, rgba into color type suitable for math
-	// todo: add hsl
+	/**
+	 * Helper function to get argurments for color functions
+	 * accepts invalid input, non colors interpreted to black
+	 */
+	function colorArgs($args) {
+		$args = $this->reduce($args);
+		if ($args[0] != 'list' || count($args[2]) < 2) {
+			return array(array('color', 0, 0, 0));
+		}
+		list($color, $delta) = $args[2];
+		if ($color[0] != 'color')
+			$color = array('color', 0, 0, 0);
+
+		$delta = floatval($delta[1]);
+
+		return array($color, $delta);
+	}
+
+	function lib_darken($args) {
+		list($color, $delta) = $this->colorArgs($args);
+
+		$hsl = $this->toHSL($color);
+		$hsl[3] = $this->clamp($hsl[3] - $delta, 100);
+		return $this->toRGB($hsl);
+	}
+
+	function lib_lighten($args) {
+		list($color, $delta) = $this->colorArgs($args);
+
+		$hsl = $this->toHSL($color);
+		$hsl[3] = $this->clamp($hsl[3] + $delta, 100);
+		return $this->toRGB($hsl);
+	}
+
+	function lib_saturate($args) {
+		list($color, $delta) = $this->colorArgs($args);
+
+		$hsl = $this->toHSL($color);
+		$hsl[2] = $this->clamp($hsl[2] + $delta, 100);
+		return $this->toRGB($hsl);
+	}
+
+	function lib_desaturate($args) {
+		list($color, $delta) = $this->colorArgs($args);
+
+		$hsl = $this->toHSL($color);
+		$hsl[2] = $this->clamp($hsl[2] - $delta, 100);
+		return $this->toRGB($hsl);
+	}
+
+	function lib_spin($args) {
+		list($color, $delta) = $this->colorArgs($args);
+
+		$hsl = $this->toHSL($color);
+		$hsl[1] = $this->clamp($hsl[1] + $delta, 360);
+		return $this->toRGB($hsl);
+	}
+
+	function lib_fadeout($args) {
+		list($color, $delta) = $this->colorArgs($args);
+		$color[4] = $this->clamp((isset($color[4]) ? $color[4] : 1) - $delta/100);
+		return $color;
+	}
+
+	function lib_fadein($args) {
+		list($color, $delta) = $this->colorArgs($args);
+		$color[4] = $this->clamp((isset($color[4]) ? $color[4] : 1) + $delta/100);
+		return $color;
+	}
+
+	function lib_hue($color) {
+		$color = $this->reduce($color);
+		if ($color[0] != 'color') return 0;
+		$hsl = $this->toHSL($color);
+		return round($hsl[1]);
+	}
+
+	function lib_saturation($color) {
+		$color = $this->reduce($color);
+		if ($color[0] != 'color') return 0;
+		$hsl = $this->toHSL($color);
+		return round($hsl[2]);
+	}
+
+	function lib_lightness($color) {
+		$color = $this->reduce($color);
+		if ($color[0] != 'color') return 0;
+		$hsl = $this->toHSL($color);
+		return round($hsl[3]);
+	}
+
+	function toHSL($color) {
+		if ($color[0] == 'hsl') return $color;
+
+		$r = $color[1] / 255;
+		$g = $color[2] / 255;
+		$b = $color[3] / 255;
+
+		$min = min($r, $g, $b);
+		$max = max($r, $g, $b);
+
+		$L = ($min + $max) / 2;
+		if ($min == $max) {
+			$S = $H = 0;
+		} else {
+			if ($L < 0.5)
+				$S = ($max - $min)/($max + $min);
+			else
+				$S = ($max - $min)/(2.0 - $max - $min);
+
+			if ($r == $max) $H = ($g - $b)/($max - $min);
+			elseif ($g == $max) $H = 2.0 + ($b - $r)/($max - $min);
+			elseif ($b == $max) $H = 4.0 + ($r - $g)/($max - $min);
+
+		}
+
+		$out = array('hsl',
+			($H < 0 ? $H + 6 : $H)*60,
+			$S*100,
+			$L*100,
+		);
+
+		if (count($color) > 4) $out[] = $color[4]; // copy alpha
+		return $out;
+	}
+
+	function toRGB_helper($comp, $temp1, $temp2) {
+		if ($comp < 0) $comp += 1.0;
+		elseif ($comp > 1) $comp -= 1.0;
+
+		if (6 * $comp < 1) return $temp1 + ($temp2 - $temp1) * 6 * $comp;
+		if (2 * $comp < 1) return $temp2;
+		if (3 * $comp < 2) return $temp1 + ($temp2 - $temp1)*((2/3) - $comp) * 6;
+
+		return $temp1;
+	}
+
+	/**
+	 * Converts an hsl array into a color value in rgb.
+	 * Expects H to be in range of 0 to 360, S and L in 0 to 100
+	 */
+	function toRGB($color) {
+		if ($color == 'color') return $color;
+
+		$H = $color[1] / 360;
+		$S = $color[2] / 100;
+		$L = $color[3] / 100;
+
+		if ($S == 0) {
+			$r = $g = $b = $L;
+		} else {
+			$temp2 = $L < 0.5 ?
+				$L*(1.0 + $S) :
+				$L + $S - $L * $S;
+
+			$temp1 = 2.0 * $L - $temp2;
+
+			$r = $this->toRGB_helper($H + 1/3, $temp1, $temp2);
+			$g = $this->toRGB_helper($H, $temp1, $temp2);
+			$b = $this->toRGB_helper($H - 1/3, $temp1, $temp2);
+		}
+
+		$out = array('color', round($r*255), round($g*255), round($b*255));
+		if (count($color) > 4) $out[] = $color[4]; // copy alpha
+		return $out;
+	}
+
+	function clamp($v, $max = 1, $min = 0) {
+		return min($max, max($min, $v));
+	}
+
+	/**
+	 * Convert the rgb, rgba, hsl color literals of function type
+	 * as returned by the parser into values of color type.
+	 */
 	function funcToColor($func) {
 		$fname = $func[1];
-		if (!preg_match('/^(rgb|rgba)$/', $fname)) return false;
 		if ($func[2][0] != 'list') return false; // need a list of arguments
+		$rawComponents = $func[2][2];
 
-		$components = array();
-		$i = 1;
-		foreach	($func[2][2] as $c) {
-			$c = $this->reduce($c);
-			if ($i < 4) {
-				if ($c[0] == '%') $components[] = 255 * ($c[1] / 100);
-				else $components[] = floatval($c[1]); 
-			} elseif ($i == 4) {
-				if ($c[0] == '%') $components[] = 1.0 * ($c[1] / 100);
-				else $components[] = floatval($c[1]);
-			} else break;
+		if ($fname == 'hsl' || $fname == 'hsla') {
+			$hsl = array('hsl');
+			$i = 0;
+			foreach ($rawComponents as $c) {
+				$val = $this->reduce($c);
+				$val = isset($val[1]) ? floatval($val[1]) : 0;
 
-			$i++;
+				if ($i == 0) $clamp = 360;
+				elseif ($i < 4) $clamp = 100;
+				else $clamp = 1;
+
+				$hsl[] = $this->clamp($val, $clamp);
+				$i++;
+			}
+
+			while (count($hsl) < 4) $hsl[] = 0;
+			return $this->toRGB($hsl);
+
+		} elseif ($fname == 'rgb' || $fname == 'rgba') {
+			$components = array();
+			$i = 1;
+			foreach	($rawComponents as $c) {
+				$c = $this->reduce($c);
+				if ($i < 4) {
+					if ($c[0] == '%') $components[] = 255 * ($c[1] / 100);
+					else $components[] = floatval($c[1]); 
+				} elseif ($i == 4) {
+					if ($c[0] == '%') $components[] = 1.0 * ($c[1] / 100);
+					else $components[] = floatval($c[1]);
+				} else break;
+
+				$i++;
+			}
+			while (count($components) < 3) $components[] = 0;
+			array_unshift($components, 'color');
+			return $this->fixColor($components);
 		}
-		while (count($components) < 3) $components[] = 0;
 
-		array_unshift($components, 'color');
-		return $this->fixColor($components);
+		return false;
 	}
 
 	// reduce an entire block, removing any delayed types
@@ -1128,10 +1382,15 @@ class lessc {
 				$color = $this->funcToColor($var);
 				if ($color) $var = $color;
 				else {
-					$f = array($this, 'lib_'.$var[1]);
+					list($_, $name, $args) = $var;
+					$f = array($this, 'lib_'.$name);
 					if (is_callable($f)) {
-						list($_, $delim, $items) = $var[2];
-						$var = call_user_func($f, $this->compressList($items, $delim));
+						if ($args[0] == 'list')
+							$args = $this->compressList($args[2], $args[1]);
+
+						$var = call_user_func($f, $args);
+
+						// convet to a typed value if the result is a php primitive
 						if (is_numeric($var)) $var = array('number', $var);
 						elseif (!is_array($var)) $var = array('keyword', $var);
 					} else {
@@ -1139,7 +1398,7 @@ class lessc {
 						$var[2] = $this->reduce($var[2]);
 					}
 				}
-				break; // no where to go after a function
+				break; // done reducing after a function
 			} elseif ($var[0] == 'negative') {
 				$value = $this->reduce($var[1]);
 				if (is_numeric($value[1])) {
