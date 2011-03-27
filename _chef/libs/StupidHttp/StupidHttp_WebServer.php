@@ -14,7 +14,9 @@ require_once 'StupidHttp_WebRequestHandler.php';
 class StupidHttp_WebServer
 {
     protected $sock;
+    protected $mounts;
     protected $requestHandlers;
+    protected $preprocessor;
  
     protected $documentRoot;
     /**
@@ -174,13 +176,21 @@ class StupidHttp_WebServer
         return $handler;
     }
     
-    protected $mounts;
     /**
      * Mounts a directory into the document root.
      */
     public function mount($directory, $alias)
     {
         $this->mounts[$alias] = rtrim($directory, '/\\');
+    }
+    
+    /**
+     * Sets the preprocessor that is run before each request.
+     */
+    public function setPreprocess($preprocessor)
+    {
+        if (!is_callable($preprocessor)) throw new PieCrustException('The preprocessor needs to be a callable object.');
+        $this->preprocessor = $preprocessor;
     }
 
     /**
@@ -228,7 +238,7 @@ class StupidHttp_WebServer
                     throw new StupidHttp_WebException("Failed accepting connection: " . socket_strerror(socket_last_error($this->sock)));
                 }
                 
-                $timeout = array('sec' => 5, 'usec' => 0);
+                $timeout = array('sec' => 4, 'usec' => 0);
                 if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
                 {
                     throw new StupidHttp_WebException("Failed setting timeout value: " . socket_strerror(socket_last_error($msgsock)));
@@ -237,7 +247,6 @@ class StupidHttp_WebServer
         
             $emptyCount = 0;
             $rawRequest = array();
-            $closeSocket = true;
             $processRequest = false;
             $profilingInfo = array();
             do
@@ -247,7 +256,6 @@ class StupidHttp_WebServer
                     if (socket_last_error($msgsock) === SOCKET_ETIMEDOUT)
                     {
                         // Kept-alive connection probably timed out. Just close it.
-                        $closeSocket = true;
                         $processRequest = false;
                         if (empty($rawRequest))
                         {
@@ -262,7 +270,6 @@ class StupidHttp_WebServer
                     else
                     {
                         $this->logError("Error reading request from connection: " . socket_strerror(socket_last_error($msgsock)));
-                        $closeSocket = true;
                         $processRequest = false;
                         break;
                     }
@@ -284,8 +291,9 @@ class StupidHttp_WebServer
                 }
             }
             while (true);
-            
             $profilingInfo['receive.end'] = microtime(true);
+            
+            $closeSocket = true;
             if ($processRequest)
             {
                 $profilingInfo['process.start'] = microtime(true);
@@ -294,6 +302,12 @@ class StupidHttp_WebServer
                 // Process the request, get the response.
                 try
                 {
+                    if ($this->preprocessor != null)
+                    {
+                        $this->logInfo('... preprocessing ' . $request->getUri() . ' ...');
+                        $func = $this->preprocessor;
+                        $func($request);
+                    }
                     $response = $this->processRequest($options, $request);
                 }
                 catch (StupidHttp_WebException $e)
@@ -329,6 +343,7 @@ class StupidHttp_WebServer
                     $closeSocket = ($request->getHeader('Connection') == 'close');
                     break;
                 }
+                $closeSocket = true;
                 
                 // Adjust the headers and send the response.
                 if ($closeSocket) $response->setHeader('Connection', 'close');
@@ -355,7 +370,7 @@ class StupidHttp_WebServer
             
             $this->logProfilingInfo($profilingInfo);
             
-            if ($closeSocket)
+            if ($closeSocket or !$processRequest)
             {
                 $this->logDebug("Closing connection.");
                 socket_close($msgsock);
