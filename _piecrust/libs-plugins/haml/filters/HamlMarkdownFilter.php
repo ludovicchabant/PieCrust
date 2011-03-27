@@ -17,14 +17,31 @@ class HamlMarkdownFilter extends _HamlMarkdownFilter
 {
     public function init()
     {
-        $this->vendorPath = PIECRUST_APP_DIR . 'libs/markdown/markdown.php';
+        $this->vendorPath = null;
         $this->vendorClass = 'Markdown_Parser_Wrapper';
         parent::init();
     }
     
     public function run($text)
     {
+        // We need to programmatically include Markdown because we may
+        // have to use Markdown-Extra instead of basic Markdown.
+        $defaultIncludePath = PIECRUST_APP_DIR . 'libs/markdown/markdown.php';
+        $extraIncludePath = PIECRUST_APP_DIR . 'libs/markdown-extra/markdown.php';
+        
+        // The global $_PIECRUST_APP should be set by the Haml template engine
+        // and the Haml formatter.
+        $includeCode = '<?php '.
+                       'if (!isset($_PIECRUST_APP)) { $markdownIncludePath = "' . $defaultIncludePath . '"; }'.
+                       'else {'.
+                            '$markdownConfig = $_PIECRUST_APP->getConfig("markdown");'.
+                            'if ($markdownConfig != null and $markdownConfig["use_markdown_extra"]) { $markdownIncludePath = "' . $extraIncludePath . '"; }'.
+                            'else { $markdownIncludePath = "' . $defaultIncludePath . '"; }'.
+                       '}'.
+                       'require_once $markdownIncludePath;'.
+                       '?>';
+        
         $text = str_replace('"', '\"', $text);  // Looks like the PHamlP parser is too dumb to escape quotes before inserting this in PHP code... *sigh*
-        return parent::run($text);
+        return $includeCode . parent::run($text);
     }
 }

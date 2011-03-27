@@ -58,6 +58,7 @@ class HamlTemplateEngine implements ITemplateEngine
         file_put_contents($out, $phpMarkup);
         
         // Declare all top-level data as local-scope variables before including the HAML PHP.
+        $_PIECRUST_APP = $this->pieCrust;
         foreach ($data as $key => $value)
         {
             if (is_array($value))
@@ -92,6 +93,7 @@ class HamlTemplateEngine implements ITemplateEngine
         if ($outputPath === false) throw new PieCrustException("An error occured processing template: " . $templateName);
         
         // Declare all top-level data as local-scope variables before including the HAML PHP.
+        $_PIECRUST_APP = $this->pieCrust;
         foreach ($data as $key => $value)
         {
             if (is_array($value))

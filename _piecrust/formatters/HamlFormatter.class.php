@@ -33,6 +33,7 @@ class HamlFormatter implements IFormatter
         file_put_contents($out, $phpMarkup);
         
         ob_start();
+        $_PIECRUST_APP = $this->pieCrust;
         require $out;
         return ob_get_clean();
     }
