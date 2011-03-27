@@ -90,6 +90,7 @@ class PieCrustServer
                                         'cache' => true
                                       )
                                 );
+        $pieCrust->setConfigValue('server', 'is_hosting', true);
         if ($this->additionalTemplatesDir != null)
         {
             $pieCrust->getTemplateEngine()->addTemplatesPaths($this->additionalTemplatesDir);
@@ -119,7 +120,6 @@ class PieCrustServer
         $pieCrust = $this->createPieCrustApp();
         $pieCrust->setConfigValue('site', 'cache_time', false);
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
-        $pieCrust->setConfigValue('server', 'is_hosting', true);
         
         $headers = array();
         $pieCrustError = null;
