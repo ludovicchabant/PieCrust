@@ -127,13 +127,43 @@ class PieCrustBaker
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($bakeInfoPath);
         
+		$cleanCache = false;
+		
+		// If the URL base changed since last time, we need to re-bake everything.
         if ($this->bakeRecord->getLast('url_base') != $this->pieCrust->getUrlBase() or
             !is_file($bakeInfoPath))
         {
-            $start = microtime(true);
+            $cleanCache = true;
+        }
+		
+		// If any template file changed since last time, we also need to re-bake everything
+		// (there's no way to know what weird conditional template inheritance/inclusion
+		//  could be in use...).
+		$maxMTime = 0;
+		foreach ($this->pieCrust->getTemplatesDirs() as $dir)
+		{
+			$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
+			foreach ($iterator as $path)
+			{
+				if ($path->isFile())
+				{
+					$maxMTime = max($maxMTime, $path->getMTime());
+				}
+			}
+		}
+		if ($maxMTime >= $this->bakeRecord->getLastBakeTime())
+		{
+			$cleanCache = true;
+		}
+		
+		if ($cleanCache)
+		{
+			$start = microtime(true);
             FileSystem::deleteDirectory($this->pieCrust->getCacheDir());
             echo self::formatTimed($start, 'Clean cache') . PHP_EOL;
-        }
+			
+			$this->parameters['smart'] = false;
+		}
         
         $this->bakePosts();
         $this->bakePages();
