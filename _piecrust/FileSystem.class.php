@@ -117,8 +117,9 @@ class FileSystem
 	{
 		if (!is_dir($dir))
 		{
-			mkdir($dir, 0777, true);
+			return mkdir($dir, 0777, true);
 		}
+		return true;
 	}
 	
 	public static function deleteDirectory($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
