@@ -710,3 +710,4 @@ foreach ($shady_functions as $name)
         errexit("StupidHttp: Function '" . $name. "' is not available on your system.");
     }
 }
+unset($shady_functions);
