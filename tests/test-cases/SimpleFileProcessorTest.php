@@ -44,7 +44,7 @@ class SimpleFileProcessorTest extends PHPUnit_Framework_TestCase
 	public function testProcessFile($inputExtensions, $outputExtensions, $inputPath, $expectedOutputPath)
     {
         $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true));
-        $sfp = new SimpleFileProcessor($inputExtensions, $outputExtensions);
+        $sfp = new SimpleFileProcessor('test', $inputExtensions, $outputExtensions);
         $outputPath = $sfp->getOutputFilenames($inputPath);
         $this->assertEquals($expectedOutputPath, $outputPath);
     }
