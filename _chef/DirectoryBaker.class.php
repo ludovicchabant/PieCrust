@@ -29,7 +29,9 @@ class DirectoryBaker
                                             'IFileProcessor',
                                             PIECRUST_CHEF_DIR . 'processors',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
-                                            function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); }
+                                            $processorsToFilter == '*' ?
+                                                null :
+                                                function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); }
                                             );
             foreach ($this->processorsLoader->getPlugins() as $proc)
             {

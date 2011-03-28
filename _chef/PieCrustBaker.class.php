@@ -100,7 +100,7 @@ class PieCrustBaker
 											'copy_assets' => true,
 											'skip_pattern' => '/^_/',
 											'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
-											'processors' => array('less', 'sass', 'copy')
+											'processors' => '*'
 										),
 										$appParams,
 										$parameters);
