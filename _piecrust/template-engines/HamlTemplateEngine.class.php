@@ -24,7 +24,6 @@ class HamlTemplateEngine implements ITemplateEngine
 {
     protected $pieCrust;
     protected $cacheDir;
-    protected $templateDirs;
     protected $haml;
     
     public function initialize(PieCrust $pieCrust)
@@ -35,14 +34,6 @@ class HamlTemplateEngine implements ITemplateEngine
     public function getExtension()
     {
         return 'haml';
-    }
-    
-    public function addTemplatesPaths($paths)
-    {
-        if (is_array($paths))
-            $this->templateDirs = array_combine($this->templateDirs, rtrim($paths, DIRECTORY_SEPARATOR));
-        else
-            $this->templateDirs[] = rtrim($paths, DIRECTORY_SEPARATOR);
     }
     
     public function renderString($content, $data)
@@ -77,18 +68,7 @@ class HamlTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         
-        $templatePath = null;
-        foreach ($this->templateDirs as $dir)
-        {
-            $path = $dir . DIRECTORY_SEPARATOR . $templateName;
-            if (is_file($path))
-            {
-                $templatePath = $path;
-                break;
-            }
-        }
-        if ($templatePath === null) throw new PieCrustException("Can't find any template named: " . $templateName);
-        
+        $templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
         $outputPath = $this->haml->parse($templatePath, $this->cacheDir);
         if ($outputPath === false) throw new PieCrustException("An error occured processing template: " . $templateName);
         
@@ -116,8 +96,6 @@ class HamlTemplateEngine implements ITemplateEngine
     {
         if ($this->haml === null)
         {
-            $this->templateDirs = array(rtrim($this->pieCrust->getTemplatesDir(), DIRECTORY_SEPARATOR));
-            
             $this->cacheDir = false;
             if ($this->pieCrust->isCachingEnabled())
             {

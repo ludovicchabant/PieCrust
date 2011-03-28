@@ -31,11 +31,6 @@ class DwooTemplateEngine implements ITemplateEngine
 	{
 		return 'dwoo';
 	}
-    
-    public function addTemplatesPaths($paths)
-    {
-        throw new PieCrustException('Not implemented yet.');
-    }
 	
 	public function renderString($content, $data)
 	{
@@ -47,8 +42,8 @@ class DwooTemplateEngine implements ITemplateEngine
 	public function renderFile($templateName, $data)
 	{
 		$this->ensureLoaded();
-		$templatesDir = $this->pieCrust->getTemplatesDir();
-		$tpl = new Dwoo_Template_File($templatesDir . $templateName);
+		$templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
+		$tpl = new Dwoo_Template_File($templatePath);
 		$this->dwoo->output($tpl, $data);
 	}
 	

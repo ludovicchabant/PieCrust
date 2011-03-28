@@ -24,7 +24,7 @@ function _chef_run_command($parser, $result)
     }
     if (isset($result->command->options['templates_dir']))
     {
-        $pieCrust->getTemplateEngine()->addTemplatesPaths($result->command->options['templates_dir']);
+        $pieCrust->addTemplatesDir($result->command->options['templates_dir']);
     }
     if ($outputDir != null)
     {

@@ -16,18 +16,6 @@ class TwigTemplateEngine implements ITemplateEngine
         return 'twig';
     }
     
-    public function addTemplatesPaths($paths)
-    {
-        $this->ensureLoaded();
-        
-        $twigPaths = $this->twigLoader->getPaths();
-        if (is_array($paths))
-            $twigPaths = array_combine($twigPaths, $paths);
-        else
-            $twigPaths[] = $paths;
-        $this->twigLoader->setPaths($twigPaths);
-    }
-    
     public function renderString($content, $data)
     {
         $this->ensureLoaded();
@@ -70,7 +58,7 @@ class TwigTemplateEngine implements ITemplateEngine
             require_once 'libs-plugins/twig/PieCrustExtension.php';
             require_once 'libs-plugins/twig/GeshiExtension.php';
             
-            $dirs = array(rtrim($this->pieCrust->getTemplatesDir(), DIRECTORY_SEPARATOR));
+            $dirs = $this->pieCrust->getTemplatesDirs();
             $useTimeInCacheKey = ($this->pieCrust->getConfigValue('server', 'is_hosting') === true);
             $this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs, $useTimeInCacheKey);
             

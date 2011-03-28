@@ -23,11 +23,6 @@ interface ITemplateEngine
 	public function getExtension();
 	
 	/**
-	 * Adds template directories to look into when searching for a template.
-	 */
-    public function addTemplatesPaths($paths);
-	
-	/**
 	 * Renders the given string, with the given data context, to the standard
 	 * output.
 	 */

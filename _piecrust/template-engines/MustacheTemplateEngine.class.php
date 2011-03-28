@@ -2,22 +2,17 @@
 
 class MustacheTemplateEngine implements ITemplateEngine
 {
+	protected $pieCrust;
 	protected $mustache;
-	protected $templatesDir;
 	
 	public function initialize(PieCrust $pieCrust)
     {
-		$this->templatesDir = $pieCrust->getTemplatesDir();
+		$this->pieCrust = $pieCrust;
     }
 	
 	public function getExtension()
 	{
 		return 'mustache';
-	}
-	
-	public function addTemplatesPaths($paths)
-	{
-		throw new PieCrustException('Not implemented yet.');
 	}
 	
 	public function renderString($content, $data)
@@ -29,7 +24,8 @@ class MustacheTemplateEngine implements ITemplateEngine
 	public function renderFile($templateName, $data)
 	{
 		$this->ensureLoaded();
-		$content = file_get_contents($this->templatesDir . $templateName);
+		$templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
+		$content = file_get_contents($templatePath);
 		$this->renderString($content, $data);
 	}
 	

@@ -93,7 +93,7 @@ class PieCrustServer
         $pieCrust->setConfigValue('server', 'is_hosting', true);
         if ($this->additionalTemplatesDir != null)
         {
-            $pieCrust->getTemplateEngine()->addTemplatesPaths($this->additionalTemplatesDir);
+            $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
         }
         return $pieCrust;
     }
