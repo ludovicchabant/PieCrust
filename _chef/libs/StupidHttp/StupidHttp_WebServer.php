@@ -215,12 +215,15 @@ class StupidHttp_WebServer
             array(
                 'list_directories' => true,
                 'list_root_directory' => false, 
-                'run_browser' => false
+                'run_browser' => false,
+                'keep_alive' => false,
+                'timeout' => 3,
+                'show_banner' => true
             ),
             $options
         );
         
-        $this->setupNetworking();
+        $this->setupNetworking($options);
         
         if ($options['run_browser'] === true)
         {
@@ -238,7 +241,7 @@ class StupidHttp_WebServer
                     throw new StupidHttp_WebException("Failed accepting connection: " . socket_strerror(socket_last_error($this->sock)));
                 }
                 
-                $timeout = array('sec' => 4, 'usec' => 0);
+                $timeout = array('sec' => $options['timeout'], 'usec' => 0);
                 if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
                 {
                     throw new StupidHttp_WebException("Failed setting timeout value: " . socket_strerror(socket_last_error($msgsock)));
@@ -331,19 +334,25 @@ class StupidHttp_WebServer
                 }
                 
                 // Figure out whether to close the connection with the client.
-                switch ($request->getVersion())
+                if ($options['keep_alive'])
                 {
-                case 'HTTP/1.0':
-                default:
-                    // Always close, unless asked to keep alive.
-                    $closeSocket = ($request->getHeader('Connection') != 'keep-alive');
-                    break;
-                case 'HTTP/1.1':
-                    // Always keep alive, unless asked to close.
-                    $closeSocket = ($request->getHeader('Connection') == 'close');
-                    break;
+                    switch ($request->getVersion())
+                    {
+                    case 'HTTP/1.0':
+                    default:
+                        // Always close, unless asked to keep alive.
+                        $closeSocket = ($request->getHeader('Connection') != 'keep-alive');
+                        break;
+                    case 'HTTP/1.1':
+                        // Always keep alive, unless asked to close.
+                        $closeSocket = ($request->getHeader('Connection') == 'close');
+                        break;
+                    }
                 }
-                $closeSocket = true;
+                else
+                {
+                    $closeSocket = true;
+                }
                 
                 // Adjust the headers and send the response.
                 if ($closeSocket) $response->setHeader('Connection', 'close');
@@ -381,7 +390,7 @@ class StupidHttp_WebServer
         while (true);
     }
     
-    protected function setupNetworking()
+    protected function setupNetworking(array $options)
     {
         if (($this->sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false)
         {
@@ -398,11 +407,18 @@ class StupidHttp_WebServer
             throw new StupidHttp_WebException("Failed listening to socket on " . $this->address . ":" . $this->port . ": " . socket_strerror(socket_last_error($this->sock)));
         }
         
-        $this->logInfo("");
-        $this->logInfo("STUPID-HTTP SERVER");
-        $this->logInfo("");
-        $this->logInfo("Listening on " . $this->address . ":" . $this->port . "...");
-        $this->logInfo("");
+        if ($options['show_banner'])
+        {
+            $this->logInfo("");
+            $this->logInfo("STUPID-HTTP SERVER");
+            $this->logInfo("");
+            $this->logInfo("Listening on " . $this->address . ":" . $this->port . "...");
+            $this->logInfo("");
+        }
+        else
+        {
+            $this->logDebug("Started server on " . $this->address . ":" . $this->port);
+        }
     }
     
     protected function runBrowser()
