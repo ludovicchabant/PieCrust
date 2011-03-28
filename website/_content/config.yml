@@ -1,2 +1,6 @@
 site:
     title: Your New PieCrust Website
+    pretty_urls: false
+    
+smartypants:
+    enable: true
