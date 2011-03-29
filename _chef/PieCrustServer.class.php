@@ -19,6 +19,8 @@ class PieCrustServer
     protected $additionalTemplatesDir;
     protected $autobake;
     protected $fullFirstBake;
+    protected $lastBakeTime;
+    protected $autobakeInterval;
     
     /**
      * Creates a new chef server.
@@ -34,6 +36,7 @@ class PieCrustServer
                   'port' => 8080,
                   'templates_dir' => null,
                   'autobake' => false,
+                  'autobake_interval' => 2,
                   'mime_types' => array('less' => 'text/css')
                   ),
             $options
@@ -42,6 +45,8 @@ class PieCrustServer
         $this->autobake = (is_string($options['autobake']) ? $options['autobake'] : false);
         $this->fullFirstBake = $options['full_first_bake'];
         $this->rootDir = rtrim(realpath($appDir), '/\\');
+        $this->lastBakeTime = 0;
+        $this->autobakeInterval = $options['autobake_interval'];
         
         $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
         $port = $options['port'];
@@ -55,16 +60,20 @@ class PieCrustServer
         if ($this->autobake === false)
         {
             $this->server->onPattern('GET', '.*')
-                         ->call(function($response) use ($self)
+                         ->call(function($context) use ($self)
                                 {
-                                    $self->_runPieCrustRequest($response);
+                                    $self->_runPieCrustRequest($context);
                                 });
         }
         else
         {
-            $this->server->setPreprocess(function($response) use ($self)
+            $this->server->setPreprocess(function($request) use ($self)
                                          {
-                                            $self->_bake(true);
+                                            if ((microtime(true) - $self->_getLastBakeTime()) > $self->_getAutobakeInterval())
+                                            {
+                                                $self->_bake(true);
+                                                $self->_setLastBakeTime();
+                                            }
                                          });
         }
     }
@@ -96,6 +105,31 @@ class PieCrustServer
             $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
         }
         return $pieCrust;
+    }
+    
+    /**
+     * For internal use only.
+     */
+    public function _getAutobakeInterval()
+    {
+        return $this->autobakeInterval;
+    }
+    
+    /**
+     * For internal use only.
+     */
+    public function _getLastBakeTime()
+    {
+        return $this->lastBakeTime;
+    }
+    
+    /**
+     * For internal use only.
+     */
+    public function _setLastBakeTime($time = null)
+    {
+        if ($time == null) $time = microtime(true);
+        $this->lastBakeTime = $time;
     }
     
     /**
