@@ -620,7 +620,10 @@ class StupidHttp_WebServer
             $responseStr .= $response->getBody();
         }
         
-        socket_write($sock, $responseStr, strlen($responseStr));
+        if (false === @socket_write($sock, $responseStr))
+        {
+            throw new StupidHttp_WebException("Couldn't write response to socket: " . socket_strerror(socket_last_error($sock)));
+        }
     }
     
     protected function logProfilingInfo(array $profilingInfo)
