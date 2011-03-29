@@ -94,7 +94,7 @@ class PieCrustServer
     protected function createPieCrustApp()
     {
         $pieCrust = new PieCrust(array(
-                                        'url_base' => 'http://' . $this->server->getAddress() . ':' . $this->server->getPort(),
+                                        'url_base' => '/',
                                         'root' => $this->rootDir,
                                         'cache' => true
                                       )
