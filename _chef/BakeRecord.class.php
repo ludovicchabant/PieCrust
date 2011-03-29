@@ -82,6 +82,7 @@ class BakeRecord
      */
     public function isPageUsingPosts($relativePath)
     {
+		if (!isset($this->lastBakeInfo['pagesUsingPosts'][$relativePath])) return false;
         return ($this->lastBakeInfo['pagesUsingPosts'][$relativePath] === true);
     }
     
