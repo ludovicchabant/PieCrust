@@ -217,7 +217,7 @@ class StupidHttp_WebServer
                 'list_root_directory' => false, 
                 'run_browser' => false,
                 'keep_alive' => false,
-                'timeout' => 3,
+                'timeout' => 4,
                 'show_banner' => true
             ),
             $options
@@ -382,7 +382,8 @@ class StupidHttp_WebServer
             if ($closeSocket or !$processRequest)
             {
                 $this->logDebug("Closing connection.");
-                socket_close($msgsock);
+                @socket_shutdown($msgsock);
+                @socket_close($msgsock);
                 $msgsock = false;
                 gc_collect_cycles();
             }
@@ -395,6 +396,11 @@ class StupidHttp_WebServer
         if (($this->sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false)
         {
             throw new StupidHttp_WebException("Can't create socket: " . socket_strerror(socket_last_error()));
+        }
+        
+        if (@socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR) === false)
+        {
+            throw new StupidHttp_WebException("Can't set options on the socket: " . socket_strerror(socket_last_error()));
         }
         
         if (@socket_bind($this->sock, $this->address, $this->port) === false)
