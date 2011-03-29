@@ -154,7 +154,7 @@ class PieCrustServer
         
         $context->getResponse()->setStatus($code);
         
-        foreach ($pieCrustHeaders as $h => $v)
+        foreach ($headers as $h => $v)
         {
             $context->getResponse()->setHeader($h, $v);
         }
