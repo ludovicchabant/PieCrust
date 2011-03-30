@@ -131,9 +131,16 @@ class DirectoryBaker
                     }
                     if (!$isUpToDate)
                     {
-                        $start = microtime(true);
-                        $fileProcessor->process($i->getPathname(), $destinationDir);
-                        echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
+                        try
+                        {
+                            $start = microtime(true);
+                            $fileProcessor->process($i->getPathname(), $destinationDir);
+                            echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
+                        }
+                        catch (Exception $e)
+                        {
+                            throw new PieCrustException("Error processing '" . $relative . "': " . $e->getMessage());
+                        }
                     }
                 }
                 else
