@@ -58,16 +58,21 @@ class TwigTemplateEngine implements ITemplateEngine
             require_once 'libs-plugins/twig/PieCrustExtension.php';
             require_once 'libs-plugins/twig/GeshiExtension.php';
             
+            $isHosted = ($this->pieCrust->getConfigValue('server', 'is_hosting') === true);
+            $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') === true);
+            
             $dirs = $this->pieCrust->getTemplatesDirs();
-            $useTimeInCacheKey = ($this->pieCrust->getConfigValue('server', 'is_hosting') === true);
-            $this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs, $useTimeInCacheKey);
+            $this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs, $isHosted); // If we're in a long running process (hosted), the temples
+                                                                                      // will be defined in memory and when the file changes, Twig
+                                                                                      // won't see it needs to recompile it if the tempalte class
+                                                                                      // name is the same, so we add the time-stamp in the cache key.
             
             $options = array('cache' => false);
             if ($this->pieCrust->isCachingEnabled())
             {
                 $options['cache'] = $this->pieCrust->getCacheDir() . 'templates_c';
             }
-            if ($this->pieCrust->getConfigValue('twig', 'auto_reload') !== false)
+            if ($isHosted or ($this->pieCrust->getConfigValue('twig', 'auto_reload') !== false and !$isBaking))
             {
                 $options['auto_reload'] = true;
             }
