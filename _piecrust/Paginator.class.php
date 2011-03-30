@@ -150,9 +150,10 @@ class Paginator
                 $postData['date'] = date($postsDateFormat, $post->getDate());
                 
                 $postContents = $post->getContentSegment();
-                $postContentsSplit = preg_split('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $postContents, 2);
-                $postData['content'] = $postContentsSplit[0];
-                if (count($postContentsSplit) > 1) $postData['has_more'] = true;
+                $postPageBreakOffset = $post->getPageBreakOffset();
+                if ($postPageBreakOffset === false) $postData['content'] = $postContents;
+                else $postData['content'] = substr($postContents, 0, $postPageBreakOffset);
+                $postData['has_more'] = ($postPageBreakOffset !== false);
                 
                 $postsData[] = $postData;
             }

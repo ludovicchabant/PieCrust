@@ -250,6 +250,21 @@ class Page
         return $this->contents;
     }
     
+    /**
+     * Gets the offset of the page-break tag into the main content segment.
+     *
+     * If no page-break is found, this returns 'false'.
+     */
+    public function getPageBreakOffset()
+    {
+        if ($this->config === null)
+        {
+            $this->loadConfigAndContents();
+        }
+        if (!isset($this->config['page_break_offset'])) return false;
+        return $this->config['page_break_offset'];
+    }
+    
     protected $data;
     /**
      * Gets the page's data for rendering.
@@ -588,7 +603,17 @@ class Page
                 $renderedContent = ob_get_clean();
             
                 $this->config['segments'][] = $key;
-                $this->contents[$key] = $this->pieCrust->formatText($renderedContent, $this->config['format']);
+                $renderedAndFormattedContent = $this->pieCrust->formatText($renderedContent, $this->config['format']);
+                $this->contents[$key] = $renderedAndFormattedContent;
+                if ($key == 'content')
+                {
+                    $matches = array();
+                    if (preg_match('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $renderedAndFormattedContent, $matches, PREG_OFFSET_CAPTURE))
+                    {
+                        $offset = $matches[0][1];
+                        $this->config['page_break_offset'] = $offset;
+                    }
+                }
             }
             
             // Do not cache the page if 'volatile' data was accessed (e.g. the page displays
