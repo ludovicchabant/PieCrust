@@ -503,7 +503,7 @@ class PieCrust
         if ($parameters['url_base'] === null)
         {
             $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-            $folder = dirname($_SERVER['PHP_SELF']) .'/';
+            $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
             $this->urlBase = $host . $folder;
         }
         else
@@ -702,7 +702,7 @@ class PieCrust
             {
                 // Clean up by removing the base URL of the application, and the trailing
                 // query string that we should ignore because we're using 'pretty URLs'.
-                $rootDirectory = dirname($server['PHP_SELF']) . '/';
+                $rootDirectory = rtrim(dirname($server['PHP_SELF']), '/') . '/';
                 if (strlen($rootDirectory) > 1)
                 {
                     if (strlen($requestUri) < strlen($rootDirectory))
