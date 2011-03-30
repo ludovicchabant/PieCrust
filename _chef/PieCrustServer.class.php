@@ -137,6 +137,8 @@ class PieCrustServer
      */
     public function _bake($smart, $showBanner = false)
     {
+        PageRepository::clearPages();
+        
         $pieCrust = $this->createPieCrustApp();
         $baker = new PieCrustBaker($pieCrust, array('smart' => $smart, 'show_banner' => $showBanner));
         $baker->setBakeDir($this->autobake);
