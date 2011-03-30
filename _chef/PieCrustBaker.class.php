@@ -307,7 +307,7 @@ class PieCrustBaker
             );
             $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
             $baker->bake($page, $postInfos);
-            echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts)') . PHP_EOL;
+            echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
         }
     }
     
@@ -334,7 +334,7 @@ class PieCrustBaker
             );
             $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
             $baker->bake($page, $postInfos);
-            echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts)') . PHP_EOL;
+            echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
         }
     }
     
