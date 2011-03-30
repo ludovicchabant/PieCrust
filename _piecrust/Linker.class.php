@@ -128,7 +128,7 @@ class Linker implements ArrayAccess, Iterator
                         'uri' => $uri,
                         'name' => $key,
                         'is_self' => ($key == $this->selfKey),
-                        'page' => new PageWrapper(Page::create($this->pieCrust, $uri, $item->getPathname()))
+                        'page' => new PageWrapper(PageRepository::getOrCreatePage($this->pieCrust, $uri, $item->getPathname()))
                     );
                     $this->linksCache[$key] = $pageInfo;
                 }

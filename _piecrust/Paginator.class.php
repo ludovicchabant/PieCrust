@@ -104,6 +104,7 @@ class Paginator
      */
     public function setPaginationDataSource(array $postInfos)
     {
+        if ($this->paginationData !== null) throw new PieCrustException("The pagination data source can only be set before the pagination data is build.");
         $this->paginationDataSource = $postInfos;
     }
     
@@ -187,7 +188,7 @@ class Paginator
             $filteredPostInfos = array();
             foreach ($postInfos as $postInfo)
             {
-                $post = Page::create(
+                $post = PageRepository::getOrCreatePage(
                     $this->pieCrust,
                     Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
@@ -228,7 +229,7 @@ class Paginator
             $relevantPostInfos = array();
             foreach ($relevantSlice as $postInfo)
             {
-                $postInfo['page'] = Page::create(
+                $postInfo['page'] = PageRepository::getOrCreatePage(
                     $this->pieCrust,
                     Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
                     $postInfo['path'],

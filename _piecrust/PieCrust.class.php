@@ -58,6 +58,7 @@ require_once 'IFormatter.class.php';
 require_once 'ITemplateEngine.class.php';
 require_once 'Page.class.php';
 require_once 'PageRenderer.class.php';
+require_once 'PageRepository.class.php';
 require_once 'Cache.class.php';
 require_once 'PluginLoader.class.php';
 require_once 'PieCrustException.class.php';
