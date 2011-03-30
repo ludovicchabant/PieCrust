@@ -61,13 +61,16 @@ class Page
      */
     public function setPageNumber($pageNumber)
     {
-        $this->pageNumber = $pageNumber;
-        $this->config = null;
-        $this->contents = null;
-        $this->data = null;
-        $this->assetor = null;
-        $this->paginator = null;
-        $this->linker = null;
+        if ($pageNumber != $this->pageNumber)
+        {
+            $this->pageNumber = $pageNumber;
+            $this->config = null;
+            $this->contents = null;
+            $this->data = null;
+            $this->assetor = null;
+            $this->paginator = null;
+            $this->linker = null;
+        }
     }
     
     protected $date;
