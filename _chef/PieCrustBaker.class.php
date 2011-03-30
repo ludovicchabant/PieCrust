@@ -64,7 +64,7 @@ class PieCrustBaker
      */
     public function setBakeDir($dir)
     {
-        $this->bakeDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim(realpath($dir), '/\\') . DIRECTORY_SEPARATOR;
         if (is_writable($this->bakeDir) === false)
         {
             try
@@ -92,18 +92,18 @@ class PieCrustBaker
     {
         $this->pieCrust = $pieCrust;
         $this->pieCrust->setConfigValue('baker', 'is_baking', false);
-		
-		$appParams = $this->pieCrust->getConfig('baker');
+        
+        $appParams = $this->pieCrust->getConfig('baker');
         $this->parameters = array_merge(array(
-											'show_banner' => false,
-											'smart' => true,
-											'copy_assets' => true,
-											'skip_pattern' => '/^_/',
-											'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
-											'processors' => '*'
-										),
-										$appParams,
-										$parameters);
+                                            'show_banner' => true,
+                                            'smart' => true,
+                                            'copy_assets' => true,
+                                            'skip_pattern' => '/^_/',
+                                            'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
+                                            'processors' => '*'
+                                        ),
+                                        $appParams,
+                                        $parameters);
     }
     
     /**
@@ -113,57 +113,57 @@ class PieCrustBaker
     {
         $overallStart = microtime(true);
         
-		if ($this->parameters['show_banner'])
-		{
-			echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
-			echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
-			echo "  Into:    " . $this->getBakeDir() . "\n";
-			echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
-			echo "\n\n";
-		}
-		
-		$this->pieCrust->setConfigValue('baker', 'is_baking', true);
+        if ($this->parameters['show_banner'])
+        {
+            echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
+            echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
+            echo "  Into:    " . $this->getBakeDir() . "\n";
+            echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
+            echo "\n\n";
+        }
+        
+        $this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($bakeInfoPath);
         
-		$cleanCache = false;
-		
-		// If the URL base changed since last time, we need to re-bake everything.
+        $cleanCache = false;
+        
+        // If the URL base changed since last time, we need to re-bake everything.
         if ($this->bakeRecord->getLast('url_base') != $this->pieCrust->getUrlBase() or
             !is_file($bakeInfoPath))
         {
             $cleanCache = true;
         }
-		
-		// If any template file changed since last time, we also need to re-bake everything
-		// (there's no way to know what weird conditional template inheritance/inclusion
-		//  could be in use...).
-		$maxMTime = 0;
-		foreach ($this->pieCrust->getTemplatesDirs() as $dir)
-		{
-			$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
-			foreach ($iterator as $path)
-			{
-				if ($path->isFile())
-				{
-					$maxMTime = max($maxMTime, $path->getMTime());
-				}
-			}
-		}
-		if ($maxMTime >= $this->bakeRecord->getLastBakeTime())
-		{
-			$cleanCache = true;
-		}
-		
-		if ($cleanCache)
-		{
-			$start = microtime(true);
+        
+        // If any template file changed since last time, we also need to re-bake everything
+        // (there's no way to know what weird conditional template inheritance/inclusion
+        //  could be in use...).
+        $maxMTime = 0;
+        foreach ($this->pieCrust->getTemplatesDirs() as $dir)
+        {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($iterator as $path)
+            {
+                if ($path->isFile())
+                {
+                    $maxMTime = max($maxMTime, $path->getMTime());
+                }
+            }
+        }
+        if ($maxMTime >= $this->bakeRecord->getLastBakeTime())
+        {
+            $cleanCache = true;
+        }
+        
+        if ($cleanCache)
+        {
+            $start = microtime(true);
             FileSystem::deleteDirectory($this->pieCrust->getCacheDir());
-            echo self::formatTimed($start, 'Clean cache') . PHP_EOL;
-			
-			$this->parameters['smart'] = false;
-		}
+            echo self::formatTimed($start, 'cleaned cache') . PHP_EOL . PHP_EOL;
+            
+            $this->parameters['smart'] = false;
+        }
         
         $this->bakePosts();
         $this->bakePages();
@@ -171,25 +171,25 @@ class PieCrustBaker
         $this->bakeCategories();
         
         $dirBaker = new DirectoryBaker($this->pieCrust,
-									   $this->getBakeDir(),
-									   array(
-											'skip_patterns' => array($this->parameters['skip_pattern'], $this->parameters['skip_system']),
-											'processors' => $this->parameters['processors']
-											)
-									   );
+                                       $this->getBakeDir(),
+                                       array(
+                                            'skip_patterns' => array($this->parameters['skip_pattern'], $this->parameters['skip_system']),
+                                            'processors' => $this->parameters['processors']
+                                            )
+                                       );
         $dirBaker->bake();
         
         $this->bakeRecord->saveBakeInfo($bakeInfoPath, array('url_base' => $this->pieCrust->getUrlBase()));
         unset($this->bakeRecord);
         $this->bakeRecord = null;
-		
-		$this->pieCrust->setConfigValue('baker', 'is_baking', false);
         
-		if ($this->parameters['show_banner'])
-		{
-			echo '-------------------------------' . PHP_EOL;
-			echo self::formatTimed($overallStart, 'Done baking') . PHP_EOL;
-		}
+        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        
+        if ($this->parameters['show_banner'])
+        {
+            echo PHP_EOL;
+            echo self::formatTimed($overallStart, 'done baking') . PHP_EOL;
+        }
     }
     
     protected function bakePages()
@@ -231,7 +231,7 @@ class PieCrustBaker
         $start = microtime(true);
         $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
         $uri = str_replace('_index', '', $uri);
-        $page = Page::create(
+        $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
                 $uri,
                 $path
@@ -259,7 +259,7 @@ class PieCrustBaker
         foreach ($postInfos as $postInfo)
         {
             $uri = Paginator::buildPostUrl($postUrlFormat, $postInfo);
-            $page = Page::create(
+            $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
                 $uri,
                 $postInfo['path'],
@@ -297,7 +297,7 @@ class PieCrustBaker
             $start = microtime(true);
             $postInfos = $this->bakeRecord->getPostsTagged($tag);
             $uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
-            $page = Page::create(
+            $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
                 $uri,
                 $tagPagePath,
@@ -324,7 +324,7 @@ class PieCrustBaker
             $start = microtime(true);
             $postInfos = $this->getPostsInCategory($category);
             $uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'category_url'), $category);
-            $page = Page::create(
+            $page = PageRepository::getOrCreatePage(
                 $this->pieCrust, 
                 $uri, 
                 $categoryPagePath,
