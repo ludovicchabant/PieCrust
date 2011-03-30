@@ -382,6 +382,7 @@ class StupidHttp_WebServer
             if ($closeSocket or !$processRequest)
             {
                 $this->logDebug("Closing connection.");
+                usleep(100);  // Weird, this seems to fix some networking problems...
                 @socket_shutdown($msgsock);
                 @socket_close($msgsock);
                 $msgsock = false;
@@ -625,10 +626,21 @@ class StupidHttp_WebServer
         {
             $responseStr .= $response->getBody();
         }
+        $responseStr .= "\n\0";
         
-        if (false === @socket_write($sock, $responseStr))
+        $transmitted = 0;
+        $responseLength = strlen($responseStr);
+        while ($transmitted < $responseLength)
         {
-            throw new StupidHttp_WebException("Couldn't write response to socket: " . socket_strerror(socket_last_error($sock)));
+            $socketWriteLength = min($responseLength - $transmitted, 1024);
+            $transmittedThisTime = @socket_write($sock, $responseStr, $socketWriteLength);
+            if (false === $transmittedThisTime)
+            {
+                throw new StupidHttp_WebException("Couldn't write response to socket: " . socket_strerror(socket_last_error($sock)));
+            }
+            $transmitted += $transmittedThisTime;
+            $responseStr = substr($responseStr, $transmittedThisTime);
+            $this->logDebug('    : transmitted ' . $transmittedThisTime . ' bytes, ' . ($responseLength - $transmitted) . ' left to go.');
         }
     }
     
