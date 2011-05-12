@@ -386,7 +386,7 @@ class PieCrust
             $this->formattersLoader = new PluginLoader(
                                             'IFormatter',
                                             PIECRUST_APP_DIR . 'formatters',
-											function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
+                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
                                             );
             foreach ($this->formattersLoader->getPlugins() as $formatter)
             {
