@@ -73,6 +73,33 @@ $bakerParser->addOption('force', array(
 ));
 _chef_add_common_command_options_and_args($bakerParser);
 
+// Upload command
+$uploadParser = $parser->addCommand('upload', array(
+    'description' => "Uploads your PieCrust website to an given FTP server."
+));
+$uploadParser->addOption('remote_root', array(
+    'short_name'  => '-r',
+    'long_name'   => '--remote_root',
+    'description' => "The root directory on the remote server.",
+    'help_name'   => 'REMOTE_ROOT'
+));
+$uploadParser->addOption('passive', array(
+    'short_name'  => '-p',
+    'long_name'   => '--passive',
+    'description' => "Uses passive mode to connect to the FTP server.",
+    'action'      => 'StoreTrue',
+    'help_name'   => 'PASSIVE'
+));
+$uploadParser->addArgument('root', array(
+    'description' => "The local directory with your website (e.g. the output directory of your latest PieCrust bake.",
+    'help_name'   => 'ROOT_DIR',
+    'optional'    => false
+));
+$uploadParser->addArgument('server', array(
+    'description' => "The FTP server to upload to.",
+    'help_name'   => 'USER:PASSWORD@DOMAIN.TLD',
+    'optional'    => false
+));
 
 // Server command
 $serverParser = $parser->addCommand('serve', array(
@@ -153,4 +180,3 @@ else
     $parser->displayUsage();
     die();
 }
-
