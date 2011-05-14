@@ -2,7 +2,7 @@
 
 define('FTP_SYNC_ALWAYS', 0);
 define('FTP_SYNC_IF_NEWER', 1);
-define('FTP_SYNC_IF_DIFFERENT_SIZE', 2);
+define('FTP_SYNC_IF_NEWER_OR_DIFFERENT_SIZE', 2);
 
 $TEXT_FILE_EXTENSIONS = array(
     'html', 'htm', 'txt', 'php', 'php3', 'cgi',
@@ -43,6 +43,19 @@ function _chef_run_command($parser, $result)
     
     $passiveMode = $result->command->options['passive'];
     
+    $syncMode = FTP_SYNC_ALWAYS;
+    switch ($result->command->options['sync_mode'])
+    {
+        case 'time':
+            $syncMode = FTP_SYNC_IF_NEWER;
+            break;
+        case 'time_and_size':
+            $syncMode = FTP_SYNC_IF_NEWER_OR_DIFFERENT_SIZE;
+            break;
+    }
+    
+    $simulate = $result->command->options['simulate'];
+    
     echo "Uploading to ".$server." [".$remoteRootDir."] as ".$user.PHP_EOL;
     
     $conn = ftp_connect($server);
@@ -68,7 +81,7 @@ function _chef_run_command($parser, $result)
                 if (!ftp_pasv($conn, true))
                     throw new PieCrustException("Can't enable passive mode.");
             }
-            sync_ftp($conn, $rootDir, $remoteRootDir);
+            sync_ftp($conn, $rootDir, $remoteRootDir, $syncMode, $simulate);
         }
         else
         {
@@ -84,7 +97,7 @@ function _chef_run_command($parser, $result)
 
 
 
-function sync_ftp($conn, $localRoot, $remoteRoot, $mode = FTP_SYNC_IF_NEWER)
+function sync_ftp($conn, $localRoot, $remoteRoot, $mode = FTP_SYNC_IF_NEWER, $simulate = false)
 {
     global $TEXT_FILE_NAMES;
     global $TEXT_FILE_EXTENSIONS;
@@ -99,7 +112,7 @@ function sync_ftp($conn, $localRoot, $remoteRoot, $mode = FTP_SYNC_IF_NEWER)
         
         $transferMode = FTP_BINARY;
         $relativePathInfo = pathinfo($relativePathname);
-        if (in_array($relativePathInfo['extension'], $TEXT_FILE_EXTENSIONS) or
+        if ((array_key_exists('extension', $relativePathInfo) and in_array($relativePathInfo['extension'], $TEXT_FILE_EXTENSIONS)) or
             in_array($relativePathInfo['filename'], $TEXT_FILE_NAMES))
         {
             $transferMode = FTP_ASCII;
@@ -110,8 +123,9 @@ function sync_ftp($conn, $localRoot, $remoteRoot, $mode = FTP_SYNC_IF_NEWER)
         if ($mode == FTP_SYNC_ALWAYS)
         {
             $doTransfer = true;
+            $doTransferReason = 'always';
         }
-        else if ($mode == FTP_SYNC_IF_NEWER)
+        else
         {
             $localMtime = $cur->getMTime();
             $remoteMtime = ftp_mdtm($conn, $remotePathname);
@@ -125,28 +139,40 @@ function sync_ftp($conn, $localRoot, $remoteRoot, $mode = FTP_SYNC_IF_NEWER)
                 $doTransfer = true;
                 $doTransferReason = "newer";
             }
-        }
-        else if ($mode == FTP_SYNC_IF_DIFFERENT_SIZE)
-        {
-            $localSize = $cur->getSize();
-            $remoteSize = ftp_size($conn, $remotePathname);
-            if ($remoteSize === -1)
+            
+            if ($doTransfer and $doTransferReason == "newer" and $mode == FTP_SYNC_IF_NEWER_OR_DIFFERENT_SIZE)
             {
-                $doTransfer = true;
-                $doTransferReason = "new";
-            }
-            else if ($remoteSize != $localSize)
-            {
-                $doTransfer = true;
-                $doTransferReason = "different size";
+                if ($transferMode == FTP_BINARY)
+                    $localSize = $cur->getSize();
+                else
+                    $localSize = get_unix_ascii_size($cur->getPathname());
+                    
+                $remoteSize = ftp_size($conn, $remotePathname);
+                if ($remoteSize != -1 and $remoteSize != $localSize)
+                {
+                    $doTransfer = true;
+                    $doTransferReason = "different size";
+                }
+                else
+                {
+                    $doTransfer = false;
+                }
             }
         }
         if ($doTransfer)
         {
             echo $relativePathname." [".$doTransferReason."][".($transferMode == FTP_ASCII ? 'A' : 'B')."]".PHP_EOL;
-            ftp_put($conn, $remotePathname, $cur->getPathname(), $transferMode);
+            if (!$simulate)
+                ftp_put($conn, $remotePathname, $cur->getPathname(), $transferMode);
         }
     }
+}
+
+function get_unix_ascii_size($path)
+{
+    $text = file_get_contents($path);
+    $text = str_replace("\r\n", "\n", $text);
+    return strlen($text);
 }
 
 function prompt_silent($prompt)

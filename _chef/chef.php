@@ -90,6 +90,19 @@ $uploadParser->addOption('passive', array(
     'action'      => 'StoreTrue',
     'help_name'   => 'PASSIVE'
 ));
+$uploadParser->addOption('sync_mode', array(
+    'short_name'  => '-s',
+    'long_name'   => '--sync_mode',
+    'default'     => 'none',
+    'description' => "The sync mode for the FTP transfer (none [default], time, time_and_size)",
+    'help_name'   => 'SYNC_MODE'
+));
+$uploadParser->addOption('simulate', array(
+    'long_name'   => '--simulate',
+    'default'     => false,
+    'description' => "Don't actually transfer anything.",
+    'action'      => 'StoreTrue'
+));
 $uploadParser->addArgument('root', array(
     'description' => "The local directory with your website (e.g. the output directory of your latest PieCrust bake.",
     'help_name'   => 'ROOT_DIR',
