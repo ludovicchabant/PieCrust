@@ -97,6 +97,7 @@ class PieCrustBaker
         $this->parameters = array_merge(array(
                                             'show_banner' => true,
                                             'smart' => true,
+                                            'clean_cache' => false,
                                             'copy_assets' => true,
                                             'skip_pattern' => '/^_/',
                                             'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
@@ -127,7 +128,7 @@ class PieCrustBaker
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($bakeInfoPath);
         
-        $cleanCache = false;
+        $cleanCache = $this->parameters['clean_cache'];
         
         // If the URL base changed since last time, we need to re-bake everything.
         if ($this->bakeRecord->getLast('url_base') != $this->pieCrust->getUrlBase() or

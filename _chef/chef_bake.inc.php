@@ -17,7 +17,7 @@ function _chef_run_command($parser, $result)
     // Start baking!
     PieCrust::setup('shell');
     $pieCrust = new PieCrust(array('root' => $rootDir, 'url_base' => $result->command->options['url_base']));
-    $baker = new PieCrustBaker($pieCrust, array('smart' => !$result->command->options['force']));
+    $baker = new PieCrustBaker($pieCrust, array('smart' => !$result->command->options['force'], 'clean_cache' => $result->command->options['force']));
     if ($result->command->options['pretty_urls'])
     {
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
