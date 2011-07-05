@@ -1,7 +1,6 @@
 
-Handle cache/expiration headers (http://docs.symfony-reloaded.org/guides/cache/http.html)
-
 Helper for loading recent Twitter entries (see chris.dzombak.name).
+
 Helper for email contact form (using jQuery hopefully).
 
 Support for administrative triggering of HTML caching (similar to Jekyll:
@@ -9,9 +8,29 @@ Support for administrative triggering of HTML caching (similar to Jekyll:
 	http://appden.com/personal/journey-to-jekyll/ and
 	https://github.com/appden/appden.github.com)
 
-Support more HTML response headers:
-- error 400 for incorrect URL/syntax
-- set Content-Length to length of body
-- set Content-Type to mime type
-- set Cache-Control to either 'no-cache, must-revalidate' (if debug mode), or 'public, max-age=<cache>'
-- set ETag to hash-value (SHA1?) of body
+`content_type` should be in templates instead of pages?
+
+Website bundles a la Webgen.
+
+Generate table of contents or header numbering for pages.
+
+Content processors:
+- minify CSS or Javascript (YUI compressor)
+- process CleverCSS
+- HTML Tidy
+
+Smarty template engine (http://www.smarty.net/)
+
+Script to create the basic structure of the website.
+
+Template variable for the encoding of the page.
+
+Sitemap and robots.txt generator.
+
+Baking:
+- Include support for local/remote baking in the shipping bake scripts.
+- Better output (simple OK/Error conclusion with stats like number of pages baked and time spent)
+
+Page metadata:
+- Better built-in support for date/time (and default that to file creation time).
+- Support for 'live'/'draft'/'hidden' statuses?
