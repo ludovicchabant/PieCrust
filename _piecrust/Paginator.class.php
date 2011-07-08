@@ -1,6 +1,7 @@
 <?php
 
 require_once 'FileSystem.class.php';
+require_once 'PaginationFilter.class.php';
 
 
 /**
@@ -125,13 +126,12 @@ class Paginator
         if (count($postInfos) > 0)
         {
             // Load all the posts for the requested page number (page numbers start at '1').
-            $postsPerPage = $this->page->getConfigValue('posts_per_page');
-            if (!$postsPerPage) $postsPerPage = $this->pieCrust->getConfigValueUnchecked('site', 'posts_per_page');
-            $postsDateFormat = $this->page->getConfigValue('date_format');
-            if (!$postsDateFormat) $postsDateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'date_format');
+            $postsPerPage = $this->page->getConfigValue('posts_per_page', 'site');
+            $postsDateFormat = $this->page->getConfigValue('date_format', 'site');
+            $postsFilter = $this->getPaginationFilter();
             
             $hasMorePages = false;
-            $postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $filterPostInfos, $postsPerPage, $hasMorePages);
+            $postInfosWithPages = $this->getRelevantPostInfosWithPages($postInfos, $postsFilter, $postsPerPage, $hasMorePages);
             foreach ($postInfosWithPages as $postInfo)
             {
                 // Create the post with all the stuff we already know.
@@ -173,16 +173,16 @@ class Paginator
                                 );
     }
     
-    protected function getRelevantPostInfosWithPages(array $postInfos, $filterPostInfos, $postsPerPage, &$hasMorePages)
+    protected function getRelevantPostInfosWithPages(array $postInfos, PaginationFilter $postsFilter, $postsPerPage, &$hasMorePages)
     {
         $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
         $upperLimit = min($offset + $postsPerPage, count($postInfos));
         $postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_url');
         
-        if ($filterPostInfos and ($this->page->isTag() or $this->page->isCategory()))
+        if ($postsFilter->hasClauses())
         {
-            // This is a tag or category listing: that's tricky because we
-            // need to filter posts in that tag or category from the start to
+            // We have some filtering clause: that's tricky because we
+            // need to filter posts using those clauses from the start to
             // know what offset to start from. This is not very efficient and
             // at this point the user might as well bake his website but hey,
             // this can still be useful for debugging.
@@ -195,29 +195,21 @@ class Paginator
                     $postInfo['path'],
                     PIECRUST_PAGE_POST);
                 
-                $isMatch = false;
-                switch ($this->page->getPageType())
-                {
-                case PIECRUST_PAGE_TAG:
-                    $postTags = $post->getConfigValue('tags');
-                    $isMatch = ($postTags != null and in_array($this->page->getPageKey(), $postTags));
-                    break;
-                case PIECRUST_PAGE_CATEGORY:
-                    $isMatch = ($this->page->getPageKey() == $post->getConfigValue('category'));
-                    break;
-                }
-                
-                if ($isMatch)
+                if ($postsFilter->postMatches($post))
                 {
                     $postInfo['page'] = $post;
                     $filteredPostInfos[] = $postInfo;
+                    
+                    // Exit if we have enough posts.
+                    if (count($filteredPostInfos) >= $upperLimit)
+                        break;
                 }
             }
             
             // Now get the slice of the filtered post infos that is relevant
             // for the current page number.
             $relevantPostInfos = array_slice($filteredPostInfos, $offset, $upperLimit - $offset);
-            $hasMorePages =($offset + $postsPerPage < count($filteredPostInfos));
+            $hasMorePages = ($offset + $postsPerPage < count($filteredPostInfos));
             return $relevantPostInfos;
         }
         else
@@ -240,6 +232,31 @@ class Paginator
             $hasMorePages =($offset + $postsPerPage < count($postInfos));
             return $relevantPostInfos;
         }
+    }
+    
+    protected function getPaginationFilter()
+    {
+        $filter = new PaginationFilter();
+        
+        // If the current page is a tag/category page, add filtering
+        // for that.
+        switch ($this->page->getPageType())
+        {
+        case PIECRUST_PAGE_TAG:
+            $filter->addHasClause('tags', $this->page->getPageKey());
+            break;
+        case PIECRUST_PAGE_CATEGORY:
+            $filter->addIsClause('category', $this->page->getPageKey());
+            break;
+        }
+        
+        // Add custom filtering clauses specified by the user in the
+        // page configuration header.
+        $filterInfo = $this->page->getConfigValue('posts_filters');
+        if ($filterInfo != null)
+            $filter->addClauses($filterInfo);
+        
+        return $filter;
     }
     
     /**

@@ -211,18 +211,28 @@ class Page
     
     /**
      * Convenience method for accessing a configuration value.
+     *
+     * If an 'appKey' is provided, and if the configuration key is not
+     * found in the page config, then that same configuration key will
+     * be looked up in the PieCrust app's own config, in the 'appKey'
+     * section. This is useful for getting a configuration value that
+     * can be defined at the app level or overridden at the page level.
      */
-    public function getConfigValue($key)
+    public function getConfigValue($key, $appKey = null)
     {
         if ($this->config === null)
         {
             $this->loadConfigAndContents();
         }
-        if (!isset($this->config[$key]))
+        if (isset($this->config[$key]))
         {
-            return null;
+            return $this->config[$key];
         }
-        return $this->config[$key];
+        if ($appKey != null)
+        {
+            return $this->pieCrust->getConfigValue($appKey, $key);
+        }
+        return null;
     }
     
     protected $contents;
