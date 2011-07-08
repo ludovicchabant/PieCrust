@@ -115,7 +115,7 @@ class Paginator
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
-            $fs = new FileSystem($this->pieCrust);
+            $fs = FileSystem::create($this->pieCrust);
             $postInfos = $fs->getPostFiles();
             $filterPostInfos = true;
         }
