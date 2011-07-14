@@ -99,12 +99,28 @@ class PieCrustBaker
                                             'smart' => true,
                                             'clean_cache' => false,
                                             'copy_assets' => true,
-                                            'skip_pattern' => '/^_/',
-                                            'skip_system' => '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/',
                                             'processors' => '*'
                                         ),
                                         $appParams,
                                         $parameters);
+        
+        if (!isset($this->parameters['skip_patterns']))
+        {
+            $this->parameters['skip_patterns'] = array('/^_/');
+        }
+        else if (!is_array($this->parameters['skip_patterns']))
+        {
+            $this->parameters['skip_patterns'] = array($this->parameters['skip_patterns']);
+        }
+        // Convert glob patterns to regex patterns.
+        for ($i = 0; $i < count($this->parameters['skip_patterns']); ++$i)
+        {
+            $pattern = $this->parameters['skip_patterns'][$i];
+            $pattern = PieCrustBaker::globToRegex($pattern);
+            $this->parameters['skip_patterns'][$i] = $pattern;
+        }
+        // Add the default system skip pattern.
+        $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
     }
     
     /**
@@ -174,7 +190,7 @@ class PieCrustBaker
         $dirBaker = new DirectoryBaker($this->pieCrust,
                                        $this->getBakeDir(),
                                        array(
-                                            'skip_patterns' => array($this->parameters['skip_pattern'], $this->parameters['skip_system']),
+                                            'skip_patterns' => $this->parameters['skip_patterns'],
                                             'processors' => $this->parameters['processors']
                                             )
                                        );
@@ -373,5 +389,20 @@ class PieCrustBaker
     {
         $endTime = microtime(true);
         return sprintf('[%8.1f ms] ', ($endTime - $startTime)*1000.0) . $message;
+    }
+    
+    public static function globToRegex($pattern)
+    {
+        if (substr($pattern, 0, 1) == "/" and
+            substr($pattern, -1) == "/")
+        {
+            // Already a regex.
+            return $pattern;
+        }
+        
+        $pattern = preg_quote($pattern, '/');
+        $pattern = str_replace('\\*', '.*', $pattern);
+        $pattern = str_replace('\\?', '.', $pattern);
+        return '/'.$pattern.'/';
     }
 }
