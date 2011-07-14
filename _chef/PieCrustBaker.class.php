@@ -269,7 +269,7 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
-        $fs = new FileSystem($this->pieCrust);
+        $fs = FileSystem::create($this->pieCrust);
         $postInfos = $fs->getPostFiles();
         
         $postUrlFormat = $this->pieCrust->getConfigValue('site', 'post_url');
