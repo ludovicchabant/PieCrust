@@ -78,7 +78,7 @@ class PieCrust
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.0.2';
+    const VERSION = '0.0.3';
     
     protected $rootDir;
     /**
