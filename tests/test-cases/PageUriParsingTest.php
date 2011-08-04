@@ -1,6 +1,9 @@
 <?php
 
 require_once 'PieCrust.class.php';
+require_once 'UriParser.class.php';
+require_once 'UriBuilder.class.php';
+
 
 class PageUriParsingTest extends PHPUnit_Framework_TestCase
 {
@@ -62,11 +65,7 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
     {
         $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true));
         
-        $format = $pc->getConfigValue('site', 'category_url');
-        $pattern = Paginator::buildCategoryUriPattern($format);
-        $this->assertTrue(preg_match($pattern, 'blah.ext') == 0, 'WTF?');
-        
-        $uriInfo = Page::parseUri($pc, $uri);
+        $uriInfo = UriParser::parseUri($pc, $uri);
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
     }
 }

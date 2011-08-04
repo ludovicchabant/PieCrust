@@ -3,5 +3,5 @@
 function Dwoo_Plugin_pccaturl_compile(Dwoo_Compiler $compiler, $value)
 {
     $format = DwooTemplateEngine::getCategoryUrlFormat();
-    return '\'' . DwooTemplateEngine::formatUri(Paginator::buildCategoryUri($format, $value)) . '\'';
+    return '\'' . DwooTemplateEngine::formatUri(UriBuilder::buildCategoryUri($format, $value)) . '\'';
 }
