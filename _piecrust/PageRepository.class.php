@@ -36,13 +36,13 @@ class PageRepository
     {
         if (!self::$enabled)
         {
-            return Page::create($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
+            return new Page($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
         }
         
         $page = self::getPage($uri);
         if ($page == null)
         {
-            $page = Page::create($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
+            $page = new Page($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
             self::addPage($page);
         }
         else

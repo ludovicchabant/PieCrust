@@ -301,8 +301,6 @@ class PieCrust
                 $yamlMarkup = json_encode($this->config);
                 if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
             }
-
-            $this->debuggingEnabled = ($this->debuggingEnabled or $this->getConfigValue('site', 'debug'));
         }
     }
     
@@ -477,6 +475,15 @@ class PieCrust
         return $data;
     }
     
+    protected $lastRunTime = null;
+    /**
+     * Gets the last microtime at which a request was run.
+     */
+    public function getLastRunTime()
+    {
+        return $this->lastRunTime;
+    }
+    
     /**
      * Creates a new PieCrust instance with the given base URL.
      */
@@ -533,12 +540,15 @@ class PieCrust
      */
     public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null)
     {
+        // Remember the time.
+        $this->lastRunTime = microtime(true);
+        
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
         if ($uri == null) $uri = $this->getRequestUri($server);
         
         // Do the heavy lifting.
-        $page = new Page($this, $uri);
+        $page = Page::createFromUri($this, $uri);
         if ($extraPageData != null) $page->setExtraPageData($extraPageData);
         $pageRenderer = new PageRenderer($this);
         $output = $pageRenderer->get($page, $extraPageData);
@@ -855,6 +865,3 @@ class PieCrust
         throw new PieCrustException("Couldn't find template: " . $templateName);
     }
 }
-
-// Get the time this was included so we can display the baking time on the requested page.
-$PIECRUST_START_TIME = microtime(true);

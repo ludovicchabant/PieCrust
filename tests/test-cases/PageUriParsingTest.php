@@ -28,10 +28,10 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             );
     }
     
-	public function parseUriDataProvider()
-	{
+    public function parseUriDataProvider()
+    {
         $pagesDir = $this->getRootDir() . str_replace('/', DIRECTORY_SEPARATOR, '_content/pages/');
-		return array(
+        return array(
             array(
                 '/existing-page',
                 $this->makeUriInfo('existing-page', $pagesDir . 'existing-page.html', true)
@@ -53,20 +53,20 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
                 $this->makeUriInfo('blah.ext', null, false)
             )
          );
-	}
+    }
 
-	/**
-	 * @dataProvider parseUriDataProvider
-	 */
-	public function testParseUri($uri, $expectedUriInfo)
+    /**
+     * @dataProvider parseUriDataProvider
+     */
+    public function testParseUri($uri, $expectedUriInfo)
     {
         $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true));
         
         $format = $pc->getConfigValue('site', 'category_url');
-        $pattern = Paginator::buildCategoryUrlPattern($format);
+        $pattern = Paginator::buildCategoryUriPattern($format);
         $this->assertTrue(preg_match($pattern, 'blah.ext') == 0, 'WTF?');
         
-		$uriInfo = Page::parseUri($pc, $uri);
+        $uriInfo = Page::parseUri($pc, $uri);
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
     }
 }

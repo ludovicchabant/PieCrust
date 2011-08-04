@@ -246,11 +246,9 @@ class PieCrustBaker
         }
         
         $start = microtime(true);
-        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-        $uri = str_replace('_index', '', $uri);
         $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
-                $uri,
+                Page::buildUri($relativePath),
                 $path
             );
         $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
@@ -275,7 +273,7 @@ class PieCrustBaker
         $postUrlFormat = $this->pieCrust->getConfigValue('site', 'post_url');
         foreach ($postInfos as $postInfo)
         {
-            $uri = Paginator::buildPostUrl($postUrlFormat, $postInfo);
+            $uri = Paginator::buildPostUri($postUrlFormat, $postInfo);
             $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
                 $uri,
@@ -313,7 +311,7 @@ class PieCrustBaker
         {
             $start = microtime(true);
             $postInfos = $this->bakeRecord->getPostsTagged($tag);
-            $uri = Paginator::buildTagUrl($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
+            $uri = Paginator::buildTagUri($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
             $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
                 $uri,
@@ -340,7 +338,7 @@ class PieCrustBaker
         {
             $start = microtime(true);
             $postInfos = $this->getPostsInCategory($category);
-            $uri = Paginator::buildCategoryUrl($this->pieCrust->getConfigValue('site', 'category_url'), $category);
+            $uri = Paginator::buildCategoryUri($this->pieCrust->getConfigValue('site', 'category_url'), $category);
             $page = PageRepository::getOrCreatePage(
                 $this->pieCrust, 
                 $uri, 

@@ -12,26 +12,26 @@ $dashboard = new PHPUnit_WebReport_Dashboard($logFile);
 
 ?>
 <html>
-	<head>
-		<title>PieCrust Unit Tests</title>
-		<style type="text/css">
+    <head>
+        <title>PieCrust Unit Tests</title>
+        <style type="text/css">
 <?php echo $dashboard->getReportCss(); ?>
-		</style>
-	</head>
-	<body>
-		<h1>Unit Testing</h1>
-		<h2>Test Cases Results</h2>
+        </style>
+    </head>
+    <body>
+        <h1>Unit Testing</h1>
+        <h2>Test Cases Results</h2>
 <?php
-	$dashboard->display();
+    $dashboard->display();
 ?>
-		<h2>PHPUnit Output</h2>
-		<pre>
+        <h2>PHPUnit Output</h2>
+        <pre>
 <?php
 foreach ($output as $line)
 {
-	echo htmlentities($line) . "\n";
+    echo htmlentities($line) . "\n";
 }
 ?>
-		</pre>
-	</body>
+        </pre>
+    </body>
 </html>

@@ -108,7 +108,6 @@ class Linker implements ArrayAccess, Iterator
         if ($this->linksCache === null)
         {
             $this->linksCache = array();
-            $pagesDir = $this->pieCrust->getPagesDir();
             $it = new FilesystemIterator($this->baseDir);
             foreach ($it as $item)
             {
@@ -121,9 +120,7 @@ class Linker implements ArrayAccess, Iterator
                 else
                 {
                     $key = $item->getBasename('.html');
-                    $relativePath = str_replace('\\', '/', substr($item->getPathname(), strlen($pagesDir)));
-                    $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-                    $uri = str_replace('_index', '', $uri);
+                    $uri = Page::buildUri($item->getPathname(), PIECRUST_PAGE_REGULAR);
                     $pageInfo = array(
                         'uri' => $uri,
                         'name' => $key,

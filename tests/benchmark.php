@@ -14,45 +14,45 @@ require_once 'PieCrust.class.php';
 
 function init_app($cache)
 {
-	$pc = new PieCrust(array('cache' => $cache));
-	$pc->getConfig();
+    $pc = new PieCrust(array('cache' => $cache));
+    $pc->getConfig();
 }
 
 function run_query($pieCrust, $uri)
 {
-	$page = new Page($pieCrust, $uri);	
-	$renderer = new PageRenderer($pieCrust);	
-	return $renderer->get($page, null, false);
+    $page = Page::createFromUri($pieCrust, $uri);  
+    $renderer = new PageRenderer($pieCrust);    
+    return $renderer->get($page, null, false);
 }
 
 function run_detailed_query($bench, $pieCrust, $uri)
-{	
-	$pieCrust->getConfig();
-	$bench->setMarker('App config loaded');
+{   
+    $pieCrust->getConfig();
+    $bench->setMarker('App config loaded');
 
-	$page = new Page($pieCrust, $uri);
-	$bench->setMarker('Created page');
-	
-	$page->getConfig();
-	$bench->setMarker('Loaded page config and contents');
-	
-	$renderer = new PageRenderer($pieCrust);
-	$bench->setMarker('Created renderer');
-	
-	$page = $renderer->get($page, null, false);
-	$bench->setMarker('Rendered page');
-	
-	return $page;
+    $page = Page::createFromUri($pieCrust, $uri);
+    $bench->setMarker('Created page');
+    
+    $page->getConfig();
+    $bench->setMarker('Loaded page config and contents');
+    
+    $renderer = new PageRenderer($pieCrust);
+    $bench->setMarker('Created renderer');
+    
+    $page = $renderer->get($page, null, false);
+    $bench->setMarker('Rendered page');
+    
+    return $page;
 }
 
 ?>
 
 <!doctype html>
 <html>
-	<head>
-		<title>PieCrust Benchmarks</title>
-	</head>
-	<body>
+    <head>
+        <title>PieCrust Benchmarks</title>
+    </head>
+    <body>
 <?php
 
 echo '<h1>PieCrust Benchmarks</h1>';
@@ -62,11 +62,11 @@ function filter_end_marker($value) { return preg_match('/^end_/', $value['name']
 function map_diff_time($value) { return $value['diff']; }
 function display_profiling_times($prof)
 {
-	$diffValues = array_map('map_diff_time', array_filter($prof, 'filter_end_marker'));
-	echo '<p>Ran '.$runCount.' times.</p>';
-	echo '<p>Median time: <strong>'.(median($diffValues)*1000).'ms</strong></p>';
-	echo '<p>Average time: <strong>'.(average($diffValues)*1000).'ms</strong></p>';
-	echo '<p>Max time: <strong>'.(max($diffValues)*1000).'ms</strong></p>';
+    $diffValues = array_map('map_diff_time', array_filter($prof, 'filter_end_marker'));
+    echo '<p>Ran '.$runCount.' times.</p>';
+    echo '<p>Median time: <strong>'.(median($diffValues)*1000).'ms</strong></p>';
+    echo '<p>Average time: <strong>'.(average($diffValues)*1000).'ms</strong></p>';
+    echo '<p>Max time: <strong>'.(max($diffValues)*1000).'ms</strong></p>';
 }
 
 //
@@ -123,5 +123,5 @@ $bench->stop();
 $bench->display();
 
 ?>
-	</body>
+    </body>
 </html>

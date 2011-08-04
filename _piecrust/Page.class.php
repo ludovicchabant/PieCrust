@@ -389,36 +389,15 @@ class Page
     /**
      * Creates a new Page instance.
      */
-    public function __construct(PieCrust $pieCrust, $uri)
+    public function __construct(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null, $date = null)
     {
         $this->pieCrust = $pieCrust;
-        if ($uri != null)
-        {
-            $uriInfo = Page::parseUri($pieCrust, $uri);
-            
-            $this->uri = $uriInfo['uri'];
-            $this->pageNumber = $uriInfo['page'];
-            $this->date = $uriInfo['date'];
-            $this->type = $uriInfo['type'];
-            $this->key = $uriInfo['key'];
-            $this->path = $uriInfo['path'];
-            
-            if ($this->path == null or (!$uriInfo['was_path_checked'] and !is_file($this->path)))
-            {
-                if ($this->type == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
-                if ($this->type == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
-                throw new PieCrustException('404');
-            }
-        }
-        else
-        {
-            $this->uri = null;
-            $this->pageNumber = 1;
-            $this->date = null;
-            $this->type = PIECRUST_PAGE_REGULAR;
-            $this->key = null;
-            $this->path = null;
-        }
+        $this->uri = $uri;
+        $this->path = $path;
+        $this->type = $pageType;
+        $this->pageNumber = $pageNumber;
+        $this->date = $date;
+        $this->key = $pageKey;
         
         $this->cache = null;
         if ($pieCrust->isCachingEnabled())
@@ -428,21 +407,58 @@ class Page
     }
     
     /**
-     * Creates a new Page instance with pre-determined properties.
+     * Creates a new Page instance given a fully qualified URI.
      */
-    public static function create(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null)
+    public static function createFromUri(PieCrust $pieCrust, $uri)
     {
-        $page = new Page($pieCrust, null);
-        $page->uri = trim($uri, '/');
-        $page->path = realpath($path);
-        $page->type = $pageType;
-        $page->pageNumber = $pageNumber;
-        $page->key = $pageKey;
-        return $page;
+        if ($uri == null)
+            throw new InvalidArgumentException("The given URI is null.");
+        
+        $uriInfo = Page::parseUri($pieCrust, $uri);
+        $path = $uriInfo['path'];
+        if ($path == null or (!$uriInfo['was_path_checked'] and !is_file($path)))
+        {
+            if ($this->type == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
+            if ($this->type == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
+            throw new PieCrustException('404');
+        }
+        
+        return new Page(
+                $pieCrust,
+                $uriInfo['uri'],
+                $path,
+                $uriInfo['type'],
+                $uriInfo['page'],
+                $uriInfo['key'],
+                $uriInfo['date']
+            );
     }
     
     /**
-     *	Parse a relative URI and returns information about it.
+     * Creates a new Page instance given a path.
+     */
+    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null, $date = null)
+    {
+        if ($path == null)
+            throw new InvalidArgumentException("The given path is null.");
+        if (!is_file($path))
+            throw new InvalidArgumentException("The given path does not exist: " . $path);
+        
+        $path = realpath($path);
+        $uri = Page::buildUri($path, $pageType);
+        return new Page(
+                $pieCrust,
+                $uri,
+                $path,
+                $pageType,
+                $pageNumber,
+                $pageKey,
+                $date
+            );
+    }
+    
+    /**
+     * Parse a relative URI and returns information about it.
      */
     public static function parseUri(PieCrust $pieCrust, $uri)
     {
@@ -483,7 +499,7 @@ class Page
             $matches = array();
             
             // Try with a post.
-            $postsPattern = Paginator::buildPostUrlPattern($pieCrust->getConfigValueUnchecked('site', 'post_url'));
+            $postsPattern = Paginator::buildPostUriPattern($pieCrust->getConfigValueUnchecked('site', 'post_url'));
             if (preg_match($postsPattern, $uri, $matches))
             {
                 // Requesting a post.
@@ -548,30 +564,31 @@ class Page
     /**
      * Gets the URI of a page given a path.
      */
-    public static function buildPageUri(PieCrust $pieCrust, $path, $stripIndex = true)
+    public static function buildUri($path, $makePathRelativeTo = null, $stripIndex = true)
     {
-        $pagesDir = $pieCrust->getPagesDir();
-        return Page::buildUri($pagesDir, $path, $stripIndex);
-    }
-    
-    /**
-     * Gets the URI of a post given a path.
-     */
-    public static function buildPostUri(PieCrust $pieCrust, $path, $stripIndex = true)
-    {
-        $postsDir = $pieCrust->getPostsDir();
-        return Page::buildUri($postsDir, $path, $stripIndex);
-    }
-    
-    /**
-     * Gets the URI of a page given a path and a base directory (probably the pages
-     * or posts directory).
-     */
-    public static function buildUri($baseDir, $path, $stripIndex = true)
-    {
-        $relativePath = str_replace('\\', '/', substr(realpath($path), strlen($baseDir)));
-        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-        if ($stripIndex) $uri = str_replace('_index', '', $uri);
+        if ($makePathRelativeTo != null)
+        {
+            $basePath = $makePathRelativeTo;
+            if (is_int($makePathRelativeTo))
+            {
+                switch ($makePathRelativeTo)
+                {
+                    case PIECRUST_PAGE_REGULAR:
+                    case PIECRUST_PAGE_CATEGORY:
+                    case PIECRUST_PAGE_TAG:
+                        $basePath = $this->pieCrust->getPagesDir();
+                        break;
+                    case PIECRUST_PAGE_POST:
+                        $basePath = $this->pieCrust->getPostsDir();
+                        break;
+                    default:
+                        throw new InvalidArgumentException("Unknown page type given: " . $makePathRelativeTo);
+                }
+            }
+            $path = str_replace('\\', '/', substr(realpath($path), strlen($baseDir)));
+        }
+        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $path);    // strip the extension
+        if ($stripIndex) $uri = str_replace('_index', '', $uri);// strip special name
         return $uri;
     }
     

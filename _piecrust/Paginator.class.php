@@ -191,7 +191,7 @@ class Paginator
             {
                 $post = PageRepository::getOrCreatePage(
                     $this->pieCrust,
-                    Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
+                    Paginator::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
                     PIECRUST_PAGE_POST);
                 
@@ -224,7 +224,7 @@ class Paginator
             {
                 $postInfo['page'] = PageRepository::getOrCreatePage(
                     $this->pieCrust,
-                    Paginator::buildPostUrl($postsUrlFormat, $postInfo), 
+                    Paginator::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
                     PIECRUST_PAGE_POST);
                 $relevantPostInfos[] = $postInfo;
@@ -262,7 +262,7 @@ class Paginator
     /**
      * Builds the URL of a post given a URL format.
      */
-    public static function buildPostUrl($postUrlFormat, $postInfo)
+    public static function buildPostUri($postUrlFormat, $postInfo)
     {
         $replacements = array(
             '%year%' => $postInfo['year'],
@@ -276,7 +276,7 @@ class Paginator
     /**
      * Builds the regex pattern to match the given URL format.
      */
-    public static function buildPostUrlPattern($postUrlFormat)
+    public static function buildPostUriPattern($postUrlFormat)
     {
         static $replacements = array(
             '%year%' => '(?P<year>\d{4})',
@@ -290,7 +290,7 @@ class Paginator
     /**
      * Builds the URL of a tag listing.
      */
-    public static function buildTagUrl($tagUrlFormat, $tag)
+    public static function buildTagUri($tagUrlFormat, $tag)
     {
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
@@ -298,7 +298,7 @@ class Paginator
     /**
      * Builds the regex pattern to match the given URL format.
      */
-    public static function buildTagUrlPattern($tagUrlFormat)
+    public static function buildTagUriPattern($tagUrlFormat)
     {
         return '/^' . str_replace('%tag%', '(?P<tag>[\w\-]+)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
@@ -306,7 +306,7 @@ class Paginator
     /**
      * Builds the URL of a category listing.
      */
-    public static function buildCategoryUrl($categoryUrlFormat, $category)
+    public static function buildCategoryUri($categoryUrlFormat, $category)
     {
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
@@ -314,7 +314,7 @@ class Paginator
     /**
      * Builds the regex pattern to match the given URL format.
      */
-    public static function buildCategoryUrlPattern($categoryUrlFormat)
+    public static function buildCategoryUriPattern($categoryUrlFormat)
     {
         return '/^' . str_replace('%category%', '(?P<cat>[\w\-]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
     }

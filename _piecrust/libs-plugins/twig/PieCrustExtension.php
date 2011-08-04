@@ -38,11 +38,11 @@ class PieCrustExtension extends Twig_Extension
     
     public function getTagUrl($value)
     {
-        return $this->pieCrust->formatUri(Paginator::buildTagUrl($this->tagUrlFormat, $value));
+        return $this->pieCrust->formatUri(Paginator::buildTagUri($this->tagUrlFormat, $value));
     }
     
     public function getCategoryUrl($value)
     {
-        return $this->pieCrust->formatUri(Paginator::buildCategoryUrl($this->categoryUrlFormat, $value));
+        return $this->pieCrust->formatUri(Paginator::buildCategoryUri($this->categoryUrlFormat, $value));
     }
 }

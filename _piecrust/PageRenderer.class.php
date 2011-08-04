@@ -70,8 +70,7 @@ class PageRenderer
     
     public function renderStatsFooter(Page $page)
     {
-        global $PIECRUST_START_TIME;
-        $timeSpan = microtime(true) - $PIECRUST_START_TIME;
+        $timeSpan = microtime(true) - $this->pieCrust->getLastRunTime();
         echo "<!-- PieCrust " . PieCrust::VERSION . " - " .
              ($page->isCached() ? "baked this morning" : "baked just now") .
              ", in " . $timeSpan * 1000 . " milliseconds. -->";
