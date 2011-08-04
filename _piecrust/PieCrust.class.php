@@ -650,7 +650,7 @@ class PieCrust
         }
         $errorPageUriInfo = Page::parseUri($this, $errorPageUri);
         $errorMessage = "<p>We're very sorry but something wrong happened. We'll try to do better next time.</p>";
-        if (is_file($errorPageUriInfo['path']))
+        if ($errorPageUriInfo != null and is_file($errorPageUriInfo['path']))
         {
             // We have a custom error page. Show it, or display
             // the "fatal error" page if even this doesn't work.

@@ -415,18 +415,17 @@ class Page
             throw new InvalidArgumentException("The given URI is null.");
         
         $uriInfo = Page::parseUri($pieCrust, $uri);
-        $path = $uriInfo['path'];
-        if ($path == null or (!$uriInfo['was_path_checked'] and !is_file($path)))
+        if ($uriInfo == null or (!$uriInfo['was_path_checked'] and !is_file($uriInfo['path'])))
         {
-            if ($this->type == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
-            if ($this->type == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
+            if ($uriInfo['type'] == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
+            if ($uriInfo['type'] == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
             throw new PieCrustException('404');
         }
         
         return new Page(
                 $pieCrust,
                 $uriInfo['uri'],
-                $path,
+                $uriInfo['path'],
                 $uriInfo['type'],
                 $uriInfo['page'],
                 $uriInfo['key'],
@@ -462,7 +461,7 @@ class Page
      */
     public static function parseUri(PieCrust $pieCrust, $uri)
     {
-        if (strpos($uri, '..') !== false)	// Some bad boy's trying to access files outside of our standard folders...
+        if (strpos($uri, '..') !== false)   // Some bad boy's trying to access files outside of our standard folders...
         {
             throw new PieCrustException('404');
         }
@@ -478,6 +477,45 @@ class Page
             $uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
             $pageNumber = intval($matches[1]);
         }
+        
+        $pageInfo = array(
+                'uri' => $uri,
+                'page' => $pageNumber,
+                'type' => PIECRUST_PAGE_REGULAR,
+                'key' => null,
+                'date' => null,
+                'path' => null,
+                'was_path_checked' => false
+            );
+        
+        // Try first with a regular page path.
+        if (Page::tryParsePageUri($pieCrust, $uri, $pageInfo))
+        {
+            return $pageInfo;
+        }
+        
+        // Try with a post.
+        if (Page::tryParsePostUri($pieCrust, $uri, $pageInfo))
+        {
+            return $pageInfo;
+        }
+        
+        // Try with special pages (tag & category)
+        if (Page::tryParseTagUri($pieCrust, $uri, $pageInfo))
+        {
+            return $pageInfo;
+        }
+        if (Page::tryParseCategoryUri($pieCrust, $uri, $pageInfo))
+        {
+            return $pageInfo;
+        }
+        
+        // No idea what that URI is...
+        return null;
+    }
+    
+    private static function tryParsePageUri(PieCrust $pieCrust, $uri, array &$pageInfo)
+    {
         $matches = array();
         $uriWithoutExtension = $uri;
         if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
@@ -488,77 +526,63 @@ class Page
             $uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
         }
         
-        // Try first with a regular page path.
-        $key = null;
-        $date = null;
-        $type = PIECRUST_PAGE_REGULAR;
         $path = $pieCrust->getPagesDir() . str_replace('/', DIRECTORY_SEPARATOR, $uriWithoutExtension) . '.html';
-        $pathWasChecked = false;
-        if (!is_file($path))
+        if (is_file($path))
         {
-            $matches = array();
+            $pageInfo['path'] = $path;
+            $pageInfo['was_path_checked'] = true;
+            return true;
+        }
+        return false;
+    }
+    
+    private static function tryParsePostUri(PieCrust $pieCrust, $uri, array &$pageInfo)
+    {
+        $matches = array();
+        $postsPattern = Paginator::buildPostUriPattern($pieCrust->getConfigValueUnchecked('site', 'post_url'));
+        if (preg_match($postsPattern, $uri, $matches))
+        {
+            $fs = FileSystem::create($pieCrust);
+            $path = $fs->getPath($matches);
+            $date = mktime(0, 0, 0, intval($matches['month']), intval($matches['day']), intval($matches['year']));
             
-            // Try with a post.
-            $postsPattern = Paginator::buildPostUriPattern($pieCrust->getConfigValueUnchecked('site', 'post_url'));
-            if (preg_match($postsPattern, $uri, $matches))
-            {
-                // Requesting a post.
-                $type = PIECRUST_PAGE_POST;
-                $baseDir = $pieCrust->getPostsDir();
-                $postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
-                switch ($postsFs)
-                {
-                case 'hierarchy':
-                    $path = $baseDir . $matches['year'] . DIRECTORY_SEPARATOR . $matches['month'] . DIRECTORY_SEPARATOR . $matches['day'] . '_' . $matches['slug'] . '.html';
-                    break;
-                case 'flat':
-                default:
-                    $path = $baseDir . $matches['year'] . '-' . $matches['month'] . '-' . $matches['day'] . '_' . $matches['slug'] . '.html';
-                    break;
-                }
-                $date = mktime(0, 0, 0, intval($matches['month']), intval($matches['day']), intval($matches['year']));
-            }
-            else
-            {
-                // Try with a tag page.
-                $tagsPattern = Paginator::buildTagUriPattern($pieCrust->getConfigValueUnchecked('site', 'tag_url'));
-                if (preg_match($tagsPattern, $uri, $matches))
-                {
-                    $key = $matches['tag'];
-                    $type = PIECRUST_PAGE_TAG;
-                    $path = $pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
-                }
-                else
-                {
-                    // Try with a category page.
-                    $categoryPattern = Paginator::buildCategoryUriPattern($pieCrust->getConfigValueUnchecked('site', 'category_url'));
-                    if (preg_match($categoryPattern, $uri, $matches))
-                    {
-                        $key = $matches['cat'];
-                        $type = PIECRUST_PAGE_CATEGORY;
-                        $path = $pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
-                    }
-                    else
-                    {
-                        $path = null;
-                    }
-                }
-            }
+            $pageInfo['type'] = PIECRUST_PAGE_POST;
+            $pageInfo['date'] = $date;
+            $pageInfo['path'] = $path;
+            return true;
         }
-        else
+        return false;
+    }
+    
+    private static function tryParseTagUri(PieCrust $pieCrust, $uri, array &$pageInfo)
+    {
+        $matches = array();
+        $tagsPattern = Paginator::buildTagUriPattern($pieCrust->getConfigValueUnchecked('site', 'tag_url'));
+        if (preg_match($tagsPattern, $uri, $matches))
         {
-            $pathWasChecked = true;
+            $path = $pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
+            
+            $pageInfo['type'] = PIECRUST_PAGE_TAG;
+            $pageInfo['key'] = $matches['tag'];
+            $pageInfo['path'] = $path;
+            return true;
         }
-        
-        return array(
-            'uri' => $uri,
-            'page' => $pageNumber,
-            'type' => $type,
-            'key' => $key,
-            'date' => $date,
-            'path' => $path,
-            'was_path_checked' => $pathWasChecked
-        );
+        return false;
+    }
+    
+    private static function tryParseCategoryUri(PieCrust $pieCrust, $uri, array &$pageInfo)
+    {
+        $categoryPattern = Paginator::buildCategoryUriPattern($pieCrust->getConfigValueUnchecked('site', 'category_url'));
+        if (preg_match($categoryPattern, $uri, $matches))
+        {
+            $path = $pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
+            
+            $pageInfo['type'] = PIECRUST_PAGE_CATEGORY;
+            $pageInfo['key'] = $matches['cat'];
+            $pageInfo['path'] = $path;
+            return true;
+        }
+        return false;
     }
     
     /**

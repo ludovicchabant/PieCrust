@@ -50,7 +50,7 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             ),
             array(
                 '/blah.ext',
-                $this->makeUriInfo('blah.ext', null, false)
+                null
             )
          );
     }
