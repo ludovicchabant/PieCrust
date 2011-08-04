@@ -521,7 +521,7 @@ class Page
             else
             {
                 // Try with a tag page.
-                $tagsPattern = Paginator::buildTagUrlPattern($pieCrust->getConfigValueUnchecked('site', 'tag_url'));
+                $tagsPattern = Paginator::buildTagUriPattern($pieCrust->getConfigValueUnchecked('site', 'tag_url'));
                 if (preg_match($tagsPattern, $uri, $matches))
                 {
                     $key = $matches['tag'];
@@ -531,7 +531,7 @@ class Page
                 else
                 {
                     // Try with a category page.
-                    $categoryPattern = Paginator::buildCategoryUrlPattern($pieCrust->getConfigValueUnchecked('site', 'category_url'));
+                    $categoryPattern = Paginator::buildCategoryUriPattern($pieCrust->getConfigValueUnchecked('site', 'category_url'));
                     if (preg_match($categoryPattern, $uri, $matches))
                     {
                         $key = $matches['cat'];
