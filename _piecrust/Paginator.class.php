@@ -115,7 +115,10 @@ class Paginator
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
-            $fs = FileSystem::create($this->pieCrust);
+            $blogKey = $this->page->getConfigValue('blog');
+            if ($blogKey == PIECRUST_DEFAULT_BLOG_KEY)
+                $blogKey = null;
+            $fs = FileSystem::create($this->pieCrust, $blogKey);
             $postInfos = $fs->getPostFiles();
             $filterPostInfos = true;
         }
@@ -177,7 +180,8 @@ class Paginator
     {
         $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
         $upperLimit = min($offset + $postsPerPage, count($postInfos));
-        $postsUrlFormat = $this->pieCrust->getConfigValueUnchecked('site', 'post_url');
+        $blogKey = $this->page->getConfigValue('blog');
+        $postsUrlFormat = $this->pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
         
         if ($postsFilter->hasClauses())
         {
@@ -193,7 +197,8 @@ class Paginator
                     $this->pieCrust,
                     UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
-                    PIECRUST_PAGE_POST);
+                    PIECRUST_PAGE_POST,
+                    $blogKey);
                 
                 if ($postsFilter->postMatches($post))
                 {
@@ -226,7 +231,8 @@ class Paginator
                     $this->pieCrust,
                     UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
-                    PIECRUST_PAGE_POST);
+                    PIECRUST_PAGE_POST,
+                    $blogKey);
                 $relevantPostInfos[] = $postInfo;
             }
             $hasMorePages =($offset + $postsPerPage < count($postInfos));

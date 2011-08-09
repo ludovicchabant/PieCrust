@@ -40,6 +40,7 @@ define('PIECRUST_CONTENT_PAGES_DIR', PIECRUST_CONTENT_DIR . 'pages/');
 define('PIECRUST_CONTENT_POSTS_DIR', PIECRUST_CONTENT_DIR . 'posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
 
+define('PIECRUST_DEFAULT_BLOG_KEY', 'blog');
 define('PIECRUST_DEFAULT_FORMAT', 'markdown');
 define('PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME', 'default');
 define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
@@ -320,13 +321,26 @@ class PieCrust
                         'pretty_urls' => false,
                         'posts_per_page' => 5,
                         'posts_fs' => 'flat',
-                        'post_url' => '%year%/%month%/%day%/%slug%',
-                        'tag_url' => 'tag/%tag%',
-                        'category_url' => '%category%',
+                        'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
                         'date_format' => 'F j, Y',
                         'cache_time' => 28800
                     ),
                     $config['site']);
+        if (in_array('blog', $config['site']['blogs']) and count($config['site']['blogs']) > 1)
+            throw new PieCrustException("'site' cannot be specified for multi-blog configurations.");
+        
+        foreach ($config['site']['blogs'] as $blogKey)
+        {
+            $prefix = '';
+            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+                $prefix = $blogKey . '/';
+            $config[$blogKey] = array_merge(array(
+                            'post_url' => $prefix . '%year%/%month%/%day%/%slug%',
+                            'tag_url' => $prefix . 'tag/%tag%',
+                            'category_url' => $prefix . '%category%'
+                        ),
+                        $config[$blogKey]);
+        }
         return $config;
     }
     

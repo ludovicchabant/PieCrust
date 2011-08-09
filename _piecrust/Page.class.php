@@ -48,6 +48,15 @@ class Page
         return $this->uri;
     }
     
+    protected $blogKey;
+    /**
+     * Gets the blog key for this page.
+     */
+    public function getBlogKey()
+    {
+        return $this->blogKey;
+    }
+    
     protected $pageNumber;
     /**
      * Gets the page number (for pages that display a large number of posts).
@@ -390,15 +399,16 @@ class Page
     /**
      * Creates a new Page instance.
      */
-    public function __construct(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null, $date = null)
+    public function __construct(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
     {
         $this->pieCrust = $pieCrust;
         $this->uri = $uri;
         $this->path = $path;
         $this->type = $pageType;
+        $this->blogKey = $blogKey;
+        $this->key = $pageKey;
         $this->pageNumber = $pageNumber;
         $this->date = $date;
-        $this->key = $pageKey;
         
         $this->cache = null;
         if ($pieCrust->isCachingEnabled())
@@ -428,8 +438,9 @@ class Page
                 $uriInfo['uri'],
                 $uriInfo['path'],
                 $uriInfo['type'],
-                $uriInfo['page'],
+                $uriInfo['blogKey'],
                 $uriInfo['key'],
+                $uriInfo['page'],
                 $uriInfo['date']
             );
     }
@@ -437,7 +448,7 @@ class Page
     /**
      * Creates a new Page instance given a path.
      */
-    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null, $date = null)
+    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
     {
         if ($path == null)
             throw new InvalidArgumentException("The given path is null.");
@@ -451,8 +462,9 @@ class Page
                 $uri,
                 $path,
                 $pageType,
-                $pageNumber,
+                $blogKey,
                 $pageKey,
+                $pageNumber,
                 $date
             );
     }
@@ -630,6 +642,7 @@ class Page
     protected function buildValidatedConfig($config)
     {
         // Add the default page config values.
+        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
         $validatedConfig = array_merge(
             array(
                 'layout' => $this->isPost() ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
@@ -637,6 +650,7 @@ class Page
                 'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',
                 'title' => 'Untitled Page',
+                'blog' => ($this->blogKey != null) ? $this->blogKey : $blogKeys[0],
                 'segments' => array()
             ),
             $config);

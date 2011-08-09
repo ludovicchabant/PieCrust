@@ -17,7 +17,7 @@ class BakeRecord
     /**
      *
      */
-    public function __construct($lastBakeInfoPath)
+    public function __construct(PieCrust $pieCrust, $lastBakeInfoPath)
     {
         $this->postInfos = array();
         $this->postTags = array();
@@ -25,6 +25,14 @@ class BakeRecord
         $this->tagsToBake = array();
         $this->categoriesToBake = array();
         $this->wasAnyPostBaked = false;
+        
+        foreach ($pieCrust->getConfigValueUnchecked('site', 'blogs') as $blogKey)
+        {
+            $this->postTags[$blogKey] = array();
+            $this->tagsToBake[$blogKey] = array();
+            $this->postCategories[$blogKey] = array();
+            $this->categoriesToBake[$blogKey] = array();
+        }
         
         $this->loadLastBakeInfo($lastBakeInfoPath);
     }
@@ -36,26 +44,28 @@ class BakeRecord
     {
         $postIndex = count($this->postInfos);
         $this->postInfos[] = $postInfo;
-
+        
+        $blogKey = $postInfo['blogKey'];
+        
         $tags = $postInfo['tags'];
         if ($tags != null)
         {
             foreach ($tags as $tag)
             {
-                if (!isset($this->postTags[$tag])) $this->postTags[$tag] = array();
-                $this->postTags[$tag][] = $postIndex;
+                if (!isset($this->postTags[$blogKey][$tag])) $this->postTags[$blogKey][$tag] = array();
+                $this->postTags[$blogKey][$tag][] = $postIndex;
                 
-                if ($wasBaked) $this->tagsToBake[$tag] = true;
+                if ($wasBaked) $this->tagsToBake[$blogKey][$tag] = true;
             }
         }
         
         $category = $postInfo['category'];
         if ($category != null)
         {
-            if (!isset($this->postCategories[$category])) $this->postCategories[$category] = array();
-            $this->postCategories[$category][] = $postIndex;
+            if (!isset($this->postCategories[$blogKey][$category])) $this->postCategories[$blogKey][$category] = array();
+            $this->postCategories[$blogKey][$category][] = $postIndex;
             
-            if ($wasBaked) $this->categoriesToBake[$category] = true;
+            if ($wasBaked) $this->categoriesToBake[$blogKey][$category] = true;
         }
         
         $this->wasAnyPostBaked = ($this->wasAnyPostBaked or $wasBaked);
@@ -82,25 +92,25 @@ class BakeRecord
      */
     public function isPageUsingPosts($relativePath)
     {
-		if (!isset($this->lastBakeInfo['pagesUsingPosts'][$relativePath])) return false;
+        if (!isset($this->lastBakeInfo['pagesUsingPosts'][$relativePath])) return false;
         return ($this->lastBakeInfo['pagesUsingPosts'][$relativePath] === true);
     }
     
     /**
      *
      */
-    public function getTagsToBake()
+    public function getTagsToBake($blogKey)
     {
-        return array_keys($this->tagsToBake);
+        return array_keys($this->tagsToBake[$blogKey]);
     }
     
     /**
      *
      */
-    public function getPostsTagged($tag)
+    public function getPostsTagged($blogKey, $tag)
     {
         $postInfos = array();
-        $postIndices = $this->postTags[$tag];
+        $postIndices = $this->postTags[$blogKey][$tag];
         foreach ($postIndices as $i)
         {
             $postInfos[] = $this->postInfos[$i];
@@ -111,18 +121,18 @@ class BakeRecord
     /**
      *
      */
-    public function getCategoriesToBake()
+    public function getCategoriesToBake($blogKey)
     {
-        return array_keys($this->categoriesToBake);
+        return array_keys($this->categoriesToBake[$blogKey]);
     }
     
     /**
      *
      */
-    public function getPostsInCategory($category)
+    public function getPostsInCategory($blogKey, $category)
     {
         $postInfos = array();
-        $postIndices = $this->postCategories[$category];
+        $postIndices = $this->postCategories[$blogKey][$category];
         foreach ($postIndices as $i)
         {
             $postInfos[] = $this->postInfos[$i];

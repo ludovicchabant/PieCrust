@@ -8,14 +8,19 @@ require_once 'FileSystem.class.php';
  */
 class FlatFileSystem extends FileSystem
 {
-    public function __construct(PieCrust $pieCrust)
+    protected $subDir;
+    
+    public function __construct(PieCrust $pieCrust, $subDir)
     {
         FileSystem::__construct($pieCrust);
+        
+        if ($subDir == null) $this->subDir = '';
+        else $this->subDir = trim($subDir, '\\/') + DIRECTORY_SEPARATOR;
     }
     
     public function getPostFiles()
     {
-        $pathPattern = $this->pieCrust->getPostsDir() . '*.html';
+        $pathPattern = $this->pieCrust->getPostsDir() . $this->subDir . '*.html';
         $paths = glob($pathPattern, GLOB_ERR);
         if ($paths === false)
         {
@@ -47,6 +52,7 @@ class FlatFileSystem extends FileSystem
     {
         $baseDir = $this->pieCrust->getPostsDir();
         $path = $baseDir
+            . $this->subDir
             . $captureGroups['year'] . '-'
             . $captureGroups['month'] . '-'
             . $captureGroups['day'] . '_' . $captureGroups['slug'] . '.html';

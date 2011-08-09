@@ -13,8 +13,9 @@ class PieCrustExtension extends Twig_Extension
     {
         $this->pieCrust = $pieCrust;
         
-        $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked('site', 'tag_url');
-        $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked('site', 'category_url');
+        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'tag_url');
+        $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'category_url');
     }
     
     public function getName()
@@ -36,13 +37,15 @@ class PieCrustExtension extends Twig_Extension
         return $this->pieCrust->formatUri($value);
     }
     
-    public function getTagUrl($value)
+    public function getTagUrl($value, $blogKey = null)
     {
-        return $this->pieCrust->formatUri(UriBuilder::buildTagUri($this->tagUrlFormat, $value));
+        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'tag_url');
+        return $this->pieCrust->formatUri(UriBuilder::buildTagUri($format, $value));
     }
     
-    public function getCategoryUrl($value)
+    public function getCategoryUrl($value, $blogKey = null)
     {
-        return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($this->categoryUrlFormat, $value));
+        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'category_url');
+        return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
     }
 }

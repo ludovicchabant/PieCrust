@@ -32,17 +32,17 @@ class PageRepository
         return self::$pages[$uri];
     }
     
-    public static function getOrCreatePage(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $pageKey = null)
+    public static function getOrCreatePage(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
     {
         if (!self::$enabled)
         {
-            return new Page($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
+            return new Page($pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber);
         }
         
         $page = self::getPage($uri);
         if ($page == null)
         {
-            $page = new Page($pieCrust, $uri, $path, $pageType, $pageNumber, $pageKey);
+            $page = new Page($pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber);
             self::addPage($page);
         }
         else
@@ -50,6 +50,7 @@ class PageRepository
             assert($uri == $page->getUri());
             assert($path == $page->getPath());
             assert($pageType == $page->getPageType());
+            assert($blogKey == $page->getBlogKey());
             assert($pageKey == $page->getPageKey());
             $page->setPageNumber($pageNumber);
         }

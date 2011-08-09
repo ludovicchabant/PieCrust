@@ -23,15 +23,15 @@ abstract class FileSystem
     
     public abstract function getPath($captureGroups);
     
-    public static function create(PieCrust $pieCrust)
+    public static function create(PieCrust $pieCrust, $subDir = null)
     {
         $postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
         switch ($postsFs)
         {
         case 'hierarchy':
-            return new HierarchicalFileSystem($pieCrust);
+            return new HierarchicalFileSystem($pieCrust, $subDir);
         case 'flat':
-            return new FlatFileSystem($pieCrust);
+            return new FlatFileSystem($pieCrust, $subDir);
         default:
             throw new PieCrustException("");
         }

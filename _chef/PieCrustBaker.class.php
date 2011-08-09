@@ -143,7 +143,7 @@ class PieCrustBaker
         $this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
-        $this->bakeRecord = new BakeRecord($bakeInfoPath);
+        $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
         
         $cleanCache = $this->parameters['clean_cache'];
         
@@ -268,35 +268,41 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
-        $fs = FileSystem::create($this->pieCrust);
-        $postInfos = $fs->getPostFiles();
-        
-        $postUrlFormat = $this->pieCrust->getConfigValue('site', 'post_url');
-        foreach ($postInfos as $postInfo)
+        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        foreach ($blogKeys as $blogKey)
         {
-            $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
-            $page = PageRepository::getOrCreatePage(
-                $this->pieCrust,
-                $uri,
-                $postInfo['path'],
-                PIECRUST_PAGE_POST
-            );
-            $page->setDate($postInfo);
+            $fs = FileSystem::create($this->pieCrust, $blogKey);
+            $postInfos = $fs->getPostFiles();
             
-            $pageWasBaked = false;
-            if ($this->shouldRebakeFile($postInfo['path']))
+            $postUrlFormat = $this->pieCrust->getConfigValue($blogKey, 'post_url');
+            foreach ($postInfos as $postInfo)
             {
-                $start = microtime(true);
-                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
-                $baker->bake($page);
-                $pageWasBaked = true;
-                $hasBaked = true;
-                echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
+                $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
+                $page = PageRepository::getOrCreatePage(
+                    $this->pieCrust,
+                    $uri,
+                    $postInfo['path'],
+                    PIECRUST_PAGE_POST,
+                    $blogKey
+                );
+                $page->setDate($postInfo);
+                
+                $pageWasBaked = false;
+                if ($this->shouldRebakeFile($postInfo['path']))
+                {
+                    $start = microtime(true);
+                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker->bake($page);
+                    $pageWasBaked = true;
+                    $hasBaked = true;
+                    echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
+                }
+                
+                $postInfo['blogKey'] = $blogKey;
+                $postInfo['tags'] = $page->getConfigValue('tags');
+                $postInfo['category'] = $page->getConfigValue('category');
+                $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
             }
-            
-            $postInfo['tags'] = $page->getConfigValue('tags');
-            $postInfo['category'] = $page->getConfigValue('category');
-            $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
         }
     }
     
@@ -304,26 +310,34 @@ class PieCrustBaker
     {
         if (!$this->hasPosts()) return;
         
-        $tagPagePath = $this->pieCrust->getPagesDir() . PIECRUST_TAG_PAGE_NAME . '.html';
-        if (!is_file($tagPagePath)) return;
-        if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
-        
-        foreach ($this->bakeRecord->getTagsToBake() as $tag)
+        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        foreach ($blogKeys as $blogKey)
         {
-            $start = microtime(true);
-            $postInfos = $this->bakeRecord->getPostsTagged($tag);
-            $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue('site', 'tag_url'), $tag);
-            $page = PageRepository::getOrCreatePage(
-                $this->pieCrust,
-                $uri,
-                $tagPagePath,
-                PIECRUST_PAGE_TAG,
-                1,
-                $tag
-            );
-            $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
-            $baker->bake($page, $postInfos);
-            echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+            $prefix = '';
+            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+                $prefix = $blogKey . DIRECTORY_SEPARATOR;
+            
+            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PIECRUST_TAG_PAGE_NAME . '.html';
+            if (!is_file($tagPagePath)) return;
+            if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
+            
+            foreach ($this->bakeRecord->getTagsToBake($blogKey) as $tag)
+            {
+                $start = microtime(true);
+                $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
+                $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
+                $page = PageRepository::getOrCreatePage(
+                    $this->pieCrust,
+                    $uri,
+                    $tagPagePath,
+                    PIECRUST_PAGE_TAG,
+                    $blogKey,
+                    $tag
+                );
+                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                $baker->bake($page, $postInfos);
+                echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+            }
         }
     }
     
@@ -331,26 +345,34 @@ class PieCrustBaker
     {
         if (!$this->hasPosts()) return;
         
-        $categoryPagePath = $this->pieCrust->getPagesDir() . PIECRUST_CATEGORY_PAGE_NAME . '.html';
-        if (!is_file($categoryPagePath)) return;
-        if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
-        
-        foreach ($this->bakeRecord->getCategoriesToBake() as $category)
+        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        foreach ($blogKeys as $blogKey)
         {
-            $start = microtime(true);
-            $postInfos = $this->getPostsInCategory($category);
-            $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfigValue('site', 'category_url'), $category);
-            $page = PageRepository::getOrCreatePage(
-                $this->pieCrust, 
-                $uri, 
-                $categoryPagePath,
-                PIECRUST_PAGE_CATEGORY,
-                1,
-                $category
-            );
-            $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
-            $baker->bake($page, $postInfos);
-            echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+            $prefix = '';
+            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+                $prefix = $blogKey . DIRECTORY_SEPARATOR;
+                
+            $categoryPagePath = $this->pieCrust->getPagesDir() . $blogKey . PIECRUST_CATEGORY_PAGE_NAME . '.html';
+            if (!is_file($categoryPagePath)) return;
+            if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
+            
+            foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
+            {
+                $start = microtime(true);
+                $postInfos = $this->getPostsInCategory($blogKey, $category);
+                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfigValue($blogKey, 'category_url'), $category);
+                $page = PageRepository::getOrCreatePage(
+                    $this->pieCrust, 
+                    $uri, 
+                    $categoryPagePath,
+                    PIECRUST_PAGE_CATEGORY,
+                    $blogKey,
+                    $category
+                );
+                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                $baker->bake($page, $postInfos);
+                echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+            }
         }
     }
     

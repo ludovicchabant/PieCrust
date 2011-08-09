@@ -8,9 +8,14 @@ require_once 'FileSystem.class.php';
  */
 class HierarchicalFileSystem extends FileSystem
 {
-    public function __construct(PieCrust $pieCrust)
+    protected $subDir;
+    
+    public function __construct(PieCrust $pieCrust, $subDir)
     {
         FileSystem::__construct($pieCrust);
+        
+        if ($subDir == null) $this->subDir = '';
+        else $this->subDir = trim($subDir, '\\/') . DIRECTORY_SEPARATOR;
     }
     
     public function getPostFiles()
@@ -18,7 +23,7 @@ class HierarchicalFileSystem extends FileSystem
         $result = array();
         
         $years = array();
-        $yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir());
+        $yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir);
         foreach ($yearsIterator as $year)
         {
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
@@ -32,7 +37,7 @@ class HierarchicalFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $months = array();
-            $monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year);
+            $monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir . $year);
             foreach ($monthsIterator as $month)
             {
                 if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
@@ -46,7 +51,7 @@ class HierarchicalFileSystem extends FileSystem
             foreach ($months as $month)
             {
                 $days = array();
-                $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $year . DIRECTORY_SEPARATOR . $month);
+                $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir . $year . DIRECTORY_SEPARATOR . $month);
                 foreach ($postsIterator as $post)
                 {
                     $matches = array();
@@ -78,6 +83,7 @@ class HierarchicalFileSystem extends FileSystem
     {
         $baseDir = $this->pieCrust->getPostsDir();
         $path = $baseDir
+            . $this->subDir
             . $captureGroups['year'] . DIRECTORY_SEPARATOR
             . $captureGroups['month'] . DIRECTORY_SEPARATOR
             . $captureGroups['day'] . '_' . $captureGroups['slug'] . '.html';
