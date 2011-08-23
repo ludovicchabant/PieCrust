@@ -15,7 +15,7 @@ class FlatFileSystem extends FileSystem
         FileSystem::__construct($pieCrust);
         
         if ($subDir == null) $this->subDir = '';
-        else $this->subDir = trim($subDir, '\\/') + DIRECTORY_SEPARATOR;
+        else $this->subDir = trim($subDir, '\\/') . DIRECTORY_SEPARATOR;
     }
     
     public function getPostFiles()
