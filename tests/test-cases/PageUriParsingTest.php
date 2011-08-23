@@ -18,12 +18,13 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
         return $this->rootDir;
     }
     
-    protected function makeUriInfo($uri, $path, $wasPathChecked, $type = PIECRUST_PAGE_REGULAR, $key = null, $date = null, $pageNumber = 1)
+    protected function makeUriInfo($uri, $path, $wasPathChecked, $type = PIECRUST_PAGE_REGULAR, $blogKey = null, $key = null, $date = null, $pageNumber = 1)
     {
         return array(
                 'uri' => $uri,
                 'page' => $pageNumber,
                 'type' => $type,
+                'blogKey' => $blogKey,
                 'key' => $key,
                 'date' => $date,
                 'path' => $path,
@@ -45,11 +46,11 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             ),
             array(
                 '/blah',
-                $this->makeUriInfo('blah', $pagesDir . PIECRUST_CATEGORY_PAGE_NAME . '.html', false, PIECRUST_PAGE_CATEGORY, 'blah')
+                $this->makeUriInfo('blah', $pagesDir . PIECRUST_CATEGORY_PAGE_NAME . '.html', false, PIECRUST_PAGE_CATEGORY, 'blog', 'blah')
             ),
             array(
                 '/tag/blah',
-                $this->makeUriInfo('tag/blah', $pagesDir . PIECRUST_TAG_PAGE_NAME . '.html', false, PIECRUST_PAGE_TAG, 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PIECRUST_TAG_PAGE_NAME . '.html', false, PIECRUST_PAGE_TAG, 'blog', 'blah')
             ),
             array(
                 '/blah.ext',
