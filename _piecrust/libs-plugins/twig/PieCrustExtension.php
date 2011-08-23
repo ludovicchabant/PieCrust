@@ -6,6 +6,7 @@ require_once (PIECRUST_APP_DIR . 'Paginator.class.php');
 class PieCrustExtension extends Twig_Extension
 {
     protected $pieCrust;
+    protected $postUrlFormat;
     protected $tagUrlFormat;
     protected $categoryUrlFormat;
     
@@ -14,6 +15,7 @@ class PieCrustExtension extends Twig_Extension
         $this->pieCrust = $pieCrust;
         
         $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $this->postUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'post_url');
         $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'tag_url');
         $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'category_url');
     }
@@ -27,6 +29,7 @@ class PieCrustExtension extends Twig_Extension
     {
         return array(
             'pcurl'    => new Twig_Function_Method($this, 'getUrl'),
+            'pcposturl' => new Twig_Function_Method($this, 'getPostUrl'),
             'pctagurl' => new Twig_Function_Method($this, 'getTagUrl'),
             'pccaturl' => new Twig_Function_Method($this, 'getCategoryUrl')
         );
@@ -35,6 +38,18 @@ class PieCrustExtension extends Twig_Extension
     public function getUrl($value)
     {
         return $this->pieCrust->formatUri($value);
+    }
+    
+    public function getPostUrl($year, $month, $day, $slug, $blogKey = null)
+    {
+        $postInfo = array(
+            'year' => $year,
+            'month' => $month,
+            'day' => $day,
+            'name' => $slug
+        );
+        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
+        return $this->pieCrust->formatUri(UriBuilder::buildPostUri($format, $postInfo));
     }
     
     public function getTagUrl($value, $blogKey = null)

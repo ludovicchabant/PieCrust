@@ -9,13 +9,21 @@ class DwooTemplateEngine implements ITemplateEngine
         return self::$currentApp->formatUri($uri);
     }
     
+    public static function getPostUrlFormat($blogKey)
+    {
+        if ($blogKey == null) $blogKey = PIECRUST_DEFAULT_BLOG_KEY;
+        return self::$currentApp->getConfigValueUnchecked($blogKey, 'post_url');
+    }
+    
     public static function getTagUrlFormat($blogKey)
     {
+        if ($blogKey == null) $blogKey = PIECRUST_DEFAULT_BLOG_KEY;
         return self::$currentApp->getConfigValueUnchecked($blogKey, 'tag_url');
     }
     
     public static function getCategoryUrlFormat($blogKey)
     {
+        if ($blogKey == null) $blogKey = PIECRUST_DEFAULT_BLOG_KEY;
         return self::$currentApp->getConfigValueUnchecked($blogKey, 'category_url');
     }
     
