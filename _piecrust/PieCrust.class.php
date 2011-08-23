@@ -326,14 +326,20 @@ class PieCrust
                         'cache_time' => 28800
                     ),
                     $config['site']);
-        if (in_array('blog', $config['site']['blogs']) and count($config['site']['blogs']) > 1)
-            throw new PieCrustException("'site' cannot be specified for multi-blog configurations.");
+        if (in_array(PIECRUST_DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
+            throw new PieCrustException("'".PIECRUST_DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
         
         foreach ($config['site']['blogs'] as $blogKey)
         {
             $prefix = '';
             if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+            {
                 $prefix = $blogKey . '/';
+            }
+            if (!isset($config[$blogKey]))
+            {
+                $config[$blogKey] = array();
+            }
             $config[$blogKey] = array_merge(array(
                             'post_url' => $prefix . '%year%/%month%/%day%/%slug%',
                             'tag_url' => $prefix . 'tag/%tag%',
