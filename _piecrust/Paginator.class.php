@@ -111,14 +111,16 @@ class Paginator
     
     protected function buildPaginationData()
     {
+        $blogKey = $this->page->getConfigValue('blog');
+        
         $filterPostInfos = false;
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
-            $blogKey = $this->page->getConfigValue('blog');
+            $subDir = $blogKey;
             if ($blogKey == PIECRUST_DEFAULT_BLOG_KEY)
-                $blogKey = null;
-            $fs = FileSystem::create($this->pieCrust, $blogKey);
+                $subDir = null;
+            $fs = FileSystem::create($this->pieCrust, $subDir);
             $postInfos = $fs->getPostFiles();
             $filterPostInfos = true;
         }
@@ -129,8 +131,8 @@ class Paginator
         if (count($postInfos) > 0)
         {
             // Load all the posts for the requested page number (page numbers start at '1').
-            $postsPerPage = $this->page->getConfigValue('posts_per_page', 'site');
-            $postsDateFormat = $this->page->getConfigValue('date_format', 'site');
+            $postsPerPage = $this->page->getConfigValue('posts_per_page', $blogKey);
+            $postsDateFormat = $this->page->getConfigValue('date_format', $blogKey);
             $postsFilter = $this->getPaginationFilter();
             
             $hasMorePages = false;

@@ -306,7 +306,7 @@ class Page
             $timestamp = $this->getDate();
             if ($this->getConfigValue('time')) $timestamp = strtotime($this->getConfigValue('time'), $timestamp);
             $data['page']['timestamp'] = $timestamp;
-            $dateFormat = $this->pieCrust->getConfigValueUnchecked('site', 'date_format');
+            $dateFormat = $this->getConfigValue('date_format', $this->blogKey);
             $data['page']['date'] = date($dateFormat, $this->getDate());
             
             switch ($this->type)

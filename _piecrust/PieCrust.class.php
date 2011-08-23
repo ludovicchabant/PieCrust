@@ -307,7 +307,7 @@ class PieCrust
     
     protected function validateConfig($config)
     {
-        // Add the default values.
+        // Add the default values for the site configuration.
         if (!isset($config['site']))
         {
             $config['site'] = array();
@@ -319,16 +319,29 @@ class PieCrust
                         'default_template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
                         'pretty_urls' => false,
-                        'posts_per_page' => 5,
                         'posts_fs' => 'flat',
                         'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
-                        'date_format' => 'F j, Y',
                         'cache_time' => 28800
                     ),
                     $config['site']);
         if (in_array(PIECRUST_DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
             throw new PieCrustException("'".PIECRUST_DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
         
+        // Add default values for the blogs configurations, or use values
+        // defined at the site level for easy site-wide configuration of multiple blogs
+        // and backwards compatibility.
+        $defaultValues = array(
+            'post_url' => '%year%/%month%/%day%/%slug%',
+            'tag_url' => 'tag/%tag%',
+            'category_url' => '%category%',
+            'posts_per_page' => 5,
+            'date_format' => 'F j, Y'
+        );
+        foreach (array_keys($defaultValues) as $key)
+        {
+            if (isset($config['site'][$key]))
+                $defaultValues[$key] = $config['site'][$key];
+        }
         foreach ($config['site']['blogs'] as $blogKey)
         {
             $prefix = '';
@@ -341,12 +354,15 @@ class PieCrust
                 $config[$blogKey] = array();
             }
             $config[$blogKey] = array_merge(array(
-                            'post_url' => $prefix . '%year%/%month%/%day%/%slug%',
-                            'tag_url' => $prefix . 'tag/%tag%',
-                            'category_url' => $prefix . '%category%'
+                            'post_url' => $prefix . $defaultValues['post_url'],
+                            'tag_url' => $prefix . $defaultValues['tag_url'],
+                            'category_url' => $prefix . $defaultValues['category_url'],
+                            'posts_per_page' => $defaultValues['posts_per_page'],
+                            'date_format' => $defaultValues['date_format']
                         ),
                         $config[$blogKey]);
         }
+        
         return $config;
     }
     
