@@ -34,3 +34,7 @@ Baking:
 Page metadata:
 - Better built-in support for date/time (and default that to file creation time).
 - Support for 'live'/'draft'/'hidden' statuses?
+
+Replace asset management with Symfony's Assetic.
+
+Try Prettify (http://code.google.com/p/google-code-prettify/)
