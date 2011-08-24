@@ -11,6 +11,7 @@ require_once 'UriBuilder.class.php';
 require_once 'FileSystem.class.php';
 require_once 'BakeRecord.class.php';
 require_once 'DirectoryBaker.class.php';
+require_once 'Combinatorics.inc.php';
 
 
 /**
@@ -101,24 +102,10 @@ class PieCrustBaker
                                             'clean_cache' => false,
                                             'copy_assets' => true,
                                             'processors' => '*',
-                                            'tag_combinations' => false
+                                            'tag_combinations' => 'sorted'
                                         ),
                                         $appParams,
                                         $parameters);
-        $combinations = $this->parameters['tag_combinations'];
-        if ($combinations)
-        {
-            if (!is_array($combinations))
-                $combinations = array($combinations);
-            $combinationsExploded = array();
-            foreach ($combinations as $comb)
-            {
-                $combExploded = explode('/', $comb);
-                if (count($combExploded) > 1)
-                    $combinationsExploded[] = $combExploded;
-            }
-            $this->parameters['tag_combinations'] = $combinationsExploded;
-        }
         
         if (!isset($this->parameters['skip_patterns']))
         {
@@ -341,46 +328,33 @@ class PieCrustBaker
             if ($combinations)
             {
                 // Add combinations of tags that contain the tags we need to rebake.
-                $combinationsToBake = array();
-                foreach ($combinations as $comb)
-                {
-                    if (count(array_intersect($comb, $tagsToBake)) > 0)
-                    {
-                        $combinationsToBake[] = $comb;
-                    }
-                }
-                $tagsToBake = array_merge($tagsToBake, $combinationsToBake);
+                $tagsToBake = array_combinations($tagsToBake);
+                array_deepsort($tagsToBake);
             }
             
             foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
-                if (is_array($tag))
+                
+                $formattedTag = $tag;
+                if (is_array($tag)) $formattedTag = implode('+', $tag);
+                
+                $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
+                if (count($postInfos) > 0)
                 {
-                    $formattedTag = implode('+', $tag);
-                    $postInfos = array();
-                    foreach ($tag as $t)
-                    {
-                        $postInfos = array_merge($postInfos, $this->bakeRecord->getPostsTagged($blogKey, $t));
-                    }
+                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
+                    $page = PageRepository::getOrCreatePage(
+                        $this->pieCrust,
+                        $uri,
+                        $tagPagePath,
+                        PIECRUST_PAGE_TAG,
+                        $blogKey,
+                        $tag
+                    );
+                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker->bake($page, $postInfos);
+                    echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
                 }
-                else
-                {
-                    $formattedTag = $tag;
-                    $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
-                }
-                $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
-                $page = PageRepository::getOrCreatePage(
-                    $this->pieCrust,
-                    $uri,
-                    $tagPagePath,
-                    PIECRUST_PAGE_TAG,
-                    $blogKey,
-                    $tag
-                );
-                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
-                $baker->bake($page, $postInfos);
-                echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
             }
         }
     }

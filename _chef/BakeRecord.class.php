@@ -1,7 +1,8 @@
 <?php
 
 /**
- *
+ * A class that keeps track of posts being baked
+ * by the PieCrustBaker.
  */
 class BakeRecord
 {
@@ -15,7 +16,7 @@ class BakeRecord
     protected $wasAnyPostBaked;
     
     /**
-     *
+     * Creates a new instance of the BakeRecord.
      */
     public function __construct(PieCrust $pieCrust, $lastBakeInfoPath)
     {
@@ -38,7 +39,10 @@ class BakeRecord
     }
     
     /**
+     * Adds a post's information to the bake record.
      *
+     * The information must contain the blog that the post belongs to,
+     * its tags, and its category.
      */
     public function addPostInfo(array $postInfo, $wasBaked)
     {
@@ -72,7 +76,8 @@ class BakeRecord
     }
 
     /**
-     *
+     * Specifies that a given page is listing blog posts, which means
+     * it will have to be re-baked if posts have changed.
      */
     public function addPageUsingPosts($relativePath)
     {
@@ -80,7 +85,8 @@ class BakeRecord
     }
     
     /**
-     *
+     * Returns whether any posts were baked since the creation of
+     * this bake record.
      */
     public function wasAnyPostBaked()
     {
@@ -88,7 +94,7 @@ class BakeRecord
     }
     
     /**
-     *
+     * Returns whether a page is known to list blog posts.
      */
     public function isPageUsingPosts($relativePath)
     {
@@ -97,7 +103,8 @@ class BakeRecord
     }
     
     /**
-     *
+     * Returns what tags have been invalidated since the creation
+     * of this bake record.
      */
     public function getTagsToBake($blogKey)
     {
@@ -105,12 +112,32 @@ class BakeRecord
     }
     
     /**
-     *
+     * Returns the list of posts known to be tagged with the given tag(s).
      */
     public function getPostsTagged($blogKey, $tag)
     {
         $postInfos = array();
-        $postIndices = $this->postTags[$blogKey][$tag];
+        if (is_array($tag))
+        {
+            $num = count($tag);
+            if ($num == 0)
+            {
+                $postIndices = array();
+            }
+            else
+            {
+                $postIndices = $this->postTags[$blogKey][$tag[0]];
+                for ($i = 1; $i < $num; ++$i)
+                {
+                    $postIndices = array_intersect($postIndices, $this->postTags[$blogKey][$tag[$i]]);
+                }
+            }
+        }
+        else
+        {
+            $postIndices = $this->postTags[$blogKey][$tag];
+        }
+        
         foreach ($postIndices as $i)
         {
             $postInfos[] = $this->postInfos[$i];
@@ -119,7 +146,8 @@ class BakeRecord
     }
     
     /**
-     *
+     * Gets the list of categories invalidated since the creation
+     * of this bake record.
      */
     public function getCategoriesToBake($blogKey)
     {
@@ -127,7 +155,7 @@ class BakeRecord
     }
     
     /**
-     *
+     * Returns the list of posts known to be in the given category.
      */
     public function getPostsInCategory($blogKey, $category)
     {
@@ -141,15 +169,15 @@ class BakeRecord
     }
     
     /**
-     *
+     * Gets the last bake time.
      */
     public function getLastBakeTime()
     {
-        return $this->lastBakeInfo['time'];
+        return $this->getLast('time');
     }
     
     /**
-     *
+     * Get an information from the last bake.
      */
     public function getLast($what)
     {
@@ -157,7 +185,7 @@ class BakeRecord
     }
 
     /**
-     *
+     * Saves the current bake record to disk.
      */
     public function saveBakeInfo($bakeInfoPath, array $infos = array())
     {

@@ -48,7 +48,7 @@ class UriBuilder
      */
     public static function buildTagUriPattern($tagUrlFormat)
     {
-        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-_\/]+)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-_]+(\/[\w\-_]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
     
     /**

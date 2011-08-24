@@ -132,8 +132,18 @@ class UriParser
             $path = $pieCrust->getPagesDir() . $prefix . PIECRUST_TAG_PAGE_NAME . '.html';
             
             $tags = explode('/', trim($matches['tag'], '/'));
-            if (count($tags) <= 1)
+            if (count($tags) > 1)
+            {
+                // Check the tags were specified in alphabetical order.
+                //TODO: temporary check until I find a way to make it cheap to support all permutations in the baker.
+                sort($tags);
+                if (implode('/', $tags) != $matches['tag'])
+                    throw new PieCrustException("Multi-tags must be specified in alphabetical order, sorry.");
+            }
+            else
+            {
                 $tags = $matches['tag'];
+            }
             
             $pageInfo['type'] = PIECRUST_PAGE_TAG;
             $pageInfo['blogKey'] = $blogKey;
