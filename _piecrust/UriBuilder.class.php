@@ -39,6 +39,7 @@ class UriBuilder
      */
     public static function buildTagUri($tagUrlFormat, $tag)
     {
+        if (is_array($tag)) $tag = implode('/', $tag);
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
     

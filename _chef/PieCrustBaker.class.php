@@ -100,10 +100,25 @@ class PieCrustBaker
                                             'smart' => true,
                                             'clean_cache' => false,
                                             'copy_assets' => true,
-                                            'processors' => '*'
+                                            'processors' => '*',
+                                            'tag_combinations' => false
                                         ),
                                         $appParams,
                                         $parameters);
+        $combinations = $this->parameters['tag_combinations'];
+        if ($combinations)
+        {
+            if (!is_array($combinations))
+                $combinations = array($combinations);
+            $combinationsExploded = array();
+            foreach ($combinations as $comb)
+            {
+                $combExploded = explode('/', $comb);
+                if (count($combExploded) > 1)
+                    $combinationsExploded[] = $combExploded;
+            }
+            $this->parameters['tag_combinations'] = $combinationsExploded;
+        }
         
         if (!isset($this->parameters['skip_patterns']))
         {
@@ -321,7 +336,24 @@ class PieCrustBaker
             if (!is_file($tagPagePath)) return;
             if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
             
-            foreach ($this->bakeRecord->getTagsToBake($blogKey) as $tag)
+            $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
+            $combinations = $this->parameters['tag_combinations'];
+            if ($combinations)
+            {
+                // Add combinations of tags that contain the tags we need to rebake.
+                $combinationsToBake = array();
+                foreach ($combinations as $comb)
+                {
+                    if (count(array_intersect($comb, $tagsToBake)) > 0)
+                        $combinationsToBake[] = $comb;
+                }
+                foreach ($combinationsToBake as $comb)
+                {
+                    $tagsToBake[] = $comb;
+                }
+            }
+            
+            foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
