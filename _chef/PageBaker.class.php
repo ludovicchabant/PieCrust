@@ -18,13 +18,21 @@ class PageBaker
         return $this->wasPaginationDataAccessed;
     }
     
-    protected $pageCount;
     /**
      * Gets the number of baked pages.
      */
     public function getPageCount()
     {
-        return $this->pageCount;
+        return count($this->bakedFiles);
+    }
+    
+    protected $bakedFiles;
+    /**
+     * Gets the files that were baked by the last call to 'bake()'.
+     */
+    public function getBakedFiles()
+    {
+        return $this->bakedFiles;
     }
     
     /**
@@ -45,7 +53,7 @@ class PageBaker
      */
     public function bake(Page $page, array $postInfos = null, array $extraData = null)
     {
-        $this->pageCount = 0;
+        $this->bakedFiles = array();
         $this->wasPaginationDataAccessed = false;
         
         $pageRenderer = new PageRenderer($this->pieCrust);
@@ -64,8 +72,6 @@ class PageBaker
                 // in the next loop, we have to re-set the extraData and all other stuff.
             }
         }
-        
-        $this->pageCount = $page->getPageNumber();
     }
     
     protected function bakeSinglePage(Page $page, PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
@@ -123,6 +129,7 @@ class PageBaker
         // Copy the page.
         FileSystem::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
+        $this->bakedFiles[] = $bakePath;
         
         // Copy any used assets for the first sub-page.
         if ($page->getPageNumber() == 1 and $this->parameters['copy_assets'] === true)
