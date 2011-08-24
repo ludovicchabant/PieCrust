@@ -208,8 +208,9 @@ class Paginator
                     $postInfo['page'] = $post;
                     $filteredPostInfos[] = $postInfo;
                     
-                    // Exit if we have enough posts.
-                    if (count($filteredPostInfos) >= $upperLimit)
+                    // Exit if we more than enough posts.
+                    // (the extra post is to make sure there is a next page)
+                    if (count($filteredPostInfos) >= ($offset + $postsPerPage + 1))
                     {
                         $hasMorePages = true;
                         break;
@@ -240,7 +241,7 @@ class Paginator
                     $blogKey);
                 $relevantPostInfos[] = $postInfo;
             }
-            $hasMorePages =($offset + $postsPerPage < count($postInfos));
+            $hasMorePages = (count($postInfos) > ($offset + $postsPerPage));
             return $relevantPostInfos;
         }
     }
