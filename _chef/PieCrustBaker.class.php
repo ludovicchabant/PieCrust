@@ -345,18 +345,30 @@ class PieCrustBaker
                 foreach ($combinations as $comb)
                 {
                     if (count(array_intersect($comb, $tagsToBake)) > 0)
+                    {
                         $combinationsToBake[] = $comb;
+                    }
                 }
-                foreach ($combinationsToBake as $comb)
-                {
-                    $tagsToBake[] = $comb;
-                }
+                $tagsToBake = array_merge($tagsToBake, $combinationsToBake);
             }
             
             foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
-                $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
+                if (is_array($tag))
+                {
+                    $formattedTag = implode('+', $tag);
+                    $postInfos = array();
+                    foreach ($tag as $t)
+                    {
+                        $postInfos = array_merge($postInfos, $this->bakeRecord->getPostsTagged($blogKey, $t));
+                    }
+                }
+                else
+                {
+                    $formattedTag = $tag;
+                    $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
+                }
                 $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
                 $page = PageRepository::getOrCreatePage(
                     $this->pieCrust,
@@ -368,7 +380,7 @@ class PieCrustBaker
                 );
                 $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page, $postInfos);
-                echo self::formatTimed($start, $tag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+                echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
             }
         }
     }
