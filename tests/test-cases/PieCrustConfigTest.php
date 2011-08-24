@@ -1,5 +1,6 @@
 <?php
 
+require_once 'TestEnvironment.inc.php';
 require_once 'PieCrust.class.php';
 
 

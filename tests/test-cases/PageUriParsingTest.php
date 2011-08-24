@@ -1,5 +1,6 @@
 <?php
 
+require_once 'TestEnvironment.inc.php';
 require_once 'PieCrust.class.php';
 require_once 'UriParser.class.php';
 require_once 'UriBuilder.class.php';

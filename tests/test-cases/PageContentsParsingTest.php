@@ -3,7 +3,7 @@
 define('PIECRUST_ROOT_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR);
 define('PIECRUST_TEST_DATA_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'test-data' . DIRECTORY_SEPARATOR);
 
-require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'util.php';
+require_once 'TestEnvironment.inc.php';
 require_once 'PieCrust.class.php';
 
 class TestPage extends Page
