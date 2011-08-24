@@ -131,10 +131,15 @@ class UriParser
             
             $path = $pieCrust->getPagesDir() . $prefix . PIECRUST_TAG_PAGE_NAME . '.html';
             
+            $tags = explode('/', trim($matches['tag'], '/'));
+            if (count($tags) <= 1)
+                $tags = $matches['tag'];
+            
             $pageInfo['type'] = PIECRUST_PAGE_TAG;
             $pageInfo['blogKey'] = $blogKey;
-            $pageInfo['key'] = $matches['tag'];
+            $pageInfo['key'] = $tags;
             $pageInfo['path'] = $path;
+            
             return true;
         }
         return false;

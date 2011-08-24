@@ -312,7 +312,14 @@ class Page
             switch ($this->type)
             {
                 case PIECRUST_PAGE_TAG:
-                    $data['tag'] = $this->key;
+                    if (is_array($this->key))
+                    {
+                        $data['tag'] = implode(' + ', $this->key);
+                    }
+                    else
+                    {
+                        $data['tag'] = $this->key;
+                    }
                     break;
                 case PIECRUST_PAGE_CATEGORY:
                     $data['category'] = $this->key;

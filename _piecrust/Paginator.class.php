@@ -180,6 +180,7 @@ class Paginator
     
     protected function getRelevantPostInfosWithPages(array $postInfos, PaginationFilter $postsFilter, $postsPerPage, &$hasMorePages)
     {
+        $hasMorePages = false;
         $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
         $upperLimit = min($offset + $postsPerPage, count($postInfos));
         $blogKey = $this->page->getConfigValue('blog');
@@ -209,14 +210,16 @@ class Paginator
                     
                     // Exit if we have enough posts.
                     if (count($filteredPostInfos) >= $upperLimit)
+                    {
+                        $hasMorePages = true;
                         break;
+                    }
                 }
             }
             
             // Now get the slice of the filtered post infos that is relevant
             // for the current page number.
             $relevantPostInfos = array_slice($filteredPostInfos, $offset, $upperLimit - $offset);
-            $hasMorePages = ($offset + $postsPerPage < count($filteredPostInfos));
             return $relevantPostInfos;
         }
         else
@@ -251,10 +254,23 @@ class Paginator
         switch ($this->page->getPageType())
         {
         case PIECRUST_PAGE_TAG:
-            $filter->addHasClause('tags', $this->page->getPageKey());
+            $pageKey = $this->page->getPageKey();
+            if (is_array($pageKey))
+            {
+                $wrapper = new AndBooleanClause();
+                foreach ($pageKey as $k)
+                {
+                    $wrapper->addClause(new HasFilterClause('tags', $k));
+                }
+                $filter->addClause($wrapper);
+            }
+            else
+            {
+                $filter->addClause(new HasFilterClause('tags', $pageKey));
+            }
             break;
         case PIECRUST_PAGE_CATEGORY:
-            $filter->addIsClause('category', $this->page->getPageKey());
+            $filter->addClause(new IsFilterClause('category', $this->page->getPageKey()));
             break;
         }
         
