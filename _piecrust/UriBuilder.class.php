@@ -1,5 +1,7 @@
 <?php
 
+require_once 'LinkCollector.class.php';
+
 
 /**
  * A utility class for building page URIs and URI patterns.
@@ -37,9 +39,22 @@ class UriBuilder
     /**
      * Builds the URL of a tag listing.
      */
-    public static function buildTagUri($tagUrlFormat, $tag)
+    public static function buildTagUri($tagUrlFormat, $tag, $registerWithLinkCollector = true)
     {
-        if (is_array($tag)) $tag = implode('/', $tag);
+        $doRegister = false;
+        if (is_array($tag))
+        {
+            $doRegister = true;
+            $tag = implode('/', $tag);
+        }
+        else if (strpos($tag, '/'))
+        {
+            $doRegister = true;
+        }
+        if ($doRegister && $registerWithLinkCollector && LinkCollector::isEnabled())
+        {
+            LinkCollector::instance()->registerTagCombination($tag);
+        }
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
     

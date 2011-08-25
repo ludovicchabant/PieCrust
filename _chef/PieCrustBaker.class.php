@@ -10,6 +10,7 @@ require_once 'PageBaker.class.php';
 require_once 'UriBuilder.class.php';
 require_once 'FileSystem.class.php';
 require_once 'BakeRecord.class.php';
+require_once 'LinkCollector.class.php';
 require_once 'DirectoryBaker.class.php';
 require_once 'Combinatorics.inc.php';
 
@@ -102,10 +103,25 @@ class PieCrustBaker
                                             'clean_cache' => false,
                                             'copy_assets' => true,
                                             'processors' => '*',
-                                            'tag_combinations' => 'sorted'
+                                            'tag_combinations' => array()
                                         ),
                                         $appParams,
                                         $parameters);
+        
+        $combinations = $this->parameters['tag_combinations'];
+        if ($combinations)
+        {
+            if (!is_array($combinations))
+                $combinations = array($combinations);
+            $combinationsExploded = array();
+            foreach ($combinations as $comb)
+            {
+                $combExploded = explode('/', $comb);
+                if (count($combExploded) > 1)
+                    $combinationsExploded[] = $combExploded;
+            }
+            $this->parameters['tag_combinations'] = $combinationsExploded;
+        }
         
         if (!isset($this->parameters['skip_patterns']))
         {
@@ -142,6 +158,7 @@ class PieCrustBaker
             echo "\n\n";
         }
         
+        LinkCollector::enable();
         $this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
@@ -204,6 +221,7 @@ class PieCrustBaker
         $this->bakeRecord = null;
         
         $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        LinkCollector::disable();
         
         if ($this->parameters['show_banner'])
         {
@@ -323,15 +341,26 @@ class PieCrustBaker
             if (!is_file($tagPagePath)) return;
             if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
             
+            // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
             $combinations = $this->parameters['tag_combinations'];
-            if ($combinations)
+            if (LinkCollector::isEnabled())
             {
-                // Add combinations of tags that contain the tags we need to rebake.
-                $tagsToBake = array_combinations($tagsToBake);
-                array_deepsort($tagsToBake);
+                $combinations = array_merge(LinkCollector::instance()->getTagCombinations(), $combinations);
+            }
+            if (count($combinations) > 0)
+            {
+                // Filter combinations that contain tags that got invalidated.
+                $combinationsToBake = array();
+                foreach ($combinations as $comb)
+                {
+                    if (count(array_intersect($comb, $tagsToBake)) > 0)
+                        $combinationsToBake[] = $comb;
+                }
+                $tagsToBake = array_merge($combinationsToBake, $tagsToBake);
             }
             
+            // Bake!
             foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
