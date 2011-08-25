@@ -62,9 +62,9 @@ class TwigTemplateEngine implements ITemplateEngine
             $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') === true);
             
             $dirs = $this->pieCrust->getTemplatesDirs();
-            $this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs, $isHosted); // If we're in a long running process (hosted), the temples
+            $this->twigLoader = new Twig_Loader_ExtendedFilesystem($dirs, $isHosted); // If we're in a long running process (hosted), the templates
                                                                                       // will be defined in memory and when the file changes, Twig
-                                                                                      // won't see it needs to recompile it if the tempalte class
+                                                                                      // won't see it needs to recompile it if the template class
                                                                                       // name is the same, so we add the time-stamp in the cache key.
             
             $options = array('cache' => false);
