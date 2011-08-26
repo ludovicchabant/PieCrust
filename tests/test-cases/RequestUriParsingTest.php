@@ -1,7 +1,8 @@
 <?php
 
 require_once 'TestEnvironment.inc.php';
-require_once 'PieCrust.class.php';
+require_once 'ServerHelper.class.php';
+
 
 class RequestUriParsingTest extends PHPUnit_Framework_TestCase
 {
@@ -10,80 +11,67 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
         return array(
             // Standard QUERY
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => null),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => ''),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => '/'),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => '/blah'),
                 '/blah',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => '/some/path'),
                 '/some/path',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/test'),
                 array('QUERY_STRING' => null),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/test'),
                 array('QUERY_STRING' => ''),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/test'),
                 array('QUERY_STRING' => '/'),
                 '/',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/test'),
                 array('QUERY_STRING' => '/blah'),
                 '/blah',
                 false
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/test'),
                 array('QUERY_STRING' => '/some/path'),
                 '/some/path',
                 false
             ),
             // URL rewriting queries
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => null, 'REQUEST_URI' => '/'),
                 '/',
                 true
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => null, 'REQUEST_URI' => '/blah'),
                 '/blah',
                 true
             ),
             array(
-                array('host' => 'host.local', 'url_base' => '/'),
                 array('QUERY_STRING' => '/something/else', 'REQUEST_URI' => '/blah'),
                 '/blah',
                 true
@@ -94,11 +82,9 @@ class RequestUriParsingTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider getRequestUriDataProvider
      */
-    public function testGetRequestUri($parameters, $serverVars, $expectedUri, $usingPrettyUrls)
+    public function testGetRequestUri($serverVars, $expectedUri, $usingPrettyUrls)
     {
-        $pc = new PieCrust($parameters);
-        $pc->setConfig(array('site' => array('pretty_urls' => $usingPrettyUrls)));
-        $uri = $pc->getRequestUri($serverVars);
+        $uri = ServerHelper::getRequestUri($serverVars, $usingPrettyUrls);
         $this->assertEquals($expectedUri, $uri);
     }
 }

@@ -60,7 +60,7 @@ echo '<h1>PieCrust Benchmarks</h1>';
 $runCount = 100;
 function filter_end_marker($value) { return preg_match('/^end_/', $value['name']); }
 function map_diff_time($value) { return $value['diff']; }
-function display_profiling_times($prof)
+function display_profiling_times($runCount, $prof)
 {
     $diffValues = array_map('map_diff_time', array_filter($prof, 'filter_end_marker'));
     echo '<p>Ran '.$runCount.' times.</p>';
@@ -78,7 +78,7 @@ $bench = new Benchmark_Iterate();
 $bench->start();
 $bench->run($runCount, 'init_app', false);
 $bench->stop();
-display_profiling_times($bench->getProfiling());
+display_profiling_times($runCount, $bench->getProfiling());
 
 echo '<h2>App Init Benchmark (caching config)</h2>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
@@ -86,7 +86,7 @@ $bench = new Benchmark_Iterate();
 $bench->start();
 $bench->run($runCount, 'init_app', true);
 $bench->stop();
-display_profiling_times($bench->getProfiling());
+display_profiling_times($runCount, $bench->getProfiling());
 
 //
 // Page rendering benchmark.
@@ -98,7 +98,7 @@ $bench->start();
 $pieCrust = new PieCrust();
 $bench->run($runCount, 'run_query', $pieCrust, '/empty');
 $bench->stop();
-display_profiling_times($bench->getProfiling());
+display_profiling_times($runCount, $bench->getProfiling());
 
 //
 // Marked run (uncached, then cached).

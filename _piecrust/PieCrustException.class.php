@@ -12,7 +12,7 @@ class PieCrustException extends Exception
  */
 function piecrust_error_handler($errno, $errstr, $errfile = null, $errline = 0, $errcontext = null)
 {
-	throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
 }
 
 /**
@@ -20,19 +20,19 @@ function piecrust_error_handler($errno, $errstr, $errfile = null, $errline = 0, 
  */
 function piecrust_format_errors($errors, $printDetails = false)
 {
-	$errorMessages = '<ul>';
-	foreach ($errors as $e)
-	{
-		$errorMessages .= '<li><h3>' . $e->getMessage() . '</h3>';
-		if ($printDetails)
-		{
-			$errorMessages .= '<p>Error: <code>' . $e->getCode() . '</code><br/>' .
-							  '   File: <code>' . $e->getFile() . '</code><br/>' .
-							  '   Line <code>' . $e->getLine() . '</code><br/>' .
-							  '   Trace: <code><pre>' . $e->getTraceAsString() . '</pre></code></p>';
-		}
-		$errorMessages .= '</li>';
-	}
+    $errorMessages = '<ul>';
+    foreach ($errors as $e)
+    {
+        $errorMessages .= '<li><h3>' . $e->getMessage() . '</h3>';
+        if ($printDetails)
+        {
+            $errorMessages .= '<p>Error: <code>' . $e->getCode() . '</code><br/>' .
+                              '   File: <code>' . $e->getFile() . '</code><br/>' .
+                              '   Line <code>' . $e->getLine() . '</code><br/>' .
+                              '   Trace: <code><pre>' . $e->getTraceAsString() . '</pre></code></p>';
+        }
+        $errorMessages .= '</li>';
+    }
     $errorMessages .= '</ul>';
     return $errorMessages;
 }

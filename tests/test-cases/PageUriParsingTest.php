@@ -90,7 +90,7 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
-        $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true));
+        $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true, 'cache' => false));
         $pc->setConfig($config);
         
         $uriInfo = UriParser::parseUri($pc, $uri);

@@ -1,12 +1,12 @@
 <?php
 
 require_once 'TestEnvironment.inc.php';
-require_once 'PieCrust.class.php';
+require_once 'PieCrustConfiguration.class.php';
 
 
-class PieCrustConfigTest extends PHPUnit_Framework_TestCase
+class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
 {
-    public function pieCrustConfigDataProvider()
+    public function configurationDataProvider()
     {
         return array(
             array(
@@ -55,14 +55,14 @@ class PieCrustConfigTest extends PHPUnit_Framework_TestCase
     }
     
     /**
-     * @dataProvider pieCrustConfigDataProvider
+     * @dataProvider configurationDataProvider
      */
-    public function testPieCrustConfig($config, $expectedConfig)
+    public function testConfiguration($config, $expectedConfig)
     {
-        $pc = new PieCrust();
-        $pc->setConfig($config);
+        $pc = new PieCrustConfiguration();
+        $pc->set($config);
         
-        $actualConfig = $pc->getConfig();
+        $actualConfig = $pc->get();
         foreach ($expectedConfig as $key => $value)
         {
             $paths = explode('/', $key);

@@ -176,14 +176,15 @@ class PieCrustBaker
         $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
         
         // Get the cache validity information.
-        $cacheInfo = $this->pieCrust->checkCacheValidity(false);
+        $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
+        $cacheValidity = $cacheInfo->getValidity(false);
         
         // Figure out if we need to clean the cache.
         $cleanCache = $this->parameters['clean_cache'];
         $cleanCacheReason = "ordered to";
         if (!$cleanCache)
         {
-            if (!$cacheInfo['is_valid'])
+            if (!$cacheValidity['is_valid'])
             {
                 $cleanCache = true;
                 $cleanCacheReason = "not valid anymore";
@@ -224,7 +225,7 @@ class PieCrustBaker
         {
             $start = microtime(true);
             FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
-            file_put_contents($cacheInfo['path'], $cacheInfo['hash']);
+            file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
             echo self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')') . PHP_EOL . PHP_EOL;
             
             $this->parameters['smart'] = false;
