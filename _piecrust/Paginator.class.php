@@ -154,11 +154,15 @@ class Paginator
                 $postData['timestamp'] = $timestamp;
                 $postData['date'] = date($postsDateFormat, $post->getDate());
                 
-                $postContents = $post->getContentSegment();
-                $postPageBreakOffset = $post->getPageBreakOffset();
-                if ($postPageBreakOffset === false) $postData['content'] = $postContents;
-                else $postData['content'] = substr($postContents, 0, $postPageBreakOffset);
-                $postData['has_more'] = ($postPageBreakOffset !== false);
+                $postHasMore = true;
+                $postContents = $post->getContentSegment('content.abstract');
+                if ($postContents == null)
+                {
+                    $postHasMore = false;
+                    $postContents = $post->getContentSegment('content');
+                }
+                $postData['content'] = $postContents;
+                $postData['has_more'] = $postHasMore;
                 
                 $postsData[] = $postData;
             }

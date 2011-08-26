@@ -259,6 +259,18 @@ class Page
     }
     
     /**
+     * Returns whether a given content segment exists.
+     */
+    public function hasContentSegment($segment)
+    {
+        if ($this->contents === null)
+        {
+            $this->loadConfigAndContents();
+        }
+        return isset($this->contents[$segment]);
+    }
+    
+    /**
      * Gets all the page's formatted content segments.
      */
     public function getContentSegments()
@@ -268,21 +280,6 @@ class Page
             $this->loadConfigAndContents();
         }
         return $this->contents;
-    }
-    
-    /**
-     * Gets the offset of the page-break tag into the main content segment.
-     *
-     * If no page-break is found, this returns 'false'.
-     */
-    public function getPageBreakOffset()
-    {
-        if ($this->config === null)
-        {
-            $this->loadConfigAndContents();
-        }
-        if (!isset($this->config['page_break_offset'])) return false;
-        return $this->config['page_break_offset'];
     }
     
     protected $data;
@@ -520,7 +517,7 @@ class Page
             $config = json_decode($configText, true);
             $this->config = $this->buildValidatedConfig($config);
             
-            $this->contents = array();
+            $this->contents = array('content' => null, 'content.abstract' => null);
             foreach ($this->config['segments'] as $key)
             {
                 $this->contents[$key] = $this->cache->read($this->uri, $key . '.html');
@@ -534,7 +531,7 @@ class Page
             $this->config = $this->parseConfig($rawContents, $headerOffset);
             
             $segments = $this->parseContentSegments($rawContents, $headerOffset);
-            $this->contents = array();
+            $this->contents = array('content' => null, 'content.abstract' => null);
             $data = $this->getPageData();
             $data = array_merge($this->pieCrust->getSiteData(), $data);
             $templateEngine = $this->pieCrust->getTemplateEngine($this->config['template_engine']);
@@ -552,8 +549,11 @@ class Page
                     $matches = array();
                     if (preg_match('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $renderedAndFormattedContent, $matches, PREG_OFFSET_CAPTURE))
                     {
+                        // Add a special content segment for the "intro/abstract" part of the article.
                         $offset = $matches[0][1];
-                        $this->config['page_break_offset'] = $offset;
+                        $abstract = substr($renderedAndFormattedContent, 0, $offset);
+                        $this->config['segments'][] = 'content.abstract';
+                        $this->contents['content.abstract'] = $abstract;
                     }
                 }
             }
@@ -565,7 +565,8 @@ class Page
                 $yamlMarkup = json_encode($this->config);
                 $this->cache->write($this->uri, 'json', $yamlMarkup);
                 
-                foreach (array_keys($segments) as $key)
+                $keys = $this->config['segments'];
+                foreach ($keys as $key)
                 {
                     $this->cache->write($this->uri . '.' . $key, 'html', $this->contents[$key]);
                 }
