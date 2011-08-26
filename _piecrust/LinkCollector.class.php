@@ -32,9 +32,26 @@ class LinkCollector
     
     protected $tagCombinations;
     
-    public function getTagCombinations()
+    public function getTagCombinations($blogKey)
     {
-        return array_values($this->tagCombinations);
+        if (!isset($this->tagCombinations[$blogKey]))
+            return null;
+        return array_values($this->tagCombinations[$blogKey]);
+    }
+    
+    public function getAllTagCombinations()
+    {
+        return $this->tagCombinations;
+    }
+    
+    public function clearTagCombinations($blogKey)
+    {
+        $this->tagCombinations[$blogKey] = array();
+    }
+    
+    public function clearAllTagCombinations()
+    {
+        $this->tagCombinations = array();
     }
     
     public function __construct()
@@ -42,20 +59,25 @@ class LinkCollector
         $this->tagCombinations = array();
     }
     
-    public function registerTagCombination($tags)
+    public function registerTagCombination($blogKey, $tags)
     {
-        if (is_array($tags))
+        if (strpos($tags, '/') === false)
         {
-            $combinationKey = implode('/', $tags);
+            return;
         }
-        else
+        if ($blogKey == null)
         {
-            $combinationKey = $tags;
-            $tags = explode('/', $tags);
+            $blogKey = PIECRUST_DEFAULT_BLOG_KEY;
         }
-        if (!array_key_exists($combinationKey, $this->tagCombinations))
+        if (!array_key_exists($blogKey, $this->tagCombinations))
         {
-            $this->tagCombinations[$combinationKey] = $tags;
+            $this->tagCombinations[$blogKey] = array();
+        }
+        
+        $tags = strtolower($tags);
+        if (!in_array($tags, $this->tagCombinations[$blogKey]))
+        {
+            $this->tagCombinations[$blogKey][] = $tags;
         }
     }
 }

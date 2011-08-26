@@ -70,10 +70,21 @@ class PageRenderer
     
     public function renderStatsFooter(Page $page)
     {
-        $timeSpan = microtime(true) - $this->pieCrust->getLastRunTime();
-        echo "<!-- PieCrust " . PieCrust::VERSION . " - " .
-             ($page->isCached() ? "baked this morning" : "baked just now") .
-             ", in " . $timeSpan * 1000 . " milliseconds. -->";
+        $runInfo = $this->pieCrust->getLastRunInfo();
+        
+        echo "<!-- PieCrust " . PieCrust::VERSION . " - ";
+        echo ($page->isCached() ? "baked this morning" : "baked just now");
+        if ($runInfo['cache_validity'] != null)
+        {
+            $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
+            echo ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
+        }
+        else
+        {
+            echo ", with no cache";
+        }
+        $timeSpan = microtime(true) - $runInfo['start_time'];
+        echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
     }
     
     public static function getHeaders($contentType, $server = null)

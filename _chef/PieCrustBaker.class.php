@@ -20,8 +20,16 @@ require_once 'Combinatorics.inc.php';
  */
 class PieCrustBaker
 {
-    protected $pieCrust;
     protected $bakeRecord;
+    
+    protected $pieCrust;
+    /**
+     * Get the app hosted in the baker.
+     */
+    public function getApp()
+    {
+        return $this->pieCrust;
+    }
     
     protected $parameters;
     /**
@@ -91,23 +99,27 @@ class PieCrustBaker
     /**
      * Creates a new instance of the PieCrustBaker.
      */
-    public function __construct(PieCrust $pieCrust, array $parameters = array())
+    public function __construct(array $appParameters = array(), array $bakerParameters = array())
     {
-        $this->pieCrust = $pieCrust;
+        $this->pieCrust = new PieCrust($appParameters);
         $this->pieCrust->setConfigValue('baker', 'is_baking', false);
         
-        $appParams = $this->pieCrust->getConfig('baker');
+        $bakerParametersFromApp = $this->pieCrust->getConfig('baker');
+        if ($bakerParametersFromApp == null)
+            $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
                                             'show_banner' => true,
                                             'smart' => true,
                                             'clean_cache' => false,
                                             'copy_assets' => true,
                                             'processors' => '*',
+                                            'skip_patterns' => array('/^_/'),
                                             'tag_combinations' => array()
                                         ),
-                                        $appParams,
-                                        $parameters);
+                                        $bakerParametersFromApp,
+                                        $bakerParameters);
         
+        // Validate and explode the tag combinations.
         $combinations = $this->parameters['tag_combinations'];
         if ($combinations)
         {
@@ -123,11 +135,8 @@ class PieCrustBaker
             $this->parameters['tag_combinations'] = $combinationsExploded;
         }
         
-        if (!isset($this->parameters['skip_patterns']))
-        {
-            $this->parameters['skip_patterns'] = array('/^_/');
-        }
-        else if (!is_array($this->parameters['skip_patterns']))
+        // Validate skip patterns.
+        if (!is_array($this->parameters['skip_patterns']))
         {
             $this->parameters['skip_patterns'] = array($this->parameters['skip_patterns']);
         }
@@ -151,59 +160,80 @@ class PieCrustBaker
         
         if ($this->parameters['show_banner'])
         {
-            echo "PieCrust Baker v." . PieCrust::VERSION . "\n\n";
-            echo "  Baking:  " . $this->pieCrust->getRootDir() . "\n";
-            echo "  Into:    " . $this->getBakeDir() . "\n";
-            echo "  For URL: " . $this->pieCrust->getUrlBase() . "\n";
-            echo "\n\n";
+            echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
+            echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
+            echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
+            echo "  for url :  " . $this->pieCrust->getUrlBase() . PHP_EOL;
+            echo PHP_EOL . PHP_EOL;
         }
         
+        // Setup the PieCrust environment.
         LinkCollector::enable();
         $this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
+        // Create the bake record.
         $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
         
+        // Get the cache validity information.
+        $cacheInfo = $this->pieCrust->checkCacheValidity(false);
+        
+        // Figure out if we need to clean the cache.
         $cleanCache = $this->parameters['clean_cache'];
-        
-        // If the URL base changed since last time, we need to re-bake everything.
-        if ($this->bakeRecord->getLast('url_base') != $this->pieCrust->getUrlBase() or
-            !is_file($bakeInfoPath))
+        $cleanCacheReason = "ordered to";
+        if (!$cleanCache)
         {
-            $cleanCache = true;
+            if (!$cacheInfo['is_valid'])
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "not valid anymore";
+            }
         }
-        
+        if (!$cleanCache)
+        {
+            if ($this->bakeRecord->shouldDoFullBake())
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "need bake info regen";
+            }
+        }
         // If any template file changed since last time, we also need to re-bake everything
         // (there's no way to know what weird conditional template inheritance/inclusion
         //  could be in use...).
-        $maxMTime = 0;
-        foreach ($this->pieCrust->getTemplatesDirs() as $dir)
+        if (!$cleanCache)
         {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ($iterator as $path)
+            $maxMTime = 0;
+            foreach ($this->pieCrust->getTemplatesDirs() as $dir)
             {
-                if ($path->isFile())
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
+                foreach ($iterator as $path)
                 {
-                    $maxMTime = max($maxMTime, $path->getMTime());
+                    if ($path->isFile())
+                    {
+                        $maxMTime = max($maxMTime, $path->getMTime());
+                    }
                 }
             }
+            if ($maxMTime >= $this->bakeRecord->getLast('time'))
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "templates modified";
+            }
         }
-        if ($maxMTime >= $this->bakeRecord->getLastBakeTime())
-        {
-            $cleanCache = true;
-        }
-        
         if ($cleanCache)
         {
             $start = microtime(true);
-            FileSystem::deleteDirectory($this->pieCrust->getCacheDir());
-            echo self::formatTimed($start, 'cleaned cache') . PHP_EOL . PHP_EOL;
+            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
+            file_put_contents($cacheInfo['path'], $cacheInfo['hash']);
+            echo self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')') . PHP_EOL . PHP_EOL;
             
             $this->parameters['smart'] = false;
         }
         
+        // Bake!
         $this->bakePosts();
         $this->bakePages();
+        $this->bakeRecord->collectTagCombinations();
         $this->bakeTags();
         $this->bakeCategories();
         
@@ -216,8 +246,8 @@ class PieCrustBaker
                                        );
         $dirBaker->bake();
         
-        $this->bakeRecord->saveBakeInfo($bakeInfoPath, array('url_base' => $this->pieCrust->getUrlBase()));
-        unset($this->bakeRecord);
+        // Save the bake record and clean up.
+        $this->bakeRecord->saveBakeInfo($bakeInfoPath);
         $this->bakeRecord = null;
         
         $this->pieCrust->setConfigValue('baker', 'is_baking', false);
@@ -329,6 +359,7 @@ class PieCrustBaker
     protected function bakeTags()
     {
         if (!$this->hasPosts()) return;
+        if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
         foreach ($blogKeys as $blogKey)
@@ -339,14 +370,22 @@ class PieCrustBaker
             
             $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PIECRUST_TAG_PAGE_NAME . '.html';
             if (!is_file($tagPagePath)) return;
-            if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
             $combinations = $this->parameters['tag_combinations'];
-            if (LinkCollector::isEnabled())
+            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
             {
-                $combinations = array_merge(LinkCollector::instance()->getTagCombinations(), $combinations);
+                if (array_key_exists($blogKey, $combinations))
+                    $combinations = $combinations[$blogKey];
+                else
+                    $combinations = array();
+            }
+            $lastKnownCombinations = $this->bakeRecord->getLast('knownTagCombinations');
+            if (array_key_exists($blogKey, $lastKnownCombinations))
+            {
+                $combinations = array_merge($combinations, $lastKnownCombinations[$blogKey]);
+                $combinations = array_unique($combinations);
             }
             if (count($combinations) > 0)
             {
@@ -354,8 +393,9 @@ class PieCrustBaker
                 $combinationsToBake = array();
                 foreach ($combinations as $comb)
                 {
-                    if (count(array_intersect($comb, $tagsToBake)) > 0)
-                        $combinationsToBake[] = $comb;
+                    $explodedComb = explode('/', $comb);
+                    if (count(array_intersect($explodedComb, $tagsToBake)) > 0)
+                        $combinationsToBake[] = $explodedComb;
                 }
                 $tagsToBake = array_merge($combinationsToBake, $tagsToBake);
             }
@@ -391,6 +431,7 @@ class PieCrustBaker
     protected function bakeCategories()
     {
         if (!$this->hasPosts()) return;
+        if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
         foreach ($blogKeys as $blogKey)
@@ -401,7 +442,6 @@ class PieCrustBaker
                 
             $categoryPagePath = $this->pieCrust->getPagesDir() . $blogKey . PIECRUST_CATEGORY_PAGE_NAME . '.html';
             if (!is_file($categoryPagePath)) return;
-            if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
             
             foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
             {
@@ -438,9 +478,9 @@ class PieCrustBaker
     
     protected function shouldRebakeFile($path)
     {
-        if ($this->parameters['smart'] and $this->bakeRecord->getLastBakeTime() !== false)
+        if ($this->parameters['smart'])
         {
-            if (filemtime($path) < $this->bakeRecord->getLastBakeTime())
+            if (filemtime($path) < $this->bakeRecord->getLast('time'))
             {
                 return false;
             }

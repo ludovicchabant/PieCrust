@@ -1,11 +1,13 @@
 <?php
 
-require_once (PIECRUST_APP_DIR . 'Paginator.class.php');
+require_once 'Paginator.class.php';
+require_once 'LinkCollector.class.php';
 
 
 class PieCrustExtension extends Twig_Extension
 {
     protected $pieCrust;
+    protected $defaultBlogKey;
     protected $postUrlFormat;
     protected $tagUrlFormat;
     protected $categoryUrlFormat;
@@ -15,6 +17,7 @@ class PieCrustExtension extends Twig_Extension
         $this->pieCrust = $pieCrust;
         
         $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $this->defaultBlogKey = $blogKeys[0];
         $this->postUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'post_url');
         $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'tag_url');
         $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'category_url');
@@ -54,6 +57,7 @@ class PieCrustExtension extends Twig_Extension
     
     public function getTagUrl($value, $blogKey = null)
     {
+        if (LinkCollector::isEnabled()) LinkCollector::instance()->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
         $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'tag_url');
         return $this->pieCrust->formatUri(UriBuilder::buildTagUri($format, $value));
     }

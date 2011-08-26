@@ -47,7 +47,7 @@ abstract class FileSystem
         return true;
     }
     
-    public static function deleteDirectory($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
+    public static function deleteDirectoryContents($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
     {
         $skippedFiles = false;
         $files = new FilesystemIterator($dir);
@@ -61,7 +61,7 @@ abstract class FileSystem
             
             if($file->isDir())
             {
-                FileSystem::deleteDirectory($file->getPathname(), $printProgress, $skipPattern, $level + 1);
+                $skippedFiles |= self::deleteDirectoryContents($file->getPathname(), $printProgress, $skipPattern, $level + 1);
             }
             else
             {
@@ -75,5 +75,6 @@ abstract class FileSystem
             if ($printProgress) echo '.';
             rmdir($dir);
         }
+        return $skippedFiles;
     }
 }

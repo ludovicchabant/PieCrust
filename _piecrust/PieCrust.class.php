@@ -39,6 +39,7 @@ define('PIECRUST_CONTENT_TEMPLATES_DIR', PIECRUST_CONTENT_DIR . 'templates/');
 define('PIECRUST_CONTENT_PAGES_DIR', PIECRUST_CONTENT_DIR . 'pages/');
 define('PIECRUST_CONTENT_POSTS_DIR', PIECRUST_CONTENT_DIR . 'posts/');
 define('PIECRUST_CACHE_DIR', '_cache/');
+define('PIECRUST_CACHE_INFO_FILENAME', 'cacheinfo');
 
 define('PIECRUST_DEFAULT_BLOG_KEY', 'blog');
 define('PIECRUST_DEFAULT_FORMAT', 'markdown');
@@ -321,7 +322,8 @@ class PieCrust
                         'pretty_urls' => false,
                         'posts_fs' => 'flat',
                         'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
-                        'cache_time' => 28800
+                        'cache_time' => 28800,
+                        'check_cache_validity' => true
                     ),
                     $config['site']);
         if (in_array(PIECRUST_DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
@@ -511,13 +513,13 @@ class PieCrust
         return $data;
     }
     
-    protected $lastRunTime = null;
+    protected $lastRunInfo = null;
     /**
-     * Gets the last microtime at which a request was run.
+     * Gets the information about the last execution (call to run() or runUnsafe()).
      */
-    public function getLastRunTime()
+    public function getLastRunInfo()
     {
-        return $this->lastRunTime;
+        return $this->lastRunInfo;
     }
     
     /**
@@ -541,7 +543,7 @@ class PieCrust
 
         $this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
-        $this->cachingEnabled = (!$this->debuggingEnabled and (bool)$parameters['cache'] and !isset($_GET['!nocache']));
+        $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($_GET['!nocache']));
         
         if ($parameters['url_base'] === null)
         {
@@ -577,7 +579,18 @@ class PieCrust
     public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null)
     {
         // Remember the time.
-        $this->lastRunTime = microtime(true);
+        $this->lastRunInfo = array('start_time' => microtime(true));
+        
+        // Check the cache validity, and clean it automatically.
+        if ($this->cachingEnabled && $this->getConfigValueUnchecked('site', 'check_cache_validity'))
+        {
+            $cacheValidity = $this->checkCacheValidity(true);
+            $this->lastRunInfo['cache_validity'] = $cacheValidity;
+        }
+        else
+        {
+            $this->lastRunInfo['cache_validity'] = null;
+        }
         
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
@@ -771,6 +784,50 @@ class PieCrust
                                         "or just because my code sucks.");
         }
         return $requestUri;
+    }
+    
+    /**
+     * Get the validity information for the cache.
+     *
+     * If $cleanCache is true and the cache is not valid, it will be wiped.
+     */
+    public function checkCacheValidity($cleanCache)
+    {
+        // Things that could make the cache invalid:
+        // - changing the version of PieCrust
+        // - changing the pretty_urls setting
+        // - being in/out of bake mode
+        // - changing the base URL
+        $prettyUrls = ($this->getConfigValueUnchecked('site', 'pretty_urls') ? "true" : "false");
+        $isBaking = ($this->getConfigValue('baker', 'is_baking') ? "true" : "false");
+        $cacheInfo = "version=". PieCrust::VERSION .
+                     "&url_base=" . $this->urlBase .
+                     "&pretty_urls=" . $prettyUrls .
+                     "&is_baking=" . $isBaking;
+        $cacheInfo = hash('sha1', $cacheInfo);
+        
+        $isCacheValid = false;
+        $cacheInfoFileName = $this->getCacheDir() . PIECRUST_CACHE_INFO_FILENAME;
+        if (file_exists($cacheInfoFileName))
+        {
+            $previousCacheInfo = file_get_contents($cacheInfoFileName);
+            $isCacheValid = ($previousCacheInfo == $cacheInfo);
+        }
+        $cacheValidity = array(
+            'is_valid' => $isCacheValid,
+            'path' => $cacheInfoFileName,
+            'hash' => $cacheInfo,
+            'was_cleaned' => false
+        );
+        if ($cleanCache && !$isCacheValid)
+        {
+            // Clean the cache!
+            FileSystem::deleteDirectoryContents($this->getCacheDir());
+            file_put_contents($cacheInfoFileName, $cacheInfo);
+            $cacheValidity['is_valid'] = true;
+            $cacheValidity['was_cleaned'] = true;
+        }
+        return $cacheValidity;
     }
     
     protected function isEmptySetup()

@@ -51,7 +51,7 @@ function ensure_cache($cacheDir, $ensureClean = true)
         
     if ($ensureClean and is_dir($cacheDir))
     {
-        FileSystem::deleteDirectory($cacheDir);
+        FileSystem::deleteDirectoryContents($cacheDir);
     }
     FileSystem::ensureDirectory($cacheDir);
 }

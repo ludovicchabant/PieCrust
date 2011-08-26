@@ -1,13 +1,17 @@
 <?php
 
+require_once 'LinkCollector.class.php';
+
+
 /**
  * A class that keeps track of posts being baked
  * by the PieCrustBaker.
  */
 class BakeRecord
 {
-    protected $lastBakeInfo;
+    protected $bakeInfo;
     
+    protected $shouldDoFullBake;
     protected $postInfos;
     protected $postTags;
     protected $postCategories;
@@ -35,7 +39,15 @@ class BakeRecord
             $this->categoriesToBake[$blogKey] = array();
         }
         
-        $this->loadLastBakeInfo($lastBakeInfoPath);
+        $this->loadBakeInfo($lastBakeInfoPath);
+    }
+    
+    /**
+     * Gets whether the next bake should be a full bake.
+     */
+    public function shouldDoFullBake()
+    {
+        return $this->shouldDoFullBake;
     }
     
     /**
@@ -81,7 +93,33 @@ class BakeRecord
      */
     public function addPageUsingPosts($relativePath)
     {
-        $this->lastBakeInfo['pagesUsingPosts'][$relativePath] = true;
+        $this->bakeInfo['pagesUsingPosts'][$relativePath] = true;
+    }
+    
+    /**
+     * Adds all collected tag combinations to the known tag combinations.
+     */
+    public function collectTagCombinations()
+    {
+        if (!LinkCollector::isEnabled())
+            return;
+        
+        $combinations = LinkCollector::instance()->getAllTagCombinations();
+        LinkCollector::instance()->clearAllTagCombinations();
+        
+        $knownCombinations = $this->bakeInfo['knownTagCombinations'];
+        foreach ($combinations as $key => $combs)
+        {
+            if (!array_key_exists($key, $knownCombinations))
+            {
+                $knownCombinations[$key] = $combs;
+            }
+            else
+            {
+                $knownCombinations[$key] = array_unique(array_merge($knownCombinations[$key], $combs));
+            }
+        }
+        $this->bakeInfo['knownTagCombinations'] = $knownCombinations;
     }
     
     /**
@@ -98,8 +136,8 @@ class BakeRecord
      */
     public function isPageUsingPosts($relativePath)
     {
-        if (!isset($this->lastBakeInfo['pagesUsingPosts'][$relativePath])) return false;
-        return ($this->lastBakeInfo['pagesUsingPosts'][$relativePath] === true);
+        if (!isset($this->bakeInfo['pagesUsingPosts'][$relativePath])) return false;
+        return ($this->bakeInfo['pagesUsingPosts'][$relativePath] === true);
     }
     
     /**
@@ -169,19 +207,11 @@ class BakeRecord
     }
     
     /**
-     * Gets the last bake time.
-     */
-    public function getLastBakeTime()
-    {
-        return $this->getLast('time');
-    }
-    
-    /**
      * Get an information from the last bake.
      */
     public function getLast($what)
     {
-        return $this->lastBakeInfo[$what];
+        return $this->bakeInfo[$what];
     }
 
     /**
@@ -190,31 +220,39 @@ class BakeRecord
     public function saveBakeInfo($bakeInfoPath, array $infos = array())
     {
         $infos = array_merge(
-            array('time' => time(), 'url_base' => '/'),
+            array('time' => time()),
             $infos
         );
         
-        $this->lastBakeInfo['time'] = $infos['time'];
-        $this->lastBakeInfo['url_base'] = $infos['url_base'];
+        $this->bakeInfo['time'] = $infos['time'];
         
-        $jsonMarkup = json_encode($this->lastBakeInfo);
+        $jsonMarkup = json_encode($this->bakeInfo);
         file_put_contents($bakeInfoPath, $jsonMarkup);
     }
     
-    protected function loadLastBakeInfo($bakeInfoPath)
+    protected function loadBakeInfo($bakeInfoPath)
     {
         $bakeInfo = array(
             'time' => false,
-            'url_base' => '/',
-            'pagesUsingPosts' => array()
+            'pagesUsingPosts' => array(),
+            'knownTagCombinations' => array()
         );
     
         if (is_file($bakeInfoPath))
         {
             $loadedBakeInfo = json_decode(file_get_contents($bakeInfoPath), true);
             $bakeInfo = array_merge($bakeInfo, $loadedBakeInfo);
+            
+            // Do a full bake if we don't have enough information from the existing bake info file.
+            $this->shouldDoFullBake = (!array_key_exists('time', $loadedBakeInfo) or
+                                       !array_key_exists('knownTagCombinations', $loadedBakeInfo));
         }
-        $this->lastBakeInfo = $bakeInfo;
+        else
+        {
+            // Do a full bake if we don't know if there was a bake before.
+            $this->shouldDoFullBake = true;
+        }
+        $this->bakeInfo = $bakeInfo;
     }
 }
 

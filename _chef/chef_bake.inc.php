@@ -16,15 +16,16 @@ function _chef_run_command($parser, $result)
     
     // Start baking!
     PieCrust::setup('shell');
-    $pieCrust = new PieCrust(array('root' => $rootDir, 'url_base' => $result->command->options['url_base']));
-    $baker = new PieCrustBaker($pieCrust, array('smart' => !$result->command->options['force'], 'clean_cache' => $result->command->options['force']));
+    $appParameters = array('root' => $rootDir, 'url_base' => $result->command->options['url_base']);
+    $bakerParameters = array('smart' => !$result->command->options['force'], 'clean_cache' => $result->command->options['force']);
+    $baker = new PieCrustBaker($appParameters, $bakerParameters);
     if ($result->command->options['pretty_urls'])
     {
-        $pieCrust->setConfigValue('site', 'pretty_urls', true);
+        $baker->getApp()->setConfigValue('site', 'pretty_urls', true);
     }
     if (isset($result->command->options['templates_dir']))
     {
-        $pieCrust->addTemplatesDir($result->command->options['templates_dir']);
+        $baker->getApp()->addTemplatesDir($result->command->options['templates_dir']);
     }
     if ($outputDir != null)
     {
