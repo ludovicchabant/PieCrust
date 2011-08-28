@@ -35,6 +35,7 @@ class PieCrustCacheInfo
         $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') ? "true" : "false");
         $cacheInfo = "version=". PieCrust::VERSION .
                      "&url_base=" . $this->pieCrust->getUrlBase() .
+                     "&debug_mode=" . $this->pieCrust->isDebuggingEnabled() .
                      "&pretty_urls=" . $prettyUrls .
                      "&is_baking=" . $isBaking;
         $cacheInfo = hash('sha1', $cacheInfo);
