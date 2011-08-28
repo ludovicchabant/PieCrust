@@ -533,7 +533,7 @@ class Page
             $segments = $this->parseContentSegments($rawContents, $headerOffset);
             $this->contents = array('content' => null, 'content.abstract' => null);
             $data = $this->getPageData();
-            $data = array_merge($this->pieCrust->getSiteData(), $data);
+            $data = array_merge($this->pieCrust->getSiteData($this->isCached()), $data);
             $templateEngine = $this->pieCrust->getTemplateEngine($this->config['template_engine']);
             foreach ($segments as $key => $content)
             {

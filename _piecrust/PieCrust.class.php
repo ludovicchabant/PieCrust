@@ -56,6 +56,7 @@ require_once 'PageRenderer.class.php';
 require_once 'PageRepository.class.php';
 require_once 'ITemplateEngine.class.php';
 require_once 'HttpHeaderHelper.class.php';
+require_once 'PieCrustSiteData.class.php';
 require_once 'PieCrustCacheInfo.class.php';
 require_once 'PieCrustException.class.php';
 require_once 'PieCrustErrorHandler.class.php';
@@ -386,18 +387,13 @@ class PieCrust
     /**
      * Gets the application's data for page rendering.
      */
-    public function getSiteData()
-    {
+    public function getSiteData($wasCurrentPageCached = null)
+     {
         $this->ensureConfig();
         $data = array_merge(
             $this->config->get(), 
-            array(
-                'piecrust' => array(
-                    'version' => self::VERSION,
-                    'branding' => 'Baked with <em><a href="http://bolt80.com/piecrust/">PieCrust</a> ' . self::VERSION . '</em>.'
-                )
-            )
-        );
+            array('piecrust' => new PieCrustSiteData($this, $wasCurrentPageCached))
+         );
         return $data;
     }
     

@@ -33,7 +33,7 @@ class PageRenderer
             $extension = pathinfo($templateName, PATHINFO_EXTENSION);
             $templateEngine = $this->pieCrust->getTemplateEngine($extension);
             $data = $page->getContentSegments();
-            $data = array_merge($this->pieCrust->getSiteData(), $page->getPageData(), $data);
+            $data = array_merge($this->pieCrust->getSiteData($page->isCached()), $page->getPageData(), $data);
             if ($extraData != null)
             {
                 if (is_array($extraData))
