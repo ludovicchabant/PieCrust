@@ -352,6 +352,8 @@ class PieCrust
             $isPretty = ($this->getConfigValueUnchecked('site','pretty_urls') === true);
             $this->pathPrefix = $this->getUrlBase() . (($isPretty or $isBaking) ? '' : '?/');
             $this->pathSuffix = ($isBaking and !$isPretty) ? '.html' : '';
+            if ($this->debuggingEnabled && !$isBaking)
+                $this->pathSuffix .= '?!debug';
         }
         
         return $this->pathPrefix . $uri . $this->pathSuffix;
