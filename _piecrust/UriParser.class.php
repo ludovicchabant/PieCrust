@@ -44,13 +44,13 @@ class UriParser
                 'was_path_checked' => false
             );
         
-        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
-        
         // Try first with a regular page path.
         if (UriParser::tryParsePageUri($pieCrust, $uri, $pageInfo))
         {
             return $pageInfo;
         }
+        
+        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
         
         // Try with a post.
         foreach ($blogKeys as $blogKey)
