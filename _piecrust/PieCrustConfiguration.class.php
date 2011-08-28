@@ -160,8 +160,7 @@ class PieCrustConfiguration implements ArrayAccess, Iterator
                         'pretty_urls' => false,
                         'posts_fs' => 'flat',
                         'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
-                        'cache_time' => 28800,
-                        'check_cache_validity' => true
+                        'cache_time' => 28800
                     ),
                     $config['site']);
         if (in_array(PIECRUST_DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)

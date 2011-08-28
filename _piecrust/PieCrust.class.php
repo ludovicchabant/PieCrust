@@ -463,7 +463,7 @@ class PieCrust
         $this->lastRunInfo = array('start_time' => microtime(true));
         
         // Check the cache validity, and clean it automatically.
-        if ($this->cachingEnabled && $this->getConfigValueUnchecked('site', 'check_cache_validity'))
+        if ($this->cachingEnabled)
         {
             $cacheInfo = new PieCrustCacheInfo($this);
             $cacheValidity = $cacheInfo->getValidity(true);
