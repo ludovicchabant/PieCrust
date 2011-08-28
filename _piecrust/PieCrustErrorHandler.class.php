@@ -49,7 +49,16 @@ class PieCrustErrorHandler
             header('HTTP/1.0 404 Not Found');
             $errorPageUri = '_404';
         }
-        $errorPageUriInfo = UriParser::parseUri($this, $errorPageUri);
+        try
+        {
+            $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri);
+        }
+        catch (Exception $inner)
+        {
+            // What the fuck.
+            $this->showSystemMessage('error', $inner->getMessage());
+            return;
+        }
         $errorMessage = "<p>We're very sorry but something wrong happened. We'll try to do better next time.</p>";
         if ($errorPageUriInfo != null and is_file($errorPageUriInfo['path']))
         {
