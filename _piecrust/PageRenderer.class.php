@@ -64,8 +64,16 @@ class PageRenderer
     public function get(Page $page, $extraData = null)
     {
         ob_start();
-        $this->render($page, $extraData);
-        return ob_get_clean();
+        try
+        {
+            $this->render($page, $extraData);
+            return ob_get_clean();
+        }
+        catch (Exception $e)
+        {
+            ob_get_clean();
+            throw $e;
+        }
     }
     
     public function renderStatsFooter(Page $page)
