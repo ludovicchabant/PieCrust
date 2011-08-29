@@ -75,7 +75,7 @@ class PieCrustBaker
      */
     public function setBakeDir($dir)
     {
-        $this->bakeDir = rtrim(realpath($dir), '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
         if (is_writable($this->bakeDir) === false)
         {
             try
@@ -109,6 +109,7 @@ class PieCrustBaker
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
                                             'show_banner' => true,
+                                            'info_only' => false,
                                             'smart' => true,
                                             'clean_cache' => false,
                                             'copy_assets' => true,
@@ -158,13 +159,16 @@ class PieCrustBaker
     {
         $overallStart = microtime(true);
         
-        if ($this->parameters['show_banner'])
+        if ($this->parameters['show_banner'] or $this->parameters['info_only'])
         {
             echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
             echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
             echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
             echo "  for url :  " . $this->pieCrust->getUrlBase() . PHP_EOL;
             echo PHP_EOL . PHP_EOL;
+            
+            if ($this->parameters['info_only'])
+                return;
         }
         
         // Setup the PieCrust environment.
@@ -277,7 +281,6 @@ class PieCrustBaker
     
     protected function bakePage($path)
     {
-        $path = realpath($path);
         $pagesDir = $this->pieCrust->getPagesDir();
         $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
         $relativePathInfo = pathinfo($relativePath);

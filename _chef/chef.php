@@ -24,7 +24,6 @@ function _chef_add_common_command_options_and_args($parser)
         'help_name'   => 'TEMPLATES_DIR'
     ));
     $parser->addOption('pretty_urls', array(
-        'short_name'  => '-r',
         'long_name'   => '--prettyurls',
         'description' => "Overrides the 'site/pretty_urls' configuration setting.",
         'default'     => false,
@@ -70,6 +69,20 @@ $bakerParser->addOption('force', array(
     'default'     => false,
     'action'      => 'StoreTrue',
     'help_name'   => 'FORCE'
+));
+$bakerParser->addOption('file_urls', array(
+    'long_name'   => '--fileurls',
+    'description' => "Uses local file paths for URLs (for previewing website locally).",
+    'default'     => false,
+    'action'      => 'StoreTrue',
+    'help_name'   => 'FILE_URLS'
+));
+$bakerParser->addOption('info_only', array(
+    'long_name'   => '--info',
+    'description' => "Prints only high-level information about what the baker will do.",
+    'default'     => false,
+    'action'      => 'StoreTrue',
+    'help_name'   => 'INFO_ONLY'
 ));
 _chef_add_common_command_options_and_args($bakerParser);
 

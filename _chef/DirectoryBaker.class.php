@@ -47,7 +47,7 @@ class DirectoryBaker
     public function __construct(PieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->bakeDir = rtrim(realpath($bakeDir), '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim($bakeDir, '/\\') . DIRECTORY_SEPARATOR;
         $this->parameters = array_merge(
                                         array(
                                               'skip_patterns' => array(),
