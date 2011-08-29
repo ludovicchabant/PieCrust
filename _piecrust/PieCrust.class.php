@@ -423,15 +423,22 @@ class PieCrust
             $parameters
         );
 
-        $this->rootDir = rtrim(realpath($parameters['root']), '/\\') . DIRECTORY_SEPARATOR;
+        $this->rootDir = rtrim($parameters['root'], '/\\') . DIRECTORY_SEPARATOR;
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
         $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($_GET['!nocache']));
         
         if ($parameters['url_base'] === null)
         {
-            $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-            $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
-            $this->urlBase = $host . $folder;
+            if (isset($_SERVER['HTTP_HOST']))
+            {
+                $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+                $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
+                $this->urlBase = $host . $folder;
+            }
+            else
+            {
+                throw new PieCrustException("Can't guess the URL base: it was not given as a parameter, and no HTTP server is running.");
+            }
         }
         else
         {
