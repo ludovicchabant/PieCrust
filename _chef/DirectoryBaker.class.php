@@ -131,6 +131,7 @@ class DirectoryBaker
                     }
                     if (!$isUpToDate)
                     {
+                        $previousErrorHandler = set_error_handler('piecrust_error_handler');
                         try
                         {
                             $start = microtime(true);
@@ -141,6 +142,10 @@ class DirectoryBaker
                         {
                             throw new PieCrustException("Error processing '" . $relative . "': " . $e->getMessage());
                         }
+                        if ($previousErrorHandler)
+                        {
+                            set_error_handler($previousErrorHandler);
+                        }
                     }
                 }
                 else
@@ -149,5 +154,10 @@ class DirectoryBaker
                 }
             }
         }
+    }
+    
+    public static function processorErrorHandler($errno, $errstr, $errfile = null, $errline = 0, $errcontext = null)
+    {
+        
     }
 }

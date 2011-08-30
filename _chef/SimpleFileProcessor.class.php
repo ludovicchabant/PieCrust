@@ -87,15 +87,8 @@ class SimpleFileProcessor implements IFileProcessor
     
     public function process($inputPath, $outputDir)
     {
-        try
-        {
-            $outputPath = $outputDir . $this->getOutputFilenames(pathinfo($inputPath, PATHINFO_BASENAME));
-            $this->doProcess($inputPath, $outputPath);
-        }
-        catch (Exception $ex)
-        {
-            exit($ex->getMessage());
-        }
+        $outputPath = $outputDir . $this->getOutputFilenames(pathinfo($inputPath, PATHINFO_BASENAME));
+        $this->doProcess($inputPath, $outputPath);
     }
     
     protected function doProcess($inputPath, $outputPath)
