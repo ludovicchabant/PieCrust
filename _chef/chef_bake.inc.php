@@ -46,5 +46,12 @@ function _chef_run_command($parser, $result)
         $templatesDir = FileSystem::getAbsolutePath($result->command->options['templates_dir']);
         $baker->getApp()->addTemplatesDir($templatesDir);
     }
-    $baker->bake();
+    try
+    {
+        $baker->bake();
+    }
+    catch (Exception $e)
+    {
+        echo 'ERROR: ' . $e->getMessage() . PHP_EOL . PHP_EOL;
+    }
 }
