@@ -1,14 +1,8 @@
 <?php
 
-// Setup the environment.
-error_reporting(E_ALL ^ E_NOTICE);
-
-set_include_path(get_include_path() . PATH_SEPARATOR . 
-                 (dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . '_piecrust') . PATH_SEPARATOR .
-                 (dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . '_chef'));
+use PieCrust\IO\FileSystem;
 
 
-// Utility methods.
 function average($values)
 {
     if (!is_array($values))
@@ -41,8 +35,6 @@ function median($values)
         return $values[$middle];
     }
 }
-
-require_once 'FileSystem.class.php';
 
 function ensure_cache($cacheDir, $ensureClean = true)
 {

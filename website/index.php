@@ -1,4 +1,4 @@
 <?php
 
-require '../_piecrust/PieCrust.class.php';
-PieCrust::setupAndRun();
+require '../_piecrust/piecrust.php';
+piecrust_run();

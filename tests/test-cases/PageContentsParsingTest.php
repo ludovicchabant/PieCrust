@@ -1,10 +1,10 @@
 <?php
 
-define('PIECRUST_ROOT_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR);
-define('PIECRUST_TEST_DATA_DIR', dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'test-data' . DIRECTORY_SEPARATOR);
+require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-require_once 'TestEnvironment.inc.php';
-require_once 'PieCrust.class.php';
+use PieCrust\Page\Page;
+use PieCrust\PieCrust;
+
 
 class TestPage extends Page
 {
@@ -34,7 +34,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
     {
         $data = array();
         
-        $htmlFiles = new GlobIterator(PIECRUST_TEST_DATA_DIR . '*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_TEST_DATA_DIR . '*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
         foreach ($htmlFiles as $htmlFile)
         {
             $info = pathinfo($htmlFile);
@@ -53,7 +53,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
     public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
         // Create the page that will load our test file.
-        $pc = new PieCrust(array('cache' => false));
+        $pc = new PieCrust(array('cache' => false, 'url_base' => 'http://doesnt-matter', 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
         $pc->setConfig(array(
             'site' => array('default_format' => 'none')
         ));

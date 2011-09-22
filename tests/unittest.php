@@ -1,13 +1,16 @@
 <?php
 
-require_once 'util.php';
+define('PIECRUST_UNITTESTS_ROOT_DIR', __DIR__ . '/test-websites/tests/');
+define('PIECRUST_UNITTESTS_TEST_CASES_DIR', __DIR__ . '/test-cases/');
+
+// This requires the PHPUnit PEAR package.
 require_once 'libs/phpunit_webreport/PHPUnit/WebReport.php';
 
-define('PIECRUST_UNITTESTS_CACHE_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR . '_cache' . DIRECTORY_SEPARATOR);
-define('TESTS_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'test-cases');
+require_once 'util.php';
 
-$logFile = PIECRUST_UNITTESTS_CACHE_DIR . 'test-results.xml';
-$output = PHPUnit_WebReport_Dashboard::run(TESTS_DIR, $logFile);
+
+$logFile = __DIR__ . '/output/test-results.xml';
+$output = PHPUnit_WebReport_Dashboard::run(PIECRUST_UNITTESTS_TEST_CASES_DIR, $logFile);
 $dashboard = new PHPUnit_WebReport_Dashboard($logFile);
 
 ?>

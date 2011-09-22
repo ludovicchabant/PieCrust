@@ -1,24 +1,16 @@
 <?php
 
-require_once 'TestEnvironment.inc.php';
-require_once 'PieCrust.class.php';
-require_once 'UriParser.class.php';
-require_once 'UriBuilder.class.php';
+require_once (dirname(__DIR__) . '/unittest_setup.php');
+
+require_once 'PieCrust/PieCrust.php';
+
+use PieCrust\PieCrust;
+use PieCrust\Util\UriParser;
+use PieCrust\Util\UriBuilder;
 
 
 class PageUriParsingTest extends PHPUnit_Framework_TestCase
 {
-    protected $rootDir;
-    
-    public function getRootDir()
-    {
-        if ($this->rootDir === null)
-        {
-            $this->rootDir = dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'test-data' . DIRECTORY_SEPARATOR;
-        }
-        return $this->rootDir;
-    }
-    
     protected function makeUriInfo($uri, $path, $wasPathChecked, $type = PIECRUST_PAGE_REGULAR, $blogKey = null, $key = null, $date = null, $pageNumber = 1)
     {
         return array(
@@ -28,15 +20,15 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
                 'blogKey' => $blogKey,
                 'key' => $key,
                 'date' => $date,
-                'path' => str_replace('/', DIRECTORY_SEPARATOR, $path),
+                'path' => $path,
                 'was_path_checked' => $wasPathChecked
             );
     }
     
     public function parseUriDataProvider()
     {
-        $pagesDir = $this->getRootDir() . str_replace('/', DIRECTORY_SEPARATOR, '_content/pages/');
-        $postsDir = $this->getRootDir() . str_replace('/', DIRECTORY_SEPARATOR, '_content/posts/');
+        $pagesDir = PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR . '_content/pages/';
+        $postsDir = PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR . '_content/posts/';
         return array(
             array(
                 array(),
@@ -90,7 +82,7 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
-        $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true, 'cache' => false));
+        $pc = new PieCrust(array('root' => PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR, 'url_base' => 'http://whatever', 'debug' => true, 'cache' => false));
         $pc->setConfig($config);
         
         $uriInfo = UriParser::parseUri($pc, $uri);

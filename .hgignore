@@ -4,7 +4,8 @@
 Thumbs\.db
 
 # App cache files.
-^website/_cache/.*?\.(?!empty)
+^website/_cache/(?!\.empty)
+^tests/output/(?!\.empty)
 
 # Libs files we don't need.
 .gitignore
@@ -20,11 +21,10 @@ Thumbs\.db
 ^_piecrust/libs/lessphp/tests/
 ^_piecrust/libs/mustache/examples/
 ^_piecrust/libs/mustache/test/
-^_chef/libs/Log/docs/
-^_chef/libs/Log/examples/
-^_chef/libs/Log/misc/
-^_chef/libs/Log/tests/
-tests/_cache
+^_piecrust/libs/Log/docs/
+^_piecrust/libs/Log/examples/
+^_piecrust/libs/Log/misc/
+^_piecrust/libs/Log/tests/
 
 syntax:glob
 *.log

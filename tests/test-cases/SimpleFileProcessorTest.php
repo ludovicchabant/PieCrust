@@ -1,23 +1,13 @@
 <?php
 
-require_once 'TestEnvironment.inc.php';
-require_once 'IFileProcessor.class.php';
-require_once 'SimpleFileProcessor.class.php';
+require_once (dirname(__DIR__) . '/unittest_setup.php');
+
+use PieCrust\Baker\Processors\IProcessor;
+use PieCrust\Baker\Processors\SimpleFileProcessor;
 
 
 class SimpleFileProcessorTest extends PHPUnit_Framework_TestCase
 {
-    protected $rootDir;
-    
-    public function getRootDir()
-    {
-        if ($this->rootDir === null)
-        {
-            $this->rootDir = dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'test-data' . DIRECTORY_SEPARATOR;
-        }
-        return $this->rootDir;
-    }
-    
     public function processFileDataProvider()
     {
         return array(
@@ -40,11 +30,10 @@ class SimpleFileProcessorTest extends PHPUnit_Framework_TestCase
     }
     
     /**
-	 * @dataProvider processFileDataProvider
-	 */
-	public function testProcessFile($inputExtensions, $outputExtensions, $inputPath, $expectedOutputPath)
+     * @dataProvider processFileDataProvider
+     */
+    public function testProcessFile($inputExtensions, $outputExtensions, $inputPath, $expectedOutputPath)
     {
-        $pc = new PieCrust(array('root' => $this->getRootDir(), 'debug' => true));
         $sfp = new SimpleFileProcessor('test', $inputExtensions, $outputExtensions);
         $outputPath = $sfp->getOutputFilenames($inputPath);
         $this->assertEquals($expectedOutputPath, $outputPath);

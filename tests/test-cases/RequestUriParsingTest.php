@@ -1,7 +1,8 @@
 <?php
 
-require_once 'TestEnvironment.inc.php';
-require_once 'ServerHelper.class.php';
+require_once (dirname(__DIR__) . '/unittest_setup.php');
+
+use PieCrust\Util\ServerHelper;
 
 
 class RequestUriParsingTest extends PHPUnit_Framework_TestCase

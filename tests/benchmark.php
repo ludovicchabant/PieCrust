@@ -1,27 +1,32 @@
 <?php
 
-require_once 'util.php';
+define('PIECRUST_BENCHMARKS_ROOT_DIR', __DIR__ . '/test-websites/benchmarks/');
+define('PIECRUST_BENCHMARKS_CACHE_DIR', __DIR__ . '/output/cache');
 
 // This requires the PEAR Benchmark package.
 require_once 'Benchmark/Timer.php';
 require_once 'Benchmark/Iterate.php';
 
-// Include the PieCrust app but with a root directory set
-// to the test website's root dir.
-define('PIECRUST_ROOT_DIR', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-define('PIECRUST_BENCHMARKS_CACHE_DIR', PIECRUST_ROOT_DIR . '_cache');
-require_once 'PieCrust.class.php';
+require_once 'util.php';
+require_once 'piecrust_setup.php';
+
+use PieCrust\Page\Page;
+use PieCrust\Page\PageRenderer;
+use PieCrust\PieCrust;
+
 
 function init_app($cache)
 {
-    $pc = new PieCrust(array('cache' => $cache));
+    $pc = new PieCrust(array('cache' => $cache, 'root' => PIECRUST_BENCHMARKS_ROOT_DIR));
+    $pc->setCacheDir(PIECRUST_BENCHMARKS_CACHE_DIR);
     $pc->getConfig();
+    return $pc;
 }
 
 function run_query($pieCrust, $uri)
 {
-    $page = Page::createFromUri($pieCrust, $uri);  
-    $renderer = new PageRenderer($pieCrust);    
+    $page = Page::createFromUri($pieCrust, $uri);
+    $renderer = new PageRenderer($pieCrust);
     return $renderer->get($page, null, false);
 }
 
@@ -95,7 +100,7 @@ echo '<h2>Page Rendering Benchmark</h2>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
-$pieCrust = new PieCrust();
+$pieCrust = init_app(true);
 $bench->run($runCount, 'run_query', $pieCrust, '/empty');
 $bench->stop();
 display_profiling_times($runCount, $bench->getProfiling());
@@ -105,7 +110,7 @@ display_profiling_times($runCount, $bench->getProfiling());
 //
 echo '<h2>Timed Benchmark</h2>';
 
-$pieCrust = new PieCrust();
+$pieCrust = init_app(true);
 
 echo '<h3>Uncached</h3>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
