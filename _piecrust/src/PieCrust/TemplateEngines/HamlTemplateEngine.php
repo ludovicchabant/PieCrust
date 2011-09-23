@@ -47,9 +47,9 @@ class HamlTemplateEngine implements ITemplateEngine
         
         $dir = $this->cacheDir;
         if (!$dir)
-            $dir = sys_get_temp_dir();
-        $temp = $dir . '/' . '__string_tpl__.haml';
-        $out = $dir . '/' . '__string_tpl__.php';
+            $dir = rtrim(sys_get_temp_dir(), '/\\') . '/';
+        $temp = $dir . '__haml_string_tpl__.haml';
+        $out = $dir . '__haml_string_tpl__.php';
         
         @file_put_contents($temp, $content);
         
