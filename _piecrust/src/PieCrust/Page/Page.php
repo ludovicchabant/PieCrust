@@ -678,7 +678,7 @@ class Page
                 'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',
                 'title' => 'Untitled Page',
-                'blog' => ($this->blogKey != null) ? $this->blogKey : ($this->isPost() ? $blogKeys[0] : null),
+                'blog' => ($this->blogKey != null) ? $this->blogKey : $blogKeys[0],
                 'segments' => array()
             ),
             $config);
