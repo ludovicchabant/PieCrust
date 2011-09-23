@@ -43,7 +43,7 @@ class MustacheTemplateEngine implements ITemplateEngine
         if ($this->mustache === null)
         {
             require_once 'Mustache/Mustache.php';
-            $this->mustache = new Mustache();
+            $this->mustache = new \Mustache();
         }
     }
 }

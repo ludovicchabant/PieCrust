@@ -45,8 +45,11 @@ class HamlTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         
-        $temp = $this->cacheDir . '/' . '__string_tpl__.haml';
-        $out = $this->cacheDir . '/' . '__string_tpl__.php';
+        $dir = $this->cacheDir;
+        if (!$dir)
+            $dir = sys_get_temp_dir();
+        $temp = $dir . '/' . '__string_tpl__.haml';
+        $out = $dir . '/' . '__string_tpl__.php';
         
         @file_put_contents($temp, $content);
         
@@ -109,13 +112,13 @@ class HamlTemplateEngine implements ITemplateEngine
             
             $appConfig = $this->pieCrust->getConfig();
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
-            else $hamlOptions = array();
+            else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
                                        array('filterDir' => PIECRUST_APP_DIR . 'Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'Phamlp/haml/HamlParser.php';
-            $this->haml = new HamlParser($hamlOptions);
+            $this->haml = new \HamlParser($hamlOptions);
         }
     }
 }

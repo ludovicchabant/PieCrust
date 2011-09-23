@@ -48,7 +48,7 @@ class DwooTemplateEngine implements ITemplateEngine
     public function renderString($content, $data)
     {
         $this->ensureLoaded();
-        $tpl = new Dwoo_Template_String($content);
+        $tpl = new \Dwoo_Template_String($content);
         $this->dwoo->output($tpl, $data);
     }
     
@@ -76,7 +76,7 @@ class DwooTemplateEngine implements ITemplateEngine
             if (!is_dir($cacheDir)) mkdir($cacheDir, 0777, true);
         
             require_once 'Dwoo/dwooAutoload.php';
-            $this->dwoo = new Dwoo($compileDir, $cacheDir);
+            $this->dwoo = new \Dwoo($compileDir, $cacheDir);
             $this->dwoo->getLoader()->addDirectory(PIECRUST_APP_DIR . 'Plugins/Dwoo/');
         }
     }
