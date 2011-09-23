@@ -114,6 +114,10 @@ class Page
         {
             $this->date = mktime(0, 0, 0, intval($date['month']), intval($date['day']), intval($date['year']));
         }
+        else if (is_string($date))
+        {
+            $this->date = strtotime($date);
+        }
         else
         {
             throw new PieCrustException("The date must be an integer or an array.");
@@ -305,11 +309,15 @@ class Page
             $data['page']['url'] = $this->pieCrust->formatUri($this->getUri());
             $data['page']['slug'] = $this->getUri();
             
-            $timestamp = $this->getDate();
-            if ($this->getConfigValue('time')) $timestamp = strtotime($this->getConfigValue('time'), $timestamp);
+            if ($this->getConfigValue('date'))
+                $timestamp = strtotime($this->getConfigValue('date'));
+            else
+                $timestamp = $this->getDate();
+            if ($this->getConfigValue('time'))
+                $timestamp = strtotime($this->getConfigValue('time'), $timestamp);
             $data['page']['timestamp'] = $timestamp;
-            $dateFormat = $this->getConfigValue('date_format', $this->blogKey);
-            $data['page']['date'] = date($dateFormat, $this->getDate());
+            $dateFormat = $this->getConfigValue('date_format', ($this->blogKey != null ? $this->blogKey : 'site'));
+            $data['page']['date'] = date($dateFormat, $timestamp);
             
             switch ($this->type)
             {
@@ -670,7 +678,7 @@ class Page
                 'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',
                 'title' => 'Untitled Page',
-                'blog' => ($this->blogKey != null) ? $this->blogKey : $blogKeys[0],
+                'blog' => ($this->blogKey != null) ? $this->blogKey : ($this->isPost() ? $blogKeys[0] : null),
                 'segments' => array()
             ),
             $config);

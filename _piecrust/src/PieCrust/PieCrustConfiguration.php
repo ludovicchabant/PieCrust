@@ -163,6 +163,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
                         'enable_gzip' => false,
                         'pretty_urls' => false,
                         'posts_fs' => 'flat',
+                        'date_format' => 'F j, Y',
                         'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
                         'cache_time' => 28800
                     ),
@@ -177,8 +178,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
             'post_url' => '%year%/%month%/%day%/%slug%',
             'tag_url' => 'tag/%tag%',
             'category_url' => '%category%',
-            'posts_per_page' => 5,
-            'date_format' => 'F j, Y'
+            'posts_per_page' => 5
         );
         foreach (array_keys($defaultValues) as $key)
         {
@@ -201,7 +201,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
                             'tag_url' => $prefix . $defaultValues['tag_url'],
                             'category_url' => $prefix . $defaultValues['category_url'],
                             'posts_per_page' => $defaultValues['posts_per_page'],
-                            'date_format' => $defaultValues['date_format']
+                            'date_format' => $config['site']['date_format']
                         ),
                         $config[$blogKey]);
         }
