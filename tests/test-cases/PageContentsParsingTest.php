@@ -34,7 +34,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
     {
         $data = array();
         
-        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/pages/*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
         foreach ($htmlFiles as $htmlFile)
         {
             $info = pathinfo($htmlFile);
