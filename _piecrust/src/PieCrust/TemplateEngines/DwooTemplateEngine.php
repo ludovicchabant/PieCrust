@@ -56,7 +56,7 @@ class DwooTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         $templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
-        $tpl = new Dwoo_Template_File($templatePath);
+        $tpl = new \Dwoo_Template_File($templatePath);
         $this->dwoo->output($tpl, $data);
     }
     
