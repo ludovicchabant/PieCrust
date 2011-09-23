@@ -1,15 +1,11 @@
 <?php
 
+// No namespace because Dwoo doesn't support them with
+// the directory loading system.
+use PieCrust\TemplateEngines\DwooTemplateEngine;
 
-function Dwoo_Plugin_pcurl_compile(Dwoo_Compiler $compiler, $value)
+
+function Dwoo_Plugin_pcurl(Dwoo $dwoo, $value)
 {
-    $delim = '\'';
-    if (substr($value, 0, 1) === $delim && substr($value, -1) === $delim)
-    {
-        return '\'' . DwooTemplateEngine::formatUri(trim($value, $delim)) . '\'';
-    }
-    else
-    {
-        return '\'' . DwooTemplateEngine::formatUri('') .'\'.' . $value;
-    }
+    return DwooTemplateEngine::formatUri($value);
 }

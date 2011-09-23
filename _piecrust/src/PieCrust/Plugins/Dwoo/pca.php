@@ -1,5 +1,9 @@
 <?php
 
+// No namespace because Dwoo doesn't support them with
+// the directory loading system.
+use PieCrust\TemplateEngines\DwooTemplateEngine;
+
 
 class Dwoo_Plugin_pca extends Dwoo_Block_Plugin implements Dwoo_ICompilable_Block
 {

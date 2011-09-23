@@ -1,7 +1,12 @@
 <?php
 
+// No namespace because Dwoo doesn't support them with
+// the directory loading system.
+use PieCrust\TemplateEngines\DwooTemplateEngine;
+use PieCrust\Util\UriBuilder;
 
-function Dwoo_Plugin_pcposturl_compile(Dwoo_Compiler $compiler, $year, $month, $day, $slug, $blogKey = null)
+
+function Dwoo_Plugin_pcposturl(Dwoo $dwoo, $year, $month, $day, $slug, $blogKey = null)
 {
     $postInfo = array(
         'year' => $year,
@@ -10,5 +15,5 @@ function Dwoo_Plugin_pcposturl_compile(Dwoo_Compiler $compiler, $year, $month, $
         'name' => $slug
     );
     $format = DwooTemplateEngine::getPostUrlFormat($blogKey);
-    return '\'' . DwooTemplateEngine::formatUri(UriBuilder::buildPostUri($format, $postInfo)) . '\'';
+    return DwooTemplateEngine::formatUri(UriBuilder::buildPostUri($format, $postInfo));
 }

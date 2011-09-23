@@ -70,11 +70,13 @@ class DwooTemplateEngine implements ITemplateEngine
         {
             self::$currentApp = $this->pieCrust;
             
-            $compileDir = $this->pieCrust->getCacheDir() . 'templates_c';
+            $dir = $this->pieCrust->getCacheDir();
+            if (!$dir) $dir = rtrim(sys_get_temp_dir(), '/\\') . '/';
+            $compileDir = $dir . 'templates_c';
             if (!is_dir($compileDir)) mkdir($compileDir, 0777, true);
-            $cacheDir = $this->pieCrust->getCacheDir() . 'templates';
+            $cacheDir = $dir . 'templates';
             if (!is_dir($cacheDir)) mkdir($cacheDir, 0777, true);
-        
+            
             require_once 'Dwoo/dwooAutoload.php';
             $this->dwoo = new \Dwoo($compileDir, $cacheDir);
             $this->dwoo->getLoader()->addDirectory(PIECRUST_APP_DIR . 'Plugins/Dwoo/');
