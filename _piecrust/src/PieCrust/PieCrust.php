@@ -201,7 +201,10 @@ class PieCrust
     {
         if ($this->cacheDir === null)
         {
-            $this->setCacheDir($this->rootDir . PIECRUST_CACHE_DIR);
+            if ($this->cachingEnabled)
+                $this->setCacheDir($this->rootDir . PIECRUST_CACHE_DIR);
+            else
+                $this->cacheDir = false;
         }
         return $this->cacheDir;
     }
@@ -551,7 +554,7 @@ class PieCrust
         {
             $configParameters = array(
                 'url_base' => $this->urlBase,
-                'cache_dir' => ($this->cachingEnabled ? $this->getCacheDir() : null),
+                'cache_dir' => ($this->cachingEnabled ? $this->getCacheDir() : false),
                 'cache' => $this->cachingEnabled
             );
             $this->config = new PieCrustConfiguration($configParameters, ($this->rootDir . PIECRUST_CONFIG_PATH));
