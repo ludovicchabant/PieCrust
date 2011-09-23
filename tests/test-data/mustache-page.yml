@@ -1,0 +1,13 @@
+config:
+    title: The title of the page
+    date: 2011/09/01
+    time: 22:36
+    template_engine: mustache
+    condition1: true
+    condition2: false
+content: |
+    This page's title should be: "The title of the page".
+    It was written on September 1, 2011 at 22:36.
+    
+    This should be displayed!
+    

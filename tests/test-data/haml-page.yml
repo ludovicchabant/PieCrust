@@ -1,0 +1,6 @@
+config:
+    title: The title of the page
+    date: 2011/09/01
+    time: 22:36
+    template_engine: haml
+content: "<div id=\"info\">\n<p>\n    This page's title should be:\n  </p><p>\n    The title of the page\n  </p></div>"
