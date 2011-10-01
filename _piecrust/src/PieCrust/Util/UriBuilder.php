@@ -13,6 +13,15 @@ class UriBuilder
      */
     public static function buildPostUri($postUrlFormat, $postInfo)
     {
+        if (is_int($postInfo['month']))
+        {
+            $postInfo['month'] = sprintf('%02s', $postInfo['month']);
+        }
+        if (is_int($postInfo['day']))
+        {
+            $postInfo['day'] = sprintf('%02s', $postInfo['day']);
+        }
+        
         $replacements = array(
             '%year%' => $postInfo['year'],
             '%month%' => $postInfo['month'],
