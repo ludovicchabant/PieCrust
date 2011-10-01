@@ -4,7 +4,7 @@
 Thumbs\.db
 
 # App cache files.
-^website/_cache/(?!\.empty)
+_cache/(?!\.empty)
 ^tests/output/(?!\.empty)
 
 # Libs files we don't need.
