@@ -2,6 +2,7 @@
 
 namespace PieCrust\Interop;
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\Interop\Importers\IImporter;
 use PieCrust\Util\PluginLoader;
@@ -13,7 +14,7 @@ use PieCrust\Util\PluginLoader;
 class PieCrustImporter
 {
     protected $pieCrust;
-    protected importersLoader;
+    protected $importersLoader;
     
     /**
      * Creates a new instance of PieCrustImporter.

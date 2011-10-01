@@ -2,6 +2,8 @@
 
 namespace PieCrust;
 
+use \Exception;
+
 
 /**
  * A class that handles critical/fatal errors caught

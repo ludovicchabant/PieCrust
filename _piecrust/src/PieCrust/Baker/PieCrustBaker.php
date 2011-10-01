@@ -6,6 +6,7 @@ define('PIECRUST_BAKE_DIR', '_counter');
 define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
 define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;

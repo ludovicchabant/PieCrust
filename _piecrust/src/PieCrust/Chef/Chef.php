@@ -2,6 +2,7 @@
 
 namespace PieCrust\Chef;
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\Util\PluginLoader;
 

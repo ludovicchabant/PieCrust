@@ -2,6 +2,7 @@
 
 namespace PieCrust\Page;
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 

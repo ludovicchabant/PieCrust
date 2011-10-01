@@ -2,6 +2,7 @@
 
 namespace PieCrust;
 
+use \Exception;
 use PieCrust\IO\Cache;
 
 require_once 'sfYaml/lib/sfYamlParser.php';

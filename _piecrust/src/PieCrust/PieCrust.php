@@ -2,6 +2,7 @@
 
 namespace PieCrust;
 
+use \Exception;
 use PieCrust\Formatters\IFormatter;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;

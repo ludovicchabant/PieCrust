@@ -5,6 +5,7 @@ namespace PieCrust\Server;
 require_once 'StupidHttp/StupidHttp_WebServer.php';
 require_once 'StupidHttp/StupidHttp_PearLog.php';
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;

@@ -2,6 +2,7 @@
 
 namespace PieCrust\Chef\Commands;
 
+use \Exception;
 use PieCrust\IO\FileSystem;
 use PieCrust\Baker\PieCrustBaker;
 

@@ -2,6 +2,7 @@
 
 namespace PieCrust\Baker;
 
+use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PluginLoader;

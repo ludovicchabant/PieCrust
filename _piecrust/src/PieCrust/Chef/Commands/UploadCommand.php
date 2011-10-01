@@ -2,6 +2,9 @@
 
 namespace PieCrust\Chef\Commands;
 
+use \Exception;
+
+
 define('FTP_SYNC_ALWAYS', 0);
 define('FTP_SYNC_IF_NEWER', 1);
 define('FTP_SYNC_IF_NEWER_OR_DIFFERENT_SIZE', 2);

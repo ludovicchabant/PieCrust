@@ -2,6 +2,7 @@
 
 namespace PieCrust\Formatters;
 
+use \Exception;
 use PieCrust\PieCrust;
 
 
