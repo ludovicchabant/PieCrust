@@ -39,7 +39,7 @@ function piecrust_shutdown_function()
         {
         }
         
-        piecrust_show_system_message('critical', print_r($error, true));
+        piecrust_show_system_message('critical', $error['message'] . ' in ' . $error['file'] . '(' . $error['line'] . ')');
         exit();
     }
 }
@@ -83,9 +83,10 @@ function piecrust_setup($profile = 'web')
     {
     case 'web':
         {
+            ini_set('display_errors', false);
             error_reporting(E_ALL ^ E_NOTICE);
             set_error_handler('piecrust_error_handler');
-            //register_shutdown_function('piecrust_shutdown_function');
+            register_shutdown_function('piecrust_shutdown_function');
             break;
         }
     case 'test':
