@@ -40,6 +40,7 @@ function piecrust_shutdown_function()
         }
         
         piecrust_show_system_message('critical', print_r($error, true));
+        exit();
     }
 }
 
@@ -92,7 +93,7 @@ function piecrust_setup($profile = 'web')
         {
             ini_set('display_errors', true);
             ini_set('display_startup_errors', true);
-            error_reporting(E_ALL ^ E_NOTICE);
+            error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
             break;
         }
