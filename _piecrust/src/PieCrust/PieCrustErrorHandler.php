@@ -3,6 +3,7 @@
 namespace PieCrust;
 
 use \Exception;
+use PieCrust\Util\UriParser;
 
 
 /**
