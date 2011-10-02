@@ -5,7 +5,7 @@ Thumbs\.db
 
 # App cache files.
 _cache/(?!\.empty)
-^tests/output/(?!\.empty)
+^tests/tmp/(?!\.empty)
 
 # Libs files we don't need.
 .gitignore

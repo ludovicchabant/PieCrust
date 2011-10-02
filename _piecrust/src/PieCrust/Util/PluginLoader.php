@@ -70,7 +70,7 @@ class PluginLoader
                 continue;
             }
             
-            include_once $p->getPathname();
+            require_once $p->getPathname();
             
             $className = substr($p->getFilename(), 0, strlen($p->getFilename()) - 4);
             if (substr($className, -6) === ".class")

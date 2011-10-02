@@ -1,6 +1,6 @@
 <?php
 
-require_once 'Phamlp/haml/filters/_HamlTextileFilter.php';
+require_once 'PhamlP/haml/filters/_HamlTextileFilter.php';
 
 
 class HamlTextileFilter extends _HamlTextileFilter

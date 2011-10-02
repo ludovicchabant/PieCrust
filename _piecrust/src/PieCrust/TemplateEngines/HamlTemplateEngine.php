@@ -117,7 +117,7 @@ class HamlTemplateEngine implements ITemplateEngine
                                        array('filterDir' => PIECRUST_APP_DIR . 'Plugins/Haml'),
                                        $hamlOptions
                                        );
-            require_once 'Phamlp/haml/HamlParser.php';
+            require_once 'PhamlP/haml/HamlParser.php';
             $this->haml = new \HamlParser($hamlOptions);
         }
     }

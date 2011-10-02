@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-require_once 'libs/console/CommandLine.php';
+require_once 'libs/Console/CommandLine.php';
 
 
 function _chef_add_common_command_options_and_args($parser)

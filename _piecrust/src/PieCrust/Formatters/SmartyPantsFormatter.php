@@ -21,7 +21,7 @@ class SmartyPantsFormatter implements IFormatter
             if (isset($smartypantsConfig['use_smartypants_typographer']) and
                 $smartypantsConfig['use_smartypants_typographer'] == true)
             {
-                $this->smartypantsLibDir = 'Smartypants-Typographer';
+                $this->smartypantsLibDir = 'SmartypantsTypographer';
             }
         }
         else
