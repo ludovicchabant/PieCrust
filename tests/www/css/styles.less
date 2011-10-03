@@ -1,0 +1,152 @@
+/* Blue theme */
+@dark: #00547F;
+@medium_dark: #26617F;
+@medium: #0087CC;
+@medium_light: #00A8FF;
+@light: #A2DFFF;
+
+.vignette(@innercolor, @outercolor) {
+	background: -moz-radial-gradient(top center, circle cover, @innercolor, @outercolor);
+	background: -webkit-radial-gradient(top center, circle cover, @innercolor, @outercolor);
+	background: radial-gradient(top center, circle cover, @innercolor, @outercolor);
+}
+
+html {
+	min-height: 100%;
+}
+body {
+	padding: 1em;
+	min-height: 100%;
+	background: lighten(@light, 10%);
+	.vignette(lighten(@light, 15%), @light);
+	color: @dark;
+	font-family: Georgia, serif;
+	font-size: 110%;
+}
+hr {
+	margin: 0;
+	background: darken(@medium_dark, 20%);
+}
+
+code {
+	background: @medium_dark;
+}
+
+img {
+	border: 3px solid @medium;
+	float: left;
+	margin: 1em;
+}
+
+blockquote {
+	color: @medium_dark;
+	background: desaturate(@light, 30%);
+	padding: 0.5em;
+}
+
+.letter-press {
+	text-shadow: 0px -1px 3px rgba(0,0,0,35),
+				 0px 1px 3px rgba(255,255,255,30);
+}
+
+#container {
+	min-height: 100%;
+	margin: 0 20%;
+	
+	a {
+		color: @medium_dark;
+		font-weight: bold;
+		text-decoration: none;
+		padding: 0.1em 0.2em;
+		
+		&:link {}
+		&:visited { color: darken(@medium_dark, 20%); }
+		&:hover { color: @light; background: @dark; }
+		&:active {}
+	}
+}
+
+#header {
+	font-size: 1.8em;
+	
+	h1 {
+		.letter-press;
+		
+		margin: 0.5em auto;
+		font-family: Lobster, 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+		font-size: 3em;
+		text-align: center;
+		font-weight: bold;
+		color: @dark;
+	}
+	h1 a {
+		color: @dark;
+		&:link {}
+		&:visited { color: @dark; }
+		&:hover { background: none; color: @dark; }
+		&:active {}
+	}
+}
+
+#menu {
+
+	#menu-inner {
+		
+	}
+	
+	ul {
+		margin: 0;
+		padding: 0;
+	}
+
+	ul li {
+		display: block;
+		float: left;
+		padding: 1em 2em;
+	}
+	ul:after {
+		clear: both;
+	}
+}
+
+#content {
+    #content-inner {
+		margin: 1em 2em;
+	}
+	
+	p a {
+		border-bottom: 1px dotted @medium_dark;
+	}
+	
+	h2 {
+		font-family: 'Covered By Your Grace', 'Verdana', sans-serif;
+		letter-spacing: 0.07em;
+		margin-bottom: 0.1em;
+	}
+}
+
+#footer {
+	font-size: 0.8em;
+	text-transform: lowercase;
+	text-align: center;
+	clear: both;
+	
+	p {
+		margin: 1em;
+	}
+}
+
+.post {
+	hr { background: @medium_dark; margin-bottom: 1.5em; }
+}
+.post-meta {
+	text-transform: uppercase;
+	font-size: 0.7em;
+	font-family: Verdana, sans-serif;
+	font-weight: bold;
+	color: @medium_dark;
+	margin: 0 0 1.5em 0.5em;
+}
+.post-more {
+	margin-bottom: 1.5em;
+}

@@ -51,17 +51,9 @@ function run_detailed_query($bench, $pieCrust, $uri)
     return $page;
 }
 
-?>
+include 'header.php';
 
-<!doctype html>
-<html>
-    <head>
-        <title>PieCrust Benchmarks</title>
-    </head>
-    <body>
-<?php
-
-echo '<h1>PieCrust Benchmarks</h1>';
+echo '<h2>Benchmarks</h2>';
 
 $runCount = 100;
 function filter_end_marker($value) { return preg_match('/^end_/', $value['name']); }
@@ -78,7 +70,7 @@ function display_profiling_times($runCount, $prof)
 //
 // App init benchmark.
 //
-echo '<h2>App Init Benchmark (non-caching config)</h2>';
+echo '<h3>App Init Benchmark (non-caching config)</h3>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
@@ -86,7 +78,7 @@ $bench->run($runCount, 'init_app', false);
 $bench->stop();
 display_profiling_times($runCount, $bench->getProfiling());
 
-echo '<h2>App Init Benchmark (caching config)</h2>';
+echo '<h3>App Init Benchmark (caching config)</h3>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
@@ -97,7 +89,7 @@ display_profiling_times($runCount, $bench->getProfiling());
 //
 // Page rendering benchmark.
 //
-echo '<h2>Page Rendering Benchmark</h2>';
+echo '<h3>Page Rendering Benchmark</h3>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Iterate();
 $bench->start();
@@ -109,11 +101,11 @@ display_profiling_times($runCount, $bench->getProfiling());
 //
 // Marked run (uncached, then cached).
 //
-echo '<h2>Timed Benchmark</h2>';
+echo '<h3>Timed Benchmark</h3>';
 
 $pieCrust = init_app(true);
 
-echo '<h3>Uncached</h3>';
+echo '<h4>Uncached</h4>';
 ensure_cache(PIECRUST_BENCHMARKS_CACHE_DIR, true);
 $bench = new Benchmark_Timer();
 $bench->start();
@@ -121,13 +113,11 @@ run_detailed_query($bench, $pieCrust, '/empty');
 $bench->stop();
 $bench->display();
 
-echo '<h3>Cached</h3>';
+echo '<h4>Cached</h4>';
 $bench = new Benchmark_Timer();
 $bench->start();
 run_detailed_query($bench, $pieCrust, '/empty');
 $bench->stop();
 $bench->display();
 
-?>
-    </body>
-</html>
+include 'footer.php';
