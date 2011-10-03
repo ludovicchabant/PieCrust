@@ -20,34 +20,54 @@ class PHPUnit_WebReport_Dashboard
 	public static function run($testsDir, $logFile)
 	{
 		$phpUnitExe = self::getPhpUnitExe();
+		$logFile = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $logFile);
 		$command = $phpUnitExe . ' --log-junit "' . $logFile . '" "' . $testsDir . '"';
 		$output = array();
 		exec($command, $output);
 		return $output;
 	}
 	
+	protected static function findExe($exeName)
+	{
+		$envPaths = explode(PATH_SEPARATOR, getenv('PATH'));
+		foreach ($envPaths as $p)
+		{
+			$tentative = rtrim($p, '/\\') . DIRECTORY_SEPARATOR . $exeName;
+			if (file_exists($tentative))
+				return $tentative;
+		}
+		return false;
+	}
+	
 	protected static function getPhpUnitExe()
 	{
-		// This requires the PEAR PHPUnit package.
-		if (isset($_SERVER['PHPRC']))
+		// Find 'phpunit' in the PATH.
+		$phpUnitExe = self::findExe('phpunit');	// on Windows, this should be 'phpunit.bat' but since both exist,
+												// and Windows runs .bat without extension, it's all good.
+		if (!$phpUnitExe)
 		{
-			// Windows: PEAR defines %PHPRC%, which we can use to find phpunit's path.
-			$phpUnitExe = '"' . $_SERVER['PHPRC'] . DIRECTORY_SEPARATOR . 'php" "' . $_SERVER['PHPRC'] . DIRECTORY_SEPARATOR . 'phpunit"';
-		}
-		else
-		{
-			// Mac/Unix: phpunit would usually be installed in the path.
-			$phpUnitExe = 'phpunit';
-		}
-		
-		if (!file_exists($phpUnitExe))
-		{	
-			// If PEAR is unavailable, try to create our own runner.
-			// (assuming PHPUnit is accessible from our include path).
+			// Can't find phpunit. Use our own runner (which is a copy of phpunit's short code.).
+			// ...but we still have to find the PHP executable.
+			$phpExeName = 'php';
+			if (strpos(PHP_OS, 'Windows') == 0)
+				$phpExeName = 'php.exe';
+				
+			$phpExe = self::findExe($phpExeName);
+			if (!$phpExe and isset($_SERVER['PHPRC']))
+			{
+				$tentative = $_SERVER['PHPRC'] . DIRECTORY_SEPARATOR . $phpExeName;
+				if (file_exists($tentative))
+					$phpExe = $tentative;
+			}
+			if (!$phpExe)
+			{
+				throw new Exception("Can't find the PHP executable anywhere!");
+			}
+			
 			try
 			{
 				$runnerCode = '<?php'.PHP_EOL.
-					'set_include_path("'.get_include_path().'");'.PHP_EOL.
+					'set_include_path("'.addcslashes(get_include_path(), '\\"').'");'.PHP_EOL.
 <<<'EOD'
 require_once 'PHP/CodeCoverage/Filter.php';
 PHP_CodeCoverage_Filter::getInstance()->addFileToBlacklist(__FILE__, 'PHPUNIT');
@@ -65,7 +85,7 @@ PHPUnit_TextUI_Command::main();
 EOD;
 				$phpUnitExe = tempnam(sys_get_temp_dir(), 'phpunit');
 				file_put_contents($phpUnitExe, $runnerCode);
-				$phpUnitExe = 'php '.$phpUnitExe;
+				$phpUnitExe = '"'.$phpExe .'" "'.$phpUnitExe.'"';
 			}
 			catch (Exception $e)
 			{
@@ -80,6 +100,7 @@ EOD;
 	 */
 	public function __construct($logFile, $format = 'xml')
 	{
+		$logFile = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $logFile);
 		switch ($format)
 		{
 		case 'xml':
