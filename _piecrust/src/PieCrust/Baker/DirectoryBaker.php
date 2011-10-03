@@ -3,6 +3,7 @@
 namespace PieCrust\Baker;
 
 use \Exception;
+use \DirectoryIterator;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PluginLoader;
@@ -29,11 +30,12 @@ class DirectoryBaker
             $processorsToFilter = $this->parameters['processors'];
             $this->processorsLoader = new PluginLoader(
                                             'PieCrust\\Baker\\Processors\\IProcessor',
-                                            PIECRUST_CHEF_DIR . 'processors',
+                                            PIECRUST_APP_DIR . 'Baker/Processors',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
                                             $processorsToFilter == '*' ?
                                                 null :
-                                                function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); }
+                                                function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
+                                            'SimpleFileProcessor.php'
                                             );
             foreach ($this->processorsLoader->getPlugins() as $proc)
             {
@@ -49,7 +51,7 @@ class DirectoryBaker
     public function __construct(PieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->bakeDir = rtrim($bakeDir, '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim(str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $bakeDir), '/\\') . DIRECTORY_SEPARATOR;
         $this->parameters = array_merge(
                                         array(
                                               'skip_patterns' => array(),
@@ -81,6 +83,10 @@ class DirectoryBaker
         foreach ($it as $i)
         {
             if ($i->isDot())
+            {
+                continue;
+            }
+            if ($i->getPathname() . DIRECTORY_SEPARATOR == $this->bakeDir)
             {
                 continue;
             }

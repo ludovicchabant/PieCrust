@@ -2,6 +2,7 @@
 
 namespace PieCrust\Baker;
 
+use PieCrust\PieCrust;
 use PieCrust\Util\LinkCollector;
 
 

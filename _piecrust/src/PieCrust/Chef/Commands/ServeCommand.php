@@ -2,6 +2,9 @@
 
 namespace PieCrust\Chef\Commands;
 
+use \Exception;
+use \Console_CommandLine;
+use \Console_CommandLine_Result;
 use PieCrust\Server\PieCrustServer;
 
 

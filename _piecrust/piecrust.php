@@ -89,6 +89,11 @@ function piecrust_setup($profile = 'web')
             register_shutdown_function('piecrust_shutdown_function');
             break;
         }
+    case 'chef':
+        {
+            error_reporting(E_ALL ^ E_NOTICE);
+            break;
+        }
     case 'test':
     case 'debug':
         {

@@ -2,6 +2,8 @@
 
 namespace PieCrust\Baker\Processors;
 
+use PieCrust\PieCrust;
+
 
 class CopyFileProcessor implements IProcessor
 {
@@ -12,6 +14,10 @@ class CopyFileProcessor implements IProcessor
         return "copy";
     }
     
+    public function __construct()
+    {
+    }
+    
     public function initialize(PieCrust $pieCrust)
     {
         $this->rootDirLength = strlen($pieCrust->getRootDir());
@@ -19,7 +25,7 @@ class CopyFileProcessor implements IProcessor
     
     public function getPriority()
     {
-        return IFileProcessor::PRIORITY_LOW;
+        return IProcessor::PRIORITY_LOW;
     }
     
     public function supportsExtension($extension)

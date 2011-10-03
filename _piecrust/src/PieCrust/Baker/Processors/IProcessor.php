@@ -2,6 +2,8 @@
 
 namespace PieCrust\Baker\Processors;
 
+use PieCrust\PieCrust;
+
 
 /**
  * The base interface for baking processors.

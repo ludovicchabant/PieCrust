@@ -2,6 +2,9 @@
 
 namespace PieCrust\Chef\Commands;
 
+use \Console_CommandLine;
+use \Console_CommandLine_Result;
+
 require_once 'Console/CommandLine.php';
 
 

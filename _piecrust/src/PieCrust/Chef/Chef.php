@@ -3,6 +3,7 @@
 namespace PieCrust\Chef;
 
 use \Exception;
+use \Console_CommandLine;
 use PieCrust\PieCrust;
 use PieCrust\Util\PluginLoader;
 
@@ -27,7 +28,7 @@ class Chef
         
         $this->commandLoader = new PluginLoader(
             'PieCrust\\Chef\\Commands\\IChefCommand',
-            __DIR__ . '/Commands');
+            PIECRUST_APP_DIR . 'Chef/Commands');
         
         foreach ($this->commandLoader->getPlugins() as $command)
         {

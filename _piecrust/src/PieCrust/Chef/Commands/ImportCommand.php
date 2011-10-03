@@ -2,6 +2,9 @@
 
 namespace PieCrust\Chef\Commands;
 
+use \Exception;
+use \Console_CommandLine;
+use \Console_CommandLine_Result;
 use PieCrust\PieCrust;
 use PieCrust\Interop\PieCrustImporter;
 
@@ -20,7 +23,7 @@ class ImportCommand implements IChefCommand
     
     public function setupParser(Console_CommandLine $importParser)
     {
-        $importParser->description 'Imports content from another CMS into PieCrust.';
+        $importParser->description = 'Imports content from another CMS into PieCrust.';
         $importParser->addOption('format', array(
             'short_name'  => '-f',
             'long_name'   => '--format',

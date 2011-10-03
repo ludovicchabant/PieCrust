@@ -3,11 +3,13 @@
 namespace PieCrust\Chef\Commands;
 
 use \Exception;
+use \Console_CommandLine;
+use \Console_CommandLine_Result;
 use PieCrust\IO\FileSystem;
 use PieCrust\Baker\PieCrustBaker;
 
 
-class BakerCommand implements IChefCommand
+class BakeCommand implements IChefCommand
 {
     public function getName()
     {
@@ -70,10 +72,6 @@ class BakerCommand implements IChefCommand
             die();
         }
         $outputDir = $result->command->options['output'];
-        if (!$outputDir)
-        {
-            $outputDir = rtrim($rootDir, '/\\') . DIRECTORY_SEPARATOR . PIECRUST_BAKE_DIR;
-        }
         $urlBase = $result->command->options['url_base'];
         if ($result->command->options['file_urls'])
         {
@@ -81,7 +79,6 @@ class BakerCommand implements IChefCommand
         }
         
         // Start baking!
-        PieCrust::setup('shell');
         $appParameters = array(
             'root' => $rootDir,
             'url_base' => $urlBase
@@ -92,7 +89,10 @@ class BakerCommand implements IChefCommand
             'info_only' => $result->command->options['info_only']
         );
         $baker = new PieCrustBaker($appParameters, $bakerParameters);
-        $baker->setBakeDir($outputDir);
+        if ($outputDir)
+        {
+            $baker->setBakeDir($outputDir);
+        }
         if ($result->command->options['pretty_urls'])
         {
             $baker->getApp()->setConfigValue('site', 'pretty_urls', true);

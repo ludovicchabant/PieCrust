@@ -2,16 +2,22 @@
 
 namespace PieCrust\Baker;
 
-define('PIECRUST_BAKE_DIR', '_counter');
-define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
-define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
-
 use \Exception;
+use \RecursiveDirectoryIterator;
+use \RecursiveIteratorIterator;
 use PieCrust\PieCrust;
+use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
+use PieCrust\Page\Page;
+use PieCrust\Page\PageRepository;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
+
+
+define('PIECRUST_DEFAULT_BAKE_DIR', '_counter');
+define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
+define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
 
 
 /**
@@ -63,7 +69,7 @@ class PieCrustBaker
     {
         if ($this->bakeDir === null)
         {
-            $defaultBakeDir = $this->pieCrust->getRootDir() . PIECRUST_BAKE_DIR;
+            $defaultBakeDir = $this->pieCrust->getRootDir() . PIECRUST_DEFAULT_BAKE_DIR;
             $this->setBakeDir($defaultBakeDir);
         }
         return $this->bakeDir;

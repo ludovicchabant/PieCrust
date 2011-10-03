@@ -2,6 +2,9 @@
 
 namespace PieCrust\Baker\Processors;
 
+use PieCrust\PieCrust;
+use PieCrust\PieCrustException;
+
 
 /**
  * A convenient base class for file processors who only
