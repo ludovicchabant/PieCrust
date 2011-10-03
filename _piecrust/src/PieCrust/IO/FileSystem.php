@@ -3,6 +3,7 @@
 namespace PieCrust\IO;
 
 use PieCrust\PieCrust;
+use PieCrust\PieCrustException;
 
 
 /**
@@ -43,9 +44,9 @@ abstract class FileSystem
     {
         if (!is_dir($dir))
         {
-            return mkdir($dir, 0777, true);
+            if (!mkdir($dir, 0777, true))
+                throw new PieCrustException("Can't create directory: ".$dir);
         }
-        return true;
     }
     
     public static function deleteDirectoryContents($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
@@ -60,21 +61,23 @@ abstract class FileSystem
                 continue;
             }
             
-            if($file->isDir())
+            if ($file->isDir())
             {
                 $skippedFiles |= self::deleteDirectoryContents($file->getPathname(), $printProgress, $skipPattern, $level + 1);
             }
             else
             {
                 if ($printProgress) echo '.';
-                unlink($file);
+                if (!unlink($file))
+                    throw new PieCrustException("Can't unlink file: ".$file);
             }
         }
         
         if ($level > 0 and !$skippedFiles and is_dir($dir))
         {
             if ($printProgress) echo '.';
-            rmdir($dir);
+            if (!rmdir($dir))
+                throw new PieCrustException("Can't rmdir directory: ".$dir);
         }
         return $skippedFiles;
     }
