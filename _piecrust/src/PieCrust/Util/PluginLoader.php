@@ -19,11 +19,12 @@ class PluginLoader
     protected $plugins;
     protected $pluginSortFunc;
     protected $pluginFilterFunc;
+    protected $skipFilenames;
     
     /**
      * Creates a new PluginLoader instance.
      */
-    public function __construct($interfaceName, $baseDir, $pluginSortFunc = null, $pluginFilterFunc = null)
+    public function __construct($interfaceName, $baseDir, $pluginSortFunc = null, $pluginFilterFunc = null, $skipFilenames = null)
     {
         $this->interfaceName = $interfaceName;
         $this->namespacePrefix = '';
@@ -36,6 +37,11 @@ class PluginLoader
         $this->baseDir = rtrim($baseDir, '/\\') . '/';
         $this->pluginSortFunc = $pluginSortFunc;
         $this->pluginFilterFunc = $pluginFilterFunc;
+        $this->skipFilenames = $skipFilenames;
+        if ($skipFilenames != null and !is_array($skipFilenames))
+        {
+            $this->skipFilenames = array($skipFilenames);
+        }
     }
     
     /**
@@ -66,17 +72,17 @@ class PluginLoader
         foreach ($paths as $p)
         {
             if (substr($p->getFilename(), -4) !== '.php')    // SplFileInfo::getExtension is only PHP 5.3.6+ 
-            {                                               // so let's not use that just yet.
+            {                                                // so let's not use that just yet.
+                continue;
+            }
+            if ($this->skipFilenames && in_array($p->getFilename(), $this->skipFilenames))
+            {
                 continue;
             }
             
             require_once $p->getPathname();
             
             $className = substr($p->getFilename(), 0, strlen($p->getFilename()) - 4);
-            if (substr($className, -6) === ".class")
-            {
-                $className = substr($className, 0, strlen($className) - 6);
-            }
             $qualifiedClassName = $this->namespacePrefix . $className;
             if ($qualifiedClassName != $this->interfaceName)
             {
