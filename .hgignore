@@ -28,3 +28,5 @@ _cache/(?!\.empty)
 
 syntax:glob
 *.log
+syntax: glob
+website/_counter
