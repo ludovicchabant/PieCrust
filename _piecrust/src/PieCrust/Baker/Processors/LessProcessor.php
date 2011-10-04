@@ -14,7 +14,7 @@ class LessProcessor extends SimpleFileProcessor
     
     protected function doProcess($inputPath, $outputPath)
     {
-        $less = new lessc($inputPath);
+        $less = new \lessc($inputPath);
         file_put_contents($outputPath, $less->parse());
     }
 }
