@@ -5,13 +5,14 @@ require_once (dirname(__DIR__) . '/unittest_setup.php');
 require_once 'PieCrust/PieCrust.php';
 
 use PieCrust\PieCrust;
+use PieCrust\Page\Page;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\UriBuilder;
 
 
 class PageUriParsingTest extends PHPUnit_Framework_TestCase
 {
-    protected function makeUriInfo($uri, $path, $wasPathChecked, $type = PIECRUST_PAGE_REGULAR, $blogKey = null, $key = null, $date = null, $pageNumber = 1)
+    protected function makeUriInfo($uri, $path, $wasPathChecked, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null, $pageNumber = 1)
     {
         return array(
                 'uri' => $uri,
@@ -43,12 +44,12 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             array(
                 array(),
                 '/blah',
-                $this->makeUriInfo('blah', $pagesDir . PIECRUST_CATEGORY_PAGE_NAME . '.html', false, PIECRUST_PAGE_CATEGORY, 'blog', 'blah')
+                $this->makeUriInfo('blah', $pagesDir . PieCrust::CATEGORY_PAGE_NAME . '.html', false, Page::TYPE_CATEGORY, 'blog', 'blah')
             ),
             array(
                 array(),
                 '/tag/blah',
-                $this->makeUriInfo('tag/blah', $pagesDir . PIECRUST_TAG_PAGE_NAME . '.html', false, PIECRUST_PAGE_TAG, 'blog', 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrust::TAG_PAGE_NAME . '.html', false, Page::TYPE_TAG, 'blog', 'blah')
             ),
             array(
                 array(),
@@ -58,21 +59,21 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             array(
                 array(),
                 '2011/02/03/some-post',
-                $this->makeUriInfo('2011/02/03/some-post', $postsDir . '2011-02-03_some-post.html', false, PIECRUST_PAGE_POST, 'blog', null, mktime(0, 0, 0, 2, 3, 2011))
+                $this->makeUriInfo('2011/02/03/some-post', $postsDir . '2011-02-03_some-post.html', false, Page::TYPE_POST, 'blog', null, mktime(0, 0, 0, 2, 3, 2011))
             ),
             array(
                 array(
                     'site' => array('blogs' => array('blogone', 'blogtwo'))
                 ),
                 '/blogone/2011/02/03/some-post',
-                $this->makeUriInfo('blogone/2011/02/03/some-post', $postsDir . 'blogone/2011-02-03_some-post.html', false, PIECRUST_PAGE_POST, 'blogone', null, mktime(0, 0, 0, 2, 3, 2011))
+                $this->makeUriInfo('blogone/2011/02/03/some-post', $postsDir . 'blogone/2011-02-03_some-post.html', false, Page::TYPE_POST, 'blogone', null, mktime(0, 0, 0, 2, 3, 2011))
             ),
             array(
                 array(
                     'site' => array('blogs' => array('blogone', 'blogtwo'))
                 ),
                 '/blogtwo/2011/02/03/some-post',
-                $this->makeUriInfo('blogtwo/2011/02/03/some-post', $postsDir . 'blogtwo/2011-02-03_some-post.html', false, PIECRUST_PAGE_POST, 'blogtwo', null, mktime(0, 0, 0, 2, 3, 2011))
+                $this->makeUriInfo('blogtwo/2011/02/03/some-post', $postsDir . 'blogtwo/2011-02-03_some-post.html', false, Page::TYPE_POST, 'blogtwo', null, mktime(0, 0, 0, 2, 3, 2011))
             )
          );
     }

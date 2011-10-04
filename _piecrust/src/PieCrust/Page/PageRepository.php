@@ -40,7 +40,7 @@ class PageRepository
         return self::$pages[$uri];
     }
     
-    public static function getOrCreatePage(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
+    public static function getOrCreatePage(PieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
     {
         if (!self::$enabled)
         {

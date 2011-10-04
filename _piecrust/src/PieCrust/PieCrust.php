@@ -13,49 +13,6 @@ use PieCrust\Util\ServerHelper;
 
 
 /**
- * The main PieCrust app.
- *
- */
-
-/**
- * The website directory, where the _cache and _content directories live.
- * You can change this if the PieCrust application directory is in a different
- * location than the website (e.g. you have several websites using the same
- * PieCrust application, or you moved the '_piecrust' directory outside of the
- * website's directory for increased security).
- *
- * Note that this is only the default value. You can specify the root directory
- * by passing it to the PieCrust constructor too.
- */
-if (!defined('PIECRUST_ROOT_DIR'))
-{
-    if (!isset($_SERVER['SCRIPT_FILENAME'])) throw new PieCrustException("Can't figure out the root directory for the website.");
-    define('PIECRUST_ROOT_DIR', dirname($_SERVER['SCRIPT_FILENAME']));
-}
-
-/**
- * Various PieCrust things.
- */
-define('PIECRUST_APP_DIR', __DIR__ . '/');
-define('PIECRUST_INDEX_PAGE_NAME', '_index');
-define('PIECRUST_CATEGORY_PAGE_NAME', '_category');
-define('PIECRUST_TAG_PAGE_NAME', '_tag');
-define('PIECRUST_CONTENT_DIR', '_content/');
-define('PIECRUST_CONFIG_PATH', PIECRUST_CONTENT_DIR . 'config.yml');
-define('PIECRUST_CONTENT_TEMPLATES_DIR', PIECRUST_CONTENT_DIR . 'templates/');
-define('PIECRUST_CONTENT_PAGES_DIR', PIECRUST_CONTENT_DIR . 'pages/');
-define('PIECRUST_CONTENT_POSTS_DIR', PIECRUST_CONTENT_DIR . 'posts/');
-define('PIECRUST_CACHE_DIR', '_cache/');
-define('PIECRUST_CACHE_INFO_FILENAME', 'cacheinfo');
-
-define('PIECRUST_DEFAULT_BLOG_KEY', 'blog');
-define('PIECRUST_DEFAULT_FORMAT', 'markdown');
-define('PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME', 'default');
-define('PIECRUST_DEFAULT_POST_TEMPLATE_NAME', 'post');
-define('PIECRUST_DEFAULT_TEMPLATE_ENGINE', 'twig');
-
-
-/**
  * The main PieCrust application class.
  *
  * This class contains the application's configuration and directory setup information,
@@ -67,6 +24,38 @@ class PieCrust
      * The current version of PieCrust.
      */
     const VERSION = '0.0.5';
+    
+    /**
+     * The application's source code directory.
+     */
+    const APP_DIR = __DIR__;
+    
+    /**
+     * Names for special pages.
+     */
+    const INDEX_PAGE_NAME = '_index';
+    const CATEGORY_PAGE_NAME = '_category';
+    const TAG_PAGE_NAME = '_tag';
+    
+    /**
+     * Names for special directories and files.
+     */
+    const CONTENT_DIR = '_content/';
+    const CONFIG_PATH = '_content/config.yml';
+    const CONTENT_TEMPLATES_DIR = '_content/templates/';
+    const CONTENT_PAGES_DIR = '_content/pages/';
+    const CONTENT_POSTS_DIR = '_content/posts/';
+    const CACHE_DIR = '_cache/';
+    const CACHE_INFO_FILENAME = 'cacheinfo';
+    
+    /**
+     * Default values for configuration settings.
+     */
+    const DEFAULT_BLOG_KEY = 'blog';
+    const DEFAULT_FORMAT = 'markdown';
+    const DEFAULT_PAGE_TEMPLATE_NAME = 'default';
+    const DEFAULT_POST_TEMPLATE_NAME = 'post';
+    const DEFAULT_TEMPLATE_ENGINE = 'twig';
     
     protected $rootDir;
     /**
@@ -112,7 +101,7 @@ class PieCrust
     {
         if ($this->templatesDirs === null)
         {
-            $this->setTemplatesDirs($this->rootDir . PIECRUST_CONTENT_TEMPLATES_DIR);
+            $this->setTemplatesDirs($this->rootDir . self::CONTENT_TEMPLATES_DIR);
         }
         return $this->templatesDirs;
     }
@@ -152,7 +141,7 @@ class PieCrust
     {
         if ($this->pagesDir === null)
         {
-            $this->setPagesDir($this->rootDir . PIECRUST_CONTENT_PAGES_DIR);
+            $this->setPagesDir($this->rootDir . self::CONTENT_PAGES_DIR);
         }
         return $this->pagesDir;
     }
@@ -177,7 +166,7 @@ class PieCrust
     {
         if ($this->postsDir === null)
         {
-            $this->setPostsDir($this->rootDir . PIECRUST_CONTENT_POSTS_DIR);
+            $this->setPostsDir($this->rootDir . self::CONTENT_POSTS_DIR);
         }
         return $this->postsDir;
     }
@@ -203,7 +192,7 @@ class PieCrust
         if ($this->cacheDir === null)
         {
             if ($this->cachingEnabled)
-                $this->setCacheDir($this->rootDir . PIECRUST_CACHE_DIR);
+                $this->setCacheDir($this->rootDir . self::CACHE_DIR);
             else
                 $this->cacheDir = false;
         }
@@ -302,7 +291,7 @@ class PieCrust
         {
             $this->formattersLoader = new PluginLoader(
                                             'PieCrust\\Formatters\\IFormatter',
-                                            PIECRUST_APP_DIR . 'Formatters',
+                                            self::APP_DIR . '/Formatters',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
                                             );
             foreach ($this->formattersLoader->getPlugins() as $formatter)
@@ -361,7 +350,7 @@ class PieCrust
         {
             $loader = new PluginLoader(
                                         'PieCrust\\TemplateEngines\\ITemplateEngine',
-                                        PIECRUST_APP_DIR . 'TemplateEngines'
+                                        self::APP_DIR . '/TemplateEngines'
                                         );
             $this->templateEngines = array();
             foreach ($loader->getPlugins() as $engine)
@@ -408,13 +397,21 @@ class PieCrust
         $parameters = array_merge(
             array(
                 'url_base' => null,
-                'root' => PIECRUST_ROOT_DIR,
+                'root' => null,
                 'cache' => true,
                 'debug' => false
             ),
             $parameters
         );
-
+        
+        if (!$parameters['root'])
+        {
+            // Figure out the default root directory.
+            if (!isset($_SERVER['SCRIPT_FILENAME']))
+                throw new PieCrustException("Can't figure out the default root directory for the website.");
+            $parameters['root'] = dirname($_SERVER['SCRIPT_FILENAME']);
+        }
+        
         $this->rootDir = rtrim($parameters['root'], '/\\') . '/';
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
         $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($_GET['!nocache']));
@@ -558,7 +555,7 @@ class PieCrust
                 'cache_dir' => ($this->cachingEnabled ? $this->getCacheDir() : false),
                 'cache' => $this->cachingEnabled
             );
-            $this->config = new PieCrustConfiguration($configParameters, ($this->rootDir . PIECRUST_CONFIG_PATH));
+            $this->config = new PieCrustConfiguration($configParameters, ($this->rootDir . self::CONFIG_PATH));
         }
     }
     

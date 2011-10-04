@@ -40,7 +40,7 @@ class PaginationFilter
         // for that.
         switch ($page->getPageType())
         {
-        case PIECRUST_PAGE_TAG:
+        case Page::TYPE_TAG:
             $pageKey = $page->getPageKey();
             if (is_array($pageKey))
             {
@@ -56,7 +56,7 @@ class PaginationFilter
                 $this->addClause(new HasFilterClause('tags', $pageKey));
             }
             break;
-        case PIECRUST_PAGE_CATEGORY:
+        case Page::TYPE_CATEGORY:
             $this->addClause(new IsFilterClause('category', $page->getPageKey()));
             break;
         }

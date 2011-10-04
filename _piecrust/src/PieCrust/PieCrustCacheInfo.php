@@ -42,7 +42,7 @@ class PieCrustCacheInfo
         $cacheInfo = hash('sha1', $cacheInfo);
         
         $isCacheValid = false;
-        $cacheInfoFileName = $this->pieCrust->getCacheDir() . PIECRUST_CACHE_INFO_FILENAME;
+        $cacheInfoFileName = $this->pieCrust->getCacheDir() . PieCrust::CACHE_INFO_FILENAME;
         if (file_exists($cacheInfoFileName))
         {
             $previousCacheInfo = file_get_contents($cacheInfoFileName);

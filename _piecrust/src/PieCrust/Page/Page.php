@@ -10,18 +10,21 @@ use PieCrust\Util\UriParser;
 
 require_once 'sfYaml/lib/sfYamlParser.php';
 
-define('PIECRUST_PAGE_REGULAR', 1);
-define('PIECRUST_PAGE_POST', 2);
-define('PIECRUST_PAGE_TAG', 3);
-define('PIECRUST_PAGE_CATEGORY', 4);
-
 
 /**
- * A class that represents a page (article or post) in PieCrust.
+U * A class that represents a page (article or post) in PieCrust.
  *
  */
 class Page
 {
+    /**
+     * Page types.
+     */
+    const TYPE_REGULAR = 1;
+    const TYPE_POST = 2;
+    const TYPE_TAG = 3;
+    const TYPE_CATEGORY = 4;
+    
     protected $pieCrust;
     protected $cache;
     
@@ -139,7 +142,7 @@ class Page
      */
     public function isRegular()
     {
-        return $this->type == PIECRUST_PAGE_REGULAR;
+        return $this->type == Page::TYPE_REGULAR;
     }
     
     /**
@@ -147,7 +150,7 @@ class Page
      */
     public function isPost()
     {
-        return $this->type == PIECRUST_PAGE_POST;
+        return $this->type == Page::TYPE_POST;
     }
     
     /**
@@ -155,7 +158,7 @@ class Page
      */
     public function isTag()
     {
-        return $this->type == PIECRUST_PAGE_TAG;
+        return $this->type == Page::TYPE_TAG;
     }
     
     /**
@@ -163,7 +166,7 @@ class Page
      */
     public function isCategory()
     {
-        return $this->type == PIECRUST_PAGE_CATEGORY;
+        return $this->type == Page::TYPE_CATEGORY;
     }
     
     protected $key;
@@ -322,7 +325,7 @@ class Page
             
             switch ($this->type)
             {
-                case PIECRUST_PAGE_TAG:
+                case Page::TYPE_TAG:
                     if (is_array($this->key))
                     {
                         $data['tag'] = implode(' + ', $this->key);
@@ -332,7 +335,7 @@ class Page
                         $data['tag'] = $this->key;
                     }
                     break;
-                case PIECRUST_PAGE_CATEGORY:
+                case Page::TYPE_CATEGORY:
                     $data['category'] = $this->key;
                     break;
             }
@@ -417,7 +420,7 @@ class Page
     /**
      * Creates a new Page instance.
      */
-    public function __construct(PieCrust $pieCrust, $uri, $path, $pageType = PIECRUST_PAGE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
+    public function __construct(PieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
     {
         $this->pieCrust = $pieCrust;
         $this->uri = $uri;
@@ -446,8 +449,8 @@ class Page
         $uriInfo = UriParser::parseUri($pieCrust, $uri);
         if ($uriInfo == null or (!$uriInfo['was_path_checked'] and !is_file($uriInfo['path'])))
         {
-            if ($uriInfo['type'] == PIECRUST_PAGE_TAG) throw new PieCrustException('The special tag listing page was not found.');
-            if ($uriInfo['type'] == PIECRUST_PAGE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
+            if ($uriInfo['type'] == Page::TYPE_TAG) throw new PieCrustException('The special tag listing page was not found.');
+            if ($uriInfo['type'] == Page::TYPE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
             throw new PieCrustException('404');
         }
         
@@ -466,7 +469,7 @@ class Page
     /**
      * Creates a new Page instance given a path.
      */
-    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = PIECRUST_PAGE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
+    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = Page::TYPE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
     {
         if ($path == null)
             throw new InvalidArgumentException("The given path is null.");
@@ -498,12 +501,12 @@ class Page
             {
                 switch ($makePathRelativeTo)
                 {
-                    case PIECRUST_PAGE_REGULAR:
-                    case PIECRUST_PAGE_CATEGORY:
-                    case PIECRUST_PAGE_TAG:
+                    case Page::TYPE_REGULAR:
+                    case Page::TYPE_CATEGORY:
+                    case Page::TYPE_TAG:
                         $basePath = $this->pieCrust->getPagesDir();
                         break;
-                    case PIECRUST_PAGE_POST:
+                    case Page::TYPE_POST:
                         $basePath = $this->pieCrust->getPostsDir();
                         break;
                     default:
@@ -674,7 +677,7 @@ class Page
         $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
         $validatedConfig = array_merge(
             array(
-                'layout' => $this->isPost() ? PIECRUST_DEFAULT_POST_TEMPLATE_NAME : PIECRUST_DEFAULT_PAGE_TEMPLATE_NAME,
+                'layout' => $this->isPost() ? PieCrust::DEFAULT_POST_TEMPLATE_NAME : PieCrust::DEFAULT_PAGE_TEMPLATE_NAME,
                 'format' => $this->pieCrust->getConfigValueUnchecked('site', 'default_format'),
                 'template_engine' => $this->pieCrust->getConfigValueUnchecked('site', 'default_template_engine'),
                 'content_type' => 'html',

@@ -114,7 +114,7 @@ class HamlTemplateEngine implements ITemplateEngine
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
             else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
-                                       array('filterDir' => PIECRUST_APP_DIR . 'Plugins/Haml'),
+                                       array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'PhamlP/haml/HamlParser.php';

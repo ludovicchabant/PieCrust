@@ -27,7 +27,7 @@ abstract class FileSystem
     
     public static function create(PieCrust $pieCrust, $subDir = null)
     {
-        if ($subDir == PIECRUST_DEFAULT_BLOG_KEY) $subDir = null;
+        if ($subDir == PieCrust::DEFAULT_BLOG_KEY) $subDir = null;
         $postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
         switch ($postsFs)
         {

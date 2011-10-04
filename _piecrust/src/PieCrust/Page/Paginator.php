@@ -123,7 +123,7 @@ class Paginator
         if ($postInfos === null)
         {
             $subDir = $blogKey;
-            if ($blogKey == PIECRUST_DEFAULT_BLOG_KEY)
+            if ($blogKey == PieCrust::DEFAULT_BLOG_KEY)
                 $subDir = null;
             $fs = FileSystem::create($this->pieCrust, $subDir);
             $postInfos = $fs->getPostFiles();
@@ -209,7 +209,7 @@ class Paginator
                     $this->pieCrust,
                     UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
-                    PIECRUST_PAGE_POST,
+                    Page::TYPE_POST,
                     $blogKey);
                 
                 if ($postsFilter->postMatches($post))
@@ -246,7 +246,7 @@ class Paginator
                     $this->pieCrust,
                     UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                     $postInfo['path'],
-                    PIECRUST_PAGE_POST,
+                    Page::TYPE_POST,
                     $blogKey);
                 $relevantPostInfos[] = $postInfo;
             }

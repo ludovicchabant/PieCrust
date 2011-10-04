@@ -1,5 +1,7 @@
 <?php
 
+use PieCrust\PieCrust;
+
 require_once 'PhamlP/haml/filters/_HamlTextileFilter.php';
 
 
@@ -7,7 +9,7 @@ class HamlTextileFilter extends _HamlTextileFilter
 {
     public function init()
     {
-        $this->vendorPath = PIECRUST_APP_DIR . 'libs/textile/classTextile.php';
+        $this->vendorPath = 'Textile/classTextile.php';
         $this->vendorClass = 'Textile';
         parent::init();
     }

@@ -30,7 +30,7 @@ class DirectoryBaker
             $processorsToFilter = $this->parameters['processors'];
             $this->processorsLoader = new PluginLoader(
                                             'PieCrust\\Baker\\Processors\\IProcessor',
-                                            PIECRUST_APP_DIR . 'Baker/Processors',
+                                            PieCrust::APP_DIR . '/Baker/Processors',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
                                             $processorsToFilter == '*' ?
                                                 null :
@@ -54,6 +54,7 @@ class DirectoryBaker
         $this->bakeDir = rtrim(str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $bakeDir), '/\\') . DIRECTORY_SEPARATOR;
         $this->parameters = array_merge(
                                         array(
+                                              'smart' => true,
                                               'skip_patterns' => array(),
                                               'processors' => array('copy')
                                               ),
@@ -124,17 +125,24 @@ class DirectoryBaker
                 }
                 if ($fileProcessor != null)
                 {
-                    $isUpToDate = true;
+                    $isUpToDate = false;
                     $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
                     $outputFilenames = $fileProcessor->getOutputFilenames($i->getFilename());
-                    if (!is_array($outputFilenames)) $outputFilenames = array($outputFilenames);
-                    foreach ($outputFilenames as $f)
+                    if (!is_array($outputFilenames))
                     {
-                        $destination = $destinationDir . $f;
-                        if (!is_file($destination) or $i->getMTime() >= filemtime($destination))
+                        $outputFilenames = array($outputFilenames);
+                    }
+                    if ($this->parameters['smart'])
+                    {
+                        $isUpToDate = true;
+                        foreach ($outputFilenames as $f)
                         {
-                            $isUpToDate = false;
-                            break;
+                            $destination = $destinationDir . $f;
+                            if (!is_file($destination) or $i->getMTime() >= filemtime($destination))
+                            {
+                                $isUpToDate = false;
+                                break;
+                            }
                         }
                     }
                     if (!$isUpToDate)

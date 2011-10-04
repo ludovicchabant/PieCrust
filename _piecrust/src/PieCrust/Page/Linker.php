@@ -5,14 +5,17 @@ namespace PieCrust\Page;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 
-define('PIECRUST_LINKER_DIR_SUFFIX', '_');
-
 
 /**
  * A class that exposes the list of pages in a folder to another page.
  */
 class Linker implements \ArrayAccess, \Iterator
 {
+    /**
+     * Default naming.
+     */
+    const DIR_SUFFIX = '_';
+    
     protected $pieCrust;
     protected $baseDir;
     protected $selfKey;
@@ -117,14 +120,14 @@ class Linker implements \ArrayAccess, \Iterator
             {
                 if ($item->isDir())
                 {
-                    $key = $item->getBasename() . PIECRUST_LINKER_DIR_SUFFIX;
+                    $key = $item->getBasename() . self::DIR_SUFFIX;
                     $linker = new Linker($this->pieCrust, $item->getPathname(), null);
                     $this->linksCache[$key] = $linker;
                 }
                 else
                 {
                     $key = $item->getBasename('.html');
-                    $uri = Page::buildUri($item->getPathname(), PIECRUST_PAGE_REGULAR);
+                    $uri = Page::buildUri($item->getPathname(), Page::TYPE_REGULAR);
                     $pageInfo = array(
                         'uri' => $uri,
                         'name' => $key,

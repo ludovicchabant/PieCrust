@@ -6,9 +6,6 @@ use \FilesystemIterator;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 
-define('PIECRUST_ASSET_DIR_SUFFIX', '-assets');
-define ('PIECRUST_ASSET_URL_SUFFIX', PIECRUST_ASSET_DIR_SUFFIX);
-
 
 /**
  * The asset manager for PieCrust pages.
@@ -19,6 +16,13 @@ define ('PIECRUST_ASSET_URL_SUFFIX', PIECRUST_ASSET_DIR_SUFFIX);
  */
 class Assetor implements \ArrayAccess, \Iterator
 {
+    /**
+     * Default file names.
+     */
+    const ASSET_DIR_SUFFIX = '-assets';
+    const ASSET_URL_SUFFIX = self::ASSET_DIR_SUFFIX;
+    
+    
     protected $assetsDir;
     protected $assetsCache;
     
@@ -55,7 +59,7 @@ class Assetor implements \ArrayAccess, \Iterator
     public function __construct(PieCrust $pieCrust, Page $page)
     {
         $pathParts = pathinfo($page->getPath());
-        $this->assetsDir = $pathParts['dirname'] . '/' . $pathParts['filename'] . PIECRUST_ASSET_DIR_SUFFIX;
+        $this->assetsDir = $pathParts['dirname'] . '/' . $pathParts['filename'] . self::ASSET_DIR_SUFFIX;
         if (is_dir($this->assetsDir))
         {
             if ($page->getAssetUrlBaseRemap() != null)
@@ -65,7 +69,7 @@ class Assetor implements \ArrayAccess, \Iterator
             else
             {
                 $relativePath = str_replace('\\', '/', $page->getRelativePath(true));
-                $this->urlBase = $pieCrust->getUrlBase() . $relativePath . PIECRUST_ASSET_DIR_SUFFIX;
+                $this->urlBase = $pieCrust->getUrlBase() . $relativePath . self::ASSET_DIR_SUFFIX;
             }
         }
         else

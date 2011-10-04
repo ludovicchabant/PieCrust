@@ -15,16 +15,17 @@ use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
 
 
-define('PIECRUST_DEFAULT_BAKE_DIR', '_counter');
-define('PIECRUST_BAKE_INDEX_DOCUMENT', 'index.html');
-define('PIECRUST_BAKE_INFO_FILE', 'bakeinfo.json');
-
-
 /**
  * A class that 'bakes' a PieCrust website into a bunch of static HTML files.
  */
 class PieCrustBaker
 {
+    /**
+     * Default directories and files.
+     */
+    const DEFAULT_BAKE_DIR = '_counter';
+    const BAKE_INFO_FILE = 'bakeinfo.json';
+    
     protected $bakeRecord;
     
     protected $pieCrust;
@@ -69,7 +70,7 @@ class PieCrustBaker
     {
         if ($this->bakeDir === null)
         {
-            $defaultBakeDir = $this->pieCrust->getRootDir() . PIECRUST_DEFAULT_BAKE_DIR;
+            $defaultBakeDir = $this->pieCrust->getRootDir() . self::DEFAULT_BAKE_DIR;
             $this->setBakeDir($defaultBakeDir);
         }
         return $this->bakeDir;
@@ -181,7 +182,7 @@ class PieCrustBaker
         $this->pieCrust->setConfigValue('baker', 'is_baking', true);
         
         // Create the bake record.
-        $bakeInfoPath = $this->getBakeDir() . PIECRUST_BAKE_INFO_FILE;
+        $bakeInfoPath = $this->getBakeDir() . self::BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
         
         // Get the cache validity information.
@@ -250,6 +251,7 @@ class PieCrustBaker
         $dirBaker = new DirectoryBaker($this->pieCrust,
                                        $this->getBakeDir(),
                                        array(
+                                            'smart' => $this->parameters['smart'],
                                             'skip_patterns' => $this->parameters['skip_patterns'],
                                             'processors' => $this->parameters['processors']
                                             )
@@ -289,8 +291,8 @@ class PieCrustBaker
         $pagesDir = $this->pieCrust->getPagesDir();
         $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
         $relativePathInfo = pathinfo($relativePath);
-        if ($relativePathInfo['filename'] == PIECRUST_CATEGORY_PAGE_NAME or
-            $relativePathInfo['filename'] == PIECRUST_TAG_PAGE_NAME or
+        if ($relativePathInfo['filename'] == PieCrust::CATEGORY_PAGE_NAME or
+            $relativePathInfo['filename'] == PieCrust::TAG_PAGE_NAME or
             $relativePathInfo['extension'] != 'html')
         {
             return false;
@@ -341,7 +343,7 @@ class PieCrustBaker
                     $this->pieCrust,
                     $uri,
                     $postInfo['path'],
-                    PIECRUST_PAGE_POST,
+                    Page::TYPE_POST,
                     $blogKey
                 );
                 $page->setDate($postInfo);
@@ -374,16 +376,16 @@ class PieCrustBaker
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
             
-            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PIECRUST_TAG_PAGE_NAME . '.html';
+            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::TAG_PAGE_NAME . '.html';
             if (!is_file($tagPagePath)) return;
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
             $combinations = $this->parameters['tag_combinations'];
-            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
             {
                 if (array_key_exists($blogKey, $combinations))
                     $combinations = $combinations[$blogKey];
@@ -425,7 +427,7 @@ class PieCrustBaker
                         $this->pieCrust,
                         $uri,
                         $tagPagePath,
-                        PIECRUST_PAGE_TAG,
+                        Page::TYPE_TAG,
                         $blogKey,
                         $tag
                     );
@@ -446,10 +448,10 @@ class PieCrustBaker
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
                 
-            $categoryPagePath = $this->pieCrust->getPagesDir() . $blogKey . PIECRUST_CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = $this->pieCrust->getPagesDir() . $blogKey . PieCrust::CATEGORY_PAGE_NAME . '.html';
             if (!is_file($categoryPagePath)) return;
             
             foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
@@ -461,7 +463,7 @@ class PieCrustBaker
                     $this->pieCrust, 
                     $uri, 
                     $categoryPagePath,
-                    PIECRUST_PAGE_CATEGORY,
+                    Page::TYPE_CATEGORY,
                     $blogKey,
                     $category
                 );

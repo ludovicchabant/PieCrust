@@ -13,6 +13,11 @@ use PieCrust\IO\FileSystem;
  */
 class PageBaker
 {
+    /**
+     * Index filename.
+     */
+    const BAKE_INDEX_DOCUMENT = 'index.html';
+    
     protected $pieCrust;
     protected $bakeDir;
     protected $parameters;
@@ -126,7 +131,7 @@ class PageBaker
                          $page->getUri() . 
                          (($page->getUri() == '') ? '' : DIRECTORY_SEPARATOR) . 
                          (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . DIRECTORY_SEPARATOR)) .
-                         PIECRUST_BAKE_INDEX_DOCUMENT);
+                         self::BAKE_INDEX_DOCUMENT);
         }
         else
         {

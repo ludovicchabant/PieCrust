@@ -58,13 +58,13 @@ class HamlFormatter implements IFormatter
         {
             $appConfig = $this->pieCrust->getConfig();
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
-            else $hamlOptions = array();
+            else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
-                                       array('filterDir' => PIECRUST_APP_DIR . 'libs-plugins/haml/filters'),
+                                       array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'Phamlp/haml/HamlParser.php';
-            $this->haml = new HamlParser($hamlOptions);
+            $this->haml = new \HamlParser($hamlOptions);
         }
     }
 }

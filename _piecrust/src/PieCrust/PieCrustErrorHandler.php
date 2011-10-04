@@ -107,9 +107,9 @@ class PieCrustErrorHandler
     
     protected function isEmptySetup()
     {
-        if (!is_dir($this->pieCrust->getRootDir() . PIECRUST_CONTENT_DIR))
+        if (!is_dir($this->pieCrust->getRootDir() . PieCrust::CONTENT_DIR))
             return true;
-        if (!is_file($this->pieCrust->getRootDir() . PIECRUST_CONFIG_PATH))
+        if (!is_file($this->pieCrust->getRootDir() . PieCrust::CONFIG_PATH))
             return true;
         
         return false;

@@ -159,18 +159,18 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         $config['site'] = array_merge(array(
                         'title' => 'PieCrust Untitled Website',
                         'root' => $this->parameters['url_base'],
-                        'default_format' => PIECRUST_DEFAULT_FORMAT,
-                        'default_template_engine' => PIECRUST_DEFAULT_TEMPLATE_ENGINE,
+                        'default_format' => PieCrust::DEFAULT_FORMAT,
+                        'default_template_engine' => PieCrust::DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
                         'pretty_urls' => false,
                         'posts_fs' => 'flat',
                         'date_format' => 'F j, Y',
-                        'blogs' => array(PIECRUST_DEFAULT_BLOG_KEY),
+                        'blogs' => array(PieCrust::DEFAULT_BLOG_KEY),
                         'cache_time' => 28800
                     ),
                     $config['site']);
-        if (in_array(PIECRUST_DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
-            throw new PieCrustException("'".PIECRUST_DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
+        if (in_array(PieCrust::DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
+            throw new PieCrustException("'".PieCrust::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
         
         // Add default values for the blogs configurations, or use values
         // defined at the site level for easy site-wide configuration of multiple blogs
@@ -189,7 +189,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         foreach ($config['site']['blogs'] as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PIECRUST_DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
             {
                 $prefix = $blogKey . '/';
             }

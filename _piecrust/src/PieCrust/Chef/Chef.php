@@ -28,7 +28,7 @@ class Chef
         
         $this->commandLoader = new PluginLoader(
             'PieCrust\\Chef\\Commands\\IChefCommand',
-            PIECRUST_APP_DIR . 'Chef/Commands');
+            PieCrust::APP_DIR . '/Chef/Commands');
         
         foreach ($this->commandLoader->getPlugins() as $command)
         {
