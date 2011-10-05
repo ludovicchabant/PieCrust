@@ -24,19 +24,19 @@ class BakeCommand implements IChefCommand
     public function setupParser(Console_CommandLine $bakerParser)
     {
         $bakerParser->description = 'Bakes your PieCrust website into a bunch of static HTML files.';
+        $bakerParser->addOption('config_variant', array(
+            'short_name'  => '-c',
+            'long_name'   => '--config',
+            'description' => "Apply the configuration settings from the named baker configuration variant.",
+            'default'     => null,
+            'help_name'   => 'VARIANT'
+        ));
         $bakerParser->addOption('output', array(
             'short_name'  => '-o',
             'long_name'   => '--output',
-            'description' => "The directory to put all the baked HTML files in.",
+            'description' => "The directory to put all the baked HTML files in (defaults to '_counter').",
             'default'     => null,
-            'help_name'   => 'OUTPUT_DIR'
-        ));
-        $bakerParser->addOption('page', array(
-            'short_name'  => '-p',
-            'long_name'   => '--page',
-            'description' => "The path to a specific page to bake instead of the whole website.",
-            'default'     => null,
-            'help_name'   => 'PAGE_PATH'
+            'help_name'   => 'DIR'
         ));
         $bakerParser->addOption('force', array(
             'short_name'  => '-f',
@@ -45,6 +45,20 @@ class BakeCommand implements IChefCommand
             'default'     => false,
             'action'      => 'StoreTrue',
             'help_name'   => 'FORCE'
+        ));
+        $bakerParser->addOption('root_url', array(
+            'short_name'  => '-r',
+            'long_name'   => '--rooturl',
+            'description' => "Overrides the 'site/root' configuration setting (root URL of the site).",
+            'default'     => null,
+            'help_name'   => 'URL_BASE'
+        ));
+        $bakerParser->addOption('pretty_urls', array(
+            'long_name'   => '--prettyurls',
+            'description' => "Overrides the 'site/pretty_urls' configuration setting (URL format for links).",
+            'default'     => false,
+            'action'      => 'StoreTrue',
+            'help_name'   => 'PRETTY_URLS'
         ));
         $bakerParser->addOption('file_urls', array(
             'long_name'   => '--fileurls',
@@ -78,7 +92,8 @@ class BakeCommand implements IChefCommand
         $bakerParameters = array(
             'smart' => !$result->command->options['force'],
             'clean_cache' => $result->command->options['force'],
-            'info_only' => $result->command->options['info_only']
+            'info_only' => $result->command->options['info_only'],
+            'config_variant' => $result->command->options['config_variant']
         );
         $baker = new PieCrustBaker($appParameters, $bakerParameters);
         if ($outputDir)
@@ -95,7 +110,7 @@ class BakeCommand implements IChefCommand
         }
         if ($result->command->options['file_urls'])
         {
-            $baker->getApp()->setConfigValue('site', 'root', str_replace(DIRECTORY_SEPARATOR, '/', $baker->getBakeDir()));
+            $baker->getApp()->setConfigValue('baker', 'file_urls', true);
         }
         
         try
@@ -104,7 +119,8 @@ class BakeCommand implements IChefCommand
         }
         catch (Exception $e)
         {
-            echo 'ERROR: ' . $e->getMessage() . PHP_EOL . PHP_EOL;
+            $parser->displayError($e->getMessage());
+            die();
         }
     }
 }

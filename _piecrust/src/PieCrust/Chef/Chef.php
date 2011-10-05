@@ -44,24 +44,11 @@ class Chef
     
     protected function addCommonOptionsAndArguments(Console_CommandLine $parser)
     {
-        $parser->addOption('root_url', array(
-            'short_name'  => '-r',
-            'long_name'   => '--rooturl',
-            'description' => "Overrides the 'site/root' configuration setting (root URL of the site).",
-            'default'     => '/',
-            'help_name'   => 'URL_BASE'
-        ));
-        $parser->addOption('pretty_urls', array(
-            'long_name'   => '--prettyurls',
-            'description' => "Overrides the 'site/pretty_urls' configuration setting (use 'pretty URLS').",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'PRETTY_URLS'
-        ));
         $parser->addArgument('root', array(
-            'description' => "The directory in which we'll find '_content' and other such directories.",
+            'description' => "The directory in which we'll find '_content' and other such directories (defaults to current directory).",
             'help_name'   => 'ROOT_DIR',
-            'optional'    => false
+            'default'     => getcwd(),
+            'optional'    => true
         ));
     }
     

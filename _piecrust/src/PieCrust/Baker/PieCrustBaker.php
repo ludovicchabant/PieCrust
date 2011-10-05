@@ -114,10 +114,11 @@ class PieCrustBaker
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
-                                            'show_banner' => true,
-                                            'info_only' => false,
                                             'smart' => true,
                                             'clean_cache' => false,
+                                            'info_only' => false,
+                                            'config_variant' => null,
+                                            'show_banner' => true,
                                             'copy_assets' => true,
                                             'processors' => '*',
                                             'skip_patterns' => array('/^_/'),
@@ -156,6 +157,27 @@ class PieCrustBaker
         }
         // Add the default system skip pattern.
         $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
+        
+        // Apply the specified configuration variant, if any.
+        if ($this->parameters['config_variant'])
+        {
+            $variants = $this->pieCrust->getConfigValue('baker', 'config_variants');
+            if (!$variants)
+            {
+                throw new PieCrustException("No baker configuration variants have been defined. You need to create a 'baker/config_variants' section in the configuration file.");
+            }
+            $variantName = $this->parameters['config_variant'];
+            if (!isset($variants[$variantName]))
+            {
+                throw new PieCrustException("Baker configuration variant '".$variantName."' does not exist. Check your configuration file.");
+            }
+            $configVariant = $variants[$variantName];
+            if (!is_array($configVariant))
+            {
+                throw new PieCrustException("Baker configuration variant '".$variantName."' is not an array. Check your configuration file.");
+            }
+            $this->pieCrust->getConfig()->merge($configVariant);
+        }
     }
     
     /**
@@ -164,6 +186,12 @@ class PieCrustBaker
     public function bake()
     {
         $overallStart = microtime(true);
+        
+        // Set the root for file-url mode, if specified.
+        if ($this->pieCrust->getConfigValue('baker', 'file_urls'))
+        {
+            $this->pieCrust->setConfigValue('site', 'root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
+        }
         
         if ($this->parameters['show_banner'] or $this->parameters['info_only'])
         {
