@@ -22,6 +22,7 @@ class Chef
     {
         // Set up the command line parser.
         $this->parser = new Console_CommandLine(array(
+            'name' => 'chef',
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrust::VERSION
         ));
