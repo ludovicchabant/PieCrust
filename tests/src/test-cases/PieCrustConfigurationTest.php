@@ -88,6 +88,7 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
         $pc->merge(array(
             'site' => array(
                 'title' => "Merged Title",
+                'root' => "http://without-slash",
                 'other' => "Something"
             ),
             'foo' => array(
@@ -96,6 +97,7 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
             'simple' => "simple value"
         ));
         $this->assertEquals("Merged Title", $pc->getSectionValue('site', 'title'));
+        $this->assertEquals("http://without-slash/", $pc->getSectionValue('site', 'root')); // should have added the trailing slash.
         $this->assertEquals("Something", $pc->getSectionValue('site', 'other'));
         $this->assertEquals("FOO BAR!", $pc->getSectionValue('foo', 'bar'));
         $this->assertEquals("simple value", $pc->getSection('simple'));
