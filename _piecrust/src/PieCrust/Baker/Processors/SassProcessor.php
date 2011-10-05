@@ -2,7 +2,7 @@
 
 namespace PieCrust\Baker\Processors;
 
-require_once 'Phamlp/sass/SassParser.php';
+require_once 'PhamlP/sass/SassParser.php';
 
 
 class SassProcessor extends SimpleFileProcessor

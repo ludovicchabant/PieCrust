@@ -59,7 +59,7 @@ class TwigTemplateEngine implements ITemplateEngine
         {
             require_once 'Twig/lib/Twig/Autoloader.php';
             \Twig_Autoloader::register();
-            require_once 'PieCrust/Plugins/Twig/ExtendedFileSystem.php';
+            require_once 'PieCrust/Plugins/Twig/ExtendedFilesystem.php';
             require_once 'PieCrust/Plugins/Twig/GeshiExtension.php';
             require_once 'PieCrust/Plugins/Twig/PieCrustExtension.php';
             

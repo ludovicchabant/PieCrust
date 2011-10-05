@@ -63,7 +63,7 @@ class HamlFormatter implements IFormatter
                                        array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
-            require_once 'Phamlp/haml/HamlParser.php';
+            require_once 'PhamlP/haml/HamlParser.php';
             $this->haml = new \HamlParser($hamlOptions);
         }
     }

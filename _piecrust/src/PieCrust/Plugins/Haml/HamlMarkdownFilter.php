@@ -1,6 +1,6 @@
 <?php
 
-require_once 'Phamlp/haml/filters/_HamlMarkdownFilter.php';
+require_once 'PhamlP/haml/filters/_HamlMarkdownFilter.php';
 
 
 class Markdown_Parser_Wrapper
