@@ -399,7 +399,7 @@ class StupidHttp_WebServer
             throw new StupidHttp_WebException("Can't create socket: " . socket_strerror(socket_last_error()));
         }
         
-        if (@socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR) === false)
+        if (@socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1) === false)
         {
             throw new StupidHttp_WebException("Can't set options on the socket: " . socket_strerror(socket_last_error()));
         }
