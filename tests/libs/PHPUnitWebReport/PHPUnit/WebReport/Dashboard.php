@@ -59,6 +59,12 @@ class PHPUnit_WebReport_Dashboard
 				if (file_exists($tentative))
 					$phpExe = $tentative;
 			}
+			if (!$phpExe and strpos(PHP_OS, 'Windows') === false)
+			{
+				$tentative = '/usr/bin/php';
+				if (file_exists($tentative))
+					$phpExe = $tentative;
+			}
 			if (!$phpExe)
 			{
 				throw new Exception("Can't find the PHP executable anywhere!");
