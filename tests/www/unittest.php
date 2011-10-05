@@ -16,7 +16,7 @@ $GLOBALS['headMarkup'] = '<style type="text/css">'.$dashboard->getReportCss().'<
 include 'header.php';
 
 echo '<h2>Test Cases Results</h2>';
-$dashboard->display();
+$dashboard->display(3);
 
 echo '<h2>PHPUnit Output</h2>';
 echo '<pre>';
