@@ -158,10 +158,20 @@ class PieCrustBaker
         // Add the default system skip pattern.
         $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
         
+        // Apply the default configuration variant, if it exists.
+        $variants = $this->pieCrust->getConfigValue('baker', 'config_variants');
+        if ($variants and isset($variants['default']))
+        {
+            if (!is_array($variants['default']))
+            {
+                throw new PieCrustException("Baker configuration variant '".$variantName."' is not an array. Check your configuration file.");
+            }
+            $this->pieCrust->getConfig()->merge($variants['default']);
+        }
+        
         // Apply the specified configuration variant, if any.
         if ($this->parameters['config_variant'])
         {
-            $variants = $this->pieCrust->getConfigValue('baker', 'config_variants');
             if (!$variants)
             {
                 throw new PieCrustException("No baker configuration variants have been defined. You need to create a 'baker/config_variants' section in the configuration file.");
