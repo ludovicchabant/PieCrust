@@ -76,4 +76,28 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($value, $cur);
         }
     }
+    
+    public function testMerge()
+    {
+        $pc = new PieCrustConfiguration();
+        
+        $this->assertEquals("Untitled PieCrust Website", $pc->getSectionValue('site', 'title'));
+        $this->assertEquals(null, $pc->getSectionValue('site', 'other'));
+        $this->assertEquals(null, $pc->getSectionValue('foo', 'bar'));
+        $this->assertEquals(null, $pc->getSection('simple'));
+        $pc->merge(array(
+            'site' => array(
+                'title' => "Merged Title",
+                'other' => "Something"
+            ),
+            'foo' => array(
+                'bar' => "FOO BAR!"
+            ),
+            'simple' => "simple value"
+        ));
+        $this->assertEquals("Merged Title", $pc->getSectionValue('site', 'title'));
+        $this->assertEquals("Something", $pc->getSectionValue('site', 'other'));
+        $this->assertEquals("FOO BAR!", $pc->getSectionValue('foo', 'bar'));
+        $this->assertEquals("simple value", $pc->getSection('simple'));
+    }
 }

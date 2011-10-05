@@ -118,34 +118,51 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         }
     }
     
+    /**
+     * Merges one or several config sections into the current config.
+     */
+    public function merge(array $config)
+    {
+        $this->ensureLoaded();
+        $this->mergeSectionRecursive($this->config, $config);
+    }
+    
     protected function ensureLoaded()
     {
         if ($this->config === null)
         {
-            // Cache a validated JSON version of the configuration for faster
-            // boot-up time (this saves a couple milliseconds).
-            $cache = $this->parameters['cache'] ? new Cache($this->parameters['cache_dir']) : null;
-            $configTime = filemtime($this->path);
-            if ($cache != null and $cache->isValid('config', 'json', $configTime))
+            if ($this->path)
             {
-                $configText = $cache->read('config', 'json');
-                $this->config = json_decode($configText, true);
+                // Cache a validated JSON version of the configuration for faster
+                // boot-up time (this saves a couple milliseconds).
+                $cache = $this->parameters['cache'] ? new Cache($this->parameters['cache_dir']) : null;
+                $configTime = filemtime($this->path);
+                if ($cache != null and $cache->isValid('config', 'json', $configTime))
+                {
+                    $configText = $cache->read('config', 'json');
+                    $this->config = json_decode($configText, true);
+                }
+                else
+                {
+                    try
+                    {
+                        $yamlParser = new \sfYamlParser();
+                        $config = $yamlParser->parse(file_get_contents($this->path));
+                        $this->config = $this->validateConfig($config);
+                    }
+                    catch (Exception $e)
+                    {
+                        throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage());
+                    }
+                    
+                    $yamlMarkup = json_encode($this->config);
+                    if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
+                }
             }
             else
             {
-                try
-                {
-                    $yamlParser = new \sfYamlParser();
-                    $config = $yamlParser->parse(file_get_contents($this->path));
-                    $this->config = $this->validateConfig($config);
-                }
-                catch (Exception $e)
-                {
-                    throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage());
-                }
-                
-                $yamlMarkup = json_encode($this->config);
-                if ($cache != null) $cache->write('config', 'json', $yamlMarkup);
+                // No path given. Just create a default configuration.
+                $this->config = $this->validateConfig(array());
             }
         }
     }
@@ -237,6 +254,29 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
             if ($key == 'root')
             {
                 return rtrim($value, '/') . '/';
+            }
+        }
+        return $value;
+    }
+    
+    protected function mergeSectionRecursive(array &$localSection, array $incomingSection)
+    {
+        foreach ($incomingSection as $key => $value)
+        {
+            if (isset($localSection[$key]))
+            {
+                if (is_array($value) and is_array($localSection[$key]))
+                {
+                    $this->mergeSectionRecursive($localSection[$key], $value);
+                }
+                else
+                {
+                    $localSection[$key] = $value;
+                }
+            }
+            else
+            {
+                $localSection[$key] = $value;
             }
         }
     }
