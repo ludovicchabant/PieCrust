@@ -56,6 +56,8 @@ class PieCrust
     const DEFAULT_PAGE_TEMPLATE_NAME = 'default';
     const DEFAULT_POST_TEMPLATE_NAME = 'post';
     const DEFAULT_TEMPLATE_ENGINE = 'twig';
+    const DEFAULT_POSTS_FS = 'flat';
+    const DEFAULT_DATE_FORMAT = 'F j, Y';
     
     protected $rootDir;
     /**
@@ -64,15 +66,6 @@ class PieCrust
     public function getRootDir()
     {
         return $this->rootDir;
-    }
-    
-    protected $urlBase;
-    /**
-     * The base URL of the application ('/' most of the time).
-     */
-    public function getUrlBase()
-    {
-        return $this->urlBase;
     }
     
     protected $cachingEnabled;
@@ -101,13 +94,21 @@ class PieCrust
     {
         if ($this->templatesDirs === null)
         {
-            $this->setTemplatesDirs($this->rootDir . self::CONTENT_TEMPLATES_DIR);
+            $this->setTemplatesDirs(self::CONTENT_TEMPLATES_DIR);
+            
+            // Add custom template directories specified in the configuration.
+            $additionalPaths = $this->getConfigValue('site', 'template_dirs');
+            if ($additionalPaths)
+            {
+                $this->addTemplatesDir($additionalPaths);
+            }
         }
         return $this->templatesDirs;
     }
     
     /**
-     * Sets the directories that contain templates and layouts.
+     * Sets the directories that contain templates and layouts. Directories can be
+     * relative to the site's root directory.
      */
     public function setTemplatesDirs($dir)
     {
@@ -116,7 +117,7 @@ class PieCrust
     }
     
     /**
-     * Adds a templates directory.
+     * Adds a templates directory. It can be relative to the site's root directory.
      */
     public function addTemplatesDir($dir)
     {
@@ -125,11 +126,16 @@ class PieCrust
         if (!is_array($dir)) $dir = array($dir);
         foreach ($dir as $d)
         {
-            if (is_dir($d) === false)
+            $absolute = $d;
+            if ($d[0] != '/' and $d[1] != ':')
             {
-                throw new PieCrustException("The templates directory doesn't exist: " . $d);
+                $absolute = $this->getRootDir() . $d;
             }
-            $this->templatesDirs[] = rtrim($d, '/\\') . '/';
+            if (is_dir($absolute) === false)
+            {
+                throw new PieCrustException("The specified templates directory doesn't exist: " . $absolute);
+            }
+            $this->templatesDirs[] = rtrim($absolute, '/\\') . '/';
         }
     }
     
@@ -331,7 +337,7 @@ class PieCrust
         {
             $isBaking = ($this->getConfigValue('baker', 'is_baking') === true);
             $isPretty = ($this->getConfigValueUnchecked('site','pretty_urls') === true);
-            $this->pathPrefix = $this->getUrlBase() . (($isPretty or $isBaking) ? '' : '?/');
+            $this->pathPrefix = $this->getConfigValueUnchecked('site', 'root') . (($isPretty or $isBaking) ? '' : '?/');
             $this->pathSuffix = ($isBaking and !$isPretty) ? '.html' : '';
             if ($this->debuggingEnabled && !$isBaking)
                 $this->pathSuffix .= '?!debug';
@@ -396,7 +402,6 @@ class PieCrust
     {
         $parameters = array_merge(
             array(
-                'url_base' => null,
                 'root' => null,
                 'cache' => true,
                 'debug' => false
@@ -415,24 +420,6 @@ class PieCrust
         $this->rootDir = rtrim($parameters['root'], '/\\') . '/';
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
         $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($_GET['!nocache']));
-        
-        if ($parameters['url_base'] === null)
-        {
-            if (isset($_SERVER['HTTP_HOST']))
-            {
-                $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-                $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
-                $this->urlBase = $host . $folder;
-            }
-            else
-            {
-                throw new PieCrustException("Can't guess the URL base: it was not given as a parameter, and no HTTP server is running.");
-            }
-        }
-        else
-        {
-            $this->urlBase = rtrim($parameters['url_base'], '/') . '/';
-        }
     }
     
     /**
@@ -551,7 +538,6 @@ class PieCrust
         if ($this->config == null)
         {
             $configParameters = array(
-                'url_base' => $this->urlBase,
                 'cache_dir' => ($this->cachingEnabled ? $this->getCacheDir() : false),
                 'cache' => $this->cachingEnabled
             );

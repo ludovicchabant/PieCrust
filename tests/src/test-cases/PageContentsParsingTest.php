@@ -53,9 +53,12 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
     public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
         // Create the page that will load our test file.
-        $pc = new PieCrust(array('cache' => false, 'url_base' => 'http://whatever', 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
+        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
         $pc->setConfig(array(
-            'site' => array('default_format' => 'none')
+            'site' => array(
+                'root' => 'http://whatever',
+                'default_format' => 'none'
+            )
         ));
         $p = TestPage::create($pc, '/test', $testFilename);
         

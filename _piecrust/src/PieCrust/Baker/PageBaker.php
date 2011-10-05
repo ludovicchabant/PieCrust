@@ -91,7 +91,7 @@ class PageBaker
     {
         // Set the extraData and asset URL remapping before the page's data is computed.        
         if ($extraData != null) $page->setExtraPageData($extraData);
-        if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%url_base%%uri%");
+        if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Set the custom stuff.
         $assetor = $page->getAssetor();

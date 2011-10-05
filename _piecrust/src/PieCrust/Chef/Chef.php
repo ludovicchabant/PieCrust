@@ -43,22 +43,16 @@ class Chef
     
     protected function addCommonOptionsAndArguments(Console_CommandLine $parser)
     {
-        $parser->addOption('url_base', array(
-            'short_name'  => '-u',
-            'long_name'   => '--urlbase',
-            'description' => "The base URL of the website.",
+        $parser->addOption('root_url', array(
+            'short_name'  => '-r',
+            'long_name'   => '--rooturl',
+            'description' => "Overrides the 'site/root' configuration setting (root URL of the site).",
             'default'     => '/',
             'help_name'   => 'URL_BASE'
         ));
-        $parser->addOption('templates_dir', array(
-            'short_name'  => '-t',
-            'long_name'   => '--templates',
-            'description' => "An optional additional templates directory.",
-            'help_name'   => 'TEMPLATES_DIR'
-        ));
         $parser->addOption('pretty_urls', array(
             'long_name'   => '--prettyurls',
-            'description' => "Overrides the 'site/pretty_urls' configuration setting.",
+            'description' => "Overrides the 'site/pretty_urls' configuration setting (use 'pretty URLS').",
             'default'     => false,
             'action'      => 'StoreTrue',
             'help_name'   => 'PRETTY_URLS'

@@ -69,7 +69,7 @@ class Assetor implements \ArrayAccess, \Iterator
             else
             {
                 $relativePath = str_replace('\\', '/', $page->getRelativePath(true));
-                $this->urlBase = $pieCrust->getUrlBase() . $relativePath . self::ASSET_DIR_SUFFIX;
+                $this->urlBase = $pieCrust->getConfigValueUnchecked('site', 'root') . $relativePath . self::ASSET_DIR_SUFFIX;
             }
         }
         else
@@ -167,7 +167,7 @@ class Assetor implements \ArrayAccess, \Iterator
     protected static function buildUrlBase(PieCrust $pieCrust, Page $page)
     {
         $replacements = array(
-            '%url_base%' => $pieCrust->getUrlBase(),
+            '%site_root%' => $pieCrust->getConfigValueUnchecked('site', 'root'),
             '%path' => $page->getRelativePath(true),
             '%uri%' => $page->getUri()
         );

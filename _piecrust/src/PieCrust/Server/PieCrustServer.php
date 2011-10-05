@@ -97,12 +97,12 @@ class PieCrustServer
     protected function createPieCrustApp()
     {
         $pieCrust = new PieCrust(array(
-                                        'url_base' => '/',
                                         'root' => $this->rootDir,
                                         'cache' => true
                                       )
                                 );
         $pieCrust->setConfigValue('server', 'is_hosting', true);
+        $pieCrust->setConfigValue('site', 'root', '/');
         if ($this->additionalTemplatesDir != null)
         {
             $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
@@ -144,7 +144,6 @@ class PieCrustServer
         
         $baker = new PieCrustBaker(
             array(
-                 'url_base' => '/',
                  'root' => $this->rootDir,
                  'cache' => true
             ),
@@ -155,6 +154,7 @@ class PieCrustServer
         );
         $baker->setBakeDir($this->autobake);
         $baker->getApp()->setConfigValue('server', 'is_hosting', true);
+        $baker->getApp()->setConfigValue('site', 'root', '/');
         if ($this->additionalTemplatesDir != null)
         {
             $baker->getApp()->addTemplatesDir($this->additionalTemplatesDir);

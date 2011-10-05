@@ -35,7 +35,7 @@ class PieCrustCacheInfo
         $prettyUrls = ($this->pieCrust->getConfigValueUnchecked('site', 'pretty_urls') ? "true" : "false");
         $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') ? "true" : "false");
         $cacheInfo = "version=". PieCrust::VERSION .
-                     "&url_base=" . $this->pieCrust->getUrlBase() .
+                     "&site_root=" . $this->pieCrust->getConfigValueUnchecked('site', 'root') .
                      "&debug_mode=" . $this->pieCrust->isDebuggingEnabled() .
                      "&pretty_urls=" . $prettyUrls .
                      "&is_baking=" . $isBaking;

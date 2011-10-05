@@ -36,7 +36,6 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         }
         $parameters = array_merge(
             array(
-                'url_base' => '/',
                 'cache_dir' => null,
                 'cache' => false
             ),
@@ -108,6 +107,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
     public function setSectionValue($section, $key, $value)
     {
         $this->ensureLoaded();
+        $value = $this->validateConfigValue($section, $key, $value);
         if (!isset($this->config[$section]))
         {
             $this->config[$section] = array($key => $value);
@@ -157,21 +157,41 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
             $config['site'] = array();
         }
         $config['site'] = array_merge(array(
-                        'title' => 'PieCrust Untitled Website',
-                        'root' => $this->parameters['url_base'],
+                        'title' => 'Untitled PieCrust Website',
+                        'root' => null,
                         'default_format' => PieCrust::DEFAULT_FORMAT,
                         'default_template_engine' => PieCrust::DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
                         'pretty_urls' => false,
-                        'posts_fs' => 'flat',
-                        'date_format' => 'F j, Y',
+                        'posts_fs' => PieCrust::DEFAULT_POSTS_FS,
+                        'date_format' => PieCrust::DEFAULT_DATE_FORMAT,
                         'blogs' => array(PieCrust::DEFAULT_BLOG_KEY),
                         'cache_time' => 28800
                     ),
                     $config['site']);
+        
+        // Validate the site root URL.
+        if ($config['site']['root'] == null)
+        {
+            if (isset($_SERVER['HTTP_HOST']))
+            {
+                $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+                $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
+                $config['site']['root'] = $host . $folder;
+            }
+            else
+            {
+                $config['site']['root'] = '/';
+            }
+        }
+        else
+        {
+            $config['site']['root'] = rtrim($config['site']['root'], '/') . '/';
+        }
+        
+        // Validate multi-blogs settings.
         if (in_array(PieCrust::DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
             throw new PieCrustException("'".PieCrust::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
-        
         // Add default values for the blogs configurations, or use values
         // defined at the site level for easy site-wide configuration of multiple blogs
         // and backwards compatibility.
@@ -208,6 +228,17 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         }
         
         return $config;
+    }
+    
+    protected function validateConfigValue($section, $key, $value)
+    {
+        if ($section == 'site')
+        {
+            if ($key == 'root')
+            {
+                return rtrim($value, '/') . '/';
+            }
+        }
     }
     
     // {{{ ArrayAccess members

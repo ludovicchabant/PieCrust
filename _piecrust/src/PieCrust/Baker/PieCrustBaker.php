@@ -170,7 +170,7 @@ class PieCrustBaker
             echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
             echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
             echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
-            echo "  for url :  " . $this->pieCrust->getUrlBase() . PHP_EOL;
+            echo "  for url :  " . $this->pieCrust->getConfigValueUnchecked('site', 'root') . PHP_EOL;
             echo PHP_EOL . PHP_EOL;
             
             if ($this->parameters['info_only'])

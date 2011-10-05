@@ -72,17 +72,9 @@ class BakeCommand implements IChefCommand
             die();
         }
         $outputDir = $result->command->options['output'];
-        $urlBase = $result->command->options['url_base'];
-        if ($result->command->options['file_urls'])
-        {
-            $urlBase = str_replace(DIRECTORY_SEPARATOR, '/', $outputDir);
-        }
         
         // Start baking!
-        $appParameters = array(
-            'root' => $rootDir,
-            'url_base' => $urlBase
-        );
+        $appParameters = array('root' => $rootDir);
         $bakerParameters = array(
             'smart' => !$result->command->options['force'],
             'clean_cache' => $result->command->options['force'],
@@ -97,10 +89,13 @@ class BakeCommand implements IChefCommand
         {
             $baker->getApp()->setConfigValue('site', 'pretty_urls', true);
         }
-        if (isset($result->command->options['templates_dir']))
+        if ($result->command->options['root_url'])
         {
-            $templatesDir = FileSystem::getAbsolutePath($result->command->options['templates_dir']);
-            $baker->getApp()->addTemplatesDir($templatesDir);
+            $baker->getApp()->setConfigValue('site', 'root', $result->command->options['root_url']);
+        }
+        if ($result->command->options['file_urls'])
+        {
+            $baker->getApp()->setConfigValue('site', 'root', str_replace(DIRECTORY_SEPARATOR, '/', $baker->getBakeDir()));
         }
         
         try

@@ -40,8 +40,9 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
     public function testTemplateRendering($testFilename, $expectedResultsFilename)
     {
         // Render our template.
-        $pc = new PieCrust(array('cache' => false, 'url_base' => 'http://whatever', 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
+        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
         $pc->setConfig(array());
+        $pc->setConfigValue('site', 'root', 'http://whatever/');
         $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
         $testInfo = pathinfo($testFilename);
         $engine = $pc->getTemplateEngine($testInfo['extension']);
