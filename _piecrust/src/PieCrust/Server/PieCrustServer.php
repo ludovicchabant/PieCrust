@@ -2,14 +2,14 @@
 
 namespace PieCrust\Server;
 
-require_once 'StupidHttp/StupidHttp_WebServer.php';
-require_once 'StupidHttp/StupidHttp_PearLog.php';
-
 use \Exception;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Page\PageRepository;
+
+require_once 'StupidHttp/StupidHttp_WebServer.php';
+require_once 'StupidHttp/StupidHttp_PearLog.php';
 
 
 /**
@@ -53,8 +53,8 @@ class PieCrustServer
         
         $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
         $port = $options['port'];
-        $this->server = new StupidHttp_WebServer($documentRoot, $port);
-        $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
+        $this->server = new \StupidHttp_WebServer($documentRoot, $port);
+        $this->server->setLog(\StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
         foreach ($options['mime_types'] as $ext => $mime)
         {
             $this->server->setMimeType($ext, $mime);
@@ -142,16 +142,30 @@ class PieCrustServer
     {
         PageRepository::clearPages();
         
-        $pieCrust = $this->createPieCrustApp();
-        $baker = new PieCrustBaker($pieCrust, array('smart' => $smart, 'show_banner' => $showBanner));
+        $baker = new PieCrustBaker(
+            array(
+                 'url_base' => '/',
+                 'root' => $this->rootDir,
+                 'cache' => true
+            ),
+            array(
+                  'smart' => $smart,
+                  'show_banner' => $showBanner
+            )
+        );
         $baker->setBakeDir($this->autobake);
+        $baker->getApp()->setConfigValue('server', 'is_hosting', true);
+        if ($this->additionalTemplatesDir != null)
+        {
+            $baker->getApp()->addTemplatesDir($this->additionalTemplatesDir);
+        }
         $baker->bake();
     }
     
     /**
      * For internal use only.
      */
-    public function _runPieCrustRequest(StupidHttp_HandlerContext $context)
+    public function _runPieCrustRequest(\StupidHttp_HandlerContext $context)
     {
         $startTime = microtime(true);
         
