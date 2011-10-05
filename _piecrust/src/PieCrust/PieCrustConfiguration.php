@@ -107,7 +107,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
     public function setSectionValue($section, $key, $value)
     {
         $this->ensureLoaded();
-        $value = $this->validateConfigValue($section, $key, $value);
+        $value = $this->validateConfigValue(($section . '/' . $key), $value);
         if (!isset($this->config[$section]))
         {
             $this->config[$section] = array($key => $value);
@@ -124,7 +124,7 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
     public function merge(array $config)
     {
         $this->ensureLoaded();
-        $this->mergeSectionRecursive($this->config, $config);
+        $this->mergeSectionRecursive($this->config, $config, null);
     }
     
     protected function ensureLoaded()
@@ -247,36 +247,39 @@ class PieCrustConfiguration implements \ArrayAccess, \Iterator
         return $config;
     }
     
-    protected function validateConfigValue($section, $key, $value)
+    protected function validateConfigValue($keyPath, $value)
     {
-        if ($section == 'site')
+        if ($keyPath == 'site/root')
         {
-            if ($key == 'root')
-            {
-                return rtrim($value, '/') . '/';
-            }
+            return rtrim($value, '/') . '/';
         }
         return $value;
     }
     
-    protected function mergeSectionRecursive(array &$localSection, array $incomingSection)
+    protected function mergeSectionRecursive(array &$localSection, array $incomingSection, $parentPath)
     {
         foreach ($incomingSection as $key => $value)
         {
+            $keyPath = $key;
+            if ($parentPath != null)
+            {
+                $keyPath = ($parentPath . '/' . $key);
+            }
+            
             if (isset($localSection[$key]))
             {
                 if (is_array($value) and is_array($localSection[$key]))
                 {
-                    $this->mergeSectionRecursive($localSection[$key], $value);
+                    $this->mergeSectionRecursive($localSection[$key], $value, $keyPath);
                 }
                 else
                 {
-                    $localSection[$key] = $value;
+                    $localSection[$key] = $this->validateConfigValue($keyPath, $value);
                 }
             }
             else
             {
-                $localSection[$key] = $value;
+                $localSection[$key] = $this->validateConfigValue($keyPath, $value);
             }
         }
     }
