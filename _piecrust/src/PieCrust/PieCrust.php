@@ -23,7 +23,7 @@ class PieCrust
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.1.0';
+    const VERSION = '0.1.1';
     
     /**
      * The application's source code directory.
