@@ -1,0 +1,23 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="{{ site.description }}">
+  <meta name="author" content="{{ site.author }}">
+  <!-- Mobile viewport optimized: j.mp/bplateviewport -->
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ site.title }}{% if page.title %} &mdash; {{ page.title }}{% endif %}</title>
+</head>
+<body>
+  <div id="container">
+    <header>
+        <h1>{{ site.title }}</h1>
+    </header>
+    <div id="main" role="main">
+        {{ content|raw }}
+    </div>
+    <footer>
+        {{ piecrust.branding|raw }}
+    </footer>
+  </div>
+</body>
+</html>
