@@ -25,7 +25,7 @@ class TextileFormatter implements IFormatter
     {
         require_once 'Textile/classTextile.php';
         
-        $textile = new Textile();
+        $textile = new \Textile();
         return $textile->TextileThis($text);
     }
 }
