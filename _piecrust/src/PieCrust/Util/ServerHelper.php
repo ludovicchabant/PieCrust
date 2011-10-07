@@ -19,14 +19,16 @@ class ServerHelper
         if (!$prettyUrls)
         {
             // Using standard query (no pretty URLs / URL rewriting)
-            $requestUri = $server['QUERY_STRING'];
-            if ($requestUri == null or $requestUri == '')
+            $requestUri = '/';
+            $requestVars = array();
+            parse_str($server['QUERY_STRING'], $requestVars);
+            foreach ($requestVars as $key => $value)
             {
-                $requestUri = '/';
-            }
-            else if (strpos($requestUri, '&') !== false)
-            {
-                $requestUri = strstr($requestUri, '&', true);
+                if ($key[0] == '/' and $value == null)
+                {
+                    $requestUri = $key;
+                    break;
+                }
             }
         }
         else
