@@ -4,23 +4,24 @@
 <head>
     <title>{{ site.title }}{% if page.title is not empty %} &mdash; {{ page.title }}{% endif %}</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="description" content="{{ site.description }}" />
+	<meta name="author" content="{{ site.author }}" />
     <meta name="generator" content="PieCrust {{ piecrust.version }}" />
     <meta name="template-engine" content="Twig" />
 {% include('blueprint.html') %}
     <link rel="stylesheet/less" href="{{ site.root }}css/default.less" type="text/css" media="all" />
 {% include('less.html') %}
-	{{ google.webfonts('Lobster|Covered+By+Your+Grace') }}
+	{{ google.webfonts('Lobster') }}
 </head>
 <body>
-    <div id="container">
-        <div id="header">
+    <div id="container" class="container">
+        <div id="header" class="span-24 last">
 			{% block header %}
             <h1><a href="{{ site.root }}">{{ site.title }}</a></h1>
 			{% endblock %}
         </div>
-        <hr />
-        <div id="menu">
-			<div id="menu-inner">
+        <div id="menu" class="span-4 push-20 last">
+			<div class="menu">
 				<ul>
 					<li><a href="{{ site.root }}">Home</a></li>
 					<li><a href="{{ pcurl('blog') }}">Blog</a></li>
@@ -28,15 +29,14 @@
 				</ul>
 			</div>
         </div>
-        <hr />
-        <div id="content">
-            <div id="content-inner">
+        <div id="content" class="span-20 pull-4 last">
+            <div class="content">
                 {% block content %}
                 {{ content|raw }}
         		{% endblock %}
             </div>
         </div>
-        <div id="footer">
+        <div id="footer" class="span-24 last">
 			{% block footer %}
             <p>{{ piecrust.branding|raw }}</p>
 			{% endblock %}
