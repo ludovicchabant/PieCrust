@@ -2,8 +2,6 @@
 
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-require_once 'PieCrust/PieCrust.php';
-
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriParser;
