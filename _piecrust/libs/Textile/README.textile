@@ -1,0 +1,47 @@
+h1. TEXTILE
+
+p=. *A Humane Web Text Generator*
+
+p=. A lightweight markup language that takes (almost) plaintext and converts it into well formed HTML.
+
+
+
+h2. Installation
+
+The only file that is necessary for the correct operation of Textile is @classTextile.php@ from the project root directory. However, to use additional features you may need to install other files from the project tree.
+
+For live installations only files and subdirectories from the @master@ branch should be used. _Code from other branches should not be used on live sites._
+
+
+
+h2. Usage
+
+You'll need to include the source file and instantiate a parser...
+
+bc.. include "classTextile.php"; # adjust paths if needed.
+$textile = new Textile();
+
+p. Then, for input that you control, pass it to @TextileThis()@. Like so...
+
+bc. $output = $textile->TextileThis( $trusted_input );
+
+If you are using Textile to format user-supplied input, blog comments for instance, use a @TextileRestricted()@ call...
+
+bc. $output = $textile->TextileRestricted( $untrusted_input );
+
+
+
+h2. Translations 
+
+The Textile project welcomes translations of the documentation found under the @docs\@ folder. For information on how to contribute translations please get in contact.
+
+
+
+h2. Getting In Contact
+
+The textile project welcomes constructive input and bug reports from users. You can contact us in several ways. 
+
+* "Open an issue":https://github.com/netcarver/textile/issues on the repository for a feature request or bug.
+* If you are on IRC, feel free to drop into *#textile* on *freenode.net* ("webchat":http://webchat.freenode.net/?channels=#textile.)
+* Use the generic "contact form":http://sitemonks.com/.
+
