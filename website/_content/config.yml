@@ -6,3 +6,8 @@ site:
     
 smartypants:
     enable: true
+
+baker:
+    skip_patterns:
+        - /^index.php/
+
