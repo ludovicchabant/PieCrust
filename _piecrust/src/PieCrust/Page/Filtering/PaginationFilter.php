@@ -89,6 +89,14 @@ class PaginationFilter
                 $clause->addClause($subClause);
                 $this->addClausesRecursive($value, $subClause);
             }
+            else if ($key == 'not')
+            {
+                if (!is_array($value) or count($value) != 1)
+                    throw new PieCrustException("'NOT' filter clauses must have exactly one child clause.");
+                $subClause = new NotClause();
+                $clause->addClause($subClause);
+                $this->addClausesRecursive($value, $subClause);
+            }
             else if (substr($key, 0, 4) === 'has_')
             {
                 $settingName = substr($key, 4);
@@ -110,6 +118,10 @@ class PaginationFilter
             {
                 $settingName = substr($key, 3);
                 $clause->addClause(new IsFilterClause($settingName, $value));
+            }
+            else
+            {
+                throw new PieCrustException("Unknown filter clause: " . $key);
             }
         }
     }
