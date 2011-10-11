@@ -252,9 +252,10 @@ class StupidHttp_WebServer
             $rawRequest = array();
             $processRequest = false;
             $profilingInfo = array();
+            $msgsockReceiveBufferSize = @socket_get_option($this->sock, SOL_SOCKET, SO_RCVBUF);
             do
             {
-                if (false === ($buf = @socket_read($msgsock, 2048, PHP_NORMAL_READ)))
+                if (false === ($buf = @socket_read($msgsock, $msgsockReceiveBufferSize, PHP_NORMAL_READ)))
                 {
                     if (socket_last_error($msgsock) === SOCKET_ETIMEDOUT)
                     {
@@ -626,13 +627,13 @@ class StupidHttp_WebServer
         {
             $responseStr .= $response->getBody();
         }
-        $responseStr .= "\n\0";
         
         $transmitted = 0;
         $responseLength = strlen($responseStr);
+        $sockSendBufferSize = @socket_get_option($this->sock, SOL_SOCKET, SO_SNDBUF);
         while ($transmitted < $responseLength)
         {
-            $socketWriteLength = min($responseLength - $transmitted, 1024);
+            $socketWriteLength = min($responseLength - $transmitted, $sockSendBufferSize);
             $transmittedThisTime = @socket_write($sock, $responseStr, $socketWriteLength);
             if (false === $transmittedThisTime)
             {
