@@ -5,6 +5,7 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\IO\FileSystem;
 use PieCrust\Server\PieCrustServer;
 
 
@@ -41,24 +42,31 @@ class ServeCommand implements IChefCommand
         $serverParser->addOption('autobake', array(
             'short_name'  => '-b',
             'long_name'   => '--autobake',
-            'description' => 'Auto-bakes the website to the specified directory, and serve that directory instead of running PieCrust on-demand.',
+            'description' => "Auto-bakes the website to the specified directory, and serve that directory instead of running PieCrust on-demand.",
             'default'     => null,
             'help_name'   => 'OUTPUT_PATH'
         ));
         $serverParser->addOption('full_first_bake', array(
             'short_name'  => '-f',
             'long_name'   => '--forcefirstbake',
-            'description' => 'When \'autobake\' is turned on, do a full first bake before running the server.',
+            'description' => "When 'autobake' is turned on, do a full first bake before running the server.",
             'default'     => false,
             'action'      => 'StoreTrue',
             'help_name'   => 'FORCE'
+        ));
+        $serverParser->addOption('log_file', array(
+            'short_name'  => '-l',
+            'long_name'   => '--log',
+            'description' => "The file to which the server should log its activity.",
+            'default'     => null,
+            'help_name'   => 'LOG_FILE'
         ));
     }
 
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = $result->command->args['root'];
+        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
         if (!is_dir($rootDir))
         {
             $parser->displayError("No such root directory: " . $rootDir, 1);
@@ -69,6 +77,7 @@ class ServeCommand implements IChefCommand
         $fullFirstBake = $result->command->options['full_first_bake'];
         $templatesDir = $result->command->options['templates_dir'];
         $runBrowser = $result->command->options['run_browser'];
+        $logFile = $result->command->options['log_file'];
         
         // Start serving!
         $server = new PieCrustServer($rootDir,
@@ -76,7 +85,8 @@ class ServeCommand implements IChefCommand
                                         'port' => $port,
                                         'templates_dir' => $templatesDir,
                                         'autobake' => (($autobakeDir != null) ? $autobakeDir : false),
-                                        'full_first_bake' => $fullFirstBake
+                                        'full_first_bake' => $fullFirstBake,
+                                        'log_file' => $logFile
                                      ));
         $server->run(array(
                            'list_directories' => false,

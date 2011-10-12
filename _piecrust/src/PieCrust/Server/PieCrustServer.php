@@ -40,7 +40,8 @@ class PieCrustServer
                   'templates_dir' => null,
                   'autobake' => false,
                   'autobake_interval' => 2,
-                  'mime_types' => array('less' => 'text/css')
+                  'mime_types' => array('less' => 'text/css'),
+                  'log_file' => null
                   ),
             $options
         );
@@ -54,7 +55,10 @@ class PieCrustServer
         $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
         $port = $options['port'];
         $this->server = new \StupidHttp_WebServer($documentRoot, $port);
-        $this->server->setLog(\StupidHttp_PearLog::fromSingleton('file', 'chef_server_' . basename($appDir) . '.log'));
+        if ($options['log_file'])
+        {
+            $this->server->setLog(\StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
+        }
         foreach ($options['mime_types'] as $ext => $mime)
         {
             $this->server->setMimeType($ext, $mime);
