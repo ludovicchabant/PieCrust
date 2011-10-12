@@ -562,7 +562,7 @@ class Page
                 catch (Exception $e)
                 {
                     ob_end_clean();
-                    throw $e;
+                    throw new PieCrustException("Error in page '".$this->path."': ".$e->getMessage(), 0, $e);
                 }
             
                 $this->config['segments'][] = $key;
