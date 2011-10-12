@@ -446,7 +446,7 @@ class StupidHttp_WebServer
     
     protected function processRequest(array $options, StupidHttp_WebRequest $request)
     {
-        $this->logInfo('> ' . $request->getMethod() . ' ' . $request->getUri());
+        $this->logDebug('> ' . $request->getMethod() . ' ' . $request->getUri());
         
         $handled = false;
         $documentPath = $this->getDocumentPath($request->getUri());
@@ -611,11 +611,11 @@ class StupidHttp_WebServer
     
     protected function sendResponse($sock, StupidHttp_WebResponse $response)
     {
-        $this->logInfo('    ->  ' . self::getHttpStatusHeader($response->getStatus()));
+        $this->logDebug('    ->  ' . self::getHttpStatusHeader($response->getStatus()));
         $this->logDebug('    : ' . memory_get_usage() / (1024.0 * 1024.0) . 'Mb');
         
         $responseStr = "HTTP/1.1 " . self::getHttpStatusHeader($response->getStatus()) . PHP_EOL;
-        $responseStr .= "Server: PieCrust Chef Server\n";
+        $responseStr .= "Server: PieCrust Chef Server".PHP_EOL;
         $responseStr .= "Date: " . date("D, d M Y H:i:s T") . PHP_EOL;
         foreach ($response->getFormattedHeaders() as $header)
         {
