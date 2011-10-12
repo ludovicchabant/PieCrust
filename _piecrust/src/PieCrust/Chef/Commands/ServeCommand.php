@@ -61,6 +61,14 @@ class ServeCommand implements IChefCommand
             'default'     => null,
             'help_name'   => 'LOG_FILE'
         ));
+        $serverParser->addOption('log_console', array(
+            'short_name'  => '-c',
+            'long_name'   => '--console',
+            'description' => "Specify whether StupidHttp should output stuff to the console.",
+            'default'     => false,
+            'action'      => 'StoreTrue',
+            'help_name'   => 'LOG'
+        ));
     }
 
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
@@ -78,6 +86,7 @@ class ServeCommand implements IChefCommand
         $templatesDir = $result->command->options['templates_dir'];
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
+        $logConsole = $result->command->options['log_console'];
         
         // Start serving!
         $server = new PieCrustServer($rootDir,
@@ -86,7 +95,8 @@ class ServeCommand implements IChefCommand
                                         'templates_dir' => $templatesDir,
                                         'autobake' => (($autobakeDir != null) ? $autobakeDir : false),
                                         'full_first_bake' => $fullFirstBake,
-                                        'log_file' => $logFile
+                                        'log_file' => $logFile,
+                                        'log_console' => $logConsole
                                      ));
         $server->run(array(
                            'list_directories' => false,

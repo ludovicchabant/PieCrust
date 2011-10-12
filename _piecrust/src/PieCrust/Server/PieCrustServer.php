@@ -10,6 +10,7 @@ use PieCrust\Page\PageRepository;
 
 require_once 'StupidHttp/StupidHttp_WebServer.php';
 require_once 'StupidHttp/StupidHttp_PearLog.php';
+require_once 'StupidHttp/StupidHttp_ConsoleLog.php';
 
 
 /**
@@ -41,7 +42,8 @@ class PieCrustServer
                   'autobake' => false,
                   'autobake_interval' => 2,
                   'mime_types' => array('less' => 'text/css'),
-                  'log_file' => null
+                  'log_file' => null,
+                  'log_console' => false
                   ),
             $options
         );
@@ -58,6 +60,10 @@ class PieCrustServer
         if ($options['log_file'])
         {
             $this->server->setLog(\StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
+        }
+        if ($options['log_console'])
+        {
+            $this->server->setLog(new \StupidHttp_ConsoleLog(\StupidHttp_Log::TYPE_DEBUG));
         }
         foreach ($options['mime_types'] as $ext => $mime)
         {
@@ -216,9 +222,17 @@ class PieCrustServer
             $context->getResponse()->setHeader($h, $v);
         }
         
+        if ($pieCrustError)
+        {
+            piecrust_show_system_message('error', $pieCrustError);
+        }
+        
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
         $context->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
-        if ($pieCrustError != null) $context->getLog()->logError("    PieCrust error: " . $pieCrustError);
+        if ($pieCrustError != null)
+        {
+            $context->getLog()->logError("    PieCrust error: " . $pieCrustError);
+        }
     }
 }
