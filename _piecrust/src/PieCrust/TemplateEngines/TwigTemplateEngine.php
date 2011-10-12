@@ -2,6 +2,7 @@
 
 namespace PieCrust\TemplateEngines;
 
+use \Exception;
 use PieCrust\PieCrust;
 
 
@@ -32,7 +33,15 @@ class TwigTemplateEngine implements ITemplateEngine
         {
             $this->twigLoader->setTemplateSource('__string_tpl__', $content);
             $tpl = $this->twigEnv->loadTemplate('__string_tpl__');
-            $tpl->display($data);
+            try
+            {
+                $tpl->display($data);
+            }
+            catch (Exception $e)
+            {
+                $this->twigEnv->setCache($cache);
+                throw $e;
+            }
         }
         $this->twigEnv->setCache($cache);
     }
