@@ -63,6 +63,12 @@ class StupidHttp_Log
     }
     
     /**
+     * For internal use.
+     */
+    public function _startBuffering() {}
+    public function _endBuffering() {}
+    
+    /**
      * Gets the string representation of a message type.
      */
     public static function messageTypeToString($type)

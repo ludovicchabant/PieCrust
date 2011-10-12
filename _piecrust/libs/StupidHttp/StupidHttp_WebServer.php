@@ -480,10 +480,22 @@ class StupidHttp_WebServer
                 {
                     $response = new StupidHttp_WebResponse();
                     $context = new StupidHttp_HandlerContext($request, $response, $this->getLog());
+                    $this->getLog()->_startBuffering();
                     ob_start();
-                    $handler->_run($context);
+                    try
+                    {
+                        $handler->_run($context);
+                    }
+                    catch (Exception $e)
+                    {
+                        ob_end_clean();
+                        $this->getLog()->_endBuffering();
+                        $this->logError("Handler error for URI '" . $request->getUri() . "': " . strval($e));
+                        return $this->createResponse(500);
+                    }
                     $body = ob_get_clean();
                     $response->setBody($body);
+                    $this->getLog()->_endBuffering();
                     return $response;
                 }
             }
@@ -621,8 +633,9 @@ class StupidHttp_WebServer
         {
             $responseStr .= $header . PHP_EOL;
         }
-        
         $responseStr .= PHP_EOL;
+        $headerLength = strlen($responseStr);
+        
         if ($response->getBody() != null)
         {
             $responseStr .= $response->getBody();
@@ -642,6 +655,16 @@ class StupidHttp_WebServer
             $transmitted += $transmittedThisTime;
             $responseStr = substr($responseStr, $transmittedThisTime);
             $this->logDebug('    : transmitted ' . $transmittedThisTime . ' bytes, ' . ($responseLength - $transmitted) . ' left to go.');
+        }
+        $declaredLength = intval($response->getHeader('Content-Length'));
+        $this->logDebug('    : total transmitted was ' . $transmitted . ' bytes, declared ' . ($declaredLength + $headerLength));
+        if (($declaredLength + $headerLength) != $transmitted)
+        {
+            $this->logError("Discrepancy of " . ($transmitted - $declaredLength - $headerLength) . " bytes between transmitted byte count and declared byte count.");
+        }
+        if ($declaredLength != strlen($response->getBody()))
+        {
+            $this->logError("Declared body length was " . $declaredLength . " but should have been " . strlen($response->getBody()));
         }
     }
     

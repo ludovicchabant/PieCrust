@@ -53,8 +53,11 @@ class StupidHttp_WebRequestHandler
         
         if (count($this->uriPatternMatches) > 1)
         {
-            return $callback($context, $this->uriPatternMatches);
+            $callback($context, $this->uriPatternMatches);
         }
-        return $callback($context);
+        else
+        {
+            $callback($context);
+        }
     }
 }
