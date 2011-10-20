@@ -3,6 +3,10 @@
 namespace PieCrust\Server;
 
 use \Exception;
+use \StupidHttp_Log;
+use \StupidHttp_PearLog;
+use \StupidHttp_ConsoleLog;
+use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;
@@ -54,21 +58,30 @@ class PieCrustServer
         $this->lastBakeTime = 0;
         $this->autobakeInterval = $options['autobake_interval'];
         
+        // Set-up the stupid web server.
         $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
         $port = $options['port'];
-        $this->server = new \StupidHttp_WebServer($documentRoot, $port);
+        $this->server = new StupidHttp_WebServer($documentRoot, $port);
+        
         if ($options['log_file'])
         {
-            $this->server->setLog(\StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
+            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
         }
+        
         if ($options['log_console'])
         {
-            $this->server->setLog(new \StupidHttp_ConsoleLog(\StupidHttp_Log::TYPE_DEBUG));
+            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_DEBUG));
         }
+        else
+        {
+            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
+        }
+        
         foreach ($options['mime_types'] as $ext => $mime)
         {
             $this->server->setMimeType($ext, $mime);
         }
+        
         $self = $this; // Workaround for $this not being capturable in closures.
         if ($this->autobake === false)
         {

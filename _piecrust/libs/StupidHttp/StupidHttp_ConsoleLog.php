@@ -25,7 +25,7 @@ class StupidHttp_ConsoleLog extends StupidHttp_Log
      */
     public function log($message, $type = StupidHttp_Log::TYPE_INFO)
     {
-        if ($type >= $this->level)
+        if ($type <= $this->level)
         {
             $formattedMessage = '[' . StupidHttp_Log::messageTypeToString($type) . '] ' . $message . PHP_EOL;
             if ($this->isBuffering)

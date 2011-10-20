@@ -1,6 +1,7 @@
 <?php
 
 require_once 'StupidHttp_Log.php';
+require_once 'StupidHttp_MultiLog.php';
 require_once 'StupidHttp_WebRequest.php';
 require_once 'StupidHttp_WebResponse.php';
 require_once 'StupidHttp_WebException.php';
@@ -73,21 +74,37 @@ class StupidHttp_WebServer
         $this->mimeTypes[$extension] = $mimeType;
     }
     
-    protected $log;
+    protected $logs;
     /**
-     * Gets the current log system.
+     * Gets the current added logs.
      */
-    public function getLog()
+    public function getLogs()
     {
-        return $this->log;
+        return $this->logs;
     }
     
     /**
-     * Sets the log system.
+     * Clears the current logs, and adds the given one.
      */
     public function setLog(StupidHttp_Log $log)
     {
-        $this->log = $log;
+        $this->logs = array($log);
+    }
+    
+    /**
+     * Adds a log system.
+     */
+    public function addLog(StupidHttp_Log $log)
+    {
+        $this->logs[] = $log;
+    }
+    
+    /**
+     * Clears all the logs.
+     */
+    public function clearLogs()
+    {
+        $this->logs = array();
     }
     
     /**
@@ -99,7 +116,7 @@ class StupidHttp_WebServer
         
         $this->address = $address;
         $this->port = $port;
-        $this->log = new StupidHttp_Log();
+        $this->logs = array();
         
         if ($documentRoot != null and !is_dir($documentRoot))
         {
@@ -376,6 +393,8 @@ class StupidHttp_WebServer
                     $this->logError($e->getCode() . ': ' . $e->getMessage());
                 }
                 $profilingInfo['send.end'] = microtime(true);
+                
+                $this->logInfo('> ' . $request->getMethod() . ' ' . $request->getUri() . '  -->  ' . self::getHttpStatusHeader($response->getStatus()));
             }
             
             $this->logProfilingInfo($profilingInfo);
@@ -479,8 +498,9 @@ class StupidHttp_WebServer
                 if ($handler->_isMatch($request->getUri()))
                 {
                     $response = new StupidHttp_WebResponse();
-                    $context = new StupidHttp_HandlerContext($request, $response, $this->getLog());
-                    $this->getLog()->_startBuffering();
+                    $multiLog = new StupidHttp_MultiLog($this->logs);
+                    $context = new StupidHttp_HandlerContext($request, $response, $multiLog);
+                    $multiLog->_startBuffering();
                     ob_start();
                     try
                     {
@@ -489,13 +509,13 @@ class StupidHttp_WebServer
                     catch (Exception $e)
                     {
                         ob_end_clean();
-                        $this->getLog()->_endBuffering();
+                        $multiLog->_endBuffering();
                         $this->logError("Handler error for URI '" . $request->getUri() . "': " . strval($e));
                         return $this->createResponse(500);
                     }
                     $body = ob_get_clean();
                     $response->setBody($body);
-                    $this->getLog()->_endBuffering();
+                    $multiLog->_endBuffering();
                     return $response;
                 }
             }
@@ -686,13 +706,9 @@ class StupidHttp_WebServer
     
     protected function log($message, $type)
     {
-        if ($this->log != null)
+        foreach ($this->logs as $log)
         {
-            $this->log->log($message, $type);
-        }
-        if ($type <= StupidHttp_Log::TYPE_INFO)
-        {
-            echo StupidHttp_Log::messageTypeToString($type) . ': ' . $message . PHP_EOL;
+            $log->log($message, $type);
         }
     }
     
