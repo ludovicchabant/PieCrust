@@ -1,0 +1,13 @@
+{% macro stylesheet(baker, path, media) %}
+{% if baker.is_baking %}
+<link rel="stylesheet" href="{{ path }}.css" type="text/css" media="{{ media|default('all') }}" />
+{% else %}
+<link rel="stylesheet/less" href="{{ path }}.less" type="text/css" media="{{ media|default('all') }}" />
+{% endif %}
+{% endmacro %}
+
+{% macro less_js(baker, site_root) %}
+{% if not baker.is_baking %}
+<script src="{{ site_root }}js/less-1.0.41.min.js" type="text/javascript"></script>
+{% endif %}
+{% endmacro %}
