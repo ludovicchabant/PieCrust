@@ -492,13 +492,13 @@ class PieCrustBaker
             if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
                 
-            $categoryPagePath = $this->pieCrust->getPagesDir() . $blogKey . PieCrust::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::CATEGORY_PAGE_NAME . '.html';
             if (!is_file($categoryPagePath)) return;
             
             foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
             {
                 $start = microtime(true);
-                $postInfos = $this->getPostsInCategory($blogKey, $category);
+                $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfigValue($blogKey, 'category_url'), $category);
                 $page = PageRepository::getOrCreatePage(
                     $this->pieCrust, 
