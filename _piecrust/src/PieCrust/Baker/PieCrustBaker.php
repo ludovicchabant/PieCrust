@@ -155,7 +155,10 @@ class PieCrustBaker
             $pattern = PieCrustBaker::globToRegex($pattern);
             $this->parameters['skip_patterns'][$i] = $pattern;
         }
-        // Add the default system skip pattern.
+        // Add the default skip patterns.
+        $this->parameters['skip_patterns'][] = '/^_cache/';
+        $this->parameters['skip_patterns'][] = '/^_content/';
+        $this->parameters['skip_patterns'][] = '/^_counter/';
         $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
         
         // Apply the default configuration variant, if it exists.
