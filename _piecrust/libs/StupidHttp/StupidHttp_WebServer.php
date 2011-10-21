@@ -386,6 +386,7 @@ class StupidHttp_WebServer
                 try
                 {
                     $this->sendResponse($msgsock, $response);
+                    $this->logInfo('> ' . $request->getMethod() . ' ' . $request->getUri() . '  -->  ' . self::getHttpStatusHeader($response->getStatus()));
                 }
                 catch (Exception $e)
                 {
@@ -393,8 +394,6 @@ class StupidHttp_WebServer
                     $this->logError($e->getCode() . ': ' . $e->getMessage());
                 }
                 $profilingInfo['send.end'] = microtime(true);
-                
-                $this->logInfo('> ' . $request->getMethod() . ' ' . $request->getUri() . '  -->  ' . self::getHttpStatusHeader($response->getStatus()));
             }
             
             $this->logProfilingInfo($profilingInfo);
@@ -686,6 +685,8 @@ class StupidHttp_WebServer
         {
             $this->logError("Declared body length was " . $declaredLength . " but should have been " . strlen($response->getBody()));
         }
+        // [TODO] Weird. Printing stuff out here seems to clear some buffering somewhere and solves some transfer problems on Windows.
+        $this->logInfo('    : sent ' . $transmitted . ' bytes.');
     }
     
     protected function logProfilingInfo(array $profilingInfo)
