@@ -1,8 +1,22 @@
 @echo off
 
-if not defined PHP_PEAR_BIN_DIR (
-	echo Can't find the PHP executable. Do you have PEAR installed?
-	exit /b 1
+if defined PHPEXE goto RunChef
+
+if defined PHPRC (
+    set PHPEXE="%PHPRC%php.exe"
+    goto RunChef
 )
-set PHP="%PHP_PEAR_BIN_DIR%\php.exe"
-%PHP% %~dp0chef.php %*
+
+if defined PHP_PEAR_BIN_DIR (
+    set PHPEXE="%PHP_PEAR_BIN_DIR%\php.exe"
+    goto RunChef
+)
+
+echo Can't find the PHP executable. Is it installed somewhere?
+echo (if you're using a portable version, please define a PHPEXE environment
+echo  variable pointing to it)
+exit /b 1
+goto :eof
+
+:RunChef
+%PHPEXE% %~dp0chef.php %*
