@@ -35,8 +35,8 @@ abstract class FileSystem
             return new HierarchicalFileSystem($pieCrust, $subDir);
         case 'flat':
             return new FlatFileSystem($pieCrust, $subDir);
-		case 'user':
-			return new UserFileSystem($pieCrust, $subDir);
+		case 'year':
+			return new YearFileSystem($pieCrust, $subDir);
         default:
             throw new PieCrustException("");
         }
