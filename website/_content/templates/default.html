@@ -1,4 +1,5 @@
 {% import 'macros_google.html' as google %}
+{% import "macros_less.html" as less %}
 <!doctype html>
 <html>
 <head>
@@ -9,9 +10,9 @@
     <meta name="generator" content="PieCrust {{ piecrust.version }}" />
     <meta name="template-engine" content="Twig" />
 {% include('blueprint.html') %}
-    <link rel="stylesheet/less" href="{{ site.root }}css/default.less" type="text/css" media="all" />
-{% include('less.html') %}
 	{{ google.webfonts('Lobster') }}
+	{{ less.stylesheet(baker, site.root ~ 'css/default') }}
+    {{ less.less_js(baker, site.root) }}
 </head>
 <body>
     <div id="container" class="container">

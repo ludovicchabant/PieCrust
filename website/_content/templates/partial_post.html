@@ -2,6 +2,9 @@
 	<h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
 	<div class="post-meta">
 		<span class="post-date">{{ post.date }}&nbsp;{{ post.time }}</span>
+		{% if post.category %}
+			in <span class="post-cat"><a href="{{ pccaturl(post.category) }}">{{ post.category }}</a></span>
+		{% endif %}
 		{% if post.tags %}
 			&mdash;
 			<span class="post-tags">
