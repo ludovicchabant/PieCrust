@@ -49,12 +49,6 @@ function piecrust_shutdown_function()
  */
 function piecrust_setup($profile = 'web')
 {
-    // Check the version of PHP.
-    if (!defined('PHP_VERSION_ID') or PHP_VERSION_ID < 50300)
-    {
-        die("You need PHP 5.3+ to use PieCrust.");
-    }
-
     // Set the include path.
     set_include_path(get_include_path() . PATH_SEPARATOR .
         __DIR__ . '/src' . PATH_SEPARATOR .
@@ -116,4 +110,15 @@ function piecrust_run($parameters = array(), $uri = null, $profile = 'web')
     
     $pieCrust = new PieCrust\PieCrust($parameters);
     $pieCrust->run($uri);
+}
+
+/**
+ * Setups and runs a new instance of Chef.
+ */
+function piecrust_chef($userArgc = null, $userArgv = null, $profile = 'chef')
+{
+    piecrust_setup($profile);
+    
+    $chef = new PieCrust\Chef\Chef();
+    $chef->run($userArgc, $userArgv);
 }
