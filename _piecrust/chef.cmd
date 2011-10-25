@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 if defined PHPEXE goto RunChef
 
