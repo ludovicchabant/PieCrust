@@ -132,7 +132,7 @@ class Paginator
     
         $postsData = array();
         $nextPageIndex = null;
-        $previousPageIndex = ($this->page->getPageNumber() > 2) ? $this->page->getPageNumber() - 1 : null;
+        $previousPageIndex = ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
         if (count($postInfos) > 0)
         {
             // Load all the posts for the requested page number (page numbers start at '1').
@@ -179,9 +179,18 @@ class Paginator
             }
         }
         
+        $previousPageUri = null;
+        if ($previousPageIndex != null)
+        {
+        	if ($previousPageIndex == 1)
+        		$previousPageUri = $this->page->getUri();
+        	else
+        		$previousPageUri = $this->page->getUri() . '/' . $previousPageIndex;
+        }
+        
         $this->paginationData = array(
                                 'posts' => $postsData,
-                                'prev_page' => ($previousPageIndex == null) ? null : $this->page->getUri() . '/' . $previousPageIndex,
+                                'prev_page' => ($previousPageIndex == null) ? null : $previousPageUri,
                                 'this_page' => $this->page->getUri() . '/' . $this->page->getPageNumber(),
                                 'next_page' => ($nextPageIndex == null) ? null : ($this->page->getUri() . '/' . $nextPageIndex)
                                 );
