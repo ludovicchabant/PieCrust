@@ -785,7 +785,7 @@ foreach ($shady_functions as $name)
 {
     if (!is_callable($name))
     {
-        errexit("StupidHttp: Function '" . $name. "' is not available on your system.");
+        die("StupidHttp: Function '" . $name. "' is not available on your system.");
     }
 }
 unset($shady_functions);
