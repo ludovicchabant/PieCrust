@@ -50,32 +50,36 @@ class YearFileSystem extends FileSystem
 
             foreach ($paths as $path)
             {
-                $matches = array();
-				$filename = pathinfo($path, PATHINFO_BASENAME);
-				if (preg_match('/^(\d{2})-(\d{2})_(.*)\.html$/', $filename, $matches) == false)
-				    continue;
-                
-				$result[] = array(
-				    'year' => $year,
-				    'month' => $matches[1],
-				    'day' => $matches[2],
-				    'name' => $matches[3],
-				    'path' => $path
-				);
+                $matches = $this->getPostPathComponents($path);
+                if ($matches == false) continue;
+				$result[] = $matches;
             }
         }
 
         return $result;
     }
     
-    public function getPath($captureGroups)
+    public function getPostPathComponents($path) {
+    	$matches = array();
+    	
+    	if (preg_match('/(\d{4})\/(\d{2})-(\d{2})_(.*)\.html$/', $path, $matches) == false)
+    	    return false;
+    	
+    	$result = array(
+    		'year' => $matches[1],
+    	    'month' => $matches[2],
+    	    'day' => $matches[3],
+    	    'name' => $matches[4],
+    	    'path' => $path
+    	);
+    	
+    	return $result;
+    }
+    
+    public function getPathFormat()
     {
-        $baseDir = $this->pieCrust->getPostsDir();
-        $path = $baseDir
-        	. $this->subDir
-            . $captureGroups['year'] . '/'
-            . $captureGroups['month'] . '-'
-            . $captureGroups['day'] . '_' . $captureGroups['slug'] . '.html';
-        return $path;
+    	$baseDir = $this->pieCrust->getPostsDir();
+    	$format = $baseDir . $this->subDir . '%year%/%month%-%day%_%slug%.html';
+    	return $format;
     }
 }
