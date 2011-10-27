@@ -109,13 +109,13 @@ class UriParser
         if (preg_match($postsPattern, $uri, $matches))
         {
             $fs = FileSystem::create($pieCrust, $blogKey);
-            $path = $fs->getPath($matches);
-            $date = mktime(0, 0, 0, intval($matches['month']), intval($matches['day']), intval($matches['year']));
+            $pathInfo = $fs->getPathInfo($matches);
+            $date = mktime(0, 0, 0, intval($pathInfo['month']), intval($pathInfo['day']), intval($pathInfo['year']));
             
             $pageInfo['type'] = Page::TYPE_POST;
             $pageInfo['blogKey'] = $blogKey;
             $pageInfo['date'] = $date;
-            $pageInfo['path'] = $path;
+            $pageInfo['path'] = $pathInfo['path'];
             return true;
         }
         return false;

@@ -295,6 +295,24 @@ class Page
         return $this->contents;
     }
     
+    /**
+     * Sets the page's configuration and content segments, replacing the lazy-loading
+     * from a file. This is useful for things like unit-testing.
+     */
+    public function setConfigAndContents(array $config, array $contents)
+    {
+        if ($this->data != null or $this->config != null or $this->contents != null)
+            throw new PieCrustException("Config and contents must be set before the page is loaded.");
+        
+        $this->config = $this->buildValidatedConfig($config);
+        
+        if (!array_key_exists('content', $contents))
+            $contents['content'] = '';
+        if (!array_key_exists('content.abstract', $contents))
+            $contents['content.abstract'] = $contents['content'];
+        $this->contents = $contents;
+    }
+    
     protected $data;
     /**
      * Gets the page's data for rendering.

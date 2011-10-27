@@ -118,6 +118,8 @@ class Paginator
     {
         $blogKey = $this->page->getConfigValue('blog');
         
+        // If not pagination data source was provided, load up a new FileSystem
+        // and get the list of posts from the disk.
         $filterPostInfos = false;
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
@@ -129,7 +131,8 @@ class Paginator
             $postInfos = $fs->getPostFiles();
             $filterPostInfos = true;
         }
-    
+        
+        // Now build the pagination data for each post.
         $postsData = array();
         $nextPageIndex = null;
         $previousPageIndex = ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
@@ -179,20 +182,34 @@ class Paginator
             }
         }
         
+        // Figure out clean URIs for previous/current/next pages.
         $previousPageUri = null;
         if ($previousPageIndex != null)
         {
-        	if ($previousPageIndex == 1)
-        		$previousPageUri = $this->page->getUri();
-        	else
-        		$previousPageUri = $this->page->getUri() . '/' . $previousPageIndex;
+            if ($previousPageIndex == 1)
+                $previousPageUri = $this->page->getUri();
+            else
+                $previousPageUri = $this->page->getUri() . '/' . $previousPageIndex;
         }
         
+        $thisPageUri = $this->page->getUri();
+        if ($this->page->getPageNumber() > 1)
+        {
+            $thisPageUri .= '/' . $this->page->getPageNumber();
+        }
+        
+        $nextPageUri = null;
+        if ($nextPageIndex != null)
+        {
+            $nextPageUri = $this->page->getUri() . '/' . $nextPageIndex;
+        }
+        
+        // That's it!
         $this->paginationData = array(
                                 'posts' => $postsData,
-                                'prev_page' => ($previousPageIndex == null) ? null : $previousPageUri,
-                                'this_page' => $this->page->getUri() . '/' . $this->page->getPageNumber(),
-                                'next_page' => ($nextPageIndex == null) ? null : ($this->page->getUri() . '/' . $nextPageIndex)
+                                'prev_page' => $previousPageUri,
+                                'this_page' => $thisPageUri,
+                                'next_page' => $nextPageUri
                                 );
     }
     
@@ -214,16 +231,18 @@ class Paginator
             $filteredPostInfos = array();
             foreach ($postInfos as $postInfo)
             {
-                $post = PageRepository::getOrCreatePage(
-                    $this->pieCrust,
-                    UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
-                    $postInfo['path'],
-                    Page::TYPE_POST,
-                    $blogKey);
-                
-                if ($postsFilter->postMatches($post))
+                if (!isset($postInfo['page']))
                 {
-                    $postInfo['page'] = $post;
+                    $postInfo['page'] = PageRepository::getOrCreatePage(
+                        $this->pieCrust,
+                        UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
+                        $postInfo['path'],
+                        Page::TYPE_POST,
+                        $blogKey);
+                }
+                
+                if ($postsFilter->postMatches($postInfo['page']))
+                {
                     $filteredPostInfos[] = $postInfo;
                     
                     // Exit if we more than enough posts.
@@ -251,12 +270,16 @@ class Paginator
             $relevantPostInfos = array();
             foreach ($relevantSlice as $postInfo)
             {
-                $postInfo['page'] = PageRepository::getOrCreatePage(
-                    $this->pieCrust,
-                    UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
-                    $postInfo['path'],
-                    Page::TYPE_POST,
-                    $blogKey);
+                if (!isset($postInfo['page']))
+                {
+                    $postInfo['page'] = PageRepository::getOrCreatePage(
+                        $this->pieCrust,
+                        UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
+                        $postInfo['path'],
+                        Page::TYPE_POST,
+                        $blogKey);
+                }
+                
                 $relevantPostInfos[] = $postInfo;
             }
             $hasMorePages = (count($postInfos) > ($offset + $postsPerPage));

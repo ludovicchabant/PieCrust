@@ -15,47 +15,96 @@ use PieCrust\PieCrustException;
 abstract class FileSystem
 {
     protected $pieCrust;
+    protected $subDir;
     
-    protected function __construct(PieCrust $pieCrust)
+    protected function __construct(PieCrust $pieCrust, $subDir)
     {
         $this->pieCrust = $pieCrust;
+        
+        if ($subDir == null) $this->subDir = '';
+        else $this->subDir = trim($subDir, '\\/') . '/';
     }
     
     public abstract function getPostFiles();
     
-    public abstract function getPostPathComponents($filename);
+    public function getPathInfo($captureGroups)
+    {
+        $needsRecapture = false;
+        if (array_key_exists('year', $captureGroups))
+        {
+            $year = $captureGroups['year'];
+        }
+        else
+        {
+            $year = '????';
+            $needsRecapture = true;
+        }
+        if (array_key_exists('month', $captureGroups))
+        {
+            $month = $captureGroups['month'];
+        }
+        else
+        {
+            $month = '??';
+            $needsRecapture = true;
+        }
+        if (array_key_exists('day', $captureGroups))
+        {
+            $day = $captureGroups['day'];
+        }
+        else
+        {
+            $day = '??';
+            $needsRecapture = true;
+        }
+        $slug = $captureGroups['slug']; // 'slug' is required.
+        
+        $path = $this->getPathFormat();
+        $path = str_replace(
+            array('%year%', '%month%', '%day%', '%slug%'),
+            array($year, $month, $day, $slug),
+            $path
+        );
+        $path = $this->pieCrust->getPostsDir() . $this->subDir . $path;
+        
+        $pathInfo = array(
+            'year' => $year,
+            'month' => $month,
+            'day' => $day,
+            'slug' => $slug,
+            'path' => $path
+        );
+        if ($needsRecapture)
+        {
+            die("RECAPTURE");
+            // Not all path components were specified in the URL (e.g. because the
+            // post URL format doesn't capture all of them).
+            // We need to find a physical file that matches everything we have,
+            // and fill in the blanks.
+            $possiblePaths = glob($path);
+            if (count($possiblePaths) != 1)
+                throw new PieCrustException('404');
+            
+            $pathInfo['path'] = $possiblePaths[0];
+            
+            $pathComponentsRegex = preg_quote($this->getPathFormat(), '/');
+            $pathComponentsRegex = str_replace(
+                array('%year%', '%month%', '%day%', '%slug%'),
+                array('(\d{4})', '(\d{2})', '(\d{2})', '(\d{2})')
+            );
+            $pathComponentsMatches = array();
+            if (preg_match($pathComponentsRegex, str_replace('\\', '/', $possiblePaths[0]), $pathComponentsMatches) !== 1)
+                throw new PieCrustException("Can't extract path components from path: " . $possiblePaths[0]);
+            
+            $pathInfo['year'] = $pathComponentsMatches[1];
+            $pathInfo['year'] = $pathComponentsMatches[2];
+            $pathInfo['month'] = $pathComponentsMatches[3];
+            $pathInfo['day'] = $pathComponentsMatches[4];
+        }
+        return $pathInfo;
+    }
     
     public abstract function getPathFormat();
-    
-    public function getPath(&$captureGroups)
-    {
-    	$year = array_key_exists('year', $captureGroups) ? $captureGroups['year'] : '????';
-    	$month = array_key_exists('month', $captureGroups) ? $captureGroups['month'] : '??';
-    	$day = array_key_exists('day', $captureGroups) ? $captureGroups['day'] : '??';
-    	$slug = $captureGroups['slug']; // slug is required as can be *the* identifying part in many cases
-    	
-    	$path = $this->getPathFormat();
-    	$path = str_replace('%year%', $year, $path);
-    	$path = str_replace('%month%', $month, $path);
-    	$path = str_replace('%day%', $day, $path);
-    	$path = str_replace('%slug%', $slug, $path);
-    	
-    	if (strpos($path, '?') !== false)
-    	{
-    		$possibilities = glob($path);
-    		$countOfPossibilities = count($possibilities);
-    		if ($countOfPossibilities !== 1)
-    			throw new PieCrustException("Path format " . $path . " yielded no or more than 1 possibility!");
-    			
-    		$path = $possibilities[0];
-    		$components = $this->getPostPathComponents($path);
-    		$captureGroups['year'] = $components['year'];
-    		$captureGroups['month'] = $components['month'];
-    		$captureGroups['day'] = $components['day'];
-    	}
-
-    	return $path;
-    }
     
     public static function create(PieCrust $pieCrust, $subDir = null)
     {
@@ -65,12 +114,12 @@ abstract class FileSystem
         {
         case 'hierarchy':
             return new HierarchicalFileSystem($pieCrust, $subDir);
+        case 'shallow':
+            return new ShallowFileSystem($pieCrust, $subDir);
         case 'flat':
             return new FlatFileSystem($pieCrust, $subDir);
-		case 'year':
-			return new YearFileSystem($pieCrust, $subDir);
         default:
-            throw new PieCrustException("");
+            throw new PieCrustException("Unknown posts_fs: " . $postsFs);
         }
     }
     

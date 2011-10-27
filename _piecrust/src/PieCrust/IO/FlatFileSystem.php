@@ -11,14 +11,9 @@ use PieCrust\PieCrustException;
  */
 class FlatFileSystem extends FileSystem
 {
-    protected $subDir;
-    
     public function __construct(PieCrust $pieCrust, $subDir)
     {
-        FileSystem::__construct($pieCrust);
-        
-        if ($subDir == null) $this->subDir = '';
-        else $this->subDir = trim($subDir, '\\/') . '/';
+        FileSystem::__construct($pieCrust, $subDir);
     }
     
     public function getPostFiles()
@@ -34,35 +29,24 @@ class FlatFileSystem extends FileSystem
         $result = array();
         foreach ($paths as $path)
         {
-            $matches = $this->getPostPathComponents($path);
-            if ($matches == false) continue;
-            $result[] = $matches;
+            $matches = array();
+            
+            if (preg_match('/(\d{4})-(\d{2})-(\d{2})_(.*)\.html$/', $path, $matches) == false)
+                continue;
+            
+            $result[] = array(
+                'year' => $matches[1],
+                'month' => $matches[2],
+                'day' => $matches[3],
+                'name' => $matches[4],
+                'path' => $path
+            );
         }
         return $result;
     }
     
-    public function getPostPathComponents($path) {
-    	$matches = array();
-    	
-    	$filename = pathinfo($path, PATHINFO_BASENAME);
-    	if (preg_match('/^(\d{4})-(\d{2})-(\d{2})_(.*)\.html$/', $filename, $matches) == false)
-    	    return false;
-    	
-    	$result = array(
-    	    'year' => $matches[1],
-    	    'month' => $matches[2],
-    	    'day' => $matches[3],
-    	    'name' => $matches[4],
-    	    'path' => $path
-    	);
-    	
-    	return $result;
-    }
-    
     public function getPathFormat()
     {
-        $baseDir = $this->pieCrust->getPostsDir();
-        $path = $baseDir . $this->subDir . '%year%-%month%-%day%_%slug%.html';
-        return $path;
+        return '%year%-%month%-%day%_%slug%.html';
     }
 }
