@@ -343,7 +343,14 @@ class PieCrust
             $this->pathPrefix = $this->getConfigValueUnchecked('site', 'root') . (($isPretty or $isBaking) ? '' : '?/');
             $this->pathSuffix = ($isBaking and !$isPretty) ? '.html' : '';
             if ($this->debuggingEnabled && !$isBaking)
-                $this->pathSuffix .= '?!debug';
+            {
+                if ($isPretty)
+                    $this->pathSuffix .= '?!debug';
+                else if (strpos($this->pathPrefix, '?') === false)
+                    $this->pathSuffix .= '?!debug';
+                else
+                    $this->pathSuffix .= '&!debug';
+            }
         }
         
         return $this->pathPrefix . $uri . $this->pathSuffix;
