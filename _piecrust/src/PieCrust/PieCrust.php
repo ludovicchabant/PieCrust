@@ -311,8 +311,11 @@ class PieCrust
     /**
      * Formats a given text using the registered page formatters.
      */
-    public function formatText($text, $format)
+    public function formatText($text, $format = null)
     {
+        if (!$format)
+            $format = $this->getConfigValueUnchecked('site', 'default_format');
+        
         $unformatted = true;
         $formattedText = $text;
         foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
