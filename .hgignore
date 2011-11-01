@@ -6,6 +6,7 @@ Thumbs\.db
 # App cache files.
 _cache/(?!\.empty)
 ^tests/tmp/(?!\.empty)
+bakeinfo\.json
 
 # Libs files we don't need.
 .gitignore
