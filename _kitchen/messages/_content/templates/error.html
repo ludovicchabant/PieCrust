@@ -1,0 +1,10 @@
+{% extends "default.html" %}
+
+{% block footer %}
+{% pcformat textile %}
+p(note). To see your custom error pages, make sure you don't initialize *PieCrust*
+    with the @debug@ parameter, and turn off the @display_errors@ setting in
+    your @php.ini@. Note that with the @chef@ development server, @PieCrust@
+    is always in @debug@ mode.
+{% endpcformat %}
+{% endblock %}
