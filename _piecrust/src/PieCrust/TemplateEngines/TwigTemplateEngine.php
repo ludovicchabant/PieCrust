@@ -26,6 +26,8 @@ class TwigTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         
+        // Some of our extensions require access to the current PieCrust app.
+        $data['PIECRUST_APP'] = $this->pieCrust;
         // Temporarily disable caching in Twig to prevent the _cache folder from
         // becoming enormous.
         $cache = $this->twigEnv->getCache();
@@ -39,10 +41,12 @@ class TwigTemplateEngine implements ITemplateEngine
             }
             catch (Exception $e)
             {
+                unset($data['PIECRUST_APP']);
                 $this->twigEnv->setCache($cache);
                 throw $e;
             }
         }
+        unset($data['PIECRUST_APP']);
         $this->twigEnv->setCache($cache);
     }
     
@@ -51,7 +55,11 @@ class TwigTemplateEngine implements ITemplateEngine
         $this->ensureLoaded();
         
         $tpl = $this->twigEnv->loadTemplate($templateName);
+        
+        // Some of our extensions require access to the current PieCrust app.
+        $data['PIECRUST_APP'] = $this->pieCrust;
         $tpl->display($data);
+        unset($data['PIECRUST_APP']);
     }
     
     public function clearInternalCache()

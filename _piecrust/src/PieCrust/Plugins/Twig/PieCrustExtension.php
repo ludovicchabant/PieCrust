@@ -1,5 +1,7 @@
 <?php
 
+require_once 'PieCrustFormatterTokenParser.php';
+
 use PieCrust\PieCrust;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
@@ -27,6 +29,13 @@ class PieCrustExtension extends Twig_Extension
     public function getName()
     {
         return "piecrust";
+    }
+    
+    public function getTokenParsers()
+    {
+        return array(
+            new PieCrustFormatterTokenParser(),
+        );
     }
     
     public function getFunctions()
