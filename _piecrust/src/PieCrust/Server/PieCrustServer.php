@@ -9,6 +9,7 @@ use \StupidHttp_ConsoleLog;
 use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\PieCrustErrorHandler;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Page\PageRepository;
 
@@ -117,22 +118,6 @@ class PieCrustServer
         $this->server->run($options);
     }
     
-    protected function createPieCrustApp()
-    {
-        $pieCrust = new PieCrust(array(
-                                        'root' => $this->rootDir,
-                                        'cache' => true
-                                      )
-                                );
-        $pieCrust->setConfigValue('server', 'is_hosting', true);
-        $pieCrust->setConfigValue('site', 'root', '/');
-        if ($this->additionalTemplatesDir != null)
-        {
-            $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
-        }
-        return $pieCrust;
-    }
-    
     /**
      * For internal use only.
      */
@@ -193,16 +178,27 @@ class PieCrustServer
         $startTime = microtime(true);
         
         // Run PieCrust dynamically.
-        $pieCrust = $this->createPieCrustApp();
+        $pieCrust = new PieCrust(array(
+                                        'root' => $this->rootDir,
+                                        'cache' => true
+                                      ),
+                                 $context->getRequest()->getServerVariables()
+                                );
+        $pieCrust->setConfigValue('server', 'is_hosting', true);
         $pieCrust->setConfigValue('site', 'cache_time', false);
         $pieCrust->setConfigValue('site', 'pretty_urls', true);
+        $pieCrust->setConfigValue('site', 'root', '/');
+        if ($this->additionalTemplatesDir != null)
+        {
+            $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
+        }
         
         $headers = array();
-        $pieCrustError = null;
+        $pieCrustException = null;
         try
         {
             $pieCrust->runUnsafe(
-                                 $context->getRequest()->getUri(),
+                                 null,
                                  $context->getRequest()->getServerVariables(),
                                  null,
                                  $headers
@@ -210,7 +206,7 @@ class PieCrustServer
         }
         catch (Exception $e)
         {
-            $pieCrustError = $e->getMessage();
+            $pieCrustException = $e;
         }
         
         $code = 500;
@@ -222,9 +218,9 @@ class PieCrustServer
         }
         else
         {
-            $code = ($pieCrustError == null) ? 200 :
+            $code = ($pieCrustException == null) ? 200 :
                         (
-                            ($pieCrustError == '404') ? 404 : 500
+                            ($pieCrustException->getMessage() == '404') ? 404 : 500
                         );
         }
         
@@ -235,17 +231,18 @@ class PieCrustServer
             $context->getResponse()->setHeader($h, $v);
         }
         
-        if ($pieCrustError)
+        if ($pieCrustException)
         {
-            piecrust_show_system_message('error', $pieCrustError);
+            $handler = new PieCrustErrorHandler($pieCrust);
+            $handler->handleError($pieCrustException);
         }
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
         $context->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
-        if ($pieCrustError != null)
+        if ($pieCrustException != null)
         {
-            $context->getLog()->logError("    PieCrust error: " . $pieCrustError);
+            $context->getLog()->logError("    PieCrust error: " . $pieCrustException->getMessage());
         }
     }
 }

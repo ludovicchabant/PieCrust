@@ -408,7 +408,7 @@ class PieCrust
     /**
      * Creates a new PieCrust instance with the given base URL.
      */
-    public function __construct(array $parameters = array())
+    public function __construct(array $parameters = array(), array $server = null)
     {
         $parameters = array_merge(
             array(
@@ -418,18 +418,27 @@ class PieCrust
             ),
             $parameters
         );
+        if ($server == null)
+        {
+            $server = $_SERVER;
+        }
+        $get = array();
+        if (isset($server['QUERY_STRING']))
+        {
+            parse_str($server['QUERY_STRING'], $get);
+        }
         
         if (!$parameters['root'])
         {
             // Figure out the default root directory.
-            if (!isset($_SERVER['SCRIPT_FILENAME']))
+            if (!isset($server['SCRIPT_FILENAME']))
                 throw new PieCrustException("Can't figure out the default root directory for the website.");
-            $parameters['root'] = dirname($_SERVER['SCRIPT_FILENAME']);
+            $parameters['root'] = dirname($server['SCRIPT_FILENAME']);
         }
         
         $this->rootDir = rtrim($parameters['root'], '/\\') . '/';
-        $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($_GET['!debug']));
-        $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($_GET['!nocache']));
+        $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($get['!debug']));
+        $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($get['!nocache']));
     }
     
     /**
