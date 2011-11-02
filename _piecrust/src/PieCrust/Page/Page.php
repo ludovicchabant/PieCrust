@@ -25,8 +25,16 @@ class Page
     const TYPE_TAG = 3;
     const TYPE_CATEGORY = 4;
     
-    protected $pieCrust;
     protected $cache;
+    
+    protected $pieCrust;
+    /**
+     * Gets the PieCrust app this page belongs to.
+     */
+    public function getApp()
+    {
+        return $this->pieCrust;
+    }
     
     protected $path;
     /**
@@ -256,6 +264,18 @@ class Page
             return $this->pieCrust->getConfigValue($appKey, $key);
         }
         return null;
+    }
+    
+    /**
+     * Returns whether the page has a value for the given configuration key.
+     */
+    public function hasConfigValue($key)
+    {
+        if ($this->config === null)
+        {
+            $this->loadConfigAndContents();
+        }
+        return isset($this->config[$key]);
     }
     
     protected $contents;
