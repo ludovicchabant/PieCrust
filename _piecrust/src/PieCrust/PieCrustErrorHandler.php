@@ -52,6 +52,12 @@ class PieCrustErrorHandler
         // If debugging is enabled, just display the error and exit.
         if ($displayErrors)
         {
+            if ($e->getMessage() == '404')
+            {
+                //TODO: set header?
+                piecrust_show_system_message('404');
+                return;
+            }
             $errorMessage = self::formatErrors(array($e), true);
             piecrust_show_system_message('error', $errorMessage);
             return;
@@ -79,10 +85,10 @@ class PieCrustErrorHandler
         catch (Exception $inner)
         {
             // What the fuck.
-            piecrust_show_system_message('error', $inner->getMessage());
+            piecrust_show_system_message('critical', $inner->getMessage());
             return;
         }
-        $errorMessage = "<p>We're very sorry but something wrong happened. We'll try to do better next time.</p>";
+        $errorMessage = "<p>We're very sorry but something very wrong happened, and we don't know what. We'll try to do better next time.</p>";
         if ($errorPageUriInfo != null and is_file($errorPageUriInfo['path']))
         {
             // We have a custom error page. Show it, or display
@@ -94,7 +100,7 @@ class PieCrustErrorHandler
             catch (Exception $inner)
             {
                 // Well there's really something wrong.
-                piecrust_show_system_message('error', $errorMessage);
+                piecrust_show_system_message('critical', $errorMessage);
             }
         }
         else
