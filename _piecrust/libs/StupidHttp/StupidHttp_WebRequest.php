@@ -69,6 +69,19 @@ class StupidHttp_WebRequest
         return $this->serverVariables;
     }
     
+    protected $queryVariables;
+    /**
+     * Gets the query variables (emulated $_GET) for the request.
+     */
+    public function getQueryVariables()
+    {
+        if ($this->queryVariables === null)
+        {
+            $this->queryVariables = $this->buildQueryVariables();
+        }
+        return $this->queryVariables;
+    }
+    
     /**
      * Creates a new instance of StupidHttp_WebRequest.
      */
@@ -97,13 +110,14 @@ class StupidHttp_WebRequest
     
     protected function buildServerVariables()
     {
+        $uri = parse_url($this->getUri());
         $server = array();
         
         $server['REQUEST_METHOD'] = $this->getMethod();
         $server['SERVER_NAME'] = $this->server->getAddress();
         $server['SERVER_PORT'] = $this->server->getPort();
         $server['SERVER_PROTOCOL'] = 'HTTP/1.1';
-        $server['QUERY_STRING'] = $this->getUri();
+        $server['QUERY_STRING'] = isset($uri['query']) ? $uri['query'] : null;
         $server['REQUEST_URI'] = $this->getUri();
         $server['REQUEST_TIME'] = time();
         $server['argv'] = array();
@@ -117,5 +131,16 @@ class StupidHttp_WebRequest
         }
         
         return $server;
+    }
+    
+    protected function buildQueryVariables()
+    {
+        $url = parse_url($this->getUri());
+        $get = array();
+        if (isset($url['query']))
+        {
+            parse_str($url['query'], $get);
+        }
+        return $get;
     }
 }
