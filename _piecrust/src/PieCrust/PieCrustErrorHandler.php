@@ -23,10 +23,16 @@ class PieCrustErrorHandler
             $errorMessages .= '<li><h3>' . $e->getMessage() . '</h3>';
             if ($printDetails)
             {
-                $errorMessages .= '<p>Error: <code>' . $e->getCode() . '</code><br/>' .
-                                  '   File: <code>' . $e->getFile() . '</code><br/>' .
-                                  '   Line <code>' . $e->getLine() . '</code><br/>' .
-                                  '   Trace: <code><pre>' . $e->getTraceAsString() . '</pre></code></p>';
+                $cur = $e;
+                while ($cur != null)
+                {
+                    $errorMessages .= '<p>Message: <code>' . $cur->getMessage() . '</code></br>' .
+                                      '   Error: <code>' . $cur->getCode() . '</code><br/>' .
+                                      '   File: <code>' . $cur->getFile() . '</code><br/>' .
+                                      '   Line <code>' . $cur->getLine() . '</code><br/>' .
+                                      '   Trace: <code><pre>' . $cur->getTraceAsString() . '</pre></code></p>';
+                    $cur = $cur->getPrevious();
+                }
             }
             $errorMessages .= '</li>';
         }
@@ -71,6 +77,9 @@ class PieCrustErrorHandler
             return;
         }
         
+        // Generic error message in case we don't have anything custom.
+        $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. We'll try to do better next time.</p>";
+        
         // Get the URI to the custom error page.
         $errorPageUri = '_error';
         if ($e->getMessage() == '404')
@@ -85,10 +94,9 @@ class PieCrustErrorHandler
         catch (Exception $inner)
         {
             // What the fuck.
-            piecrust_show_system_message('critical', $inner->getMessage());
+            piecrust_show_system_message('critical', $errorMessage);
             return;
         }
-        $errorMessage = "<p>We're very sorry but something very wrong happened, and we don't know what. We'll try to do better next time.</p>";
         if ($errorPageUriInfo != null and is_file($errorPageUriInfo['path']))
         {
             // We have a custom error page. Show it, or display
