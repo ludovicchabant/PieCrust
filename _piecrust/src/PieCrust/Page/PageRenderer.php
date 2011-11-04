@@ -56,6 +56,10 @@ class PageRenderer
                 }
             }
             
+            // We need to reset the pagination data so that any filters or modifications
+            // applied to it by the page are not also applied to the template.
+            $page->getPaginator()->resetPaginationData();
+            
             // Render the page.
             $templateEngine->renderFile($templateName, $data);
         }

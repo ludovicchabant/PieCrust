@@ -5,6 +5,7 @@ require_once (dirname(__DIR__) . '/unittest_setup.php');
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\Paginator;
+use PieCrust\Page\PaginationIterator;
 
 
 class PaginatorTest extends PHPUnit_Framework_TestCase
@@ -35,36 +36,36 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         $page->setConfigAndContents(array(), array('content' => 'Dummy page for paginator tests.'));
         $paginator = $page->getPaginator();
         $paginator->setPaginationDataSource($this->buildPaginationDataSource($pc, $postCount));
-        $data = $paginator->getPaginationData();
         
-        $this->assertNotNull($data);
+        $posts = $paginator->posts();
+        $this->assertNotNull($posts);
         if ($postCount <= 5)
         {
             // All posts fit on the page.
-            $this->assertNull($data['prev_page']);
-            $this->assertEquals('test-page-uri', $data['this_page']);
-            $this->assertNull($data['next_page']);
+            $this->assertNull($paginator->prev_page());
+            $this->assertEquals('test-page-uri', $paginator->this_page());
+            $this->assertNull($paginator->next_page());
         }
         else if ($pageNumber <= 1)
         {
             // Lots of posts, but this is the first page.
-            $this->assertNull($data['prev_page']);
-            $this->assertEquals('test-page-uri', $data['this_page']);
-            $this->assertEquals('test-page-uri/2', $data['next_page']);
+            $this->assertNull($paginator->prev_page());
+            $this->assertEquals('test-page-uri', $paginator->this_page());
+            $this->assertEquals('test-page-uri/2', $paginator->next_page());
         }
         else if ($pageNumber * 5 > $postCount)
         {
             // Lots of posts, and this is a page somewhere in the middle, or
             // the last page.
             if ($pageNumber > 2)
-                $this->assertEquals('test-page-uri/' . ($pageNumber - 1), $data['prev_page']);
+                $this->assertEquals('test-page-uri/' . ($pageNumber - 1), $paginator->prev_page());
             else
-                $this->assertEquals('test-page-uri', $data['prev_page']);
-            $this->assertEquals('test-page-uri/' . $pageNumber, $data['this_page']);
+                $this->assertEquals('test-page-uri', $paginator->prev_page());
+            $this->assertEquals('test-page-uri/' . $pageNumber, $paginator->this_page());
             if ($pageNumber * 5 > $postCount)
-                $this->assertNull($data['next_page']);
+                $this->assertNull($paginator->next_page());
             else
-                $this->assertEquals('test-page-uri/' . ($pageNumber + 1), $data['next_page']);
+                $this->assertEquals('test-page-uri/' . ($pageNumber + 1), $paginator->next_page());
         }
         
         $expectedCount = $postCount;
@@ -75,17 +76,37 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             else
                 $expectedCount = ($postCount % 5);
         }
-        $this->assertEquals($expectedCount, count($data['posts']));
-        for ($i = 0; $i < $expectedCount; ++$i)
-        {
-            $post = $data['posts'][$i];
-            $fullIndex = $i + 5 * ($pageNumber - 1);
-            
-            $this->assertEquals('test-post-number-' . $fullIndex . '-name', $post['slug']);
-            $time = mktime(0, 0, 0, ($fullIndex % 12), (($fullIndex * 3) % 28), 2006 + ($fullIndex / 6));
-            $this->assertEquals(date('F j, Y', $time), $post['date']);
-            $this->assertEquals('Test page ' . $fullIndex . ' contents.', $post['content']);
-        }
+        $expectedIndexes = array();
+        if ($postCount > 0)
+            $expectedIndexes = range(5 * ($pageNumber - 1), 5 * ($pageNumber - 1) + $expectedCount - 1);
+        $this->assertExpectedPostsData($expectedIndexes, $posts);
+    }
+    
+    public function fluentFilteringDataProvider()
+    {
+        return array(
+            array(1, 17, null, range(0, 16)),
+            array(1, 17, function ($it) { $it->skip(4); }, range(4, 16)),
+            array(1, 17, function ($it) { $it->limit(3); }, range(0, 2)),
+            array(1, 17, function ($it) { $it->skip(2)->limit(3); }, range(2, 4))
+        );
+    }
+    
+    /**
+     * @dataProvider fluentFilteringDataProvider
+     */
+    public function testFluentFiltering($pageNumber, $postCount, $filterFunc, $expectedIndexes)
+    {
+        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
+        $pc->setConfigValue('site', 'posts_per_page', 5);
+        $page = new Page($pc, 'test-page-uri', 'test-page-path', Page::TYPE_REGULAR, null, null, $pageNumber, null);
+        $page->setConfigAndContents(array(), array('content' => 'Dummy page for paginator tests.'));
+        $dataSource = $this->buildPaginationDataSource($pc, $postCount);
+        $it = new PaginationIterator($page, $dataSource);
+        
+        if ($filterFunc)
+            $filterFunc($it);
+        $this->assertExpectedPostsData($expectedIndexes, $it);
     }
     
     protected function buildPaginationDataSource(PieCrust $pc, $postCount)
@@ -99,7 +120,10 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $name = ('test-post-number-' . $i . '-name');
             $path = ('test-post-number-' . $i . '-path.html');
             $dummyPage = new Page($pc, $name, $path);
-            $dummyPage->setConfigAndContents(array(), array('content' => ('Test page ' . $i . ' contents.')));
+            $dummyPage->setConfigAndContents(
+                array(),
+                array('content' => ('Test page ' . $i . ' contents.'))
+            );
             $posts[] = array(
                 'year' => $year,
                 'month' => $month,
@@ -110,5 +134,18 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             );
         }
         return $posts;
+    }
+    
+    protected function assertExpectedPostsData($expectedIndexes, $actualPosts)
+    {
+        $this->assertEquals(count($expectedIndexes), count($actualPosts));
+        foreach ($expectedIndexes as $k => $i)
+        {
+            $post = $actualPosts[$k];
+            $this->assertEquals('test-post-number-' . $i . '-name', $post['slug']);
+            $time = mktime(0, 0, 0, ($i % 12), (($i * 3) % 28), 2006 + ($i / 6));
+            $this->assertEquals(date('F j, Y', $time), $post['date']);
+            $this->assertEquals('Test page ' . $i . ' contents.', $post['content']);
+        }
     }
 }
