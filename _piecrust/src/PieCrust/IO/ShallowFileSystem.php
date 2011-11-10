@@ -34,7 +34,7 @@ class ShallowFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $posts = array();
-            $pathPattern = $this->pieCrust->getPostsDir() . $this->subDir . '/' . $year . '/' . '*.html';
+            $pathPattern = $this->pieCrust->getPostsDir() . $this->subDir . $year . '/' . '*.html';
             $paths = glob($pathPattern, GLOB_ERR);
             if ($paths === false)
             {

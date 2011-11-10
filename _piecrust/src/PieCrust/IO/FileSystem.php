@@ -98,9 +98,9 @@ abstract class FileSystem
                 throw new PieCrustException("Can't extract path components from path: " . $possiblePaths[0]);
             
             $pathInfo['year'] = $pathComponentsMatches[1];
-            $pathInfo['year'] = $pathComponentsMatches[2];
-            $pathInfo['month'] = $pathComponentsMatches[3];
-            $pathInfo['day'] = $pathComponentsMatches[4];
+            $pathInfo['month'] = $pathComponentsMatches[2];
+            $pathInfo['day'] = $pathComponentsMatches[3];
+            $pathInfo['slug'] = $pathComponentsMatches[4];
         }
         return $pathInfo;
     }
