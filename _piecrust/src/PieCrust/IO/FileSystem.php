@@ -76,7 +76,6 @@ abstract class FileSystem
         );
         if ($needsRecapture)
         {
-            die("RECAPTURE");
             // Not all path components were specified in the URL (e.g. because the
             // post URL format doesn't capture all of them).
             // We need to find a physical file that matches everything we have,
@@ -90,8 +89,10 @@ abstract class FileSystem
             $pathComponentsRegex = preg_quote($this->getPathFormat(), '/');
             $pathComponentsRegex = str_replace(
                 array('%year%', '%month%', '%day%', '%slug%'),
-                array('(\d{4})', '(\d{2})', '(\d{2})', '(\d{2})')
+                array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)'),
+                $pathComponentsRegex
             );
+            $pathComponentsRegex = '/' . $pathComponentsRegex . '/';
             $pathComponentsMatches = array();
             if (preg_match($pathComponentsRegex, str_replace('\\', '/', $possiblePaths[0]), $pathComponentsMatches) !== 1)
                 throw new PieCrustException("Can't extract path components from path: " . $possiblePaths[0]);
