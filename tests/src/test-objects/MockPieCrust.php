@@ -126,8 +126,15 @@ class MockPieCrust implements IPieCrust
     public function __construct()
     {
         $this->config = new PieCrustConfiguration();
-        $engine = new PieCrust\TemplateEngines\PassThroughTemplateEngine();
+        $this->templateEngines = array();
+        $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
+    }
+    
+    public function addTemplateEngine($name, $className)
+    {
+        $className = 'PieCrust\\TemplateEngines\\' . $className;
+        $engine = new $className;
         $engine->initialize($this);
-        $this->templateEngines = array('none' => $engine);
+        $this->templateEngines[$name] = $engine;
     }
 }

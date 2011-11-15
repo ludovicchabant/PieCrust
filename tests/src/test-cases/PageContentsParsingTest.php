@@ -27,13 +27,20 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         return $data;
     }
     
+    public function formatUriCallback($uri)
+    {
+        return 'http://whatever/?/'.$uri;
+    }
+    
     /**
      * @dataProvider parsePageContentsDataProvider
      */
     public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
         // Create the page that will load our test file.
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
+        $pc = $this->getMock('MockPieCrust', array('formatUri'));
+        $pc->setPagesDir(PIECRUST_UNITTESTS_EMPTY_ROOT_DIR . 'pages/');
+        $pc->setTemplatesDirs(array());
         $pc->getConfig()->set(array(
             'site' => array(
                 'root' => 'http://whatever',
@@ -41,7 +48,13 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
                 'default_template_engine' => 'none'
             )
         ));
-        
+        $pc->addTemplateEngine('dwoo', 'DwooTemplateEngine');
+        $pc->addTemplateEngine('haml', 'HamlTemplateEngine');
+        $pc->addTemplateEngine('mustache', 'MustacheTemplateEngine');
+        $pc->addTemplateEngine('twig', 'TwigTemplateEngine');
+        $pc->expects($this->any())
+           ->method('formatUri')
+           ->will($this->returnCallback(array($this, 'formatUriCallback')));
         $p = new Page($pc, '/test', $testFilename);
         
         // Get the stuff we are expecting.
