@@ -55,7 +55,7 @@ if (!defined('T_NAMESPACE')) {
  * @author     Sebastian Bergmann <sebastian@phpunit.de>
  * @copyright  2002-2011 Sebastian Bergmann <sebastian@phpunit.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 3.5.15
+ * @version    Release: 3.6.3
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 3.1.0
  */
@@ -146,8 +146,9 @@ class PHPUnit_Util_Class
                 $name .= 'arg' . $i;
             }
 
-            $default  = '';
-            $typeHint = '';
+            $default   = '';
+            $reference = '';
+            $typeHint  = '';
 
             if (!$forCall) {
                 if ($parameter->isArray()) {
@@ -170,19 +171,16 @@ class PHPUnit_Util_Class
                     $value   = $parameter->getDefaultValue();
                     $default = ' = ' . var_export($value, TRUE);
                 }
-
                 else if ($parameter->isOptional()) {
                     $default = ' = null';
                 }
+
+                if ($parameter->isPassedByReference()) {
+                    $reference = '&';
+                }
             }
 
-            $ref = '';
-
-            if ($parameter->isPassedByReference()) {
-                $ref = '&';
-            }
-
-            $parameters[] = $typeHint . $ref . $name . $default;
+            $parameters[] = $typeHint . $reference . $name . $default;
         }
 
         return join(', ', $parameters);

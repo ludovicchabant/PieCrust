@@ -52,7 +52,7 @@
  * @author     Sebastian Bergmann <sebastian@phpunit.de>
  * @copyright  2002-2011 Sebastian Bergmann <sebastian@phpunit.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 3.5.15
+ * @version    Release: 3.6.3
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 3.0.0
  */
@@ -64,7 +64,6 @@ class PHPUnit_TextUI_Command
     protected $arguments = array(
       'listGroups'              => FALSE,
       'loader'                  => NULL,
-      'syntaxCheck'             => FALSE,
       'useDefaultConfiguration' => TRUE
     );
 
@@ -82,6 +81,8 @@ class PHPUnit_TextUI_Command
       'configuration=' => NULL,
       'coverage-html=' => NULL,
       'coverage-clover=' => NULL,
+      'coverage-php=' => NULL,
+      'coverage-text==' => NULL,
       'debug' => NULL,
       'exclude-group=' => NULL,
       'filter=' => NULL,
@@ -90,7 +91,6 @@ class PHPUnit_TextUI_Command
       'include-path=' => NULL,
       'list-groups' => NULL,
       'loader=' => NULL,
-      'log-dbus' => NULL,
       'log-json=' => NULL,
       'log-junit=' => NULL,
       'log-tap=' => NULL,
@@ -103,21 +103,17 @@ class PHPUnit_TextUI_Command
       'stop-on-failure' => NULL,
       'stop-on-incomplete' => NULL,
       'stop-on-skipped' => NULL,
-      'story' => NULL,
-      'story-html=' => NULL,
-      'story-text=' => NULL,
       'strict' => NULL,
-      'syntax-check' => NULL,
       'tap' => NULL,
       'testdox' => NULL,
       'testdox-html=' => NULL,
       'testdox-text=' => NULL,
       'no-configuration' => NULL,
       'no-globals-backup' => NULL,
+      'printer=' => NULL,
       'static-backup' => NULL,
       'verbose' => NULL,
-      'version' => NULL,
-      'wait' => NULL
+      'version' => NULL
     );
 
     /**
@@ -126,7 +122,7 @@ class PHPUnit_TextUI_Command
     public static function main($exit = TRUE)
     {
         $command = new PHPUnit_TextUI_Command;
-        $command->run($_SERVER['argv'], $exit);
+        return $command->run($_SERVER['argv'], $exit);
     }
 
     /**
@@ -137,7 +133,7 @@ class PHPUnit_TextUI_Command
     {
         $this->handleArguments($argv);
 
-        $runner = new PHPUnit_TextUI_TestRunner($this->arguments['loader']);
+        $runner = $this->createRunner();
 
         if (is_object($this->arguments['test']) &&
             $this->arguments['test'] instanceof PHPUnit_Framework_Test) {
@@ -145,8 +141,7 @@ class PHPUnit_TextUI_Command
         } else {
             $suite = $runner->getTest(
               $this->arguments['test'],
-              $this->arguments['testFile'],
-              $this->arguments['syntaxCheck']
+              $this->arguments['testFile']
             );
         }
 
@@ -178,7 +173,11 @@ class PHPUnit_TextUI_Command
                 print " - $group\n";
             }
 
-            exit(PHPUnit_TextUI_TestRunner::SUCCESS_EXIT);
+            if ($exit) {
+                exit(PHPUnit_TextUI_TestRunner::SUCCESS_EXIT);
+            } else {
+                return PHPUnit_TextUI_TestRunner::SUCCESS_EXIT;
+            }
         }
 
         unset($this->arguments['test']);
@@ -192,19 +191,32 @@ class PHPUnit_TextUI_Command
             print $e->getMessage() . "\n";
         }
 
-        if ($exit) {
-            if (isset($result) && $result->wasSuccessful()) {
-                exit(PHPUnit_TextUI_TestRunner::SUCCESS_EXIT);
-            }
+        $ret = PHPUnit_TextUI_TestRunner::FAILURE_EXIT;
 
-            else if (!isset($result) || $result->errorCount() > 0) {
-                exit(PHPUnit_TextUI_TestRunner::EXCEPTION_EXIT);
-            }
-
-            else {
-                exit(PHPUnit_TextUI_TestRunner::FAILURE_EXIT);
-            }
+        if (isset($result) && $result->wasSuccessful()) {
+            $ret = PHPUnit_TextUI_TestRunner::SUCCESS_EXIT;
         }
+
+        else if (!isset($result) || $result->errorCount() > 0) {
+            $ret = PHPUnit_TextUI_TestRunner::EXCEPTION_EXIT;
+        }
+
+        if ($exit) {
+            exit($ret);
+        } else {
+            return $ret;
+        }
+    }
+
+    /**
+     * Create a TestRunner, override in subclasses.
+     *
+     * @return PHPUnit_TextUI_TestRunner
+     * @since  Method available since Release 3.6.0
+     */
+    protected function createRunner()
+    {
+        return new PHPUnit_TextUI_TestRunner($this->arguments['loader']);
     }
 
     /**
@@ -237,7 +249,7 @@ class PHPUnit_TextUI_Command
         try {
             $this->options = PHPUnit_Util_Getopt::getopt(
               $argv,
-              'd:c:',
+              'd:c:hv',
               array_keys($this->longOptions)
             );
         }
@@ -267,38 +279,51 @@ class PHPUnit_TextUI_Command
                 }
                 break;
 
-                case '--coverage-clover': {
-                    if (extension_loaded('tokenizer') &&
-                        extension_loaded('xdebug')) {
-                        $this->arguments['coverageClover'] = $option[1];
-                    } else {
-                        if (!extension_loaded('tokenizer')) {
-                            $this->showMessage(
-                              'The tokenizer extension is not loaded.'
-                            );
-                        } else {
-                            $this->showMessage(
-                              'The Xdebug extension is not loaded.'
-                            );
-                        }
-                    }
-                }
-                break;
+                case '--coverage-clover':
+                case '--coverage-html':
+                case '--coverage-php':
+                case '--coverage-text': {
+                    if (!extension_loaded('tokenizer')) {
+                        $this->showExtensionNotLoadedMessage(
+                          'tokenizer', 'No code coverage will be generated.'
+                        );
 
-                case '--coverage-html': {
-                    if (extension_loaded('tokenizer') &&
-                        extension_loaded('xdebug')) {
-                        $this->arguments['reportDirectory'] = $option[1];
-                    } else {
-                        if (!extension_loaded('tokenizer')) {
-                            $this->showMessage(
-                              'The tokenizer extension is not loaded.'
-                            );
-                        } else {
-                            $this->showMessage(
-                              'The Xdebug extension is not loaded.'
-                            );
+                        continue;
+                    }
+
+                    if (!extension_loaded('xdebug')) {
+                        $this->showExtensionNotLoadedMessage(
+                          'Xdebug', 'No code coverage will be generated.'
+                        );
+
+                        continue;
+                    }
+
+                    switch ($option[0]) {
+                        case '--coverage-clover': {
+                            $this->arguments['coverageClover'] = $option[1];
                         }
+                        break;
+
+                        case '--coverage-html': {
+                            $this->arguments['reportDirectory'] = $option[1];
+                        }
+                        break;
+
+                        case '--coverage-php': {
+                            $this->arguments['coveragePHP'] = $option[1];
+                        }
+                        break;
+
+                        case '--coverage-text': {
+                            if ($option[1] === NULL) {
+                                $option[1] = 'php://stdout';
+                            }
+
+                            $this->arguments['coverageText'] = $option[1];
+                            $this->arguments['coverageTextShowUncoveredFiles'] = FALSE;
+                        }
+                        break;
                     }
                 }
                 break;
@@ -321,6 +346,7 @@ class PHPUnit_TextUI_Command
                 }
                 break;
 
+                case 'h':
                 case '--help': {
                     $this->showHelp();
                     exit(PHPUnit_TextUI_TestRunner::SUCCESS_EXIT);
@@ -354,13 +380,13 @@ class PHPUnit_TextUI_Command
                 }
                 break;
 
-                case '--loader': {
-                    $this->arguments['loader'] = $option[1];
+                case '--printer': {
+                    $this->arguments['printer'] = $option[1];
                 }
                 break;
 
-                case '--log-dbus': {
-                    $this->arguments['logDbus'] = TRUE;
+                case '--loader': {
+                    $this->arguments['loader'] = $option[1];
                 }
                 break;
 
@@ -381,7 +407,6 @@ class PHPUnit_TextUI_Command
 
                 case '--process-isolation': {
                     $this->arguments['processIsolation'] = TRUE;
-                    $this->arguments['syntaxCheck']      = FALSE;
                 }
                 break;
 
@@ -435,44 +460,6 @@ class PHPUnit_TextUI_Command
                 }
                 break;
 
-                case '--story': {
-                    $this->showMessage(
-                      'The --story functionality is deprecated and ' .
-                      'will be removed in the future.',
-                      FALSE
-                    );
-
-                    $this->arguments['printer'] = new PHPUnit_Extensions_Story_ResultPrinter_Text;
-                }
-                break;
-
-                case '--story-html': {
-                    $this->showMessage(
-                      'The --story-html functionality is deprecated and ' .
-                      'will be removed in the future.',
-                      FALSE
-                    );
-
-                    $this->arguments['storyHTMLFile'] = $option[1];
-                }
-                break;
-
-                case '--story-text': {
-                    $this->showMessage(
-                      'The --story-text functionality is deprecated and ' .
-                      'will be removed in the future.',
-                      FALSE
-                    );
-
-                    $this->arguments['storyTextFile'] = $option[1];
-                }
-                break;
-
-                case '--syntax-check': {
-                    $this->arguments['syntaxCheck'] = TRUE;
-                }
-                break;
-
                 case '--testdox': {
                     $this->arguments['printer'] = new PHPUnit_Util_TestDox_ResultPrinter_Text;
                 }
@@ -503,6 +490,7 @@ class PHPUnit_TextUI_Command
                 }
                 break;
 
+                case 'v':
                 case '--verbose': {
                     $this->arguments['verbose'] = TRUE;
                 }
@@ -511,11 +499,6 @@ class PHPUnit_TextUI_Command
                 case '--version': {
                     PHPUnit_TextUI_TestRunner::printVersionString();
                     exit(PHPUnit_TextUI_TestRunner::SUCCESS_EXIT);
-                }
-                break;
-
-                case '--wait': {
-                    $this->arguments['wait'] = TRUE;
                 }
                 break;
 
@@ -542,15 +525,6 @@ class PHPUnit_TextUI_Command
             }
         }
 
-        if (isset($this->arguments['printer']) &&
-            $this->arguments['printer'] instanceof PHPUnit_Extensions_Story_ResultPrinter_Text &&
-            isset($this->arguments['processIsolation']) &&
-            $this->arguments['processIsolation']) {
-            $this->showMessage(
-              'The story result printer cannot be used in process isolation.'
-            );
-        }
-
         $this->handleCustomTestSuite();
 
         if (!isset($this->arguments['test'])) {
@@ -564,7 +538,9 @@ class PHPUnit_TextUI_Command
                 $this->arguments['testFile'] = '';
             }
 
-            if (isset($this->arguments['test']) && is_file($this->arguments['test'])) {
+            if (isset($this->arguments['test']) &&
+                is_file($this->arguments['test']) &&
+                substr($this->arguments['test'], -5, 5) != '.phpt') {
                 $this->arguments['testFile'] = realpath($this->arguments['test']);
                 $this->arguments['test']     = substr($this->arguments['test'], 0, strrpos($this->arguments['test'], '.'));
             }
@@ -578,7 +554,12 @@ class PHPUnit_TextUI_Command
         }
 
         if (isset($this->arguments['bootstrap'])) {
-            $this->handleBootstrap($this->arguments['bootstrap'], $this->arguments['syntaxCheck']);
+            $this->handleBootstrap($this->arguments['bootstrap']);
+        }
+
+        if (isset($this->arguments['printer']) &&
+            is_string($this->arguments['printer'])) {
+            $this->arguments['printer'] = $this->handlePrinter($this->arguments['printer']);
         }
 
         if ($this->arguments['loader'] !== NULL) {
@@ -628,8 +609,16 @@ class PHPUnit_TextUI_Command
 
             $phpunit = $configuration->getPHPUnitConfiguration();
 
-            if (isset($phpunit['syntaxCheck'])) {
-                $this->arguments['syntaxCheck'] = $phpunit['syntaxCheck'];
+            if (isset($phpunit['printerClass'])) {
+                if (isset($phpunit['printerFile'])) {
+                    $file = $phpunit['printerFile'];
+                } else {
+                    $file = '';
+                }
+
+                $this->arguments['printer'] = $this->handlePrinter(
+                  $phpunit['printerClass'], $file
+                );
             }
 
             if (isset($phpunit['testSuiteLoaderClass'])) {
@@ -644,26 +633,41 @@ class PHPUnit_TextUI_Command
                 );
             }
 
+            $logging = $configuration->getLoggingConfiguration();
+
+            if (isset($logging['coverage-html']) || isset($logging['coverage-clover']) || isset($logging['coverage-text']) ) {
+                if (!extension_loaded('tokenizer')) {
+                    $this->showExtensionNotLoadedMessage(
+                      'tokenizer', 'No code coverage will be generated.'
+                    );
+                }
+
+                else if (!extension_loaded('Xdebug')) {
+                    $this->showExtensionNotLoadedMessage(
+                      'Xdebug', 'No code coverage will be generated.'
+                    );
+                }
+            }
+
             $configuration->handlePHPConfiguration();
 
             if (!isset($this->arguments['bootstrap'])) {
                 $phpunitConfiguration = $configuration->getPHPUnitConfiguration();
 
                 if (isset($phpunitConfiguration['bootstrap'])) {
-                    $this->handleBootstrap($phpunitConfiguration['bootstrap'], $this->arguments['syntaxCheck']);
+                    $this->handleBootstrap($phpunitConfiguration['bootstrap']);
                 }
             }
 
             $browsers = $configuration->getSeleniumBrowserConfiguration();
 
-            if (!empty($browsers)) {
+            if (!empty($browsers) &&
+                class_exists('PHPUnit_Extensions_SeleniumTestCase')) {
                 PHPUnit_Extensions_SeleniumTestCase::$browsers = $browsers;
             }
 
             if (!isset($this->arguments['test'])) {
-                $testSuite = $configuration->getTestSuiteConfiguration(
-                  $this->arguments['syntaxCheck']
-                );
+                $testSuite = $configuration->getTestSuiteConfiguration();
 
                 if ($testSuite !== NULL) {
                     $this->arguments['test'] = $testSuite;
@@ -682,10 +686,6 @@ class PHPUnit_TextUI_Command
             (isset($this->arguments['testDatabaseLogRevision']) && !isset($this->arguments['testDatabaseDSN']))) {
             $this->showHelp();
             exit(PHPUnit_TextUI_TestRunner::EXCEPTION_EXIT);
-        }
-
-        if (!isset($this->arguments['syntaxCheck'])) {
-            $this->arguments['syntaxCheck'] = FALSE;
         }
 
         if ($skeletonClass || $skeletonTest) {
@@ -736,6 +736,7 @@ class PHPUnit_TextUI_Command
      *
      * @param  string  $loaderClass
      * @param  string  $loaderFile
+     * @return PHPUnit_Runner_TestSuiteLoader
      */
     protected function handleLoader($loaderClass, $loaderFile = '')
     {
@@ -778,20 +779,83 @@ class PHPUnit_TextUI_Command
     }
 
     /**
+     * Handles the loading of the PHPUnit_Util_Printer implementation.
+     *
+     * @param  string $printerClass
+     * @param  string $printerFile
+     * @return PHPUnit_Util_Printer
+     */
+    protected function handlePrinter($printerClass, $printerFile = '')
+    {
+        if (!class_exists($printerClass, FALSE)) {
+            if ($printerFile == '') {
+                $printerFile = PHPUnit_Util_Filesystem::classNameToFilename(
+                  $printerClass
+                );
+            }
+
+            $printerFile = PHPUnit_Util_Filesystem::fileExistsInIncludePath(
+              $printerFile
+            );
+
+            if ($printerFile !== FALSE) {
+                require $printerFile;
+            }
+        }
+
+        if (class_exists($printerClass, FALSE)) {
+            $class = new ReflectionClass($printerClass);
+
+            if ($class->implementsInterface('PHPUnit_Framework_TestListener') &&
+                $class->isSubclassOf('PHPUnit_Util_Printer') &&
+                $class->isInstantiable()) {
+                $printer = $class->newInstance();
+            }
+        }
+
+        if (!isset($printer)) {
+            PHPUnit_TextUI_TestRunner::showError(
+              sprintf(
+                'Could not use "%s" as printer.',
+
+                $printerClass
+              )
+            );
+        }
+
+        return $printer;
+    }
+
+    /**
      * Loads a bootstrap file.
      *
-     * @param  string  $filename
-     * @param  boolean $syntaxCheck
+     * @param string $filename
      */
-    protected function handleBootstrap($filename, $syntaxCheck = FALSE)
+    protected function handleBootstrap($filename)
     {
         try {
-            PHPUnit_Util_Fileloader::checkAndLoad($filename, $syntaxCheck);
+            PHPUnit_Util_Fileloader::checkAndLoad($filename);
         }
 
         catch (RuntimeException $e) {
             PHPUnit_TextUI_TestRunner::showError($e->getMessage());
         }
+    }
+
+    /**
+     * @param string  $message
+     * @since Method available since Release 3.6.0
+     */
+    protected function showExtensionNotLoadedMessage($extension, $message = '')
+    {
+        if (!empty($message)) {
+            $message = ' ' . $message;
+        }
+
+        $this->showMessage(
+          'The ' . $extension . ' extension is not loaded.' . $message . "\n",
+          FALSE
+        );
     }
 
     /**
@@ -825,11 +889,12 @@ Usage: phpunit [switches] UnitTest [UnitTest.php]
 
   --log-junit <file>        Log test execution in JUnit XML format to file.
   --log-tap <file>          Log test execution in TAP format to file.
-  --log-dbus                Log test execution to DBUS.
   --log-json <file>         Log test execution in JSON format.
 
+  --coverage-clover <file>  Generate code coverage report in Clover XML format.
   --coverage-html <dir>     Generate code coverage report in HTML format.
-  --coverage-clover <file>  Write code coverage data in Clover XML format.
+  --coverage-php <file>     Serialize PHP_CodeCoverage object to file.
+  --coverage-text <file>    Generate code coverage report in text format.
 
   --testdox-html <file>     Write agile documentation in HTML format to file.
   --testdox-text <file>     Write agile documentation in Text format to file.
@@ -840,6 +905,7 @@ Usage: phpunit [switches] UnitTest [UnitTest.php]
   --list-groups             List available test groups.
 
   --loader <loader>         TestSuiteLoader implementation to use.
+  --printer <printer>       TestSuiteListener implementation to use.
   --repeat <times>          Runs the test(s) repeatedly.
 
   --tap                     Report test execution progress in TAP format.
@@ -851,9 +917,8 @@ Usage: phpunit [switches] UnitTest [UnitTest.php]
   --stop-on-failure         Stop execution upon first error or failure.
   --stop-on-skipped         Stop execution upon first skipped test.
   --stop-on-incomplete      Stop execution upon first incomplete test.
-  --strict                  Mark a test as incomplete if no assertions are made.
-  --verbose                 Output more verbose information.
-  --wait                    Waits for a keystroke after each test.
+  --strict                  Run tests in strict mode.
+  -v|--verbose              Output more verbose information.
 
   --skeleton-class          Generate Unit class for UnitTest in UnitTest.php.
   --skeleton-test           Generate UnitTest class for Unit in Unit.php.
@@ -861,7 +926,6 @@ Usage: phpunit [switches] UnitTest [UnitTest.php]
   --process-isolation       Run each test in a separate PHP process.
   --no-globals-backup       Do not backup and restore \$GLOBALS for each test.
   --static-backup           Backup and restore static attributes for each test.
-  --syntax-check            Try to check source files for syntax errors.
 
   --bootstrap <file>        A "bootstrap" PHP file that is run before the tests.
   -c|--configuration <file> Read configuration from XML file.
@@ -869,7 +933,7 @@ Usage: phpunit [switches] UnitTest [UnitTest.php]
   --include-path <path(s)>  Prepend PHP's include_path with given path(s).
   -d key[=value]            Sets a php.ini value.
 
-  --help                    Prints this usage information.
+  -h|--help                 Prints this usage information.
   --version                 Prints the version and exits.
 
   --debug                   Output debugging information.

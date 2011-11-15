@@ -54,7 +54,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -72,6 +72,18 @@ abstract class PHPUnit_Extensions_Database_Operation_RowBased implements PHPUnit
     protected abstract function buildOperationArguments(PHPUnit_Extensions_Database_DataSet_ITableMetaData $databaseTableMetaData, PHPUnit_Extensions_Database_DataSet_ITable $table, $row);
 
     /**
+    * Allows an operation to disable primary keys if necessary.
+    *
+    * @param PHPUnit_Extensions_Database_DataSet_ITableMetaData $databaseTableMetaData
+    * @param PHPUnit_Extensions_Database_DataSet_ITable $table
+    * @param PHPUnit_Extensions_Database_DB_IDatabaseConnection $connection
+    */
+    protected function disablePrimaryKeys(PHPUnit_Extensions_Database_DataSet_ITableMetaData $databaseTableMetaData, PHPUnit_Extensions_Database_DataSet_ITable $table, PHPUnit_Extensions_Database_DB_IDatabaseConnection $connection)
+    {
+        return FALSE;
+    }
+
+    /**
      * @param PHPUnit_Extensions_Database_DB_IDatabaseConnection $connection
      * @param PHPUnit_Extensions_Database_DataSet_IDataSet $dataSet
      */
@@ -85,9 +97,14 @@ abstract class PHPUnit_Extensions_Database_Operation_RowBased implements PHPUnit
             /* @var $table PHPUnit_Extensions_Database_DataSet_ITable */
             $databaseTableMetaData = $databaseDataSet->getTableMetaData($table->getTableMetaData()->getTableName());
             $query                 = $this->buildOperationQuery($databaseTableMetaData, $table, $connection);
+            $disablePrimaryKeys    = $this->disablePrimaryKeys($databaseTableMetaData, $table, $connection);
 
             if ($query === FALSE && $table->getRowCount() > 0) {
                 throw new PHPUnit_Extensions_Database_Operation_Exception($this->operationName, '', array(), $table, "Rows requested for insert, but no columns provided!");
+            }
+
+            if ($disablePrimaryKeys) {
+                $connection->disablePrimaryKeys($databaseTableMetaData->getTableName());
             }
 
             $statement = $connection->getConnection()->prepare($query);
@@ -105,6 +122,10 @@ abstract class PHPUnit_Extensions_Database_Operation_RowBased implements PHPUnit
                       $this->operationName, $query, $args, $table, $e->getMessage()
                     );
                 }
+            }
+
+            if ($disablePrimaryKeys) {
+                $connection->enablePrimaryKeys($databaseTableMetaData->getTableName());
             }
         }
     }

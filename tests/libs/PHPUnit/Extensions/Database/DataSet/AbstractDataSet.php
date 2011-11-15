@@ -49,7 +49,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -134,7 +134,7 @@ abstract class PHPUnit_Extensions_Database_DataSet_AbstractDataSet implements PH
      *
      * @param PHPUnit_Extensions_Database_DataSet_IDataSet $other
      */
-    public function assertEquals(PHPUnit_Extensions_Database_DataSet_IDataSet $other)
+    public function matches(PHPUnit_Extensions_Database_DataSet_IDataSet $other)
     {
         $thisTableNames  = $this->getTableNames();
         $otherTableNames = $other->getTableNames();
@@ -143,11 +143,15 @@ abstract class PHPUnit_Extensions_Database_DataSet_AbstractDataSet implements PH
         sort($otherTableNames);
 
         if ($thisTableNames != $otherTableNames) {
-            throw new Exception("Expected following tables: " . implode(', ', $thisTableNames) . "; has columns: " . implode(', ', $otherTableNames));
+            return FALSE;
         }
 
         foreach ($thisTableNames as $tableName) {
-            $this->getTable($tableName)->assertEquals($other->getTable($tableName));
+            $table = $this->getTable($tableName);
+
+            if (!$table->matches($other->getTable($tableName))) {
+                return FALSE;
+            }
         }
 
         return TRUE;

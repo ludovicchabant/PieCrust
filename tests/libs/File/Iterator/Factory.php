@@ -41,8 +41,6 @@
  * @since     File available since Release 1.1.0
  */
 
-require_once 'File/Iterator.php';
-
 /**
  * Factory Method implementation that creates a File_Iterator that operates on
  * an AppendIterator that contains an RecursiveDirectoryIterator for each given
@@ -51,7 +49,7 @@ require_once 'File/Iterator.php';
  * @author    Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @copyright 2009-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license   http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version   Release: 1.2.6
+ * @version   Release: 1.3.0
  * @link      http://github.com/sebastianbergmann/php-file-iterator/tree
  * @since     Class available since Release 1.1.0
  */
@@ -64,7 +62,7 @@ class File_Iterator_Factory
      * @param  array        $exclude
      * @return AppendIterator
      */
-    public static function getFileIterator($paths, $suffixes = '', $prefixes = '', array $exclude = array())
+    public function getFileIterator($paths, $suffixes = '', $prefixes = '', array $exclude = array())
     {
         if (is_string($paths)) {
             $paths = array($paths);
@@ -119,41 +117,4 @@ class File_Iterator_Factory
 
         return $iterator;
     }
-
-    /**
-     * @param  array|string $paths
-     * @param  array|string $suffixes
-     * @param  array|string $prefixes
-     * @param  array        $exclude
-     * @return array
-     */
-    public static function getFilesAsArray($paths, $suffixes = '', $prefixes = '', array $exclude = array())
-    {
-        if (is_string($paths)) {
-            $paths = array($paths);
-        }
-
-        $result = array();
-
-        $iterator = self::getFileIterator(
-          $paths, $suffixes, $prefixes, $exclude
-        );
-
-        foreach ($iterator as $file) {
-            $file = $file->getRealPath();
-
-            if ($file) {
-                $result[] = $file;
-            }
-        }
-
-        foreach ($paths as $path) {
-            if (is_file($path)) {
-                $result[] = realpath($path);
-            }
-        }
-
-        return array_unique($result);
-    }
 }
-?>

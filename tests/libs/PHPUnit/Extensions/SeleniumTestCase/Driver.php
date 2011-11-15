@@ -49,7 +49,7 @@
  * @author     Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @copyright  2010-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.0
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -136,6 +136,11 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
     protected $commands = array();
 
     /**
+     * @var array $userCommands A numerical array which holds custom user commands.
+     */
+    protected $userCommands = array();
+
+    /**
      * @var array
      */
     protected $verificationErrors = array();
@@ -167,6 +172,15 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
             $this->doCommand('setTimeout', array($this->seleniumTimeout * 1000));
         }
 
+        return $this->sessionId;
+    }
+
+    /**
+     * @return string
+     * @since  Method available since Release 1.1.0
+     */
+    public function getSessionId()
+    {
         return $this->sessionId;
     }
 
@@ -265,6 +279,15 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
     }
 
     /**
+     * @return string
+     * @since  Method available since Release 1.1.0
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
      * @param  integer $port
      * @throws InvalidArgumentException
      */
@@ -275,6 +298,15 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
         }
 
         $this->port = $port;
+    }
+
+    /**
+     * @return integer
+     * @since  Method available since Release 1.1.0
+     */
+    public function getPort()
+    {
+        return $this->port;
     }
 
     /**
@@ -346,6 +378,24 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
         }
 
         $this->useWaitForPageToLoad = $flag;
+    }
+
+    /**
+     * Adds allowed user commands into {@link self::$userCommands}. See
+     * {@link self::__call()} (switch/case -> default) for usage.
+     *
+     * @param string $command A command.
+     *
+     * @return $this
+     * @see    self::__call()
+     */
+    public function addUserCommand($command)
+    {
+        if (!is_string($command)) {
+            throw PHPUnit_Util_InvalidArgumentHelper::factory(1, 'string');
+        }
+        $this->userCommands[] = $command;
+        return $this;
     }
 
     /**
@@ -836,11 +886,14 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
             break;
 
             default: {
-                $this->stop();
+                if (!in_array($command, $this->userCommands)) {
+                    $this->stop();
 
-                throw new BadMethodCallException(
-                  "Method $command not defined."
-                );
+                    throw new BadMethodCallException(
+                      "Method $command not defined."
+                    );
+                }
+                $this->doCommand($command, $arguments);
             }
         }
     }
@@ -851,17 +904,10 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
      * @param  string $command
      * @param  array  $arguments
      * @return string
-     * @author Shin Ohno <ganchiku@gmail.com>
-     * @author Bjoern Schotte <schotte@mayflower.de>
+     * @author Seth Casana <totallymeat@gmail.org>
      */
     protected function doCommand($command, array $arguments = array())
     {
-        if (!ini_get('allow_url_fopen')) {
-            throw new PHPUnit_Framework_Exception(
-              'Could not connect to the Selenium RC server because allow_url_fopen is disabled.'
-            );
-        }
-
         $url = sprintf(
           'http://%s:%s/selenium-server/driver/?cmd=%s',
           $this->host,
@@ -873,51 +919,39 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
 
         for ($i = 0; $i < $numArguments; $i++) {
             $argNum = strval($i + 1);
-            $url .= sprintf('&%s=%s', $argNum, urlencode(trim($arguments[$i])));
+            
+            if($arguments[$i] == ' ') {
+              $url .= sprintf('&%s=%s', $argNum, urlencode($arguments[$i]));
+            } else {
+              $url .= sprintf('&%s=%s', $argNum, urlencode(trim($arguments[$i])));
+            }            
         }
 
         if (isset($this->sessionId)) {
             $url .= sprintf('&%s=%s', 'sessionId', $this->sessionId);
         }
 
-        $this->commands[] = sprintf('%s(%s)', $command, join(', ', $arguments));
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 60);
 
-        $context = stream_context_create(
-          array(
-            'http' => array(
-              'timeout' => $this->httpTimeout
-            )
-          )
-        );
+        $response = curl_exec($curl);
+        $info     = curl_getinfo($curl);
 
-        $handle = @fopen($url, 'r', FALSE, $context);
-
-        if (!$handle) {
-            throw new PHPUnit_Framework_Exception(
-              'Could not connect to the Selenium RC server.'
-            );
+        if (!$response) {
+            throw new RuntimeException(curl_error($curl));
         }
 
-        stream_set_blocking($handle, 1);
-        stream_set_timeout($handle, $this->httpTimeout);
+        curl_close($curl);
 
-        /* Tell the web server that we will not be sending more data
-        so that it can start processing our request */
-        stream_socket_shutdown($handle, STREAM_SHUT_WR);
-
-        $response = stream_get_contents($handle);
-
-        fclose($handle);
-
-        if (!preg_match('/^OK/', $response)) {
+        if ($info['http_code'] != 200) {
             $this->stop();
 
-            throw new PHPUnit_Framework_Exception(
-              sprintf(
-                "Response from Selenium RC server for %s.\n%s.\n",
-                $this->commands[count($this->commands)-1],
-                $response
-              )
+            throw new RuntimeException(
+              'The response from the Selenium RC server is invalid: ' .
+              $response
             );
         }
 
@@ -947,7 +981,7 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
                 $this->stop();
 
                 throw new PHPUnit_Framework_Exception(
-                  'Result is neither "true" nor "false": ' . PHPUnit_Util_Type::toString($result, TRUE)
+                  'Result is neither "true" nor "false": ' . PHPUnit_Util_Type::export($result)
                 );
             }
         }
@@ -971,7 +1005,7 @@ class PHPUnit_Extensions_SeleniumTestCase_Driver
             $this->stop();
 
             throw new PHPUnit_Framework_Exception(
-              'Result is not numeric: ' . PHPUnit_Util_Type::toString($result, TRUE)
+              'Result is not numeric: ' . PHPUnit_Util_Type::export($result)
             );
         }
 

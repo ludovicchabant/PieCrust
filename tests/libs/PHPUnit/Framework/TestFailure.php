@@ -51,7 +51,7 @@
  * @author     Sebastian Bergmann <sebastian@phpunit.de>
  * @copyright  2002-2011 Sebastian Bergmann <sebastian@phpunit.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 3.5.15
+ * @version    Release: 3.6.3
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 2.0.0
  */
@@ -115,62 +115,18 @@ class PHPUnit_Framework_TestFailure
     public static function exceptionToString(Exception $e)
     {
         if ($e instanceof PHPUnit_Framework_SelfDescribing) {
-            if ($e instanceof PHPUnit_Framework_ExpectationFailedException) {
-                $comparisonFailure = $e->getComparisonFailure();
-                $description       = $e->getDescription();
-                $message           = $e->getCustomMessage();
+            $buffer = $e->toString();
 
-                if ($message == '') {
-                    $buffer = '';
-                } else {
-                    $buffer = $message . "\n";
-                }
-
-                if ($comparisonFailure !== NULL) {
-                    if ($comparisonFailure->identical()) {
-                        if ($comparisonFailure instanceof PHPUnit_Framework_ComparisonFailure_Object) {
-                            $buffer .= 'Failed asserting that two variables ' .
-                                       "reference the same object.\n";
-                        } else {
-                            $buffer .= $comparisonFailure->toString() . "\n";
-                        }
-                    } else {
-                        if ($comparisonFailure instanceof PHPUnit_Framework_ComparisonFailure_Scalar) {
-                            $buffer .= $comparisonFailure->toString() . "\n";
-                        }
-
-                        else if ($comparisonFailure instanceof PHPUnit_Framework_ComparisonFailure_Array ||
-                                 $comparisonFailure instanceof PHPUnit_Framework_ComparisonFailure_Object ||
-                                 $comparisonFailure instanceof PHPUnit_Framework_ComparisonFailure_String) {
-                            $buffer .= sprintf(
-                              "Failed asserting that two %ss are equal.\n%s\n",
-
-                              strtolower(
-                                substr(get_class($comparisonFailure), 36)
-                              ),
-                              $comparisonFailure->toString()
-                            );
-                        }
-                    }
-                } else {
-                    $buffer .= $e->toString();
-
-                    if (!empty($buffer)) {
-                        $buffer .= "\n";
-                    }
-
-                    if (strpos($buffer, $description) === FALSE) {
-                        $buffer .= $description . "\n";
-                    }
-                }
+            if ($e instanceof PHPUnit_Framework_ComparisonFailure) {
+                $buffer = trim($buffer . "\n" . $e->getDiff());
             }
 
-            else {
-                $buffer = $e->toString();
+            if ($e instanceof PHPUnit_Framework_ExpectationFailedException && $e->getComparisonFailure()) {
+                $buffer = trim($buffer . "\n" . $e->getComparisonFailure()->getDiff());
+            }
 
-                if (!empty($buffer)) {
-                    $buffer .= "\n";
-                }
+            if (!empty($buffer)) {
+                $buffer .= "\n";
             }
         }
 

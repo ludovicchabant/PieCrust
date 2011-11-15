@@ -49,7 +49,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -92,5 +92,13 @@ class PHPUnit_Extensions_Database_Operation_Insert extends PHPUnit_Extensions_Da
             $args[] = $table->getValue($row, $columnName);
         }
         return $args;
+    }
+
+    protected function disablePrimaryKeys(PHPUnit_Extensions_Database_DataSet_ITableMetaData $databaseTableMetaData, PHPUnit_Extensions_Database_DataSet_ITable $table, PHPUnit_Extensions_Database_DB_IDatabaseConnection $connection)
+    {
+        if (count($databaseTableMetaData->getPrimaryKeys())) {
+            return TRUE;
+        }
+        return FALSE;
     }
 }
