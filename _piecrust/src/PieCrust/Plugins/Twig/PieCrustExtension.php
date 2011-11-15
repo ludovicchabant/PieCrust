@@ -2,7 +2,7 @@
 
 require_once 'PieCrustFormatterTokenParser.php';
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
 
@@ -15,7 +15,7 @@ class PieCrustExtension extends Twig_Extension
     protected $tagUrlFormat;
     protected $categoryUrlFormat;
     
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         
