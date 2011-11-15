@@ -27,6 +27,7 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $pc->getConfig()->setValue('site/posts_fs', $fsType);
         
         $fs = FileSystem::create($pc);
+        $this->assertNotNull($fs);
         $postFiles = $fs->getPostFiles();
         $this->assertNotNull($postFiles);
         $this->assertEquals(4, count($postFiles));
