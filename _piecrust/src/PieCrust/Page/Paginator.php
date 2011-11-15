@@ -123,7 +123,7 @@ class Paginator
      */
     public function setPaginationDataSource(array $postInfos)
     {
-        if ($this->paginationData !== null)
+        if ($this->postsIterator != null)
             throw new PieCrustException("The pagination data source can only be set before the pagination data is build.");
         $this->paginationDataSource = $postInfos;
     }
