@@ -282,12 +282,12 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             $postData['timestamp'] = $timestamp;
             $postData['date'] = date($postsDateFormat, $timestamp);
             
-            $postHasMore = true;
-            $postContents = $post->getContentSegment('content.abstract');
-            if ($postContents == null)
+            $postHasMore = false;
+            $postContents = $post->getContentSegment('content');
+            if ($post->hasContentSegment('content.abstract'))
             {
-                $postHasMore = false;
-                $postContents = $post->getContentSegment('content');
+                $postContents = $post->getContentSegment('content.abstract');
+                $postHasMore = true;
             }
             $postData['content'] = $postContents;
             $postData['has_more'] = $postHasMore;
