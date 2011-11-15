@@ -3,7 +3,8 @@
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
 use PieCrust\PieCrust;
-use PieCrust\Page\Page;
+use PieCrust\IPieCrust;
+use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
 use PieCrust\Page\PaginationIterator;
 
@@ -29,12 +30,15 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
      */
     public function testPaginator($pageNumber, $postCount)
     {
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setConfigValue('site', 'posts_per_page', 5);
-        $pc->setConfigValue('site', 'date_format', 'F j, Y');
-        $page = new Page($pc, 'test-page-uri', 'test-page-path', Page::TYPE_REGULAR, null, null, $pageNumber, null);
-        $page->setConfigAndContents(array(), array('content' => 'Dummy page for paginator tests.'));
-        $paginator = $page->getPaginator();
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/posts_per_page', 5);
+        $pc->getConfig()->setValue('blog/date_format', 'F j, Y');
+        
+        $page = new MockPage($pc);
+        $page->uri = 'test-page-uri';
+        $page->pageNumber = $pageNumber;
+        
+        $paginator = new Paginator($page);
         $paginator->setPaginationDataSource($this->buildPaginationDataSource($pc, $postCount));
         
         $posts = $paginator->posts();
@@ -97,10 +101,11 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
      */
     public function testFluentFiltering($pageNumber, $postCount, $filterFunc, $expectedIndexes)
     {
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setConfigValue('site', 'posts_per_page', 5);
-        $page = new Page($pc, 'test-page-uri', 'test-page-path', Page::TYPE_REGULAR, null, null, $pageNumber, null);
-        $page->setConfigAndContents(array(), array('content' => 'Dummy page for paginator tests.'));
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('site/posts_per_page', 5);
+        
+        $page = new MockPage($pc);
+        
         $dataSource = $this->buildPaginationDataSource($pc, $postCount);
         $it = new PaginationIterator($page, $dataSource);
         
@@ -109,7 +114,7 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         $this->assertExpectedPostsData($expectedIndexes, $it);
     }
     
-    protected function buildPaginationDataSource(PieCrust $pc, $postCount)
+    protected function buildPaginationDataSource(IPieCrust $pc, $postCount)
     {
         $posts = array();
         for ($i = 0; $i < $postCount; ++$i)
@@ -119,11 +124,11 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $day = (($i * 3) % 28);
             $name = ('test-post-number-' . $i . '-name');
             $path = ('test-post-number-' . $i . '-path.html');
-            $dummyPage = new Page($pc, $name, $path);
-            $dummyPage->setConfigAndContents(
-                array(),
-                array('content' => ('Test page ' . $i . ' contents.'))
-            );
+            
+            $dummyPage = new MockPage($pc);
+            $dummyPage->uri = $name;
+            $dummyPage->path = $path;
+            $dummyPage->contents = array('content' => ('Test page ' . $i . ' contents.'));
             $posts[] = array(
                 'year' => $year,
                 'month' => $month,

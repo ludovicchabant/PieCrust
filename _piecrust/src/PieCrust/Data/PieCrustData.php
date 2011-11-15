@@ -1,12 +1,15 @@
 <?php
 
-namespace PieCrust;
+namespace PieCrust\Data;
+
+use PieCrust\IPieCrust;
+use PieCrust\PieCrust;
 
 
 /**
- * A class containing site data to be passed to a page.
+ * A class containing PieCrust app's data to be passed to a page.
  */
-class PieCrustSiteData
+class PieCrustData
 {
     const DEBUG_INFO_CSS = 'padding: 1em; background: #a42; color: #fff; position: fixed; width: 50%; bottom: 0; right: 0;';
     const P_CSS = 'margin: 0; padding: 0';
@@ -18,7 +21,7 @@ class PieCrustSiteData
     public $url;
     public $branding;
     
-    public function __construct(PieCrust $pieCrust, $wasCurrentPageCached)
+    public function __construct(IPieCrust $pieCrust, $wasCurrentPageCached)
     {
         $this->pieCrust = $pieCrust;
         $this->wasCurrentPageCached = $wasCurrentPageCached;

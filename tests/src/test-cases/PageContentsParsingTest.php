@@ -2,34 +2,14 @@
 
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-use PieCrust\Page\Page;
 use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
+use PieCrust\Page\Page;
+use PieCrust\Page\PageConfiguration;
 
-
-class TestPage extends Page
-{
-    public static function create(PieCrust $pieCrust, $uri, $path)
-    {
-        return new TestPage($pieCrust, $uri, $path);
-    }
-    
-    public function validateConfig($config)
-    {
-        if (!is_array($config))
-        {
-            $config = array();
-        }
-        return $this->buildValidatedConfig($config);
-    }
-}
 
 class PageContentsParsingTest extends PHPUnit_Framework_TestCase
-{
-    public static function setUpBeforeClass()
-    {
-        date_default_timezone_set('America/Los_Angeles');
-    }
-    
+{   
     public function parsePageContentsDataProvider()
     {
         $data = array();
@@ -54,18 +34,20 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
     {
         // Create the page that will load our test file.
         $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setConfig(array(
+        $pc->getConfig()->set(array(
             'site' => array(
                 'root' => 'http://whatever',
-                'default_format' => 'none'
+                'default_format' => 'none',
+                'default_template_engine' => 'none'
             )
         ));
-        $p = TestPage::create($pc, '/test', $testFilename);
+        
+        $p = new Page($pc, '/test', $testFilename);
         
         // Get the stuff we are expecting.
         $yamlParser = new sfYamlParser();
         $expectedResults = $yamlParser->parse(file_get_contents($expectedResultsFilename));
-        $expectedConfig = $p->validateConfig($expectedResults['config']);
+        $expectedConfig = PageConfiguration::getValidatedConfig($p, $expectedResults['config']);
         foreach ($expectedResults as $key => $content) // Add the segment names.
         {
             if ($key == 'config') continue;
@@ -73,12 +55,14 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         }
         
         // Start asserting!
-        $this->assertEquals($expectedConfig, $p->getConfig(), 'The configurations are not equivalent.');
+        $actualConfig = $p->getConfig()->get();
+        $this->assertEquals($expectedConfig, $actualConfig, 'The configurations are not equivalent.');
         $actualSegments = $p->getContentSegments();
         foreach ($expectedResults as $key => $content)
         {
             if ($key == 'config') continue;
             
+            $this->assertContains($key, $actualConfig['segments'], 'Expected a declared content segment named: ' . $key);
             $this->assertArrayHasKey($key, $actualSegments, 'Expected a content segment named: ' . $key);
             $this->assertEquals($content, $actualSegments[$key], 'The content segments are not equivalent.');
         }

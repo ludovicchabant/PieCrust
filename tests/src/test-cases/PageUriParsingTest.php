@@ -82,8 +82,8 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
         $pc = new PieCrust(array('root' => PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR, 'debug' => true, 'cache' => false));
-        $pc->setConfig($config);
-        $pc->setConfigValue('site', 'root', 'http://whatever/');
+        $pc->getConfig()->set($config);
+        $pc->getConfig()->setValue('site/root', 'http://whatever/');
         
         $uriInfo = UriParser::parseUri($pc, $uri);
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');

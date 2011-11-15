@@ -54,7 +54,7 @@ class PieCrustImporter
             echo 'Importing "' . $source . '" using "' . $importer->getName() . '".' . PHP_EOL;
             $importer->open($source);
             $importer->importPages($this->pieCrust()->getPagesDir());
-            $importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfigValue('site', 'posts_fs'));
+            $importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
             $importer->close();
         }
         catch (Exception $e)

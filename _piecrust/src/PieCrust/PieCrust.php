@@ -8,6 +8,7 @@ use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;
 use PieCrust\TemplateEngines\ITemplateEngine;
 use PieCrust\Util\HttpHeaderHelper;
+use PieCrust\Util\PageHelper;
 use PieCrust\Util\PluginLoader;
 use PieCrust\Util\ServerHelper;
 
@@ -18,7 +19,7 @@ use PieCrust\Util\ServerHelper;
  * This class contains the application's configuration and directory setup information,
  * and handles, among other things, routing and errors.
  */
-class PieCrust
+class PieCrust implements IPieCrust
 {
     /**
      * The current version of PieCrust.
@@ -97,7 +98,7 @@ class PieCrust
             $this->setTemplatesDirs(self::CONTENT_TEMPLATES_DIR);
             
             // Add custom template directories specified in the configuration.
-            $additionalPaths = $this->getConfigValue('site', 'template_dirs');
+            $additionalPaths = $this->getConfig()->getValue('site/template_dirs');
             if ($additionalPaths)
             {
                 $this->addTemplatesDir($additionalPaths);
@@ -234,78 +235,11 @@ class PieCrust
     protected $config;
     /**
      * Gets the application's configuration.
-     *
-     * This function lazy-loads the '/_content/config.yml' file unless the configuration was
-     * specifically set by setConfig().
      */
-    public function getConfig($category = null)
+    public function getConfig()
     {
         $this->ensureConfig();
-        if ($category != null)
-        {
-            return $this->config->getSection($category);
-        }
         return $this->config;
-    }
-    
-    /**
-     * Sets the application's configuration.
-     *
-     * This is useful for controlled environments like unit-testing.
-     */
-    public function setConfig($config)
-    {
-        $this->ensureConfig();
-        $this->config->set($config);
-    }
-    
-    /**
-     * Helper function for getting a configuration setting, or null if it doesn't exist.
-     */
-    public function getConfigValue($section, $key)
-    {
-        $this->ensureConfig();
-       return $this->config->getSectionValue($section, $key);
-    }
-    
-    /**
-     * Helper function for getting a configuration setting, but without checks
-     * for existence or validity.
-     */
-    public function getConfigValueUnchecked($section, $key)
-    {
-        $this->ensureConfig();
-        return $this->config->getSectionValueUnchecked($section, $key);
-    }
-    
-    /**
-     * Sets a configuration setting.
-     */
-    public function setConfigValue($section, $key, $value)
-    {
-        $this->ensureConfig();
-        $this->config->setSectionValue($section, $key, $value);
-    }
-    
-    protected $formattersLoader;
-    /**
-     * Gets the PluginLoader for the page formatters.
-     */
-    public function getFormattersLoader()
-    {
-        if ($this->formattersLoader === null)
-        {
-            $this->formattersLoader = new PluginLoader(
-                                            'PieCrust\\Formatters\\IFormatter',
-                                            self::APP_DIR . '/Formatters',
-                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
-                                            );
-            foreach ($this->formattersLoader->getPlugins() as $formatter)
-            {
-                $formatter->initialize($this);
-            }
-        }
-        return $this->formattersLoader;
     }
     
     /**
@@ -314,7 +248,7 @@ class PieCrust
     public function formatText($text, $format = null)
     {
         if (!$format)
-            $format = $this->getConfigValueUnchecked('site', 'default_format');
+            $format = $this->getConfig()->getValueUnchecked('site/default_format');
         
         $unformatted = true;
         $formattedText = $text;
@@ -338,9 +272,9 @@ class PieCrust
     {
         if ($this->pathPrefix === null or $this->pathSuffix === null)
         {
-            $isBaking = ($this->getConfigValue('baker', 'is_baking') === true);
-            $isPretty = ($this->getConfigValueUnchecked('site','pretty_urls') === true);
-            $this->pathPrefix = $this->getConfigValueUnchecked('site', 'root') . (($isPretty or $isBaking) ? '' : '?/');
+            $isBaking = ($this->getConfig()->getValue('baker/is_baking') === true);
+            $isPretty = ($this->getConfig()->getValueUnchecked('site/pretty_urls') === true);
+            $this->pathPrefix = $this->getConfig()->getValueUnchecked('site/root') . (($isPretty or $isBaking) ? '' : '?/');
             $this->pathSuffix = ($isBaking and !$isPretty) ? '.html' : '';
             if ($this->debuggingEnabled && !$isBaking)
             {
@@ -378,22 +312,9 @@ class PieCrust
         
         if ($extension == 'html')
         {
-            $extension = $this->getConfigValueUnchecked('site', 'default_template_engine');
+            $extension = $this->getConfig()->getValueUnchecked('site/default_template_engine');
         }
         return $this->templateEngines[$extension];
-    }
-    
-    /**
-     * Gets the application's data for page rendering.
-     */
-    public function getSiteData($wasCurrentPageCached = null)
-     {
-        $this->ensureConfig();
-        $data = array_merge(
-            $this->config->get(), 
-            array('piecrust' => new PieCrustSiteData($this, $wasCurrentPageCached))
-         );
-        return $data;
     }
     
     protected $lastRunInfo = null;
@@ -480,16 +401,16 @@ class PieCrust
         
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
-        if ($uri == null) $uri = ServerHelper::getRequestUri($server, $this->getConfigValueUnchecked('site', 'pretty_urls'));
+        if ($uri == null) $uri = ServerHelper::getRequestUri($server, $this->getConfig()->getValueUnchecked('site/pretty_urls'));
         
         // Do the heavy lifting.
         $page = Page::createFromUri($this, $uri);
         if ($extraPageData != null) $page->setExtraPageData($extraPageData);
-        $pageRenderer = new PageRenderer($this);
-        $output = $pageRenderer->get($page, $extraPageData);
+        $pageRenderer = new PageRenderer($page);
+        $output = $pageRenderer->get();
         
         // Set or return the HTML headers.
-        HttpHeaderHelper::setOrAddHeaders(PageRenderer::getHeaders($page->getConfigValue('content_type'), $server), $headers);
+        HttpHeaderHelper::setOrAddHeaders(PageRenderer::getHeaders($page->getConfig()->getValue('content_type'), $server), $headers);
         
         // Handle caching.
         if (!$this->isDebuggingEnabled())
@@ -519,8 +440,7 @@ class PieCrust
         }
         else
         {
-            $cacheTime = $page->getConfigValue('cache_time');
-            if ($cacheTime === null) $cacheTime = $this->getConfigValue('site', 'cache_time');
+            $cacheTime = PageHelper::getConfigValue($page, 'cache_time', 'site');
             if ($cacheTime)
             {
                 HttpHeaderHelper::setOrAddHeader('Cache-Control', 'public, max-age=' . $cacheTime, $headers);
@@ -528,7 +448,7 @@ class PieCrust
         }
     
         // Output with or without GZip compression.
-        $gzipEnabled = (($this->getConfigValueUnchecked('site', 'enable_gzip') === true) and
+        $gzipEnabled = (($this->getConfig()->getValueUnchecked('site/enable_gzip') === true) and
                         (strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
         if ($gzipEnabled)
         {
@@ -552,32 +472,36 @@ class PieCrust
         }
     }
     
+    /**
+     * Ensures the configuration has been loaded.
+     */
     protected function ensureConfig()
     {
         if ($this->config == null)
         {
-            $configParameters = array(
-                'cache_dir' => ($this->cachingEnabled ? $this->getCacheDir() : false),
-                'cache' => $this->cachingEnabled
-            );
-            $this->config = new PieCrustConfiguration($configParameters, ($this->rootDir . self::CONFIG_PATH));
+            $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
+            $this->config = new PieCrustConfiguration($this->rootDir . self::CONFIG_PATH, $configCache);
         }
     }
     
+    protected $formattersLoader;
     /**
-     * A utility function that searches an app's templates directories for
-     * a template file.
+     * Gets the PluginLoader for the page formatters.
      */
-    public static function getTemplatePath(PieCrust $pieCrust, $templateName)
+    protected function getFormattersLoader()
     {
-        foreach ($pieCrust->getTemplatesDirs() as $dir)
+        if ($this->formattersLoader === null)
         {
-            $path = $dir . '/' . $templateName;
-            if (is_file($path))
+            $this->formattersLoader = new PluginLoader(
+                                            'PieCrust\\Formatters\\IFormatter',
+                                            self::APP_DIR . '/Formatters',
+                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
+                                            );
+            foreach ($this->formattersLoader->getPlugins() as $formatter)
             {
-                return $path;
+                $formatter->initialize($this);
             }
         }
-        throw new PieCrustException("Couldn't find template: " . $templateName);
+        return $this->formattersLoader;
     }
 }

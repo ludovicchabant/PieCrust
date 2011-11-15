@@ -19,11 +19,11 @@ class PieCrustExtension extends Twig_Extension
     {
         $this->pieCrust = $pieCrust;
         
-        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         $this->defaultBlogKey = $blogKeys[0];
-        $this->postUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'post_url');
-        $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'tag_url');
-        $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'category_url');
+        $this->postUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/post_url');
+        $this->tagUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/tag_url');
+        $this->categoryUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/category_url');
     }
     
     public function getName()
@@ -61,20 +61,20 @@ class PieCrustExtension extends Twig_Extension
             'day' => $day,
             'name' => $slug
         );
-        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
+        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
         return $this->pieCrust->formatUri(UriBuilder::buildPostUri($format, $postInfo));
     }
     
     public function getTagUrl($value, $blogKey = null)
     {
         if (LinkCollector::isEnabled()) LinkCollector::instance()->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
-        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'tag_url');
+        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url');
         return $this->pieCrust->formatUri(UriBuilder::buildTagUri($format, $value));
     }
     
     public function getCategoryUrl($value, $blogKey = null)
     {
-        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'category_url');
+        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
     }
 }

@@ -34,7 +34,7 @@ class BakeRecord
         $this->categoriesToBake = array();
         $this->wasAnyPostBaked = false;
         
-        foreach ($pieCrust->getConfigValueUnchecked('site', 'blogs') as $blogKey)
+        foreach ($pieCrust->getConfig()->getValueUnchecked('site/blogs') as $blogKey)
         {
             $this->postTags[$blogKey] = array();
             $this->tagsToBake[$blogKey] = array();

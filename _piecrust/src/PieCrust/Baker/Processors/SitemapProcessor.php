@@ -34,7 +34,7 @@ class SitemapProcessor extends SimpleFileProcessor
             $xml->startElement('url');
             {
                 // loc
-                $locUrl = $this->pieCrust->getConfigValueUnchecked('site', 'root') . ltrim($loc['url'], '/');
+                $locUrl = $this->pieCrust->getConfig()->getValueUnchecked('site/root') . ltrim($loc['url'], '/');
                 $xml->writeElement('loc', $locUrl);
                 
                 // lastmod

@@ -2,7 +2,7 @@
 
 namespace PieCrust\Page\Filtering;
 
-use PieCrust\Page\Page;
+use PieCrust\IPage;
 
 
 /**
@@ -15,7 +15,7 @@ class OrBooleanClause extends BooleanClause
         BooleanClause::__construct();
     }
     
-    public function postMatches(Page $post)
+    public function postMatches(IPage $post)
     {
         foreach ($this->clauses as $c)
         {

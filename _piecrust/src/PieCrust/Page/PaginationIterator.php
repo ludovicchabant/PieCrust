@@ -5,10 +5,11 @@ namespace PieCrust\Page;
 use \Iterator;
 use \Countable;
 use \ArrayAccess;
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
 
 
 /**
@@ -29,7 +30,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     protected $posts;
     protected $hasMorePosts;
     
-    public function __construct(Page $parentPage, array $dataSource)
+    public function __construct(IPage $parentPage, array $dataSource)
     {
         $this->parentPage = $parentPage;
         $this->dataSource = $dataSource;
@@ -72,10 +73,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     public function filter($filterName)
     {
         $this->ensureNotLoaded('filter');
-        if (!$this->parentPage->hasConfigValue($filterName))
+        if (!$this->parentPage->getConfig()->hasValue($filterName))
             throw new PieCrustException("Couldn't find filter '".$filterName."' in the page's configuration header.");
         
-        $filterDefinition = $this->parentPage->getConfigValue($filterName);
+        $filterDefinition = $this->parentPage->getConfig()->getValue($filterName);
         $this->filter = new PaginationFilter();
         $this->filter->addClauses($filterDefinition);
         return $this;
@@ -178,8 +179,8 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         
         $this->hasMorePosts = false;
         $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfigValue('blog');
-        $postsUrlFormat = $pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
+        $blogKey = $this->parentPage->getConfig()->getValue('blog');
+        $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
         
         if ($this->filter != null and $this->filter->hasClauses())
         {
@@ -259,14 +260,14 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     {
         $postsData = array();
         $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfigValue('blog');
-        $postsDateFormat = $this->parentPage->getConfigValue('date_format', $blogKey);
+        $blogKey = $this->parentPage->getConfig()->getValue('blog');
+        $postsDateFormat = PageHelper::getConfigValue($this->parentPage, 'date_format', $blogKey);
         foreach ($postInfos as $postInfo)
         {
             // Create the post with all the stuff we already know.
             $post = $postInfo['page'];
             $post->setAssetUrlBaseRemap($this->parentPage->getAssetUrlBaseRemap());
-            $post->setDate($postInfo);
+            $post->setDate(PageHelper::getPostDate($postInfo));
 
             // Build the pagination data entry for this post.
             $postData = $post->getConfig();
@@ -274,9 +275,9 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             $postData['slug'] = $post->getUri();
             
             $timestamp = $post->getDate();
-            if ($post->getConfigValue('time'))
+            if ($post->getConfig()->getValue('time'))
             {
-                $timestamp = strtotime($post->getConfigValue('time'), $timestamp);
+                $timestamp = strtotime($post->getConfig()->getValue('time'), $timestamp);
             }
             $postData['timestamp'] = $timestamp;
             $postData['date'] = date($postsDateFormat, $timestamp);

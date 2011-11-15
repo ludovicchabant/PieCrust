@@ -2,7 +2,8 @@
 
 namespace PieCrust\Page;
 
-use PieCrust\PieCrust;
+use PieCrust\IPage;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
 
@@ -29,7 +30,7 @@ class PageRepository
         self::$pages = array();
     }
     
-    public static function addPage(Page $page)
+    public static function addPage(IPage $page)
     {
         self::$pages[$page->getUri()] = $page;
     }
@@ -40,7 +41,7 @@ class PageRepository
         return self::$pages[$uri];
     }
     
-    public static function getOrCreatePage(PieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
+    public static function getOrCreatePage(IPieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
     {
         if (!self::$enabled)
         {

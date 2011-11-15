@@ -15,7 +15,7 @@ class PieCrustCacheInfo
     /**
      * Creates a new instance of PieCrustCacheInfo
      */
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -32,10 +32,10 @@ class PieCrustCacheInfo
         // - changing the pretty_urls setting
         // - being in/out of bake mode
         // - changing the base URL
-        $prettyUrls = ($this->pieCrust->getConfigValueUnchecked('site', 'pretty_urls') ? "true" : "false");
-        $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') ? "true" : "false");
+        $prettyUrls = ($this->pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') ? "true" : "false");
+        $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') ? "true" : "false");
         $cacheInfo = "version=". PieCrust::VERSION .
-                     "&site_root=" . $this->pieCrust->getConfigValueUnchecked('site', 'root') .
+                     "&site_root=" . $this->pieCrust->getConfig()->getValueUnchecked('site/root') .
                      "&debug_mode=" . $this->pieCrust->isDebuggingEnabled() .
                      "&pretty_urls=" . $prettyUrls .
                      "&is_baking=" . $isBaking;

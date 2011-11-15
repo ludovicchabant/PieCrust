@@ -2,8 +2,10 @@
 
 namespace PieCrust\Page;
 
-use PieCrust\PieCrust;
+use PieCrust\IPage;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -24,10 +26,10 @@ class Linker implements \ArrayAccess, \Iterator
     /**
      * Creates a new instance of Linker.
      */
-    public function __construct(PieCrust $pieCrust, $pageOrBaseDir)
+    public function __construct(IPieCrust $pieCrust, $pageOrBaseDir)
     {
         $this->pieCrust = $pieCrust;
-        if ($pageOrBaseDir instanceof Page)
+        if ($pageOrBaseDir instanceof IPage)
         {
             $this->baseDir = dirname($pageOrBaseDir->getPath()) . '/';
             $this->selfKey = basename($pageOrBaseDir->getPath(), '.html');
@@ -127,12 +129,13 @@ class Linker implements \ArrayAccess, \Iterator
                 else
                 {
                     $key = $item->getBasename('.html');
-                    $uri = Page::buildUri($item->getPathname(), Page::TYPE_REGULAR);
+                    $uri = UriBuilder::buildUri($item->getPathname(), Page::TYPE_REGULAR);
+                    $page = PageRepository::getOrCreatePage($this->pieCrust, $uri, $item->getPathname());
                     $pageInfo = array(
                         'uri' => $uri,
                         'name' => $key,
                         'is_self' => ($key == $this->selfKey),
-                        'page' => new PageWrapper(PageRepository::getOrCreatePage($this->pieCrust, $uri, $item->getPathname()))
+                        'page' => $page->getConfig()
                     );
                     $this->linksCache[$key] = $pageInfo;
                 }

@@ -161,8 +161,8 @@ class PieCrustServer
             )
         );
         $baker->setBakeDir($this->autobake);
-        $baker->getApp()->setConfigValue('server', 'is_hosting', true);
-        $baker->getApp()->setConfigValue('site', 'root', '/');
+        $baker->getApp()->getConfig()->setValue('server/is_hosting', true);
+        $baker->getApp()->getConfig()->setValue('site/root', '/');
         if ($this->additionalTemplatesDir != null)
         {
             $baker->getApp()->addTemplatesDir($this->additionalTemplatesDir);
@@ -184,10 +184,10 @@ class PieCrustServer
                                       ),
                                  $context->getRequest()->getServerVariables()
                                 );
-        $pieCrust->setConfigValue('server', 'is_hosting', true);
-        $pieCrust->setConfigValue('site', 'cache_time', false);
-        $pieCrust->setConfigValue('site', 'pretty_urls', true);
-        $pieCrust->setConfigValue('site', 'root', '/');
+        $pieCrust->getConfig()->setValue('server/is_hosting', true);
+        $pieCrust->getConfig()->setValue('site/cache_time', false);
+        $pieCrust->getConfig()->setValue('site/pretty_urls', true);
+        $pieCrust->getConfig()->setValue('site/root', '/');
         if ($this->additionalTemplatesDir != null)
         {
             $pieCrust->addTemplatesDir($this->additionalTemplatesDir);

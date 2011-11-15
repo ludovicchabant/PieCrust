@@ -3,6 +3,7 @@
 namespace PieCrust\Util;
 
 use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
 use PieCrust\Page\Page;
@@ -16,7 +17,7 @@ class UriParser
     /**
      * Parse a relative URI and returns information about it.
      */
-    public static function parseUri(PieCrust $pieCrust, $uri)
+    public static function parseUri(IPieCrust $pieCrust, $uri)
     {
         if (strpos($uri, '..') !== false)   // Some bad boy's trying to access files outside of our standard folders...
         {
@@ -52,7 +53,7 @@ class UriParser
             return $pageInfo;
         }
         
-        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         
         // Try with a post.
         foreach ($blogKeys as $blogKey)
@@ -80,7 +81,7 @@ class UriParser
         return null;
     }
     
-    private static function tryParsePageUri(PieCrust $pieCrust, $uri, array &$pageInfo)
+    private static function tryParsePageUri(IPieCrust $pieCrust, $uri, array &$pageInfo)
     {
         $matches = array();
         $uriWithoutExtension = $uri;
@@ -102,10 +103,10 @@ class UriParser
         return false;
     }
     
-    private static function tryParsePostUri(PieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
+    private static function tryParsePostUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
         $matches = array();
-        $postsPattern = UriBuilder::buildPostUriPattern($pieCrust->getConfigValueUnchecked($blogKey, 'post_url'));
+        $postsPattern = UriBuilder::buildPostUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url'));
         if (preg_match($postsPattern, $uri, $matches))
         {
             $fs = FileSystem::create($pieCrust, $blogKey);
@@ -121,10 +122,10 @@ class UriParser
         return false;
     }
     
-    private static function tryParseTagUri(PieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
+    private static function tryParseTagUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
         $matches = array();
-        $tagsPattern = UriBuilder::buildTagUriPattern($pieCrust->getConfigValueUnchecked($blogKey, 'tag_url'));
+        $tagsPattern = UriBuilder::buildTagUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url'));
         if (preg_match($tagsPattern, $uri, $matches))
         {
             $prefix = '';
@@ -157,9 +158,9 @@ class UriParser
         return false;
     }
     
-    private static function tryParseCategoryUri(PieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
+    private static function tryParseCategoryUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
-        $categoryPattern = UriBuilder::buildCategoryUriPattern($pieCrust->getConfigValueUnchecked($blogKey, 'category_url'));
+        $categoryPattern = UriBuilder::buildCategoryUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url'));
         if (preg_match($categoryPattern, $uri, $matches))
         {
             $prefix = '';

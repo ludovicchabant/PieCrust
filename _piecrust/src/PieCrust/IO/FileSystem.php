@@ -3,6 +3,7 @@
 namespace PieCrust\IO;
 
 use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
 
@@ -17,7 +18,7 @@ abstract class FileSystem
     protected $pieCrust;
     protected $subDir;
     
-    protected function __construct(PieCrust $pieCrust, $subDir)
+    protected function __construct(IPieCrust $pieCrust, $subDir)
     {
         $this->pieCrust = $pieCrust;
         
@@ -107,10 +108,10 @@ abstract class FileSystem
     
     public abstract function getPathFormat();
     
-    public static function create(PieCrust $pieCrust, $subDir = null)
+    public static function create(IPieCrust $pieCrust, $subDir = null)
     {
         if ($subDir == PieCrust::DEFAULT_BLOG_KEY) $subDir = null;
-        $postsFs = $pieCrust->getConfigValueUnchecked('site', 'posts_fs');
+        $postsFs = $pieCrust->getConfig()->getValueUnchecked('site/posts_fs');
         switch ($postsFs)
         {
         case 'hierarchy':

@@ -3,6 +3,7 @@
 namespace PieCrust\IO;
 
 use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
 
@@ -11,7 +12,7 @@ use PieCrust\PieCrustException;
  */
 class ShallowFileSystem extends FileSystem
 {
-    public function __construct(PieCrust $pieCrust, $subDir)
+    public function __construct(IPieCrust $pieCrust, $subDir)
     {
         FileSystem::__construct($pieCrust, $subDir);
     }

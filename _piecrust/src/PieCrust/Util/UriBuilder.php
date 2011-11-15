@@ -9,6 +9,37 @@ namespace PieCrust\Util;
 class UriBuilder
 {
     /**
+     * Gets the URI of a page given a path.
+     */
+    public static function buildUri($path, $makePathRelativeTo = null, $stripIndex = true)
+    {
+        if ($makePathRelativeTo != null)
+        {
+            $basePath = $makePathRelativeTo;
+            if (is_int($makePathRelativeTo))
+            {
+                switch ($makePathRelativeTo)
+                {
+                    case Page::TYPE_REGULAR:
+                    case Page::TYPE_CATEGORY:
+                    case Page::TYPE_TAG:
+                        $basePath = $this->pieCrust->getPagesDir();
+                        break;
+                    case Page::TYPE_POST:
+                        $basePath = $this->pieCrust->getPostsDir();
+                        break;
+                    default:
+                        throw new InvalidArgumentException("Unknown page type given: " . $makePathRelativeTo);
+                }
+            }
+            $path = str_replace('\\', '/', substr($path, strlen($baseDir)));
+        }
+        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $path);    // strip the extension
+        if ($stripIndex) $uri = str_replace('_index', '', $uri);// strip special name
+        return $uri;
+    }
+    
+    /**
      * Builds the URL of a post given a URL format.
      */
     public static function buildPostUri($postUrlFormat, $postInfo)

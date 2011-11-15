@@ -8,11 +8,6 @@ use PieCrust\PieCrust;
 
 class TemplateRenderingTest extends PHPUnit_Framework_TestCase
 {
-    public static function setUpBeforeClass()
-    {
-        date_default_timezone_set('America/Los_Angeles');
-    }
-    
     public function renderTemplateDataProvider()
     {
         $data = array();
@@ -41,16 +36,17 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
     {
         // Render our template.
         $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setConfig(array());
-        $pc->setConfigValue('site', 'root', 'http://whatever/');
+        $pc->getConfig()->setValue('site/root', 'http://whatever/');
         $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
+        
         $testInfo = pathinfo($testFilename);
         $engine = $pc->getTemplateEngine($testInfo['extension']);
         $this->assertNotNull($engine, "Couldn't find a template engine for extension: ".$testInfo['extension']);
+        $this->assertEquals($testInfo['extension'], $engine->getExtension());
         ob_start();
         try
         {
-            $data = $pc->getSiteData();
+            $data = $pc->getConfig()->get();
             $data['page'] = array(
                     'title' => 'The title of the page'
                 );
@@ -59,7 +55,7 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
         catch (Exception $e)
         {
             ob_end_clean();
-            $this->assertTrue(false, $e->getMessage());
+            throw $e;
         }
         $actualResults = ob_get_clean();
         $actualResults = str_replace("\r\n", "\n", $actualResults);

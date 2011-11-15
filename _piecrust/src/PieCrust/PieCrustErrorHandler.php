@@ -42,7 +42,7 @@ class PieCrustErrorHandler
     
     protected $pieCrust;
     
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }

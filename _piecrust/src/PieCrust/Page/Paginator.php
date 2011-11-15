@@ -2,11 +2,12 @@
 
 namespace PieCrust\Page;
 
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
 
 
 /**
@@ -19,16 +20,14 @@ use PieCrust\Util\UriBuilder;
  */
 class Paginator
 {
-    protected $pieCrust;
     protected $page;
     protected $postsIterator;
     
     /**
      * Creates a new Paginator instance.
      */
-    public function __construct(PieCrust $pieCrust, Page $page)
+    public function __construct(IPage $page)
     {
-        $this->pieCrust = $pieCrust;
         $this->page = $page;
         $this->postsIterator = null;
     }
@@ -86,7 +85,7 @@ class Paginator
     public function next_page()
     {
         $this->ensurePaginationData();
-        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfigValue('single_page')))
+        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfig()->getValue('single_page')))
         {
             $nextPageIndex = $this->page->getPageNumber() + 1;
             return $this->page->getUri() . '/' . $nextPageIndex;
@@ -124,7 +123,8 @@ class Paginator
      */
     public function setPaginationDataSource(array $postInfos)
     {
-        if ($this->paginationData !== null) throw new PieCrustException("The pagination data source can only be set before the pagination data is build.");
+        if ($this->paginationData !== null)
+            throw new PieCrustException("The pagination data source can only be set before the pagination data is build.");
         $this->paginationDataSource = $postInfos;
     }
     
@@ -133,7 +133,7 @@ class Paginator
         if ($this->postsIterator != null)
             return;
         
-        $blogKey = $this->page->getConfigValue('blog');
+        $blogKey = $this->page->getConfig()->getValue('blog');
         
         // If not pagination data source was provided, load up a new FileSystem
         // and get the list of posts from the disk.
@@ -143,12 +143,12 @@ class Paginator
             $subDir = $blogKey;
             if ($blogKey == PieCrust::DEFAULT_BLOG_KEY)
                 $subDir = null;
-            $fs = FileSystem::create($this->pieCrust, $subDir);
+            $fs = FileSystem::create($this->page->getApp(), $subDir);
             $postInfos = $fs->getPostFiles();
         }
         
         // Create the pagination iterator.
-        $postsPerPage = $this->page->getConfigValue('posts_per_page', $blogKey);
+        $postsPerPage = PageHelper::getConfigValue($this->page, 'posts_per_page', $blogKey);
         $postsFilter = $this->getPaginationFilter();
         $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
         
@@ -168,7 +168,7 @@ class Paginator
         
         // Add custom filtering clauses specified by the user in the
         // page configuration header.
-        $filterInfo = $this->page->getConfigValue('posts_filters');
+        $filterInfo = $this->page->getConfig()->getValue('posts_filters');
         if ($filterInfo != null)
             $filter->addClauses($filterInfo);
         

@@ -2,7 +2,9 @@
 
 namespace PieCrust\TemplateEngines;
 
-use PieCrust\PieCrust;
+use \Mustache;
+use PieCrust\IPieCrust;
+use PieCrust\Util\PathHelper;
 
 
 class MustacheTemplateEngine implements ITemplateEngine
@@ -10,7 +12,7 @@ class MustacheTemplateEngine implements ITemplateEngine
     protected $pieCrust;
     protected $mustache;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -29,7 +31,7 @@ class MustacheTemplateEngine implements ITemplateEngine
     public function renderFile($templateName, $data)
     {
         $this->ensureLoaded();
-        $templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
+        $templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
         $content = file_get_contents($templatePath);
         $this->renderString($content, $data);
     }
@@ -43,7 +45,7 @@ class MustacheTemplateEngine implements ITemplateEngine
         if ($this->mustache === null)
         {
             require_once 'Mustache/Mustache.php';
-            $this->mustache = new \Mustache();
+            $this->mustache = new Mustache();
         }
     }
 }

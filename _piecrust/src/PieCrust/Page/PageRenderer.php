@@ -3,7 +3,7 @@
 namespace PieCrust\Page;
 
 use \Exception;
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
 
 
@@ -12,19 +12,50 @@ use PieCrust\PieCrustException;
  */
 class PageRenderer
 {
-    protected $pieCrust;
-    
-    public function __construct(PieCrust $pieCrust)
+    protected $page;
+    /**
+     * Gets the page this renderer is bound to.
+     */
+    public function getPage()
     {
-        $this->pieCrust = $pieCrust;
+        return $this->page;
     }
     
-    public function render(Page $page, $extraData = null)
+    protected $renderData;
+    /**
+     * Gets the render data.
+     */
+    public function getRenderData()
     {
-        $pageConfig = $page->getConfig();
+        if ($this->renderData == null)
+        {
+            $this->renderData = Configuration::mergeArrays(
+                DataBuilder::getSiteData($this->page),
+                DataBuilder::getPageData($this->page),
+                $this->page->getContentSegments()
+            );
+        }
+        return $this->renderData;
+    }
+    
+    /**
+     * Creates a new instance of PageRenderer.
+     */
+    public function __construct(IPage $page)
+    {
+        $this->page = $page;
+    }
+    
+    /**
+     * Renders the given page and sends the result to the standard output.
+     */
+    public function render($data = null)
+    {
+        $pieCrust = $this->page->getApp();
+        $pageConfig = $this->page->getConfig();
         
         // Get the template name.
-        $templateName = $pageConfig['layout'];
+        $templateName = $this->page->getConfig()->getValue('layout');
         if ($templateName == null or $templateName == '' or $templateName == 'none')
         {
             $templateName = false;
@@ -41,46 +72,31 @@ class PageRenderer
         {
             // Get the template engine and the page data.
             $extension = pathinfo($templateName, PATHINFO_EXTENSION);
-            $templateEngine = $this->pieCrust->getTemplateEngine($extension);
-            $data = $page->getContentSegments();
-            $data = array_merge($this->pieCrust->getSiteData($page->isCached()), $page->getPageData(), $data);
-            if ($extraData != null)
-            {
-                if (is_array($extraData))
-                {
-                    $data = array_merge($data, $extraData);
-                }
-                else
-                {
-                    $data['extra'] = $extraData;
-                }
-            }
-            
-            // We need to reset the pagination data so that any filters or modifications
-            // applied to it by the page are not also applied to the template.
-            $page->getPaginator()->resetPaginationData();
+            $templateEngine = $pieCrust->getTemplateEngine($extension);
             
             // Render the page.
+            $data = $this->getRenderData();
             $templateEngine->renderFile($templateName, $data);
         }
         else
         {
-            echo $page->getContentSegment();
+            // No template... just output the 'content' segment.
+            echo $this->page->getContentSegment();
         }
         
-        if ($this->pieCrust->isDebuggingEnabled())
+        if ($pieCrust->isDebuggingEnabled())
         {
             // Add a footer with version, caching and timing information.
-            $this->renderStatsFooter($page);
+            $this->renderStatsFooter($this->page);
         }
     }
     
-    public function get(Page $page, $extraData = null)
+    public function get($data = null)
     {
         ob_start();
         try
         {
-            $this->render($page, $extraData);
+            $this->render($data);
             return ob_get_clean();
         }
         catch (Exception $e)
@@ -90,12 +106,12 @@ class PageRenderer
         }
     }
     
-    public function renderStatsFooter(Page $page)
+    public function renderStatsFooter()
     {
-        $runInfo = $this->pieCrust->getLastRunInfo();
+        $runInfo = $this->page->getApp()->getLastRunInfo();
         
         echo "<!-- PieCrust " . PieCrust::VERSION . " - ";
-        echo ($page->isCached() ? "baked this morning" : "baked just now");
+        echo ($this->page->wasCached() ? "baked this morning" : "baked just now");
         if ($runInfo['cache_validity'] != null)
         {
             $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];

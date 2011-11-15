@@ -3,7 +3,7 @@
 namespace PieCrust\TemplateEngines;
 
 use \Exception;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 class TwigTemplateEngine implements ITemplateEngine
@@ -12,7 +12,7 @@ class TwigTemplateEngine implements ITemplateEngine
     protected $twigEnv;
     protected $twigLoader;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -80,8 +80,8 @@ class TwigTemplateEngine implements ITemplateEngine
             require_once 'PieCrust/Plugins/Twig/GeshiExtension.php';
             require_once 'PieCrust/Plugins/Twig/PieCrustExtension.php';
             
-            $isHosted = ($this->pieCrust->getConfigValue('server', 'is_hosting') === true);
-            $isBaking = ($this->pieCrust->getConfigValue('baker', 'is_baking') === true);
+            $isHosted = ($this->pieCrust->getConfig()->getValue('server/is_hosting') === true);
+            $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') === true);
             
             $dirs = $this->pieCrust->getTemplatesDirs();
             $this->twigLoader = new \ExtendedFilesystem($dirs, $isHosted); // If we're in a long running process (hosted), the templates
@@ -94,7 +94,7 @@ class TwigTemplateEngine implements ITemplateEngine
             {
                 $options['cache'] = $this->pieCrust->getCacheDir() . 'templates_c';
             }
-            if ($isHosted or ($this->pieCrust->getConfigValue('twig', 'auto_reload') !== false and !$isBaking))
+            if ($isHosted or ($this->pieCrust->getConfig()->getValue('twig/auto_reload') !== false and !$isBaking))
             {
                 $options['auto_reload'] = true;
             }

@@ -102,15 +102,15 @@ class BakeCommand implements IChefCommand
         }
         if ($result->command->options['pretty_urls'])
         {
-            $baker->getApp()->setConfigValue('site', 'pretty_urls', true);
+            $baker->getApp()->getConfig()->setValue('site/pretty_urls', true);
         }
         if ($result->command->options['root_url'])
         {
-            $baker->getApp()->setConfigValue('site', 'root', $result->command->options['root_url']);
+            $baker->getApp()->getConfig()->setValue('site/root', $result->command->options['root_url']);
         }
         if ($result->command->options['file_urls'])
         {
-            $baker->getApp()->setConfigValue('baker', 'file_urls', true);
+            $baker->getApp()->getConfig()->setValue('baker/file_urls', true);
         }
         
         try

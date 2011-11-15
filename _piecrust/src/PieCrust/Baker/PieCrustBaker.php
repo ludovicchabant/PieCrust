@@ -13,6 +13,7 @@ use PieCrust\Page\Page;
 use PieCrust\Page\PageRepository;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
 
 
 /**
@@ -108,7 +109,7 @@ class PieCrustBaker
     public function __construct(array $appParameters = array(), array $bakerParameters = array())
     {
         $this->pieCrust = new PieCrust($appParameters);
-        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         
         $bakerParametersFromApp = $this->pieCrust->getConfig('baker');
         if ($bakerParametersFromApp == null)
@@ -162,7 +163,7 @@ class PieCrustBaker
         $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
         
         // Apply the default configuration variant, if it exists.
-        $variants = $this->pieCrust->getConfigValue('baker', 'config_variants');
+        $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
         if ($variants and isset($variants['default']))
         {
             if (!is_array($variants['default']))
@@ -201,9 +202,9 @@ class PieCrustBaker
         $overallStart = microtime(true);
         
         // Set the root for file-url mode, if specified.
-        if ($this->pieCrust->getConfigValue('baker', 'file_urls'))
+        if ($this->pieCrust->getConfig()->getValue('baker/file_urls'))
         {
-            $this->pieCrust->setConfigValue('site', 'root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
+            $this->pieCrust->getConfig()->setValue('site/root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
         }
         
         if ($this->parameters['show_banner'] or $this->parameters['info_only'])
@@ -211,7 +212,7 @@ class PieCrustBaker
             echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
             echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
             echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
-            echo "  for url :  " . $this->pieCrust->getConfigValueUnchecked('site', 'root') . PHP_EOL;
+            echo "  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root') . PHP_EOL;
             echo PHP_EOL . PHP_EOL;
             
             if ($this->parameters['info_only'])
@@ -220,7 +221,7 @@ class PieCrustBaker
         
         // Setup the PieCrust environment.
         LinkCollector::enable();
-        $this->pieCrust->setConfigValue('baker', 'is_baking', true);
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', true);
         
         // Create the bake record.
         $bakeInfoPath = $this->getBakeDir() . self::BAKE_INFO_FILE;
@@ -303,7 +304,7 @@ class PieCrustBaker
         $this->bakeRecord->saveBakeInfo($bakeInfoPath);
         $this->bakeRecord = null;
         
-        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         LinkCollector::disable();
         
         if ($this->parameters['show_banner'])
@@ -351,7 +352,7 @@ class PieCrustBaker
         $start = microtime(true);
         $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
-                Page::buildUri($relativePath),
+                UriBuilder::buildUri($relativePath),
                 $path
             );
         $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
@@ -370,13 +371,13 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $fs = FileSystem::create($this->pieCrust, $blogKey);
             $postInfos = $fs->getPostFiles();
             
-            $postUrlFormat = $this->pieCrust->getConfigValue($blogKey, 'post_url');
+            $postUrlFormat = $this->pieCrust->getConfig()->getValue($blogKey.'/post_url');
             foreach ($postInfos as $postInfo)
             {
                 $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
@@ -387,7 +388,7 @@ class PieCrustBaker
                     Page::TYPE_POST,
                     $blogKey
                 );
-                $page->setDate($postInfo);
+                $page->setDate(PageHelper::getPostDate($postInfo));
                 
                 $pageWasBaked = false;
                 if ($this->shouldRebakeFile($postInfo['path']))
@@ -401,8 +402,8 @@ class PieCrustBaker
                 }
                 
                 $postInfo['blogKey'] = $blogKey;
-                $postInfo['tags'] = $page->getConfigValue('tags');
-                $postInfo['category'] = $page->getConfigValue('category');
+                $postInfo['tags'] = $page->getConfig()->getValue('tags');
+                $postInfo['category'] = $page->getConfig()->getValue('category');
                 $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
             }
         }
@@ -413,7 +414,7 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
@@ -463,7 +464,7 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
-                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
                     $page = PageRepository::getOrCreatePage(
                         $this->pieCrust,
                         $uri,
@@ -485,7 +486,7 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
@@ -499,7 +500,7 @@ class PieCrustBaker
             {
                 $start = microtime(true);
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
-                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfigValue($blogKey, 'category_url'), $category);
+                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
                 $page = PageRepository::getOrCreatePage(
                     $this->pieCrust, 
                     $uri, 

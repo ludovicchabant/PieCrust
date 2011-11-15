@@ -2,7 +2,7 @@
 
 namespace PieCrust\TemplateEngines;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 /**
@@ -20,7 +20,7 @@ interface ITemplateEngine
      * the actual engine implementation should be done the first time renderFile()
      * or renderString() ar called.
      */
-    public function initialize(PieCrust $pieCrust);
+    public function initialize(IPieCrust $pieCrust);
     
     /**
      * Gets the file extension this engine supports.
