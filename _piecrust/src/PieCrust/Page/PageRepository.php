@@ -41,7 +41,7 @@ class PageRepository
         return self::$pages[$uri];
     }
     
-    public static function getOrCreatePage(IPieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
+    public static function getOrCreatePage(IPieCrust $pieCrust, $uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
     {
         if (!self::$enabled)
         {

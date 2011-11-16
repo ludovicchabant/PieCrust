@@ -198,7 +198,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                         $pieCrust,
                         UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                         $postInfo['path'],
-                        Page::TYPE_POST,
+                        IPage::TYPE_POST,
                         $blogKey);
                 }
                 
@@ -240,7 +240,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                         $pieCrust,
                         UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                         $postInfo['path'],
-                        Page::TYPE_POST,
+                        IPage::TYPE_POST,
                         $blogKey);
                 }
                 

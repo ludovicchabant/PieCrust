@@ -4,7 +4,6 @@ namespace PieCrust\Data;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
-use PieCrust\Page\Page;
 use PieCrust\Page\Linker;
 use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
@@ -62,7 +61,7 @@ class DataBuilder
         
         switch ($page->getPageType())
         {
-            case Page::TYPE_TAG:
+            case IPage::TYPE_TAG:
                 if (is_array($page->getPageKey()))
                 {
                     $data['tag'] = implode(' + ', $page->getPageKey());
@@ -72,7 +71,7 @@ class DataBuilder
                     $data['tag'] = $page->getPageKey();
                 }
                 break;
-            case Page::TYPE_CATEGORY:
+            case IPage::TYPE_CATEGORY:
                 $data['category'] = $page->getPageKey();
                 break;
         }

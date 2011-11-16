@@ -3,7 +3,7 @@
 namespace PieCrust\Data;
 
 use PieCrust\IPieCrust;
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 
 
 /**
@@ -26,7 +26,7 @@ class PieCrustData
         $this->pieCrust = $pieCrust;
         $this->wasCurrentPageCached = $wasCurrentPageCached;
         
-        $this->version = PieCrust::VERSION;
+        $this->version = PieCrustDefaults::VERSION;
         $this->url = 'http://bolt80.com/piecrust/';
         $this->branding = 'Baked with <em><a href="'. $this->url . '">PieCrust</a> ' . $this->version . '</em>.';
     }
@@ -37,7 +37,7 @@ class PieCrustData
             return '';
         
         $output = '<div id="piecrust-debug-info" style="' . self::DEBUG_INFO_CSS . '">';
-        $output .= '<p style="' . self::P_CSS . '"><strong>PieCrust ' . PieCrust::VERSION . '</strong> &mdash; ';
+        $output .= '<p style="' . self::P_CSS . '"><strong>PieCrust ' . PieCrustDefaults::VERSION . '</strong> &mdash; ';
         if ($this->wasCurrentPageCached !== null)
         {
             $output .= ($this->wasCurrentPageCached ? "baked this morning" : "baked just now");

@@ -2,6 +2,8 @@
 
 namespace PieCrust\Util;
 
+use PieCrust\IPage;
+
 
 /**
  * A utility class for building page URIs and URI patterns.
@@ -20,12 +22,12 @@ class UriBuilder
             {
                 switch ($makePathRelativeTo)
                 {
-                    case Page::TYPE_REGULAR:
-                    case Page::TYPE_CATEGORY:
-                    case Page::TYPE_TAG:
+                    case IPage::TYPE_REGULAR:
+                    case IPage::TYPE_CATEGORY:
+                    case IPage::TYPE_TAG:
                         $basePath = $this->pieCrust->getPagesDir();
                         break;
-                    case Page::TYPE_POST:
+                    case IPage::TYPE_POST:
                         $basePath = $this->pieCrust->getPostsDir();
                         break;
                     default:

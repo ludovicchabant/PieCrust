@@ -2,7 +2,6 @@
 
 namespace PieCrust\IO;
 
-use PieCrust\PieCrust;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 

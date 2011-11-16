@@ -34,7 +34,7 @@ class PieCrustCacheInfo
         // - changing the base URL
         $prettyUrls = ($this->pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') ? "true" : "false");
         $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') ? "true" : "false");
-        $cacheInfo = "version=". PieCrust::VERSION .
+        $cacheInfo = "version=". PieCrustDefaults::VERSION .
                      "&site_root=" . $this->pieCrust->getConfig()->getValueUnchecked('site/root') .
                      "&debug_mode=" . $this->pieCrust->isDebuggingEnabled() .
                      "&pretty_urls=" . $prettyUrls .
@@ -42,7 +42,7 @@ class PieCrustCacheInfo
         $cacheInfo = hash('sha1', $cacheInfo);
         
         $isCacheValid = false;
-        $cacheInfoFileName = $this->pieCrust->getCacheDir() . PieCrust::CACHE_INFO_FILENAME;
+        $cacheInfoFileName = $this->pieCrust->getCacheDir() . PieCrustDefaults::CACHE_INFO_FILENAME;
         if (file_exists($cacheInfoFileName))
         {
             $previousCacheInfo = file_get_contents($cacheInfoFileName);

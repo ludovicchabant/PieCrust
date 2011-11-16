@@ -109,13 +109,13 @@ class PieCrustConfiguration extends Configuration
         $config['site'] = array_merge(array(
                         'title' => 'Untitled PieCrust Website',
                         'root' => null,
-                        'default_format' => PieCrust::DEFAULT_FORMAT,
-                        'default_template_engine' => PieCrust::DEFAULT_TEMPLATE_ENGINE,
+                        'default_format' => PieCrustDefaults::DEFAULT_FORMAT,
+                        'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                         'enable_gzip' => false,
                         'pretty_urls' => false,
-                        'posts_fs' => PieCrust::DEFAULT_POSTS_FS,
-                        'date_format' => PieCrust::DEFAULT_DATE_FORMAT,
-                        'blogs' => array(PieCrust::DEFAULT_BLOG_KEY),
+                        'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
+                        'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
+                        'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                         'cache_time' => 28800
                     ),
                     $config['site']);
@@ -140,8 +140,8 @@ class PieCrustConfiguration extends Configuration
         }
         
         // Validate multi-blogs settings.
-        if (in_array(PieCrust::DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
-            throw new PieCrustException("'".PieCrust::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
+        if (in_array(PieCrustDefaults::DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
+            throw new PieCrustException("'".PieCrustDefaults::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
         // Add default values for the blogs configurations, or use values
         // defined at the site level for easy site-wide configuration of multiple blogs
         // and backwards compatibility.
@@ -159,7 +159,7 @@ class PieCrustConfiguration extends Configuration
         foreach ($config['site']['blogs'] as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             {
                 $prefix = $blogKey . '/';
             }

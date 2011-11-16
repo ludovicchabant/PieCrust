@@ -129,7 +129,7 @@ class Linker implements \ArrayAccess, \Iterator
                 else
                 {
                     $key = $item->getBasename('.html');
-                    $uri = UriBuilder::buildUri($item->getPathname(), Page::TYPE_REGULAR);
+                    $uri = UriBuilder::buildUri($item->getPathname(), IPage::TYPE_REGULAR);
                     $page = PageRepository::getOrCreatePage($this->pieCrust, $uri, $item->getPathname());
                     $pageInfo = array(
                         'uri' => $uri,

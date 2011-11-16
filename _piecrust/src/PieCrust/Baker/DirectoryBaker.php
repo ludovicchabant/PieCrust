@@ -4,7 +4,8 @@ namespace PieCrust\Baker;
 
 use \Exception;
 use \DirectoryIterator;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PluginLoader;
 
@@ -30,7 +31,7 @@ class DirectoryBaker
             $processorsToFilter = $this->parameters['processors'];
             $this->processorsLoader = new PluginLoader(
                                             'PieCrust\\Baker\\Processors\\IProcessor',
-                                            PieCrust::APP_DIR . '/Baker/Processors',
+                                            PieCrustDefaults::APP_DIR . '/Baker/Processors',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
                                             $processorsToFilter == '*' ?
                                                 null :
@@ -48,7 +49,7 @@ class DirectoryBaker
     /**
      * Creates a new instance of DirectoryBaker.
      */
-    public function __construct(PieCrust $pieCrust, $bakeDir, array $parameters = array())
+    public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
         $this->bakeDir = rtrim(str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $bakeDir), '/\\') . DIRECTORY_SEPARATOR;

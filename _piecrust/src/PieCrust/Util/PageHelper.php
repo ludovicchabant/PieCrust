@@ -3,7 +3,6 @@
 namespace PieCrust\Util;
 
 use PieCrust\IPage;
-use PieCrust\Page\Page;
 
 
 class PageHelper
@@ -32,7 +31,7 @@ class PageHelper
      */
     public static function isRegular(IPage $page)
     {
-        return $page->getPageType() == Page::TYPE_REGULAR;
+        return $page->getPageType() == IPage::TYPE_REGULAR;
     }
     
     /**
@@ -40,7 +39,7 @@ class PageHelper
      */
     public static function isPost(IPage $page)
     {
-        return $page->getPageType() == Page::TYPE_POST;
+        return $page->getPageType() == IPage::TYPE_POST;
     }
     
     /**
@@ -48,7 +47,7 @@ class PageHelper
      */
     public static function isTag(IPage $page)
     {
-        return $page->getPageType() == Page::TYPE_TAG;
+        return $page->getPageType() == IPage::TYPE_TAG;
     }
     
     /**
@@ -56,6 +55,6 @@ class PageHelper
      */
     public static function isCategory(IPage $page)
     {
-        return $page->getPageType() == Page::TYPE_CATEGORY;
+        return $page->getPageType() == IPage::TYPE_CATEGORY;
     }
 }

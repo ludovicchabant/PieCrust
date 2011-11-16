@@ -21,45 +21,6 @@ use PieCrust\Util\ServerHelper;
  */
 class PieCrust implements IPieCrust
 {
-    /**
-     * The current version of PieCrust.
-     */
-    const VERSION = '0.1.3';
-    
-    /**
-     * The application's source code directory.
-     */
-    const APP_DIR = __DIR__;
-    
-    /**
-     * Names for special pages.
-     */
-    const INDEX_PAGE_NAME = '_index';
-    const CATEGORY_PAGE_NAME = '_category';
-    const TAG_PAGE_NAME = '_tag';
-    
-    /**
-     * Names for special directories and files.
-     */
-    const CONTENT_DIR = '_content/';
-    const CONFIG_PATH = '_content/config.yml';
-    const CONTENT_TEMPLATES_DIR = '_content/templates/';
-    const CONTENT_PAGES_DIR = '_content/pages/';
-    const CONTENT_POSTS_DIR = '_content/posts/';
-    const CACHE_DIR = '_cache/';
-    const CACHE_INFO_FILENAME = 'cacheinfo';
-    
-    /**
-     * Default values for configuration settings.
-     */
-    const DEFAULT_BLOG_KEY = 'blog';
-    const DEFAULT_FORMAT = 'markdown';
-    const DEFAULT_PAGE_TEMPLATE_NAME = 'default';
-    const DEFAULT_POST_TEMPLATE_NAME = 'post';
-    const DEFAULT_TEMPLATE_ENGINE = 'twig';
-    const DEFAULT_POSTS_FS = 'flat';
-    const DEFAULT_DATE_FORMAT = 'F j, Y';
-    
     protected $rootDir;
     /**
      * The root directory of the website.
@@ -95,7 +56,7 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            $this->setTemplatesDirs(self::CONTENT_TEMPLATES_DIR);
+            $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
             
             // Add custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/template_dirs');
@@ -148,7 +109,7 @@ class PieCrust implements IPieCrust
     {
         if ($this->pagesDir === null)
         {
-            $this->setPagesDir($this->rootDir . self::CONTENT_PAGES_DIR);
+            $this->setPagesDir($this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR);
         }
         return $this->pagesDir;
     }
@@ -173,7 +134,7 @@ class PieCrust implements IPieCrust
     {
         if ($this->postsDir === null)
         {
-            $this->setPostsDir($this->rootDir . self::CONTENT_POSTS_DIR);
+            $this->setPostsDir($this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR);
         }
         return $this->postsDir;
     }
@@ -199,7 +160,7 @@ class PieCrust implements IPieCrust
         if ($this->cacheDir === null)
         {
             if ($this->cachingEnabled)
-                $this->setCacheDir($this->rootDir . self::CACHE_DIR);
+                $this->setCacheDir($this->rootDir . PieCrustDefaults::CACHE_DIR);
             else
                 $this->cacheDir = false;
         }
@@ -300,7 +261,7 @@ class PieCrust implements IPieCrust
         {
             $loader = new PluginLoader(
                                         'PieCrust\\TemplateEngines\\ITemplateEngine',
-                                        self::APP_DIR . '/TemplateEngines'
+                                        PieCrustDefaults::APP_DIR . '/TemplateEngines'
                                         );
             $this->templateEngines = array();
             foreach ($loader->getPlugins() as $engine)
@@ -480,7 +441,7 @@ class PieCrust implements IPieCrust
         if ($this->config == null)
         {
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
-            $this->config = new PieCrustConfiguration($this->rootDir . self::CONFIG_PATH, $configCache);
+            $this->config = new PieCrustConfiguration($this->rootDir . PieCrustDefaults::CONFIG_PATH, $configCache);
         }
     }
     
@@ -494,7 +455,7 @@ class PieCrust implements IPieCrust
         {
             $this->formattersLoader = new PluginLoader(
                                             'PieCrust\\Formatters\\IFormatter',
-                                            self::APP_DIR . '/Formatters',
+                                            PieCrustDefaults::APP_DIR . '/Formatters',
                                             function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
                                             );
             foreach ($this->formattersLoader->getPlugins() as $formatter)

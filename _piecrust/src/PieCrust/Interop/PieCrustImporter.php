@@ -3,7 +3,7 @@
 namespace PieCrust\Interop;
 
 use \Exception;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\Interop\Importers\IImporter;
 use PieCrust\Util\PluginLoader;
 
@@ -19,7 +19,7 @@ class PieCrustImporter
     /**
      * Creates a new instance of PieCrustImporter.
      */
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->importersLoader = new PluginLoader(

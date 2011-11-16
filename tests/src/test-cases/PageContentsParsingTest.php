@@ -2,7 +2,6 @@
 
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-use PieCrust\PieCrust;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;

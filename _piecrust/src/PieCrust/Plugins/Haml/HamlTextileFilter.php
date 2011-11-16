@@ -1,7 +1,5 @@
 <?php
 
-use PieCrust\PieCrust;
-
 require_once 'PhamlP/haml/filters/_HamlTextileFilter.php';
 
 

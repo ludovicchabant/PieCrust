@@ -3,8 +3,8 @@
 namespace PieCrust\TemplateEngines;
 
 use \HamlParser;
-use PieCrust\PieCrust;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Util\PathHelper;
 
 
@@ -69,7 +69,7 @@ class HamlTemplateEngine implements ITemplateEngine
         {
             if (is_array($value))
             {
-                $$key = new ArrayWrapper($value);
+                $$key = (object)$value;
             }
             else
             {
@@ -97,7 +97,7 @@ class HamlTemplateEngine implements ITemplateEngine
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
             else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
-                                       array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
+                                       array('filterDir' => PieCrustDefaults::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'PhamlP/haml/HamlParser.php';

@@ -2,7 +2,7 @@
 
 namespace PieCrust\IO;
 
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 
 
 /**
@@ -61,7 +61,7 @@ class Cache
         
         $commentTags = $this->commentTags[$extension];
         if ($commentTags != null)
-            $header = $commentTags[0] . 'PieCrust ' . PieCrust::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
+            $header = $commentTags[0] . 'PieCrust ' . PieCrustDefaults::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
         else
             $header = '';
         file_put_contents($cachePath, ($header . $contents));

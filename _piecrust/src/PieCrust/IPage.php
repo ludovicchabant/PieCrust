@@ -8,6 +8,13 @@ namespace PieCrust;
  */
 interface IPage
 {
+    // {{{ Page types.
+    const TYPE_REGULAR = 1;
+    const TYPE_POST = 2;
+    const TYPE_TAG = 3;
+    const TYPE_CATEGORY = 4;
+    // }}}
+    
     /**
      * Gets the PieCrust app this page belongs to.
      */

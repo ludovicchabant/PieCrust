@@ -2,8 +2,8 @@
 
 namespace PieCrust\IO;
 
-use PieCrust\PieCrust;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 
 
@@ -110,7 +110,7 @@ abstract class FileSystem
     
     public static function create(IPieCrust $pieCrust, $subDir = null)
     {
-        if ($subDir == PieCrust::DEFAULT_BLOG_KEY) $subDir = null;
+        if ($subDir == PieCrustDefaults::DEFAULT_BLOG_KEY) $subDir = null;
         $postsFs = $pieCrust->getConfig()->getValueUnchecked('site/posts_fs');
         switch ($postsFs)
         {

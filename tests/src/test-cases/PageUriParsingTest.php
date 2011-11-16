@@ -3,6 +3,7 @@
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
 use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\UriBuilder;
@@ -42,12 +43,12 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             array(
                 array(),
                 '/blah',
-                $this->makeUriInfo('blah', $pagesDir . PieCrust::CATEGORY_PAGE_NAME . '.html', false, Page::TYPE_CATEGORY, 'blog', 'blah')
+                $this->makeUriInfo('blah', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', false, Page::TYPE_CATEGORY, 'blog', 'blah')
             ),
             array(
                 array(),
                 '/tag/blah',
-                $this->makeUriInfo('tag/blah', $pagesDir . PieCrust::TAG_PAGE_NAME . '.html', false, Page::TYPE_TAG, 'blog', 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', false, Page::TYPE_TAG, 'blog', 'blah')
             ),
             array(
                 array(),

@@ -3,7 +3,7 @@
 namespace PieCrust\Page;
 
 use PieCrust\IPage;
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 
@@ -46,7 +46,7 @@ class PageConfiguration extends Configuration
         $blogKeys = $pieCrustConfig->getValueUnchecked('site/blogs');
         $validatedConfig = array_merge(
             array(
-                'layout' => PageHelper::isPost($page) ? PieCrust::DEFAULT_POST_TEMPLATE_NAME : PieCrust::DEFAULT_PAGE_TEMPLATE_NAME,
+                'layout' => PageHelper::isPost($page) ? PieCrustDefaults::DEFAULT_POST_TEMPLATE_NAME : PieCrustDefaults::DEFAULT_PAGE_TEMPLATE_NAME,
                 'format' => $pieCrustConfig->getValueUnchecked('site/default_format'),
                 'template_engine' => $pieCrustConfig->getValueUnchecked('site/default_template_engine'),
                 'content_type' => 'html',

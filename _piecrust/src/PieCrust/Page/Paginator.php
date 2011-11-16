@@ -141,7 +141,7 @@ class Paginator
         if ($postInfos === null)
         {
             $subDir = $blogKey;
-            if ($blogKey == PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey == PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $subDir = null;
             $fs = FileSystem::create($this->page->getApp(), $subDir);
             $postInfos = $fs->getPostFiles();

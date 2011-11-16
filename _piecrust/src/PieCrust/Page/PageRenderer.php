@@ -110,7 +110,7 @@ class PageRenderer
     {
         $runInfo = $this->page->getApp()->getLastRunInfo();
         
-        echo "<!-- PieCrust " . PieCrust::VERSION . " - ";
+        echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - ";
         echo ($this->page->wasCached() ? "baked this morning" : "baked just now");
         if ($runInfo['cache_validity'] != null)
         {

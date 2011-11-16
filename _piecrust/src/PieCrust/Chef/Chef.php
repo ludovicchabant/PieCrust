@@ -4,7 +4,7 @@ namespace PieCrust\Chef;
 
 use \Exception;
 use \Console_CommandLine;
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Util\PluginLoader;
 
 require_once 'Console/CommandLine.php';
@@ -24,12 +24,12 @@ class Chef
         $this->parser = new Console_CommandLine(array(
             'name' => 'chef',
             'description' => 'The PieCrust chef manages your website.',
-            'version' => PieCrust::VERSION
+            'version' => PieCrustDefaults::VERSION
         ));
         
         $this->commandLoader = new PluginLoader(
             'PieCrust\\Chef\\Commands\\IChefCommand',
-            PieCrust::APP_DIR . '/Chef/Commands');
+            PieCrustDefaults::APP_DIR . '/Chef/Commands');
         
         foreach ($this->commandLoader->getPlugins() as $command)
         {

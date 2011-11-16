@@ -2,7 +2,7 @@
 
 namespace PieCrust\Baker\Processors;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 /**
@@ -24,7 +24,7 @@ interface IProcessor
     /**
      * Initializes a file processor with the given PieCrust instance.
      */
-    public function initialize(PieCrust $pieCrust);
+    public function initialize(IPieCrust $pieCrust);
     
     /**
      * Gets the priority of this processor.

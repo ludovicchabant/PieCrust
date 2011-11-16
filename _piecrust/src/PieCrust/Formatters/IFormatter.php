@@ -2,7 +2,7 @@
 
 namespace PieCrust\Formatters;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 /**
@@ -26,7 +26,7 @@ interface IFormatter
      * the actual formatter implementation should be done the first time format()
      * is called.
      */
-    public function initialize(PieCrust $pieCrust);
+    public function initialize(IPieCrust $pieCrust);
     
     /**
      * Gets the priority of the formatter, which defines the relative order in which

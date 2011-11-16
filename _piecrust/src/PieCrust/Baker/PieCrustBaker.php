@@ -5,11 +5,11 @@ namespace PieCrust\Baker;
 use \Exception;
 use \RecursiveDirectoryIterator;
 use \RecursiveIteratorIterator;
+use PieCrust\IPage;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
-use PieCrust\Page\Page;
 use PieCrust\Page\PageRepository;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
@@ -209,7 +209,7 @@ class PieCrustBaker
         
         if ($this->parameters['show_banner'] or $this->parameters['info_only'])
         {
-            echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
+            echo "PieCrust Baker v." . PieCrustDefaults::VERSION . PHP_EOL . PHP_EOL;
             echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
             echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
             echo "  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root') . PHP_EOL;
@@ -333,8 +333,8 @@ class PieCrustBaker
         $pagesDir = $this->pieCrust->getPagesDir();
         $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
         $relativePathInfo = pathinfo($relativePath);
-        if ($relativePathInfo['filename'] == PieCrust::CATEGORY_PAGE_NAME or
-            $relativePathInfo['filename'] == PieCrust::TAG_PAGE_NAME or
+        if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
+            $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or
             $relativePathInfo['extension'] != 'html')
         {
             return false;
@@ -385,7 +385,7 @@ class PieCrustBaker
                     $this->pieCrust,
                     $uri,
                     $postInfo['path'],
-                    Page::TYPE_POST,
+                    IPage::TYPE_POST,
                     $blogKey
                 );
                 $page->setDate(PageHelper::getPostDate($postInfo));
@@ -418,16 +418,16 @@ class PieCrustBaker
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
             
-            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::TAG_PAGE_NAME . '.html';
+            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
             if (!is_file($tagPagePath)) return;
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
             $combinations = $this->parameters['tag_combinations'];
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             {
                 if (array_key_exists($blogKey, $combinations))
                     $combinations = $combinations[$blogKey];
@@ -469,7 +469,7 @@ class PieCrustBaker
                         $this->pieCrust,
                         $uri,
                         $tagPagePath,
-                        Page::TYPE_TAG,
+                        IPage::TYPE_TAG,
                         $blogKey,
                         $tag
                     );
@@ -490,10 +490,10 @@ class PieCrustBaker
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
                 
-            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
             if (!is_file($categoryPagePath)) return;
             
             foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
@@ -505,7 +505,7 @@ class PieCrustBaker
                     $this->pieCrust, 
                     $uri, 
                     $categoryPagePath,
-                    Page::TYPE_CATEGORY,
+                    IPage::TYPE_CATEGORY,
                     $blogKey,
                     $category
                 );

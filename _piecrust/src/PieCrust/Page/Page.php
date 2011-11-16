@@ -17,14 +17,6 @@ use PieCrust\Util\UriBuilder;
  */
 class Page implements IPage
 {
-    /**
-     * Page types.
-     */
-    const TYPE_REGULAR = 1;
-    const TYPE_POST = 2;
-    const TYPE_TAG = 3;
-    const TYPE_CATEGORY = 4;
-    
     protected $pieCrust;
     /**
      * Gets the PieCrust app this page belongs to.
@@ -219,7 +211,7 @@ class Page implements IPage
     /**
      * Creates a new Page instance.
      */
-    public function __construct(IPieCrust $pieCrust, $uri, $path, $pageType = Page::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
+    public function __construct(IPieCrust $pieCrust, $uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
     {
         $this->pieCrust = $pieCrust;
         $this->uri = $uri;
@@ -278,8 +270,8 @@ class Page implements IPage
         $uriInfo = UriParser::parseUri($pieCrust, $uri);
         if ($uriInfo == null or (!$uriInfo['was_path_checked'] and !is_file($uriInfo['path'])))
         {
-            if ($uriInfo['type'] == Page::TYPE_TAG) throw new PieCrustException('The special tag listing page was not found.');
-            if ($uriInfo['type'] == Page::TYPE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
+            if ($uriInfo['type'] == IPage::TYPE_TAG) throw new PieCrustException('The special tag listing page was not found.');
+            if ($uriInfo['type'] == IPage::TYPE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
             throw new PieCrustException('404');
         }
         
@@ -298,7 +290,7 @@ class Page implements IPage
     /**
      * Creates a new Page instance given a path.
      */
-    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = Page::TYPE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
+    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = IPage::TYPE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
     {
         if ($path == null)
             throw new InvalidArgumentException("The given path is null.");

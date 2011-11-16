@@ -2,7 +2,7 @@
 
 namespace PieCrust\Baker;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\Util\LinkCollector;
 
 
@@ -25,7 +25,7 @@ class BakeRecord
     /**
      * Creates a new instance of the BakeRecord.
      */
-    public function __construct(PieCrust $pieCrust, $lastBakeInfoPath)
+    public function __construct(IPieCrust $pieCrust, $lastBakeInfoPath)
     {
         $this->postInfos = array();
         $this->postTags = array();

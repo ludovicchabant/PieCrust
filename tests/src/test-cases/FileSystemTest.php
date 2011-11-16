@@ -2,7 +2,6 @@
 
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-use PieCrust\PieCrust;
 use PieCrust\IO\FileSystem;
 
 

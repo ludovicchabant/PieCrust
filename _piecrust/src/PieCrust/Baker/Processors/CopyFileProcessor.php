@@ -2,7 +2,7 @@
 
 namespace PieCrust\Baker\Processors;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 class CopyFileProcessor implements IProcessor
@@ -18,7 +18,7 @@ class CopyFileProcessor implements IProcessor
     {
     }
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->rootDirLength = strlen($pieCrust->getRootDir());
     }

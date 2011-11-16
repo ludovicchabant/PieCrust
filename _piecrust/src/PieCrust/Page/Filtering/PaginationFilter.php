@@ -3,7 +3,6 @@
 namespace PieCrust\Page\Filtering;
 
 use PieCrust\IPage;
-use PieCrust\Page\Page;
 use PieCrust\PieCrustException;
 
 
@@ -40,7 +39,7 @@ class PaginationFilter
         // for that.
         switch ($page->getPageType())
         {
-        case Page::TYPE_TAG:
+        case IPage::TYPE_TAG:
             $pageKey = $page->getPageKey();
             if (is_array($pageKey))
             {
@@ -56,7 +55,7 @@ class PaginationFilter
                 $this->addClause(new HasFilterClause('tags', $pageKey));
             }
             break;
-        case Page::TYPE_CATEGORY:
+        case IPage::TYPE_CATEGORY:
             $this->addClause(new IsFilterClause('category', $page->getPageKey()));
             break;
         }

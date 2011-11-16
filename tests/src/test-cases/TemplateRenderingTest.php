@@ -2,8 +2,8 @@
 
 require_once (dirname(__DIR__) . '/unittest_setup.php');
 
-use PieCrust\Page\Page;
 use PieCrust\PieCrust;
+use PieCrust\Page\Page;
 
 
 class TemplateRenderingTest extends PHPUnit_Framework_TestCase
