@@ -5,6 +5,7 @@ namespace PieCrust\Page;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Data\DataBuilder;
+use PieCrust\IO\Cache;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 
@@ -86,7 +87,9 @@ class PageLoader
             // Get the page from the cache.
             $configText = $this->cache->read($this->page->getUri(), 'json');
             $config = json_decode($configText, true);
-            $this->page->getConfig()->set($config);
+            $this->page->getConfig()->set($config, false); // false = No need to validate this.
+            if (!$this->page->getConfig()->hasValue('segments'))
+                throw new PieCrustException("Error in page '".$this->page->getPath()."': Can't get segments list from cache.");
             
             $contents  = array('content' => null, 'content.abstract' => null);
             foreach ($config['segments'] as $key)
@@ -154,7 +157,7 @@ class PageLoader
             $wasVolatileDataAccessed = $data['pagination']->wasPaginationDataAccessed();
             if ($enableCache and $this->cache != null and !$wasVolatileDataAccessed)
             {
-                $yamlMarkup = json_encode($config);
+                $yamlMarkup = json_encode($config->get());
                 $this->cache->write($this->page->getUri(), 'json', $yamlMarkup);
                 
                 $keys = $config['segments'];
