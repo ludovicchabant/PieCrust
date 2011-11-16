@@ -4,7 +4,10 @@ namespace PieCrust\Page;
 
 use \Exception;
 use PieCrust\IPage;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\Data\DataBuilder;
+use PieCrust\Util\Configuration;
 
 
 /**
@@ -30,7 +33,7 @@ class PageRenderer
         if ($this->renderData == null)
         {
             $this->renderData = Configuration::mergeArrays(
-                DataBuilder::getSiteData($this->page),
+                DataBuilder::getSiteData($this->page->getApp(), $this->page->wasCached()),
                 DataBuilder::getPageData($this->page),
                 $this->page->getContentSegments()
             );
