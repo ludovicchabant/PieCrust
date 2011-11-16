@@ -89,13 +89,14 @@ class BakeCommand implements IChefCommand
         
         // Start baking!
         $appParameters = array('root' => $rootDir);
+        $app = new PieCrust($appParameters);
         $bakerParameters = array(
             'smart' => !$result->command->options['force'],
             'clean_cache' => $result->command->options['force'],
             'info_only' => $result->command->options['info_only'],
             'config_variant' => $result->command->options['config_variant']
         );
-        $baker = new PieCrustBaker($appParameters, $bakerParameters);
+        $baker = new PieCrustBaker($app, $bakerParameters);
         if ($outputDir)
         {
             $baker->setBakeDir($outputDir);

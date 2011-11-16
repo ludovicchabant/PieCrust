@@ -6,7 +6,7 @@ use \Exception;
 use \RecursiveDirectoryIterator;
 use \RecursiveIteratorIterator;
 use PieCrust\IPage;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
@@ -106,9 +106,9 @@ class PieCrustBaker
     /**
      * Creates a new instance of the PieCrustBaker.
      */
-    public function __construct(array $appParameters = array(), array $bakerParameters = array())
+    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array())
     {
-        $this->pieCrust = new PieCrust($appParameters);
+        $this->pieCrust = $pieCrust;
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         
         $bakerParametersFromApp = $this->pieCrust->getConfig('baker');
