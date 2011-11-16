@@ -2,6 +2,10 @@
 
 namespace PieCrust\Server;
 
+require_once 'StupidHttp/StupidHttp_WebServer.php';
+require_once 'StupidHttp/StupidHttp_PearLog.php';
+require_once 'StupidHttp/StupidHttp_ConsoleLog.php';
+
 use \Exception;
 use \StupidHttp_Log;
 use \StupidHttp_PearLog;
@@ -10,12 +14,6 @@ use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
-use PieCrust\Baker\PieCrustBaker;
-use PieCrust\Page\PageRepository;
-
-require_once 'StupidHttp/StupidHttp_WebServer.php';
-require_once 'StupidHttp/StupidHttp_PearLog.php';
-require_once 'StupidHttp/StupidHttp_ConsoleLog.php';
 
 
 /**
@@ -26,43 +24,28 @@ class PieCrustServer
     protected $server;
     protected $rootDir;
     protected $additionalTemplatesDir;
-    protected $autobake;
-    protected $fullFirstBake;
-    protected $lastBakeTime;
-    protected $autobakeInterval;
     
     /**
      * Creates a new chef server.
      */
     public function __construct($appDir, array $options = array())
     {
-        set_time_limit(0);
-        error_reporting(E_ALL);
-        date_default_timezone_set('America/Los_Angeles');
-        
         $options = array_merge(
             array(
                   'port' => 8080,
                   'templates_dir' => null,
-                  'autobake' => false,
-                  'autobake_interval' => 2,
                   'mime_types' => array('less' => 'text/css'),
                   'log_file' => null,
                   'log_console' => false
                   ),
             $options
         );
-        $this->additionalTemplatesDir = $options['templates_dir'];
-        $this->autobake = (is_string($options['autobake']) ? $options['autobake'] : false);
-        $this->fullFirstBake = $options['full_first_bake'];
         $this->rootDir = rtrim($appDir, '/\\');
-        $this->lastBakeTime = 0;
-        $this->autobakeInterval = $options['autobake_interval'];
+        $this->additionalTemplatesDir = $options['templates_dir'];
         
         // Set-up the stupid web server.
-        $documentRoot = ($this->autobake === false) ? $this->rootDir : $this->autobake;
         $port = $options['port'];
-        $this->server = new StupidHttp_WebServer($documentRoot, $port);
+        $this->server = new StupidHttp_WebServer($this->rootDir, $port);
         
         if ($options['log_file'])
         {
@@ -84,25 +67,11 @@ class PieCrustServer
         }
         
         $self = $this; // Workaround for $this not being capturable in closures.
-        if ($this->autobake === false)
-        {
-            $this->server->onPattern('GET', '.*')
-                         ->call(function($context) use ($self)
-                                {
-                                    $self->_runPieCrustRequest($context);
-                                });
-        }
-        else
-        {
-            $this->server->setPreprocess(function($request) use ($self)
-                                         {
-                                            if ((microtime(true) - $self->_getLastBakeTime()) > $self->_getAutobakeInterval())
-                                            {
-                                                $self->_bake(true);
-                                                $self->_setLastBakeTime();
-                                            }
-                                         });
-        }
+        $this->server->onPattern('GET', '.*')
+                     ->call(function($context) use ($self)
+                            {
+                                $self->_runPieCrustRequest($context);
+                            });
     }
 
     /**
@@ -110,64 +79,7 @@ class PieCrustServer
      */
     public function run(array $options = array())
     {
-        if ($this->autobake !== false and $this->fullFirstBake)
-        {
-            $this->_bake(false, true);
-        }
-        
         $this->server->run($options);
-    }
-    
-    /**
-     * For internal use only.
-     */
-    public function _getAutobakeInterval()
-    {
-        return $this->autobakeInterval;
-    }
-    
-    /**
-     * For internal use only.
-     */
-    public function _getLastBakeTime()
-    {
-        return $this->lastBakeTime;
-    }
-    
-    /**
-     * For internal use only.
-     */
-    public function _setLastBakeTime($time = null)
-    {
-        if ($time == null) $time = microtime(true);
-        $this->lastBakeTime = $time;
-    }
-    
-    /**
-     * For internal use only.
-     */
-    public function _bake($smart, $showBanner = false)
-    {
-        PageRepository::clearPages();
-        
-        $baker = new PieCrustBaker(
-            array(
-                 'root' => $this->rootDir,
-                 'cache' => true
-            ),
-            array(
-                  'smart' => $smart,
-                  'show_banner' => $showBanner
-            )
-        );
-        $baker->setBakeDir($this->autobake);
-        $baker->getApp()->getConfig()->setValue('server/is_hosting', true);
-        $baker->getApp()->getConfig()->setValue('site/root', '/');
-        if ($this->additionalTemplatesDir != null)
-        {
-            $baker->getApp()->addTemplatesDir($this->additionalTemplatesDir);
-        }
-        $baker->bake();
     }
     
     /**
