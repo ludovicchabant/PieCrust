@@ -106,6 +106,36 @@ class ConfigurationTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('other', $c->getValue('foo/bar'));
     }
     
+    public function testAppendValue1()
+    {
+        $c = new Configuration(array(
+            'foo' => 'bar'
+        ));
+        $this->assertNull($c->getValue('blah'));
+        $c->appendValue('blah', 'one');
+        $this->assertEquals(array('one'), $c->getValue('blah'));
+        $c->appendValue('blah', 'two');
+        $this->assertEquals(array('one', 'two'), $c->getValue('blah'));
+        $c->appendValue('blah', 'two');
+        $this->assertEquals(array('one', 'two', 'two'), $c->getValue('blah'));
+    }
+    
+    public function testAppendValue2()
+    {
+        $c = new Configuration(array(
+            'foo' => array(
+                'bar' => true
+            )
+        ));
+        $this->assertNull($c->getValue('foo/blah'));
+        $c->appendValue('foo/blah', 'one');
+        $this->assertEquals(array('one'), $c->getValue('foo/blah'));
+        $c->appendValue('foo/blah', 'two');
+        $this->assertEquals(array('one', 'two'), $c->getValue('foo/blah'));
+        $c->appendValue('foo/blah', 'two');
+        $this->assertEquals(array('one', 'two', 'two'), $c->getValue('foo/blah'));
+    }
+    
     public function testMerge()
     {
         $pc = new Configuration(array(
