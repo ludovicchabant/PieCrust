@@ -262,7 +262,7 @@ class Page implements IPage
     /**
      * Creates a new Page instance given a fully qualified URI.
      */
-    public static function createFromUri(PieCrust $pieCrust, $uri)
+    public static function createFromUri(IPieCrust $pieCrust, $uri)
     {
         if ($uri == null)
             throw new InvalidArgumentException("The given URI is null.");
@@ -290,7 +290,7 @@ class Page implements IPage
     /**
      * Creates a new Page instance given a path.
      */
-    public static function createFromPath(PieCrust $pieCrust, $path, $pageType = IPage::TYPE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
+    public static function createFromPath(IPieCrust $pieCrust, $path, $pageType = IPage::TYPE_REGULAR, $pageNumber = 1, $blogKey = null, $pageKey = null, $date = null)
     {
         if ($path == null)
             throw new InvalidArgumentException("The given path is null.");

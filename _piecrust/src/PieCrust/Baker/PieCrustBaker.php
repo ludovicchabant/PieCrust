@@ -7,6 +7,7 @@ use \RecursiveDirectoryIterator;
 use \RecursiveIteratorIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;

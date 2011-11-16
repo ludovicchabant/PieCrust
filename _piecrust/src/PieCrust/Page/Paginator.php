@@ -3,6 +3,7 @@
 namespace PieCrust\Page;
 
 use PieCrust\IPage;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
 use PieCrust\Page\Filtering\PaginationFilter;
