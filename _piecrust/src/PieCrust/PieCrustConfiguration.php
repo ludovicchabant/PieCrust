@@ -43,6 +43,10 @@ class PieCrustConfiguration extends Configuration
             // boot-up time (this saves a couple milliseconds).
             $cache = $this->cache ? new Cache($this->cache) : null;
             $configTime = filemtime($this->path);
+            if ($configTime === false)
+            {
+                throw new PieCrustException("The PieCrust configuration file is not readable: " . $this->path);
+            }
             if ($cache != null and $cache->isValid('config', 'json', $configTime))
             {
                 $configText = $cache->read('config', 'json');
