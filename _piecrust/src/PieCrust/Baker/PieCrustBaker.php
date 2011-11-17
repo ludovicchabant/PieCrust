@@ -90,11 +90,13 @@ class PieCrustBaker
             {
                 if (!is_dir($this->bakeDir))
                 {
-                    @mkdir($dir, 0777, true);
+                    if (@mkdir($this->bakeDir, 0777, true) === false)
+                        throw new PieCrustException("Can't create bake directory: " . $this->bakeDir);
                 }
                 else
                 {
-                    @chmod($this->bakeDir, 0777);
+                    if (@chmod($this->bakeDir, 0777) === false)
+                        throw new PieCrustException("Can't make bake directory writeable: " . $this->bakeDir);
                 }
             }
             catch (Exception $e)

@@ -34,10 +34,12 @@ class HamlTemplateEngine implements ITemplateEngine
         $temp = $dir . '__haml_string_tpl__.haml';
         $out = $dir . '__haml_string_tpl__.php';
         
-        @file_put_contents($temp, $content);
+        if (@file_put_contents($temp, $content) === false)
+            throw new PieCrustException("Can't write input Haml template to: " . $temp);
         
         $phpMarkup = $this->haml->parse($temp);
-        file_put_contents($out, $phpMarkup);
+        if (@file_put_contents($out, $phpMarkup) === false)
+            throw new PieCrustException("Can't write output Haml template to: " . $out);
         
         // Declare all top-level data as local-scope variables before including the HAML PHP.
         $_PIECRUST_APP = $this->pieCrust;

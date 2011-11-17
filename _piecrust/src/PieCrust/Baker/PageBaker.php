@@ -3,6 +3,7 @@
 namespace PieCrust\Baker;
 
 use PieCrust\IPage;
+use PieCrust\PieCrustException;
 use PieCrust\Page\PageRenderer;
 use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
@@ -164,7 +165,9 @@ class PageBaker
                 FileSystem::ensureDirectory($bakeAssetDir);
                 foreach ($assetPaths as $assetPath)
                 {
-                    @copy($assetPath, ($bakeAssetDir . basename($assetPath)));
+                    $destinationAssetPath = $bakeAssetDir . basename($assetPath);
+                    if (@copy($assetPath, $destinationAssetPath) == false)
+                        throw new PieCrustException("Can't copy '".$assetPath."' to '".$destinationAssetPath."'.");
                 }
             }
         }

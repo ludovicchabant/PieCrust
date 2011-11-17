@@ -3,6 +3,7 @@
 namespace PieCrust\Baker\Processors;
 
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 
 
 class CopyFileProcessor implements IProcessor
@@ -40,6 +41,8 @@ class CopyFileProcessor implements IProcessor
     
     public function process($inputPath, $outputDir)
     {
-        @copy($inputPath, $outputDir . basename($inputPath));
+        $outputPath = $outputDir . basename($inputPath);
+        if (@copy($inputPath, $outputPath) == false)
+            throw new PieCrustException("Can't copy '".$inputPath."' to '".$outputPath."'.");
     }
 }

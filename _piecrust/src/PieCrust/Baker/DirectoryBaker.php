@@ -30,14 +30,14 @@ class DirectoryBaker
         {
             $processorsToFilter = $this->parameters['processors'];
             $this->processorsLoader = new PluginLoader(
-                                            'PieCrust\\Baker\\Processors\\IProcessor',
-                                            PieCrustDefaults::APP_DIR . '/Baker/Processors',
-                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
-                                            $processorsToFilter == '*' ?
-                                                null :
-                                                function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
-                                            'SimpleFileProcessor.php'
-                                            );
+                'PieCrust\\Baker\\Processors\\IProcessor',
+                PieCrustDefaults::APP_DIR . '/Baker/Processors',
+                function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
+                $processorsToFilter == '*' ?
+                    null :
+                    function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
+                'SimpleFileProcessor.php'
+            );
             foreach ($this->processorsLoader->getPlugins() as $proc)
             {
                 $proc->initialize($this->pieCrust);
@@ -109,7 +109,8 @@ class DirectoryBaker
                 $destination = $this->bakeDir . $relative;
                 if (!is_dir($destination))
                 {
-                    @mkdir($destination, 0777, true);
+                    if (@mkdir($destination, 0777, true) === false)
+                        throw new PieCrustException("Can't create directory: " . $destination);
                 }
                 $this->bakeDirectory($i->getPathname(), $level + 1);
             }
