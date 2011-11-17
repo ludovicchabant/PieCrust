@@ -225,8 +225,9 @@ class PieCrustBaker
         $this->pieCrust->getConfig()->setValue('baker/is_baking', true);
         
         // Create the bake record.
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         $bakeInfoPath = $this->getBakeDir() . self::BAKE_INFO_FILE;
-        $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
+        $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
         
         // Get the cache validity information.
         $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
@@ -398,14 +399,14 @@ class PieCrustBaker
                     $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page);
                     $pageWasBaked = true;
-                    $hasBaked = true;
                     echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
                 }
                 
                 $postInfo['blogKey'] = $blogKey;
                 $postInfo['tags'] = $page->getConfig()->getValue('tags');
                 $postInfo['category'] = $page->getConfig()->getValue('category');
-                $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
+                $postInfo['wasBaked'] = $pageWasBaked;
+                $this->bakeRecord->addPostInfo($postInfo);
             }
         }
     }
