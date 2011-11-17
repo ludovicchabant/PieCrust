@@ -8,6 +8,18 @@ namespace PieCrust\Util;
  */
 class HttpHeaderHelper
 {
+    /**
+     * Sets an HTTP header using PHP's 'header()' method, or sets/adds it to
+     * a given header dictionary.
+     *
+     * If $header is 0, $value is considered to be an HTTP code, which will be
+     * looked up in the status codes array (see 'getHttpStatusHeader()') to set
+     * the actual full header string.
+     * This means that if headers are not set directly, but instead stored in
+     * the given header dictionary, then that dictionary will have the HTTP
+     * header stored at index 0 (all other HTTP headers will be stored at their
+     * associated header name key, like 'Content-Type' or 'Content-Length').
+     */
     public static function setOrAddHeader($header, $value, &$headers)
     {
         if ($headers === null)
@@ -27,6 +39,10 @@ class HttpHeaderHelper
         }
     }
     
+    /**
+     * Same as 'setOrAddHeader' but takes an associative array with multiple
+     * headers to set instead of just one.
+     */
     public static function setOrAddHeaders($headersAndValues, &$headers)
     {
         foreach ($headersAndValues as $h => $v)
@@ -35,6 +51,9 @@ class HttpHeaderHelper
         }
     }
     
+    /**
+     * Returns the full HTTP header string given an HTTP code.
+     */
     public static function getHttpStatusHeader($code)
     {
         static $headers = array(100 => "100 Continue",
