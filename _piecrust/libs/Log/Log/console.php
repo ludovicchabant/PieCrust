@@ -2,7 +2,7 @@
 /**
  * $Header$
  *
- * @version $Revision: 224513 $
+ * @version $Revision: 306594 $
  * @package Log
  */
 
@@ -23,7 +23,14 @@ class Log_console extends Log
      * @var resource
      * @access private
      */
-    var $_stream = STDOUT;
+    var $_stream = null;
+
+    /**
+     * Is this object responsible for closing the stream resource?
+     * @var bool
+     * @access private
+     */
+    var $_closeResource = false;
 
     /**
      * Should the output be buffered or displayed immediately?
@@ -73,6 +80,11 @@ class Log_console extends Log
 
         if (!empty($conf['stream'])) {
             $this->_stream = $conf['stream'];
+        } elseif (defined('STDOUT')) {
+            $this->_stream = STDOUT;
+        } else {
+            $this->_stream = fopen('php://output', 'a');
+            $this->_closeResource = true;
         }
 
         if (isset($conf['buffering'])) {
@@ -130,6 +142,9 @@ class Log_console extends Log
     {
         $this->flush();
         $this->_opened = false;
+        if ($this->_closeResource === true && is_resource($this->_stream)) {
+            fclose($this->_stream);
+        }
         return true;
     }
 
@@ -149,7 +164,7 @@ class Log_console extends Log
             fwrite($this->_stream, $this->_buffer);
             $this->_buffer = '';
         }
- 
+
         if (is_resource($this->_stream)) {
             return fflush($this->_stream);
         }
@@ -204,5 +219,4 @@ class Log_console extends Log
 
         return true;
     }
-
 }

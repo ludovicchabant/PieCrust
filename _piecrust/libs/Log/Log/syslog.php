@@ -3,7 +3,7 @@
  * $Header$
  * $Horde: horde/lib/Log/syslog.php,v 1.6 2000/06/28 21:36:13 jon Exp $
  *
- * @version $Revision: 302789 $
+ * @version $Revision: 308379 $
  * @package Log
  */
 
@@ -36,6 +36,13 @@ class Log_syslog extends Log
      * @access private
      */
     var $_inherit = false;
+
+    /**
+     * Should we re-open the syslog connection for each log event?
+     * @var boolean
+     * @access private
+     */
+    var $_reopen = false;
 
     /**
      * Maximum message length that will be sent to syslog().  If the handler 
@@ -83,6 +90,9 @@ class Log_syslog extends Log
             $this->_inherit = $conf['inherit'];
             $this->_opened = $this->_inherit;
         }
+        if (isset($conf['reopen'])) {
+            $this->_reopen = $conf['reopen'];
+        }
         if (isset($conf['maxLength'])) {
             $this->_maxLength = $conf['maxLength'];
         }
@@ -108,7 +118,7 @@ class Log_syslog extends Log
      */
     function open()
     {
-        if (!$this->_opened) {
+        if (!$this->_opened || $this->_reopen) {
             $this->_opened = openlog($this->_ident, LOG_PID, $this->_name);
         }
 
@@ -154,8 +164,8 @@ class Log_syslog extends Log
             return false;
         }
 
-        /* If the connection isn't open and can't be opened, return failure. */
-        if (!$this->_opened && !$this->open()) {
+        /* If we need to (re)open the connection and open() fails, abort. */
+        if ((!$this->_opened || $this->_reopen) && !$this->open()) {
             return false;
         }
 

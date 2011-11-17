@@ -2,7 +2,7 @@
 /**
  * $Header$
  *
- * @version $Revision: 306582 $
+ * @version $Revision: 313304 $
  * @package Log
  */
 
@@ -142,7 +142,7 @@ class Log_firebug extends Log
     function flush() {
         if (count($this->_buffer)) {
             print '<script type="text/javascript">';
-            print "\nif (('console' in window) && ('firebug' in console)) {\n";
+            print "\nif ('console' in window) {\n";
             foreach ($this->_buffer as $line) {
                 print "  $line\n";
             }
@@ -193,7 +193,7 @@ class Log_firebug extends Log
             $this->_buffer[] = sprintf('console.%s("%s");', $method, $line);
         } else {
             print '<script type="text/javascript">';
-            print "\nif (('console' in window) && ('firebug' in console)) {\n";
+            print "\nif ('console' in window) {\n";
             /* Build and output the complete log line. */
             printf('  console.%s("%s");', $method, $line);
             print "\n}\n";

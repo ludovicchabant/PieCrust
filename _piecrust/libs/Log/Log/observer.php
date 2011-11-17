@@ -3,7 +3,7 @@
  * $Header$
  * $Horde: horde/lib/Log/observer.php,v 1.5 2000/06/28 21:36:13 jon Exp $
  *
- * @version $Revision: 211953 $
+ * @version $Revision: 316951 $
  * @package Log
  */
 
@@ -78,7 +78,7 @@ class Log_observer
          * instance.
          */
         if (class_exists($class)) {
-            $object = &new $class($priority, $conf);
+            $object = new $class($priority, $conf);
             return $object;
         }
 
@@ -102,9 +102,9 @@ class Log_observer
         if (class_exists($class)) {
             /* Support both new-style and old-style construction. */
             if ($newstyle) {
-                $object = &new $class($priority, $conf);
+                $object = new $class($priority, $conf);
             } else {
-                $object = &new $class($priority);
+                $object = new $class($priority);
             }
             return $object;
         }
