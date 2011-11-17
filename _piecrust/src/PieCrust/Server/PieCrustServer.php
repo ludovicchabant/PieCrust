@@ -90,41 +90,54 @@ class PieCrustServer
         $startTime = microtime(true);
         
         // Run PieCrust dynamically.
-        $pieCrust = new PieCrust(array(
-                                        'root' => $this->rootDir,
-                                        'cache' => true
-                                      ),
-                                 $context->getRequest()->getServerVariables()
-                                );
-        $pieCrust->getConfig()->setValue('server/is_hosting', true);
-        $pieCrust->getConfig()->setValue('site/cache_time', false);
-        $pieCrust->getConfig()->setValue('site/pretty_urls', true);
-        $pieCrust->getConfig()->setValue('site/root', '/');
-        if ($this->additionalTemplatesDir != null)
-        {
-            $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
-        }
-        
-        $headers = array();
         $pieCrustException = null;
         try
         {
-            $pieCrust->runUnsafe(
-                                 null,
-                                 $context->getRequest()->getServerVariables(),
-                                 null,
-                                 $headers
-                                 );
+            $pieCrust = new PieCrust(array(
+                                            'root' => $this->rootDir,
+                                            'cache' => true
+                                          ),
+                                     $context->getRequest()->getServerVariables()
+                                    );
+            $pieCrust->getConfig()->setValue('server/is_hosting', true);
+            $pieCrust->getConfig()->setValue('site/cache_time', false);
+            $pieCrust->getConfig()->setValue('site/pretty_urls', true);
+            $pieCrust->getConfig()->setValue('site/root', '/');
+            if ($this->additionalTemplatesDir != null)
+            {
+                $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
+            }
         }
         catch (Exception $e)
         {
+            // Error while setting up PieCrust.
             $pieCrustException = $e;
+        }
+        
+        $headers = array();
+        if ($pieCrustException == null)
+        {
+            try
+            {
+                $pieCrust->runUnsafe(
+                                     null,
+                                     $context->getRequest()->getServerVariables(),
+                                     null,
+                                     $headers
+                                     );
+            }
+            catch (Exception $e)
+            {
+                // Error while running the request.
+                $pieCrustException = $e;
+            }
         }
         
         $code = 500;
         if (isset($headers[0]))
         {
-            // The HTTP return code is set by PieCrust in the '0'-th header most of the time.
+            // The HTTP return code is set by PieCrust in the '0'-th header (if
+            // set at all).
             $code = $headers[0];
             unset($headers[0]); // Unset so we can iterate on headers more easily later.
         }
