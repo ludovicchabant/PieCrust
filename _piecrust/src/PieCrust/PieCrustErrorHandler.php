@@ -4,6 +4,7 @@ namespace PieCrust;
 
 use \Exception;
 use PieCrust\Util\UriParser;
+use PieCrust\Util\HttpHeaderHelper;
 
 
 /**
@@ -78,13 +79,14 @@ class PieCrustErrorHandler
         }
         
         // Generic error message in case we don't have anything custom.
-        $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. We'll try to do better next time.</p>";
+        $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. ".
+                        "We'll try to do better next time.</p>".PHP_EOL;
         
         // Get the URI to the custom error page.
         $errorPageUri = '_error';
         if ($e->getMessage() == '404')
         {
-            header('HTTP/1.0 404 Not Found');
+            HttpHeaderHelper::setOrAddHeader(0, 404, null);
             $errorPageUri = '_404';
         }
         try
