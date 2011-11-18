@@ -24,23 +24,6 @@ class PageRenderer
         return $this->page;
     }
     
-    protected $renderData;
-    /**
-     * Gets the render data.
-     */
-    public function getRenderData()
-    {
-        if ($this->renderData == null)
-        {
-            $this->renderData = Configuration::mergeArrays(
-                DataBuilder::getSiteData($this->page->getApp(), $this->page->wasCached()),
-                DataBuilder::getPageData($this->page),
-                $this->page->getContentSegments()
-            );
-        }
-        return $this->renderData;
-    }
-    
     /**
      * Creates a new instance of PageRenderer.
      */
@@ -77,8 +60,12 @@ class PageRenderer
             $extension = pathinfo($templateName, PATHINFO_EXTENSION);
             $templateEngine = $pieCrust->getTemplateEngine($extension);
             
-            // Render the page.
+            // We need to reset the pagination data so that any filters or modifications
+            // applied to it by the page are not also applied to the template.
             $data = $this->getRenderData();
+            $data['pagination']->resetPaginationData();
+            
+            // Render the page.
             $templateEngine->renderFile($templateName, $data);
         }
         else
@@ -126,6 +113,16 @@ class PageRenderer
         }
         $timeSpan = microtime(true) - $runInfo['start_time'];
         echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
+    }
+    
+    protected function getRenderData()
+    {
+        $renderData = Configuration::mergeArrays(
+            DataBuilder::getSiteData($this->page->getApp(), $this->page->wasCached()),
+            $this->page->getPageData(),
+            $this->page->getContentSegments()
+        );
+        return $renderData;
     }
     
     public static function getHeaders($contentType, $server = null)

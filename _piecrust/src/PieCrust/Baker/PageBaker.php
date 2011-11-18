@@ -2,6 +2,7 @@
 
 namespace PieCrust\Baker;
 
+use \Exception;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Page\PageRenderer;
@@ -65,28 +66,35 @@ class PageBaker
      */
     public function bake(IPage $page, array $postInfos = null, array $extraData = null)
     {
-        $this->bakedFiles = array();
-        $this->wasPaginationDataAccessed = false;
-        
-        $pageRenderer = new PageRenderer($page);
-        
-        $hasMorePages = true;
-        while ($hasMorePages)
+        try
         {
-            $this->bakeSinglePage($pageRenderer, $postInfos, $extraData);
+            $this->bakedFiles = array();
+            $this->wasPaginationDataAccessed = false;
             
-            $data = $pageRenderer->getRenderData();
-            if ($data and isset($data['pagination']))
+            $pageRenderer = new PageRenderer($page);
+            
+            $hasMorePages = true;
+            while ($hasMorePages)
             {
-                $paginator = $data['pagination'];
-                $hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
-                if ($hasMorePages)
+                $this->bakeSinglePage($pageRenderer, $postInfos, $extraData);
+                
+                $data = $page->getPageData();
+                if ($data and isset($data['pagination']))
                 {
-                    $page->setPageNumber($page->getPageNumber() + 1);
-                    // setPageNumber() resets the page's data, so when we enter bakeSinglePage again
-                    // in the next loop, we have to re-set the extraData and all other stuff.
+                    $paginator = $data['pagination'];
+                    $hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
+                    if ($hasMorePages)
+                    {
+                        $page->setPageNumber($page->getPageNumber() + 1);
+                        // setPageNumber() resets the page's data, so when we enter bakeSinglePage again
+                        // in the next loop, we have to re-set the extraData and all other stuff.
+                    }
                 }
             }
+        }
+        catch (Exception $e)
+        {
+            throw new PieCrustException("Error baking page '" . $page->getUri() . "' (p" . $page->getPageNumber() . "): " . $e->getMessage(), 0, $e);
         }
     }
     
@@ -99,7 +107,7 @@ class PageBaker
         if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Set the custom stuff.
-        $data = $pageRenderer->getRenderData();
+        $data = $page->getPageData();
         $assetor = $data['asset'];
         $paginator = $data['pagination'];
         if ($postInfos != null) $paginator->setPaginationDataSource($postInfos);

@@ -91,6 +91,11 @@ interface IPage
     public function getContentSegments();
     
     /**
+     * Gets the data used for rendering the page.
+     */
+    public function getPageData();
+    
+    /**
      * Gets the extra data for the page's rendering.
      */
     public function getExtraPageData();

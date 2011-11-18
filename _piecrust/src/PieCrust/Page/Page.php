@@ -6,6 +6,7 @@ use \Exception;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Data\DataBuilder;
 use PieCrust\IO\Cache;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\UriBuilder;
@@ -72,6 +73,7 @@ class Page implements IPage
             $this->pageNumber = $pageNumber;
             $this->config = null;
             $this->contents = null;
+            $this->pageData = null;
         }
     }
     
@@ -172,6 +174,19 @@ class Page implements IPage
         return $this->contents;
     }
     
+    protected $pageData;
+    /**
+     * Gets the data used for rendering the page.
+     */
+    public function getPageData()
+    {
+        if ($this->pageData == null)
+        {
+            $this->pageData = DataBuilder::getPageData($this);
+        }
+        return $this->pageData;
+    }
+    
     protected $extraData;
     /**
      * Gets the extra data.
@@ -221,6 +236,7 @@ class Page implements IPage
         $this->key = $pageKey;
         $this->pageNumber = $pageNumber;
         $this->date = $date;
+        $this->pageData = null;
     }
     
     /**

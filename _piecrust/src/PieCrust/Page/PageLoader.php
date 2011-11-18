@@ -71,6 +71,8 @@ class PageLoader
         {
             $this->cache = new Cache($page->getApp()->getCacheDir() . 'pages_r');
         }
+        
+        $this->pageData = null;
     }
     
     /**
@@ -105,6 +107,9 @@ class PageLoader
             $rawContents = file_get_contents($this->page->getPath());
             $parsedContents = Configuration::parseHeader($rawContents);
             
+            // We need to set the configuration on the page right away because
+            // most formatters, template engines, and other elements will need
+            // access to it for rendering the contents.
             $config = $this->page->getConfig();
             $config->set($parsedContents['config']);
             
@@ -114,7 +119,7 @@ class PageLoader
             $pieCrust = $this->page->getApp();
             $data = Configuration::mergeArrays(
                 DataBuilder::getSiteData($pieCrust, false),
-                DataBuilder::getPageData($this->page)
+                $this->page->getPageData()
             );
             $templateEngineName = $this->page->getConfig()->getValue('template_engine');
             $templateEngine = $pieCrust->getTemplateEngine($templateEngineName);

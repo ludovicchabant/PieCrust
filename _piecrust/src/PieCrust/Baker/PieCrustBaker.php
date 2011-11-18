@@ -114,7 +114,7 @@ class PieCrustBaker
         $this->pieCrust = $pieCrust;
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         
-        $bakerParametersFromApp = $this->pieCrust->getConfig('baker');
+        $bakerParametersFromApp = $this->pieCrust->getConfig()->getValue('baker');
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
@@ -359,7 +359,7 @@ class PieCrustBaker
                 UriBuilder::buildUri($relativePath),
                 $path
             );
-        $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+        $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
         $baker->bake($page);
         if ($baker->wasPaginationDataAccessed())
         {
@@ -398,7 +398,7 @@ class PieCrustBaker
                 if ($this->shouldRebakeFile($postInfo['path']))
                 {
                     $start = microtime(true);
-                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page);
                     $pageWasBaked = true;
                     echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
@@ -477,7 +477,7 @@ class PieCrustBaker
                         $blogKey,
                         $tag
                     );
-                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page, $postInfos);
                     echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
                 }
@@ -513,7 +513,7 @@ class PieCrustBaker
                     $blogKey,
                     $category
                 );
-                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page, $postInfos);
                 echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
             }
