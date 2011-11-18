@@ -1,6 +1,6 @@
 <?php
 
-require_once ('unittest_setup.php');
+require_once 'unittest_setup.php';
 
 use PieCrust\IO\FileSystem;
 

@@ -1,6 +1,6 @@
 <?php
 
-require_once ('unittest_setup.php');
+require_once 'unittest_setup.php';
 
 use PieCrust\Baker\Processors\IProcessor;
 use PieCrust\Baker\Processors\SimpleFileProcessor;
