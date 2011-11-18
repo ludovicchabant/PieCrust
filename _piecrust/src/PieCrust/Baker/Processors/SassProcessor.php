@@ -14,7 +14,7 @@ class SassProcessor extends SimpleFileProcessor
     
     protected function doProcess($inputPath, $outputPath)
     {
-        $sassOptions = $this->pieCrust->getConfig('sass');
+        $sassOptions = $this->pieCrust->getConfig()->getValue('sass');
         if ($sassOptions == null) $sassOptions = array();
         $sass = new \SassParser($sassOptions);
         $css = $sass->toCss($inputPath);
