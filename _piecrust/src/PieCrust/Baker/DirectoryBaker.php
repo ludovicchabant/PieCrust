@@ -52,7 +52,7 @@ class DirectoryBaker
     public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->bakeDir = rtrim(str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $bakeDir), '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim($bakeDir, '/\\') . '/';
         $this->parameters = array_merge(
                                         array(
                                               'smart' => true,
@@ -62,7 +62,10 @@ class DirectoryBaker
                                         $parameters
                                         );
         
+        // Compute the number of characters we need to remove from file paths
+        // to get their relative paths.
         $rootDir = $this->pieCrust->getRootDir();
+        $rootDir = rtrim($rootDir, '/\\') . '/';
         $this->rootDirLength = strlen($rootDir);
         
         if (!is_dir($this->bakeDir) or !is_writable($this->bakeDir))
@@ -88,8 +91,10 @@ class DirectoryBaker
             {
                 continue;
             }
-            if ($i->getPathname() . DIRECTORY_SEPARATOR == $this->bakeDir)
+            if ($i->getPathname() . '/' == $this->bakeDir)
             {
+                // This is for when the bake directory is inside the website's
+                // root directory.
                 continue;
             }
             $shouldSkip = false;
