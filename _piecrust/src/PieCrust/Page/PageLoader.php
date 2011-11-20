@@ -117,9 +117,10 @@ class PageLoader
             $rawSegments = $this->parseContentSegments($rawContents, $rawSegmentsOffset);
             
             $pieCrust = $this->page->getApp();
+            $pageData = $this->page->getPageData();
             $data = Configuration::mergeArrays(
-                DataBuilder::getSiteData($pieCrust, false),
-                $this->page->getPageData()
+                DataBuilder::getSiteData($pieCrust, $pageData, null, false),
+                $pageData
             );
             $templateEngineName = $this->page->getConfig()->getValue('template_engine');
             $templateEngine = $pieCrust->getTemplateEngine($templateEngineName);

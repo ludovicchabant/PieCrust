@@ -2,8 +2,11 @@
 
 namespace PieCrust\Data;
 
+use \Exception;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
+use PieCrust\Util\Configuration;
 
 
 /**
@@ -11,19 +14,22 @@ use PieCrust\PieCrustDefaults;
  */
 class PieCrustData
 {
-    const DEBUG_INFO_CSS = 'padding: 1em; background: #a42; color: #fff; position: fixed; width: 50%; bottom: 0; right: 0;';
-    const P_CSS = 'margin: 0; padding: 0';
+    
     
     protected $pieCrust;
+    protected $pageData;
+    protected $pageContentSegments;
     protected $wasCurrentPageCached;
     
     public $version;
     public $url;
     public $branding;
     
-    public function __construct(IPieCrust $pieCrust, $wasCurrentPageCached)
+    public function __construct(IPieCrust $pieCrust, $pageData, $pageContentSegments, $wasCurrentPageCached)
     {
         $this->pieCrust = $pieCrust;
+        $this->pageData = $pageData;
+        $this->pageContentSegments = $pageContentSegments;
         $this->wasCurrentPageCached = $wasCurrentPageCached;
         
         $this->version = PieCrustDefaults::VERSION;
@@ -36,8 +42,10 @@ class PieCrustData
         if (!$this->pieCrust->isDebuggingEnabled())
             return '';
         
-        $output = '<div id="piecrust-debug-info" style="' . self::DEBUG_INFO_CSS . '">';
-        $output .= '<p style="' . self::P_CSS . '"><strong>PieCrust ' . PieCrustDefaults::VERSION . '</strong> &mdash; ';
+        $output = '<div id="piecrust-debug-info" style="' . DataStyles::CSS_DEBUGINFO . '">' . PHP_EOL;
+        
+        $output .= '<div id="piecrust-cache-info">' . PHP_EOL;
+        $output .= '<p style="' . DataStyles::CSS_P . '"><strong>PieCrust ' . PieCrustDefaults::VERSION . '</strong> &mdash; ' . PHP_EOL;
         if ($this->wasCurrentPageCached !== null)
         {
             $output .= ($this->wasCurrentPageCached ? "baked this morning" : "baked just now");
@@ -55,8 +63,48 @@ class PieCrustData
         }
         $timeSpan = microtime(true) - $runInfo['start_time'];
         $output .= ", in " . sprintf('%8.1f', $timeSpan * 1000.0) . " ms.";
-        $output .= "</p>";
-        $output .= "</div>";
+        $output .= '</p>' . PHP_EOL;
+        $output .= '</div>' . PHP_EOL;
+        
+        if ($this->pageData or $this->pageContentSegments)
+        {
+            $output .= '<div id="piecrust-data-info">' . PHP_EOL;
+            $output .= '<p style="' . DataStyles::CSS_P . ' cursor: pointer;" onclick="var l = document.getElementById(\'piecrust-data-list\'); if (l.style.display == \'none\') l.style.display = \'block\'; else l.style.display = \'none\';">';
+            $output .= "<span style=\"" . DataStyles::CSS_BIGHEADER . "\">Template engine data</span> &mdash; click to toggle</a>.</p>" . PHP_EOL;
+            
+            $data = array(
+                'Website configuration' => $this->pieCrust->getConfig()->get(),
+                'Page data' => $this->pageData,
+                'Page content segments' => $this->pageContentSegments
+            );
+            $output .= '<div id="piecrust-data-list" style="display: none;">' . PHP_EOL;
+            $output .= '<p style="' . DataStyles::CSS_DOC . '">The following key/value pairs are available in the layout\'s markup, ' .
+                       'and most is available in the page\'s markup.</p>' . PHP_EOL;
+            foreach ($data as $desc => $d)
+            {
+                $output .= '<div>' . PHP_EOL;
+                $output .= '<p style="' . DataStyles::CSS_HEADER . '">&raquo; ' . $desc . '</p>' . PHP_EOL;
+                $output .= '<div style="' . DataStyles::CSS_DATA . '">' . PHP_EOL;
+                ob_start();
+                try
+                {
+                    $formatter = new DataFormatter();
+                    $formatter->format($d);
+                }
+                catch (Exception $e)
+                {
+                    ob_end_clean();
+                    throw new PieCrustException("Error while generating the debug data: " . $e->getMessage(), 0, $e);
+                }
+                $output .= ob_get_clean();
+                $output .= '</div>' .PHP_EOL;
+                $output .= '</div>' . PHP_EOL;
+            }
+            $output .= '</div>' . PHP_EOL;
+            $output .= '</div>' . PHP_EOL;
+        }
+        
+        $output .= '</div>';
         return $output;
     }
 }

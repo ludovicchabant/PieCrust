@@ -17,6 +17,9 @@ use PieCrust\Util\PageHelper;
  *
  * The data-source must be an array with the same keys/values as what's returned
  * by FileSystem::getPostFiles().
+ *
+ * @formatObject
+ * @explicitInclude
  */
 class PaginationIterator implements Iterator, ArrayAccess, Countable
 {
@@ -56,6 +59,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     }
     
     // {{{ Fluent-interface filtering members
+    /**
+     * @include
+     * @noCall
+     */
     public function skip($count)
     {
         $this->ensureNotLoaded('skip');
@@ -63,6 +70,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         return $this;
     }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function limit($count)
     {
         $this->ensureNotLoaded('limit');
@@ -70,6 +81,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         return $this;
     }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function filter($filterName)
     {
         $this->ensureNotLoaded('filter');
@@ -82,6 +97,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         return $this;
     }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function all()
     {
         $this->ensureNotLoaded('all');
@@ -93,6 +112,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     // }}}
     
     // {{{ Countable members
+    /**
+     * @include
+     * @noCall
+     */
     public function count()
     {
         $this->ensureLoaded();

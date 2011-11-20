@@ -19,11 +19,11 @@ class DataBuilder
     /**
      * Gets the application's data for page rendering.
      */
-    public static function getSiteData(IPieCrust $pieCrust, $wasPageCached = null)
+    public static function getSiteData(IPieCrust $pieCrust, $pageData = null, $pageContentSegments = null, $wasPageCached = null)
      {
         $data = Configuration::mergeArrays(
             $pieCrust->getConfig()->get(), 
-            array('piecrust' => new PieCrustData($pieCrust, $wasPageCached))
+            array('piecrust' => new PieCrustData($pieCrust, $pageData, $pageContentSegments, $wasPageCached))
          );
         return $data;
     }
@@ -37,7 +37,7 @@ class DataBuilder
         
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
-        $linker = new Linker($page->getApp(), $page);
+        $linker = new Linker($page);
         
         $data = array(
             'page' => $page->getConfig()->get(),

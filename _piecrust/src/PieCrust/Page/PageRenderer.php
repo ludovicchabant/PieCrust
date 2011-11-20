@@ -117,9 +117,11 @@ class PageRenderer
     
     protected function getRenderData()
     {
+        $pageData = $this->page->getPageData();
+        $pageContentSegments = $this->page->getContentSegments();
         $renderData = Configuration::mergeArrays(
-            DataBuilder::getSiteData($this->page->getApp(), $this->page->wasCached()),
-            $this->page->getPageData(),
+            DataBuilder::getSiteData($this->page->getApp(), $pageData, $pageContentSegments, $this->page->wasCached()),
+            $pageData,
             $this->page->getContentSegments()
         );
         return $renderData;

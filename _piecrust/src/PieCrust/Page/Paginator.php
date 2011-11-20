@@ -26,6 +26,8 @@ class Paginator
     
     /**
      * Creates a new Paginator instance.
+     *
+     * @ignore
      */
     public function __construct(IPage $page)
     {
@@ -37,6 +39,7 @@ class Paginator
      * Gets the posts for this page.
      *
      * This method is meant to be called from the layouts via the template engine.
+     *
      */
     public function posts()
     {
@@ -96,6 +99,8 @@ class Paginator
     
     /**
      * Resets the pagination data, as if it had never been accessed.
+     *
+     * @ignore
      */
     public function resetPaginationData()
     {
@@ -104,6 +109,8 @@ class Paginator
     
     /**
      * Gets whether the pagination data was requested by the page.
+     *
+     * @ignore
      */
     public function wasPaginationDataAccessed()
     {
@@ -112,6 +119,8 @@ class Paginator
     
     /**
      * Gets whether the current page has more pages to show.
+     *
+     * @ignore
      */
     public function hasMorePages()
     {
@@ -121,6 +130,8 @@ class Paginator
     protected $paginationDataSource;
     /**
      * Specifies that the pagination data should be build from the given posts.
+     *
+     * @ignore
      */
     public function setPaginationDataSource(array $postInfos)
     {
