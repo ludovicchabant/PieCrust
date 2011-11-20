@@ -15,6 +15,7 @@ use PieCrust\Page\PageRepository;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -334,8 +335,7 @@ class PieCrustBaker
     
     protected function bakePage($path)
     {
-        $pagesDir = $this->pieCrust->getPagesDir();
-        $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
+        $relativePath = PathHelper::getRelativePagePath($this->pieCrust, $path, IPage::TYPE_REGULAR);
         $relativePathInfo = pathinfo($relativePath);
         if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
             $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or

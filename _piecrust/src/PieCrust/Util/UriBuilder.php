@@ -11,33 +11,19 @@ use PieCrust\IPage;
 class UriBuilder
 {
     /**
-     * Gets the URI of a page given a path.
+     * Gets the URI of a page given a relative path.
      */
-    public static function buildUri($path, $makePathRelativeTo = null, $stripIndex = true)
+    public static function buildUri($relativePath, $stripExtension = true, $stripIndex = true)
     {
-        if ($makePathRelativeTo != null)
+        $uri = $relativePath;
+        if ($stripExtension)
         {
-            $basePath = $makePathRelativeTo;
-            if (is_int($makePathRelativeTo))
-            {
-                switch ($makePathRelativeTo)
-                {
-                    case IPage::TYPE_REGULAR:
-                    case IPage::TYPE_CATEGORY:
-                    case IPage::TYPE_TAG:
-                        $basePath = $this->pieCrust->getPagesDir();
-                        break;
-                    case IPage::TYPE_POST:
-                        $basePath = $this->pieCrust->getPostsDir();
-                        break;
-                    default:
-                        throw new InvalidArgumentException("Unknown page type given: " . $makePathRelativeTo);
-                }
-            }
-            $path = str_replace('\\', '/', substr($path, strlen($baseDir)));
+            $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);    // strip the extension
         }
-        $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $path);    // strip the extension
-        if ($stripIndex) $uri = str_replace('_index', '', $uri);// strip special name
+        if ($stripIndex)
+        {
+            $uri = str_replace('_index', '', $uri); // strip special name
+        }
         return $uri;
     }
     

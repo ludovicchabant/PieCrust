@@ -2,6 +2,7 @@
 
 namespace PieCrust\Util;
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -15,6 +16,30 @@ class PathHelper
     {
         $rootDir = $pieCrust->getRootDir();
         $relativePath = substr($path, strlen($rootDir));
+        if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+        return $relativePath;
+    }
+    
+    /**
+     * Gets the relative file-system path from the pages or posts directories.
+     */
+    public static function getRelativePagePath(IPieCrust $pieCrust, $path, $pageType = IPage::TYPE_REGULAR, $stripExtension = false)
+    {
+        switch ($pageType)
+        {
+            case IPage::TYPE_REGULAR:
+            case IPage::TYPE_CATEGORY:
+            case IPage::TYPE_TAG:
+                $basePath = $pieCrust->getPagesDir();
+                break;
+            case IPage::TYPE_POST:
+                $basePath = $pieCrust->getPostsDir();
+                break;
+            default:
+                throw new InvalidArgumentException("Unknown page type given: " . $pageType);
+        }
+        
+        $relativePath = substr($path, strlen($basePath));
         if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
         return $relativePath;
     }
