@@ -218,18 +218,6 @@ class Configuration implements ArrayAccess, Iterator
     }
     
     // {{{ ArrayAccess members
-    public function __isset($name)
-    {
-        $this->ensureLoaded();
-        return isset($this->config[$name]);
-    }
-    
-    public function __get($name)
-    {
-        $this->ensureLoaded();
-        return $this->config[$name];
-    }
-    
     public function offsetExists($offset)
     {
         $this->ensureLoaded();
