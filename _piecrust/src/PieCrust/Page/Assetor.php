@@ -13,7 +13,6 @@ use PieCrust\Util\PathHelper;
  *
  * The Assetor (worst class name ever) handles lazy loading of a page's
  * assets, stored in a subdirectory with the same name as the page file.
- *
  */
 class Assetor implements \ArrayAccess, \Iterator
 {
@@ -81,16 +80,6 @@ class Assetor implements \ArrayAccess, \Iterator
     }
     
     // {{{ ArrayAccess members
-    public function __isset($name)
-    {
-        return $this->offsetExists($name);
-    }
-    
-    public function __get($name)
-    {
-        return $this->offsetGet($name);
-    }
-    
     public function offsetExists($offset)
     {
         $this->ensureAssetsCache();
