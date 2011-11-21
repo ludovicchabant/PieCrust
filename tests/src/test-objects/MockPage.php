@@ -106,6 +106,13 @@ class MockPage implements IPage
         return $this->contents;
     }
     
+    public $data;
+
+    public function getPageData()
+    {
+        return $this->data;
+    }
+    
     public $extraData;
     
     public function getExtraPageData()
