@@ -362,11 +362,17 @@ class PieCrust implements IPieCrust
         
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
-        if ($uri == null) $uri = ServerHelper::getRequestUri($server, $this->getConfig()->getValueUnchecked('site/pretty_urls'));
-        
+        if ($uri == null)
+        {
+            $uri = ServerHelper::getRequestUri($server, $this->getConfig()->getValueUnchecked('site/pretty_urls'));
+        }
+
         // Do the heavy lifting.
         $page = Page::createFromUri($this, $uri);
-        if ($extraPageData != null) $page->setExtraPageData($extraPageData);
+        if ($extraPageData != null)
+        {
+            $page->setExtraPageData($extraPageData);
+        }
         $pageRenderer = new PageRenderer($page);
         $output = $pageRenderer->get();
         
