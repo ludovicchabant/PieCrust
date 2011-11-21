@@ -8,6 +8,7 @@ use \Exception;
 use \sfYamlParser;
 use PieCrust\IO\Cache;
 use PieCrust\Util\Configuration;
+use PieCrust\Util\ServerHelper;
 
 
 /**
@@ -51,6 +52,14 @@ class PieCrustConfiguration extends Configuration
             {
                 $configText = $cache->read('config', 'json');
                 $this->config = json_decode($configText, true);
+
+                // If the site root URL was automatically defined, we need to re-compute
+                // it in case the website is being run from a different place.
+                $isAutoRoot = $this->getValue('site/is_auto_root');
+                if ($isAutoRoot === true or $isAutoRoot === null)
+                {
+                    $this->config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
+                }
             }
             else
             {
@@ -124,23 +133,18 @@ class PieCrustConfiguration extends Configuration
                     ),
                     $config['site']);
         
-        // Validate the site root URL.
+        // Validate the site root URL, and remember if it was specified in the
+        // source config.yml, because we won't be able to tell the difference from
+        // the completely validated cache version.
         if ($config['site']['root'] == null)
         {
-            if (isset($_SERVER['HTTP_HOST']))
-            {
-                $host = ((isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-                $folder = rtrim(dirname($_SERVER['PHP_SELF']), '/') .'/';
-                $config['site']['root'] = $host . $folder;
-            }
-            else
-            {
-                $config['site']['root'] = '/';
-            }
+            $config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
+            $config['site']['is_auto_root'] = true;
         }
         else
         {
             $config['site']['root'] = rtrim($config['site']['root'], '/') . '/';
+            $config['site']['is_auto_root'] = false;
         }
         
         // Validate multi-blogs settings.
