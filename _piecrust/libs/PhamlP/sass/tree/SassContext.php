@@ -33,7 +33,7 @@ class SassContext {
 	/**
 	 * @var SassNode the node being processed
 	 */
-	public $node; 
+	public $node;
 
 	/**
 	 * SassContext constructor.
@@ -77,6 +77,7 @@ class SassContext {
 	 * @throws SassContextException if variable not defined in this context
 	 */
 	public function getVariable($name) {
+	    $name = str_replace('-', '_', $name);
 		if (isset($this->variables[$name])) {
 			return $this->variables[$name];
 		}
@@ -94,6 +95,7 @@ class SassContext {
 	 * @return boolean true if the variable exists in this context, false if not
 	 */
 	public function hasVariable($name) {
+	    $name = str_replace('-', '_', $name);
 		return isset($this->variables[$name]);
 	}
 
@@ -103,6 +105,7 @@ class SassContext {
 	 * @param sassLiteral value of variable
 	 */
 	public function setVariable($name, $value) {
+	    $name = str_replace('-', '_', $name);
 		$this->variables[$name] = $value;
 		return $this;
 	}

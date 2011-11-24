@@ -48,7 +48,9 @@ class SassFile {
 
 	/**
 	 * Returns the full path to a file to parse.
-	 * The file is looked for recursively under the load_paths directories and
+     * If a relative directory is given, a filename relative to that directory
+     * is tried first.
+	 * Then, the file is looked for recursively under the load_paths directories and
 	 * the template_location directory.
 	 * If the filename does not end in .sass or .scss try the current syntax first
 	 * then, if a file is not found, try the other syntax.
@@ -57,7 +59,7 @@ class SassFile {
 	 * @return string path to file
 	 * @throws SassException if file not found
 	 */
-	public static function getFile($filename, $parser) {
+	public static function getFile($filename, $parser, $relativeDir = null) {
 		$ext = substr($filename, -5);
 		
 		foreach (self::$extensions as $i=>$extension) {
@@ -79,7 +81,9 @@ class SassFile {
 
             $paths = $parser->load_paths;
             if(!empty($parser->filename))
-                $paths[] = dirname($parser->filename);
+                array_splice($paths, 0, 0, dirname($parser->filename));
+            if ($relativeDir)
+                array_splice($paths, 0, 0, $relativeDir);
 			foreach($paths as $loadPath) {
 				$path = self::findFile($_filename, realpath($loadPath));
 				if ($path !== false) {

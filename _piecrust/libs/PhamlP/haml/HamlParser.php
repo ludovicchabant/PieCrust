@@ -405,7 +405,7 @@ class HamlParser {
 			}
 			$outputFile = $cacheDir.DIRECTORY_SEPARATOR.
 					basename($sourceFile, $sourceExtension).$outputExtension;
-			if (!is_file($outputFile) or @filemtime($sourceFile) > @filemtime($outputFile)) {
+			if (!is_file($outputFile) || @filemtime($sourceFile) > @filemtime($outputFile)) {
 				if (!is_dir($cacheDir)) {
 					@mkdir($cacheDir, $permission);
 				}

@@ -53,9 +53,10 @@ class SassImportNode extends SassNode {
 				return "@import {$file}";
 			}
 			else {
-				$file = trim($file, '\'"');
-				$tree = SassFile::getTree(
-					SassFile::getFile($file, $this->parser), $this->parser);
+                $file = trim($file, '\'"');
+                $relativeDir = dirname($this->token->filename);
+                $path = SassFile::getFile($file, $this->parser, $relativeDir);
+				$tree = SassFile::getTree($path, $this->parser);
 				if (empty($tree)) {
 					throw new SassImportNodeException('Unable to create document tree for {file}', array('{file}'=>$file), $this);
 				}
