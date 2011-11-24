@@ -303,9 +303,9 @@ class SassParser {
 				$lp = dirname(__FILE__).DIRECTORY_SEPARATOR.'extensions'.DIRECTORY_SEPARATOR.$extension.DIRECTORY_SEPARATOR.'frameworks';
 				$fp = dirname(__FILE__).DIRECTORY_SEPARATOR.'extensions'.DIRECTORY_SEPARATOR.$extension.DIRECTORY_SEPARATOR.'functions';
 				$options['load_paths'] = (empty($options['load_paths']) ?
-					array($lp) : array_merge($options['load_paths'], $lp));
+					array($lp) : array_merge($options['load_paths'], (array)$lp));
 				$options['function_paths'] = (empty($options['function_paths']) ?
-					array($fp) : array_merge($options['function_paths'], $fp));			
+					array($fp) : array_merge($options['function_paths'], (array)$fp));			
 			}
 		}
 		

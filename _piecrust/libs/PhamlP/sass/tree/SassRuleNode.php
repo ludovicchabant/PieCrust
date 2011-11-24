@@ -125,7 +125,7 @@ class SassRuleNode extends SassNode {
 			else {
 				$pattern = preg_quote($extendee);
 			}
-			foreach (preg_grep('/'.$pattern.'$/', $this->selectors) as $selector) {
+			foreach (preg_grep('/'.$pattern.'/', $this->selectors) as $selector) {
 				foreach ($extenders as $extender) {
 					if (is_array($extendee)) {
 						$this->selectors[] = preg_replace('/(.*?)'.$pattern.'$/', "\\1$extender\\2", $selector);

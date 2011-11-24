@@ -133,7 +133,8 @@ class SassScriptOperation {
 		}
 		
 		if (method_exists($operands[0], $operation)) {
-			return $operands[0]->$operation(!empty($operands[1]) ? $operands[1] : null);
+		    $op = clone $operands[0];
+			return $op->$operation(!empty($operands[1]) ? $operands[1] : null);
 		}
 
 		throw new SassScriptOperationException('Undefined operation "{operation}" for {what}',  array('{operation}'=>$operation, '{what}'=>get_class($operands[0])), SassScriptParser::$context->node);
