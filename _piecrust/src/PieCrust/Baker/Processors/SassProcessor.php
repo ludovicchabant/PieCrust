@@ -23,7 +23,7 @@ class SassProcessor extends SimpleFileProcessor
 
         // User can specify the options for PhamlP's Sass parser
         // through the 'sass' configuration section.
-        $sassOptions = $pieCrust->getConfigValue('sass');
+        $sassOptions = $pieCrust->getConfig('sass');
 
         // Let's add the default values.
         if ($sassOptions == null)
