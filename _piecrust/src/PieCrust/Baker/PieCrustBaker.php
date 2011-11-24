@@ -97,7 +97,7 @@ class PieCrustBaker
             }
             catch (Exception $e)
             {
-                throw new PieCrustException('The bake directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->bakeDir);
+                throw new PieCrustException('The bake directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->bakeDir, 0, $e);
             }
         }
     }

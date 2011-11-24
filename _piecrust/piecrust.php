@@ -86,6 +86,7 @@ function piecrust_setup($profile = 'web')
     case 'chef':
         {
             error_reporting(E_ALL ^ E_NOTICE);
+            set_error_handler('piecrust_error_handler');
             break;
         }
     case 'test':

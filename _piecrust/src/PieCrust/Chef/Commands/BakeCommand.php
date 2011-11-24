@@ -113,14 +113,6 @@ class BakeCommand implements IChefCommand
             $baker->getApp()->setConfigValue('baker', 'file_urls', true);
         }
         
-        try
-        {
-            $baker->bake();
-        }
-        catch (Exception $e)
-        {
-            $parser->displayError($e->getMessage());
-            die();
-        }
+        $baker->bake();
     }
 }
