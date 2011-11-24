@@ -4,6 +4,7 @@ namespace PieCrust\Chef;
 
 use \Exception;
 use \Console_CommandLine;
+use \Console_CommandLine_Result;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Util\PluginLoader;
 
