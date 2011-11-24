@@ -50,6 +50,13 @@ class Chef
             'default'     => getcwd(),
             'optional'    => true
         ));
+        $parser->addOption('debug', array(
+            'long_name'   => '--debug',
+            'description' => "Show debug information.",
+            'default'     => false,
+            'help_name'   => 'DEBUG',
+            'action'      => 'StoreTrue'
+        ));
     }
     
     public function run($userArgc = null, $userArgv = null)
@@ -62,6 +69,7 @@ class Chef
         catch (Exception $e)
         {
             $this->parser->displayError($e->getMessage());
+            self::displayDebugInformation($this, $e);
             die();
         }
         
@@ -79,7 +87,7 @@ class Chef
                     }
                     catch (Exception $e)
                     {
-                        $this->parser->displayError($e->getMessage());
+                        $this->parser->displayError(self::getErrorMessage($result, $e));
                         die();
                     }
                 }
@@ -88,4 +96,25 @@ class Chef
         
         $this->parser->displayUsage();
     }
+
+    public static function getErrorMessage(Console_CommandLine_Result $result, Exception $e)
+    {
+        $message = $e->getMessage();
+        if ($result->command->options['debug'])
+        {
+            $message .= PHP_EOL;
+            $message .= PHP_EOL;
+            $message .= "Debug Information" . PHP_EOL;
+            while ($e)
+            {
+                $message .= "-----------------" . PHP_EOL;
+                $message .= $e->getTraceAsString();
+                $message .= PHP_EOL;
+                $e = $e->getPrevious();
+            }
+            $message .= "-----------------" . PHP_EOL;
+        }
+        return $message;
+    }
 }
+

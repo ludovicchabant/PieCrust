@@ -124,14 +124,6 @@ class BakeCommand implements IChefCommand
         }
         
         // Start baking!
-        try
-        {
-            $baker->bake();
-        }
-        catch (Exception $e)
-        {
-            $parser->displayError($e->getMessage());
-            die();
-        }
+        $baker->bake();
     }
 }
