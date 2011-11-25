@@ -295,7 +295,7 @@ class SassParser {
 		
 		if (!empty($options['extensions'])) {
 			foreach ($options['extensions'] as $extension=>$extOptions) {
-				include dirname(__FILE__).DIRECTORY_SEPARATOR.'extensions'.DIRECTORY_SEPARATOR.$extension.DIRECTORY_SEPARATOR.'config.php';
+				include_once dirname(__FILE__).DIRECTORY_SEPARATOR.'extensions'.DIRECTORY_SEPARATOR.$extension.DIRECTORY_SEPARATOR.'config.php';
 				$configClass = 'SassExtentions'.$extension.'Config';
 				$config = new $configClass;
 				$config->config($extOptions);
