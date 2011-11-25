@@ -45,6 +45,29 @@ function piecrust_shutdown_function()
 }
 
 /**
+ * The Chef shutdown function (command-line version of `piecrust_shutdown_function`).
+ */
+function chef_shutdown_function()
+{
+    $error = error_get_last();
+    if ($error)
+    {
+        try
+        {
+            $obStatus = ob_get_status();
+            if ($obStatus['level'] > 0)
+                ob_end_clean();
+        }
+        catch (Exception $e)
+        {
+        }
+
+        echo "Critical error in '" . $error['file'] . ":" . $error['line'] . "': " . $error['message'] . PHP_EOL;
+        exit();
+    }
+}
+
+/**
  * Sets up basic things like the global error handler or the timezone.
  */
 function piecrust_setup($profile = 'web')
@@ -78,15 +101,16 @@ function piecrust_setup($profile = 'web')
     case 'web':
         {
             ini_set('display_errors', false);
-            error_reporting(E_ALL ^ E_NOTICE);
+            error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
             register_shutdown_function('piecrust_shutdown_function');
             break;
         }
     case 'chef':
         {
-            error_reporting(E_ALL ^ E_NOTICE);
+            error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
+            register_shutdown_function('chef_shutdown_function');
             break;
         }
     case 'test':
