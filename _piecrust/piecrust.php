@@ -18,7 +18,9 @@ function piecrust_show_system_message($message, $details = null)
  */
 function piecrust_error_handler($errno, $errstr, $errfile = null, $errline = 0, $errcontext = null)
 {
-    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    if (error_reporting() & $errno)
+        throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    return;
 }
 
 /**
@@ -93,7 +95,7 @@ function piecrust_setup($profile = 'web')
         });
     
     // Set the time zone.
-    date_default_timezone_set('America/Los_Angeles');
+    date_default_timezone_set('UTC');
     
     // Set error handling.
     switch ($profile)
@@ -108,17 +110,17 @@ function piecrust_setup($profile = 'web')
         }
     case 'chef':
         {
+            ini_set('display_errors', true);
             error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
             register_shutdown_function('chef_shutdown_function');
             break;
         }
     case 'test':
-    case 'debug':
         {
             ini_set('display_errors', true);
             ini_set('display_startup_errors', true);
-            error_reporting(E_ALL);
+            error_reporting(E_ALL | E_STRICT);
             set_error_handler('piecrust_error_handler');
             break;
         }
