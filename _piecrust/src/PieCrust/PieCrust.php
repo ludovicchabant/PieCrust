@@ -59,7 +59,7 @@ class PieCrust implements IPieCrust
             $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
             
             // Add custom template directories specified in the configuration.
-            $additionalPaths = $this->getConfig()->getValue('site/template_dirs');
+            $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
             if ($additionalPaths)
             {
                 $this->addTemplatesDir($additionalPaths);
