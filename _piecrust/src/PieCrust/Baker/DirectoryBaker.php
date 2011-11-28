@@ -112,7 +112,7 @@ class DirectoryBaker
             $shouldSkip = false;
             foreach ($this->parameters['skip_patterns'] as $p)
             {
-                if (preg_match($p, $i->getFilename()))
+                if (preg_match($p, $relative))
                 {
                     $shouldSkip = true;
                     break;
