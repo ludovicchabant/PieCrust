@@ -175,7 +175,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         
         $outFile = vfsStream::url('root/_counter/something.html');
         $this->assertFalse(is_file($outFile));
-        usleep(1200000);
+        sleep(1);
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
@@ -183,14 +183,14 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $mtime = filemtime($outFile);
         $this->assertGreaterThan(filemtime(vfsStream::url('root/something.html')), $mtime);
 
-        usleep(1200000);
+        sleep(1);
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         clearstatcache();
         $this->assertEquals($mtime, filemtime($outFile));
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
 
-        usleep(1200000);
+        sleep(1);
         file_put_contents(vfsStream::url('root/something.html'), 'New content!');
         $baker->bake();
         $this->assertTrue(is_file($outFile));
@@ -223,7 +223,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
         $mtime = filemtime($outFile);
 
-        usleep(1000000);
+        sleep(1);
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         clearstatcache();
