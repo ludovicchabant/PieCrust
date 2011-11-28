@@ -32,6 +32,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     
     protected $posts;
     protected $hasMorePosts;
+    protected $totalPostCount;
     
     public function __construct(IPage $parentPage, array $dataSource)
     {
@@ -44,12 +45,19 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         
         $this->posts = null;
         $this->hasMorePosts = false;
+        $this->totalPostCount = 0;
     }
     
     public function setFilter(PaginationFilter $filter)
     {
         $this->ensureNotLoaded('setFilter');
         $this->filter = $filter;
+    }
+
+    public function getTotalPostCount()
+    {
+        $this->ensureLoaded();
+        return $this->totalPostCount;
     }
     
     public function hasMorePosts()
@@ -209,12 +217,18 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         {
             // We have some filtering clause: that's tricky because we
             // need to filter posts using those clauses from the start to
-            // know what offset to start from. This is not very efficient and
-            // at this point the user might as well bake his website but hey,
-            // this can still be useful for debugging.
+            // know what offset to start from, and we need to enumerate it
+            // all until the end to know the total number of posts.
+            // This is not very efficient and at this point the user might 
+            // as well bake his website but this is still fast enough for 
+            // previewing in the 'chef server'.
+            $this->totalPostCount = 0;
             $filteredDataSource = array();
             foreach ($this->dataSource as $postInfo)
             {
+                // TODO: this will load *all* pages matching the given filter!
+                // TODO: we should probably, inside the loop, unload pages we
+                // TODO: know won't get into the relevant slice.
                 if (!isset($postInfo['page']))
                 {
                     $postInfo['page'] = PageRepository::getOrCreatePage(
@@ -228,24 +242,19 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                 if ($this->filter->postMatches($postInfo['page']))
                 {
                     $filteredDataSource[] = $postInfo;
-                    
-                    if ($this->limit > 0)
-                    {
-                        // Exit if we have more than enough posts.
-                        // (the extra post is to make sure there is a next page)
-                        if (count($filteredDataSource) >= ($this->skip + $this->limit + 1))
-                        {
-                            $this->hasMorePosts = true;
-                            break;
-                        }
-                    }
                 }
             }
             
             // Now get the slice of the filtered post infos that is relevant
-            // for the current page number.
-            $filteredDataSource = array_slice($filteredDataSource, $this->skip, $upperLimit - $this->skip);
-            $this->posts = $this->getPostsData($filteredDataSource);
+            // for the current page number, the total number of posts, and see
+            // if there's more past our current page.
+            $limitedFilteredDataSource = array_slice($filteredDataSource, $this->skip, $upperLimit - $this->skip);
+            $this->posts = $this->getPostsData($limitedFilteredDataSource);
+            $this->totalPostCount = count($filteredDataSource);
+            if ($this->limit > 0)
+            {
+                $this->hasMorePosts = (count($filteredDataSource) > ($this->skip + $this->limit));
+            }
         }
         else
         {
@@ -270,8 +279,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                 $filteredDataSource[] = $postInfo;
             }
             
-            // Get the posts data, and see if this slice reaches the end of the data source.
+            // Get the posts data, the total number of posts, and see if this slice 
+            // reaches the end of the data source.
             $this->posts = $this->getPostsData($filteredDataSource);
+            $this->totalPostCount = count($this->dataSource);
             if ($this->limit > 0)
             {
                 $this->hasMorePosts = (count($this->dataSource) > ($this->skip + $this->limit));

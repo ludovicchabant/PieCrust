@@ -46,7 +46,54 @@ class Paginator
         $this->ensurePaginationData();
         return $this->postsIterator;
     }
+ 
+    /**
+     * Gets the maximum number of posts to be displayed on the page.
+     */
+    public function posts_per_page()
+    {
+        $blogKey = $this->page->getConfig()->getValue('blog');
+        return PageHelper::getConfigValue($this->page, 'posts_per_page', $blogKey);
+    }
+ 
+    /**
+     * Gets the actual number of posts on the page.
+     */
+    public function posts_this_page()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->count();
+    }
+
+    /**
+     * Gets the previous page's page number.
+     */
+    public function prev_page_number()
+    {
+        return ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
+    }
     
+    /**
+     * Gets this page's page number.
+     */
+    public function this_page_number()
+    {
+        return $this->page->getPageNumber();
+    }
+ 
+    /**
+     * Gets the next page's page number.
+     */
+    public function next_page_number()
+    {
+        $this->ensurePaginationData();
+        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfig()->getValue('single_page')))
+        {
+            return $this->page->getPageNumber() + 1;
+        }
+        return null;
+    }
+
     /**
      * Gets the previous page's URI.
      *
@@ -54,7 +101,7 @@ class Paginator
      */
     public function prev_page()
     {
-        $previousPageIndex = ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
+        $previousPageIndex = $this->prev_page_number();
         $previousPageUri = null;
         if ($previousPageIndex != null)
         {
@@ -80,21 +127,42 @@ class Paginator
         }
         return $thisPageUri;
     }
-    
+   
     /**
-     * Gets thenext page's URI.
+     * Gets the next page's URI.
      *
      * This method is meant to be called from the layouts via the template engine.
      */
     public function next_page()
     {
-        $this->ensurePaginationData();
-        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfig()->getValue('single_page')))
+        $nextPageIndex = $this->next_page_number();
+        if ($nextPageIndex != null)
         {
-            $nextPageIndex = $this->page->getPageNumber() + 1;
             return $this->page->getUri() . '/' . $nextPageIndex;
         }
         return null;
+    }
+
+    /**
+     * Gets the total number of posts.
+     */
+    public function total_post_count()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->getTotalPostCount();
+    }
+
+    /**
+     * Gets the total number of pages.
+     */
+    public function total_page_count()
+    {
+        if ($this->page->getConfig()->getValue('single_page'))
+            return 1;
+
+        $totalPostCount = $this->total_post_count(); 
+        $postsPerPage = $this->posts_per_page();
+        return ceil($totalPostCount / $postsPerPage);
     }
     
     /**
