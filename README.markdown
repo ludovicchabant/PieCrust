@@ -33,3 +33,19 @@ There are 2 branches:
   has version tags whenever changes are committed.
 
 
+Breaking Changes
+================
+
+These are the latest breaking changes in the main branch:
+
+* __Baking__: the `skip_patterns` setting is now applied to the relative path of files
+  instead of the filename. This means that patterns like `/^blah/` will only skip
+  files and directories starting with `blah` sitting in the root directory. A file
+  called `somedir/blah.html` would still be baked, unless you change the pattern to
+  `/\bblah/` or `/\/?blah/`.
+
+* __Baking__: the `templates_dir` parameter given to `chef` has been deprecated. You can
+  now more naturally specify additional templates directories in the configuration file
+  with the `site/templates_dirs` setting.
+
+
