@@ -48,6 +48,13 @@ class PieCrustExtension extends Twig_Extension
         );
     }
     
+    public function getFilters()
+    {
+        return array(
+            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter'),
+        );
+    }
+    
     public function getUrl($value)
     {
         return $this->pieCrust->formatUri($value);
@@ -76,5 +83,19 @@ class PieCrustExtension extends Twig_Extension
     {
         $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
+    }
+
+    public function addNoCacheParameter($value, $parameterName = 't', $parameterValue = null)
+    {
+        if (!$parameterValue)
+            $parameterValue = time();
+
+        if (strpos($value, '?') === false)
+            $value .= '?';
+        else
+            $value .= '&';
+        $value .= $parameterName . '=' . $parameterValue;
+
+        return $value;
     }
 }
