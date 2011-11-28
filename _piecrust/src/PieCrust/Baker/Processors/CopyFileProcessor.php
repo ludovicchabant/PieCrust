@@ -34,6 +34,11 @@ class CopyFileProcessor implements IProcessor
         return true;
     }
     
+    public function getDependencies($path)
+    {
+        return null;
+    }
+
     public function getOutputFilenames($filename)
     {
         return basename($filename);

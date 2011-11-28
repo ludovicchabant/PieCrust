@@ -126,7 +126,8 @@ class PieCrustBaker
                                             'show_banner' => true,
                                             'copy_assets' => true,
                                             'processors' => '*',
-                                            'skip_patterns' => array('/^_/'),
+                                            'skip_patterns' => array(),
+                                            'force_patterns' => array(),
                                             'tag_combinations' => array()
                                         ),
                                         $bakerParametersFromApp,
@@ -149,22 +150,15 @@ class PieCrustBaker
         }
         
         // Validate skip patterns.
-        if (!is_array($this->parameters['skip_patterns']))
-        {
-            $this->parameters['skip_patterns'] = array($this->parameters['skip_patterns']);
-        }
-        // Convert glob patterns to regex patterns.
-        for ($i = 0; $i < count($this->parameters['skip_patterns']); ++$i)
-        {
-            $pattern = $this->parameters['skip_patterns'][$i];
-            $pattern = PieCrustBaker::globToRegex($pattern);
-            $this->parameters['skip_patterns'][$i] = $pattern;
-        }
-        // Add the default skip patterns.
-        $this->parameters['skip_patterns'][] = '/^_cache/';
-        $this->parameters['skip_patterns'][] = '/^_content/';
-        $this->parameters['skip_patterns'][] = '/^_counter/';
-        $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
+        $this->parameters['skip_patterns'] = self::validatePatterns(
+            $this->parameters['skip_patterns'],
+            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
+        );
+        
+        // Validate force-bake patterns.
+        $this->parameters['force_patterns'] = self::validatePatterns(
+            $this->parameters['force_patterns']
+        );
         
         // Apply the default configuration variant, if it exists.
         $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
@@ -300,6 +294,7 @@ class PieCrustBaker
                                        array(
                                             'smart' => $this->parameters['smart'],
                                             'skip_patterns' => $this->parameters['skip_patterns'],
+                                            'force_patterns' => $this->parameters['force_patterns'],
                                             'processors' => $this->parameters['processors']
                                             )
                                        );
@@ -569,5 +564,24 @@ class PieCrustBaker
         $pattern = str_replace('\\*', '.*', $pattern);
         $pattern = str_replace('\\?', '.', $pattern);
         return '/'.$pattern.'/';
+    }
+
+    public static function validatePatterns($patterns, array $defaultPatterns = array())
+    {
+        if (!is_array($patterns))
+        {
+            $patterns = array($patterns);
+        }
+        // Convert glob patterns to regex patterns.
+        for ($i = 0; $i < count($patterns); ++$i)
+        {
+            $patterns[$i] = self::globToRegex($patterns[$i]);
+        }
+        // Add the default patterns.
+        foreach ($defaultPatterns as $p)
+        {
+            $patterns[] = $p;
+        }
+        return $patterns;
     }
 }

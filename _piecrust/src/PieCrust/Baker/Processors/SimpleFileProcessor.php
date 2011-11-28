@@ -71,6 +71,11 @@ class SimpleFileProcessor implements IProcessor
         if ($extension == null or $extension == '') return false;
         return in_array($extension, $this->inputExtensions);
     }
+
+    public function getDependencies($path)
+    {
+        return null;
+    }
     
     public function getOutputFilenames($filename)
     {

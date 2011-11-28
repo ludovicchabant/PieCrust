@@ -39,6 +39,11 @@ interface IProcessor
      * extension.
      */
     public function supportsExtension($extension);
+
+    /**
+     * Gets zero or more input dependency file names for the given input file.
+     */
+    public function getDependencies($path);
     
     /**
      * Gets one or more output file names for the given input file.
