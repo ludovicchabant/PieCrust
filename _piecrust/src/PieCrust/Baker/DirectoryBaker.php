@@ -61,7 +61,7 @@ class DirectoryBaker
     public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->bakeDir = rtrim($bakeDir, '/\\') . '/';
+        $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
                                         array(
                                               'smart' => true,
@@ -126,7 +126,8 @@ class DirectoryBaker
                 // Current path is a directory... recurse into it, unless it's
                 // actually the directory we're baking *into* (which would cause
                 // an infinite loop and lots of files being created!).
-                if ($i->getPathname() . '/' == $this->bakeDir)
+                $normalizedPathname = rtrim(str_replace('\\', '/', $i->getPathname()), '/') . '/';
+                if ($normalizedPathname == $this->bakeDir)
                 {
                     continue;
                 }
