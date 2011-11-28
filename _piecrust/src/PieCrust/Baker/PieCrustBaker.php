@@ -561,8 +561,8 @@ class PieCrustBaker
         }
         
         $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '.*', $pattern);
-        $pattern = str_replace('\\?', '.', $pattern);
+        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
+        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
         return '/'.$pattern.'/';
     }
 
