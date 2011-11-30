@@ -220,10 +220,7 @@ class Paginator
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
-            $subDir = $blogKey;
-            if ($blogKey == PieCrustDefaults::DEFAULT_BLOG_KEY)
-                $subDir = null;
-            $fs = FileSystem::create($this->page->getApp(), $subDir);
+            $fs = FileSystem::create($this->page->getApp(), $blogKey);
             $postInfos = $fs->getPostFiles();
         }
         
