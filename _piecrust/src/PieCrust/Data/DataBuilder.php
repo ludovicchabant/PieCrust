@@ -23,7 +23,11 @@ class DataBuilder
      {
         $data = Configuration::mergeArrays(
             $pieCrust->getConfig()->get(), 
-            array('piecrust' => new PieCrustData($pieCrust, $pageData, $pageContentSegments, $wasPageCached))
+            array(
+                'categories' => new PagePropertyData($pieCrust, 'category'),
+                'tags' => new PagePropertyData($pieCrust, 'tags'),
+                'piecrust' => new PieCrustData($pieCrust, $pageData, $pageContentSegments, $wasPageCached)
+            )
          );
         return $data;
     }

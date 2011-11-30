@@ -14,8 +14,6 @@ use PieCrust\Util\Configuration;
  */
 class PieCrustData
 {
-    
-    
     protected $pieCrust;
     protected $pageData;
     protected $pageContentSegments;
@@ -75,7 +73,11 @@ class PieCrustData
             $data = array(
                 'Website configuration' => $this->pieCrust->getConfig()->get(),
                 'Page data' => $this->pageData,
-                'Page content segments' => $this->pageContentSegments
+                'Page content segments' => $this->pageContentSegments,
+                'Tags and categories' => array(
+                    'categories' => new PagePropertyData($this->pieCrust, 'category'),
+                    'tags' => new PagePropertyData($this->pieCrust, 'tags')
+                )
             );
             $output .= '<div id="piecrust-data-list" style="display: none;">' . PHP_EOL;
             $output .= '<p style="' . DataStyles::CSS_DOC . '">The following key/value pairs are available in the layout\'s markup, ' .
