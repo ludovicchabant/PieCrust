@@ -14,6 +14,7 @@ use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
+use PieCrust\Page\PageRepository;
 
 
 /**
@@ -93,6 +94,11 @@ class PieCrustServer
         $pieCrustException = null;
         try
         {
+            // We need to clear pages between requests, otherwise the user
+            // could have modified some of the posts and we would keep using
+            // the cached versions until the actual posts' pages are requested.
+            PageRepository::clearPages();
+
             $pieCrust = new PieCrust(array(
                                             'root' => $this->rootDir,
                                             'cache' => true
