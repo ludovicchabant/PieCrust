@@ -104,6 +104,53 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         $this->filter->addClauses($filterDefinition);
         return $this;
     }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function in_category($category)
+    {
+        $this->ensureNotLoaded('in_category');
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('is_category' => $category));
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function with_tag($tag)
+    {
+        $this->ensureNotLoaded('with_tag');
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('has_tags' => $tag));
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function with_tags($tag1, $tag2 /*, $tag3, ... */)
+    {
+        $this->ensureNotLoaded('with_tags');
+
+        $tagClauses = array();
+        $argCount = func_num_args();
+        for ($i = 0; $i < $argCount; ++$i)
+        {
+            $tag = func_get_arg($i);
+            $tagClauses['has_tags'] = $tag;
+        }
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('and' => $tagClauses));
+        return $this;
+    }
     
     /**
      * @include
