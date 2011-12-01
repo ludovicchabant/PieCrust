@@ -117,12 +117,16 @@ class PageRenderer
     
     protected function getRenderData()
     {
+        $pieCrust = $this->page->getApp();
         $pageData = $this->page->getPageData();
         $pageContentSegments = $this->page->getContentSegments();
+        $siteData = DataBuilder::getSiteData($pieCrust);
+        $appData = DataBuilder::getAppData($pieCrust, $siteData, $pageData, $pageContentSegments, $this->page->wasCached());
         $renderData = Configuration::mergeArrays(
-            DataBuilder::getSiteData($this->page->getApp(), $pageData, $pageContentSegments, $this->page->wasCached()),
+            $this->page->getContentSegments(),
             $pageData,
-            $this->page->getContentSegments()
+            $siteData,
+            $appData
         );
         return $renderData;
     }

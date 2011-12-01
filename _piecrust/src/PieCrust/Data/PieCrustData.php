@@ -15,6 +15,7 @@ use PieCrust\Util\Configuration;
 class PieCrustData
 {
     protected $pieCrust;
+    protected $siteData;
     protected $pageData;
     protected $pageContentSegments;
     protected $wasCurrentPageCached;
@@ -23,9 +24,10 @@ class PieCrustData
     public $url;
     public $branding;
     
-    public function __construct(IPieCrust $pieCrust, $pageData, $pageContentSegments, $wasCurrentPageCached)
+    public function __construct(IPieCrust $pieCrust, $siteData, $pageData, $pageContentSegments, $wasCurrentPageCached)
     {
         $this->pieCrust = $pieCrust;
+        $this->siteData = $siteData;
         $this->pageData = $pageData;
         $this->pageContentSegments = $pageContentSegments;
         $this->wasCurrentPageCached = $wasCurrentPageCached;
@@ -71,12 +73,16 @@ class PieCrustData
             $output .= "<span style=\"" . DataStyles::CSS_BIGHEADER . "\">Template engine data</span> &mdash; click to toggle</a>.</p>" . PHP_EOL;
             
             $data = array(
-                'Website configuration' => $this->pieCrust->getConfig()->get(),
+                'Website data' => $this->siteData,
                 'Page data' => $this->pageData,
-                'Page content segments' => $this->pageContentSegments,
-                'Tags and categories' => array(
-                    'categories' => new PagePropertyData($this->pieCrust, 'category'),
-                    'tags' => new PagePropertyData($this->pieCrust, 'tags')
+                'Page contents' => $this->pageContentSegments,
+                'PieCrust data' => array(
+                    'piecrust' => array(
+                        'version' => $this->version,
+                        'url' => $this->url,
+                        'branding' => $this->branding,
+                        'debug_info' => "This very thing you're looking at!"
+                    )
                 )
             );
             $output .= '<div id="piecrust-data-list" style="display: none;">' . PHP_EOL;

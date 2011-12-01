@@ -19,22 +19,37 @@ class DataBuilder
     /**
      * Gets the application's data for page rendering.
      */
-    public static function getSiteData(IPieCrust $pieCrust, $pageData = null, $pageContentSegments = null, $wasPageCached = null)
-     {
+    public static function getAppData(IPieCrust $pieCrust, $siteData = null, $pageData = null, $pageContentSegments = null, $wasPageCached = null)
+    {
+        return array(
+            'piecrust' => new PieCrustData($pieCrust, $siteData, $pageData, $pageContentSegments, $wasPageCached)
+        );
+    }
+
+    /**
+     * Gets the site's data for page rendering.
+     */
+    public static function getSiteData(IPieCrust $pieCrust)
+    {
         $data = Configuration::mergeArrays(
-            $pieCrust->getConfig()->get(), 
+            $pieCrust->getConfig()->get(),
             array(
-                'categories' => new PagePropertyData($pieCrust, 'category'),
-                'tags' => new PagePropertyData($pieCrust, 'tags'),
-                'piecrust' => new PieCrustData($pieCrust, $pageData, $pageContentSegments, $wasPageCached)
+                'site' => array(
+                    'categories' => new PagePropertyData($pieCrust, 'category'),
+                    'tags' => new PagePropertyData($pieCrust, 'tags')
+                )
             )
-         );
+        );
         return $data;
     }
-    
-   /**
-    * Gets the page's data for page rendering.
-    */
+
+    /**
+     * Gets the page's data for page rendering.
+     *
+     * It's better to call IPage::getData, which calls this function, because it
+     * will also cache the results. It's useful for example when pagination
+     * results needs to be re-used.
+     */
     public static function getPageData(IPage $page)
     {
         $pieCrust = $page->getApp();

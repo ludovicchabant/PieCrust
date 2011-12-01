@@ -118,9 +118,12 @@ class PageLoader
             
             $pieCrust = $this->page->getApp();
             $pageData = $this->page->getPageData();
+            $siteData = DataBuilder::getSiteData($pieCrust);
+            $appData = DataBuilder::getAppData($pieCrust, $siteData, $pageData, null, false);
             $data = Configuration::mergeArrays(
-                DataBuilder::getSiteData($pieCrust, $pageData, null, false),
-                $pageData
+                $pageData,
+                $siteData,
+                $appData
             );
             $templateEngineName = $this->page->getConfig()->getValue('template_engine');
             $templateEngine = $pieCrust->getTemplateEngine($templateEngineName);
