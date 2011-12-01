@@ -83,10 +83,6 @@ class ServeCommand implements IChefCommand
             $templatesDir = realpath($templatesDir);
         }
 
-        // Configure PHP's environment.
-        set_time_limit(0);
-        date_default_timezone_set('UTC');
-
         // Start serving!
         $server = new PieCrustServer($rootDir,
                                      array(
