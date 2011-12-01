@@ -18,7 +18,9 @@ function piecrust_show_system_message($message, $details = null)
  */
 function piecrust_error_handler($errno, $errstr, $errfile = null, $errline = 0, $errcontext = null)
 {
-    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    if (error_reporting() & $errno)
+        throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    return;
 }
 
 /**
@@ -107,7 +109,8 @@ function piecrust_setup($profile = 'web')
             break;
         }
     case 'chef':
-        {
+    {
+            ini_set('display_errors', true);
             error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
             register_shutdown_function('chef_shutdown_function');

@@ -69,6 +69,13 @@ class ServeCommand implements IChefCommand
             'action'      => 'StoreTrue',
             'help_name'   => 'LOG'
         ));
+        $serverParser->addOption('templates_dir', array(
+            'short_name'  => '-t',
+            'long_name'   => '--templates_dir',
+            'description' => "DEPRECATED: you should now define your template directories with 'site/template_dirs' in the website configuration file.",
+            'default'     => null,
+            'help_name'   => 'DIR'
+        ));
     }
 
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
@@ -87,7 +94,13 @@ class ServeCommand implements IChefCommand
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $logConsole = $result->command->options['log_console'];
-        
+
+        if ($templatesDir)
+        {
+            $parser->displayError("-t/--templates_dir is deprecated. You should now define your templates directories with 'site/template_dirs' in the website configuration file.", false);
+            $templatesDir = realpath($templatesDir);
+        }
+
         // Start serving!
         $server = new PieCrustServer($rootDir,
                                      array(
