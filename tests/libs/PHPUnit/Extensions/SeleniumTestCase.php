@@ -42,8 +42,6 @@
  * @since      File available since Release 1.0.0
  */
 
-require_once 'File/Iterator/Factory.php';
-
 /**
  * TestCase class that uses Selenium to provide
  * the functionality required for web testing.
@@ -52,7 +50,7 @@ require_once 'File/Iterator/Factory.php';
  * @author     Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @copyright  2010-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.0
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  *
@@ -330,6 +328,11 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
     protected $screenshotUrl = '';
 
     /**
+     * @var boolean
+     */
+    private $serverRunning;
+
+    /**
      * @param  string $name
      * @param  array  $data
      * @param  string $dataName
@@ -507,7 +510,7 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
             $result = $this->createResult();
         }
 
-        $this->result = $result;
+        $this->setTestResultObject($result);
 
         $this->collectCodeCoverageInformation = $result->getCollectCodeCoverageInformation();
 
@@ -535,7 +538,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
     /**
      * @param  array $browser
      * @return PHPUnit_Extensions_SeleniumTestCase_Driver
-     * @since  Method available since Release 1.0.0
      */
     protected function getDriver(array $browser)
     {
@@ -599,6 +601,12 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
             $browser['httpTimeout'] = 45;
         }
 
+        if (@fsockopen($browser['host'], $browser['port'], $errno, $errstr)) {
+            $this->serverRunning = TRUE;
+        } else {
+            $this->serverRunning = FALSE;
+        }
+
         $driver = new PHPUnit_Extensions_SeleniumTestCase_Driver;
         $driver->setName($browser['name']);
         $driver->setBrowser($browser['browser']);
@@ -619,6 +627,16 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      */
     protected function runTest()
     {
+        if (!$this->serverRunning) {
+            $this->markTestSkipped(
+              sprintf(
+                'Could not connect to Selenium RC on %s:%d.',
+                $this->drivers[0]->getHost(),
+                $this->drivers[0]->getPort()
+              )
+            );
+        }
+
         $this->start();
 
         if (!is_file($this->getName(FALSE))) {
@@ -787,7 +805,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $selectLocator
      * @param  string $option
      * @param  string $message
-     * @since  Method available since Release 3.2.0
      */
     public function assertSelectHasOption($selectLocator, $option, $message = '')
     {
@@ -800,7 +817,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $selectLocator
      * @param  string $option
      * @param  string $message
-     * @since  Method available since Release 3.2.0
      */
     public function assertSelectNotHasOption($selectLocator, $option, $message = '')
     {
@@ -813,7 +829,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $selectLocator
      * @param  string $value
      * @param  string $message
-     * @since  Method available since Release 3.2.0
      */
     public function assertSelected($selectLocator, $option, $message = '')
     {
@@ -838,7 +853,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $selectLocator
      * @param  string $value
      * @param  string $message
-     * @since  Method available since Release 3.2.0
      */
     public function assertNotSelected($selectLocator, $option, $message = '')
     {
@@ -908,7 +922,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * Template Method that is called after Selenium actions.
      *
      * @param  string $action
-     * @since  Method available since Release 3.1.0
      */
     protected function defaultAssertions($action)
     {
@@ -916,7 +929,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
 
     /**
      * @return array
-     * @since  Method available since Release 3.2.0
      */
     protected function getCodeCoverage()
     {
@@ -930,7 +942,12 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
             $buffer = @file_get_contents($url);
 
             if ($buffer !== FALSE) {
-                return $this->matchLocalAndRemotePaths(unserialize($buffer));
+                $coverageData = unserialize($buffer);
+                if (is_array($coverageData)) {
+                    return $this->matchLocalAndRemotePaths($coverageData);
+                } else {
+                    throw new Exception('Empty or invalid code coverage data received from url "' . $url . '"');
+                }
             }
         }
 
@@ -941,7 +958,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  array $coverage
      * @return array
      * @author Mattis Stordalen Flister <mattis@xait.no>
-     * @since  Method available since Release 3.2.9
      */
     protected function matchLocalAndRemotePaths(array $coverage)
     {
@@ -968,7 +984,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $path
      * @return string
      * @author Mattis Stordalen Flister <mattis@xait.no>
-     * @since  Method available since Release 3.2.9
      */
     protected function findDirectorySeparator($path)
     {
@@ -983,7 +998,6 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $path
      * @return array
      * @author Mattis Stordalen Flister <mattis@xait.no>
-     * @since  Method available since Release 3.2.9
      */
     protected function explodeDirectories($path)
     {
@@ -994,23 +1008,16 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * @param  string $directory
      * @param  string $suffix
      * @return array
-     * @since  Method available since Release 1.0.0
      */
     protected static function getSeleneseFiles($directory, $suffix)
     {
-        $files    = array();
-        $iterator = File_Iterator_Factory::getFileIterator($directory, $suffix);
+        $facade = new File_Iterator_Facade;
 
-        foreach ($iterator as $file) {
-            $files[] = (string)$file;
-        }
-
-        return $files;
+        return $facade->getFilesAsArray($directory, $suffix);
     }
 
     /**
      * @param  string $action
-     * @since  Method available since Release 3.2.0
      */
     public function runDefaultAssertions($action)
     {
@@ -1025,14 +1032,13 @@ abstract class PHPUnit_Extensions_SeleniumTestCase extends PHPUnit_Framework_Tes
      * This method is called when a test method did not execute successfully.
      *
      * @param Exception $e
-     * @since Method available since Release 3.4.0
      */
     protected function onNotSuccessfulTest(Exception $e)
     {
         if ($e instanceof PHPUnit_Framework_ExpectationFailedException) {
             $buffer  = 'Current URL: ' . $this->drivers[0]->getLocation() .
                        "\n";
-            $message = $e->getCustomMessage();
+            $message = $e->getComparisonFailure()->toString();
 
             if ($this->captureScreenshotOnFailure &&
                 !empty($this->screenshotPath) &&

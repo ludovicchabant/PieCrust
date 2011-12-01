@@ -2,11 +2,13 @@
 
 namespace PieCrust\Page;
 
-use PieCrust\PieCrust;
+use PieCrust\IPage;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
 
 
 /**
@@ -19,16 +21,16 @@ use PieCrust\Util\UriBuilder;
  */
 class Paginator
 {
-    protected $pieCrust;
     protected $page;
     protected $postsIterator;
     
     /**
      * Creates a new Paginator instance.
+     *
+     * @ignore
      */
-    public function __construct(PieCrust $pieCrust, Page $page)
+    public function __construct(IPage $page)
     {
-        $this->pieCrust = $pieCrust;
         $this->page = $page;
         $this->postsIterator = null;
     }
@@ -37,13 +39,61 @@ class Paginator
      * Gets the posts for this page.
      *
      * This method is meant to be called from the layouts via the template engine.
+     *
      */
     public function posts()
     {
         $this->ensurePaginationData();
         return $this->postsIterator;
     }
+ 
+    /**
+     * Gets the maximum number of posts to be displayed on the page.
+     */
+    public function posts_per_page()
+    {
+        $blogKey = $this->page->getConfig()->getValue('blog');
+        return PageHelper::getConfigValue($this->page, 'posts_per_page', $blogKey);
+    }
+ 
+    /**
+     * Gets the actual number of posts on the page.
+     */
+    public function posts_this_page()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->count();
+    }
+
+    /**
+     * Gets the previous page's page number.
+     */
+    public function prev_page_number()
+    {
+        return ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
+    }
     
+    /**
+     * Gets this page's page number.
+     */
+    public function this_page_number()
+    {
+        return $this->page->getPageNumber();
+    }
+ 
+    /**
+     * Gets the next page's page number.
+     */
+    public function next_page_number()
+    {
+        $this->ensurePaginationData();
+        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfig()->getValue('single_page')))
+        {
+            return $this->page->getPageNumber() + 1;
+        }
+        return null;
+    }
+
     /**
      * Gets the previous page's URI.
      *
@@ -51,7 +101,7 @@ class Paginator
      */
     public function prev_page()
     {
-        $previousPageIndex = ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
+        $previousPageIndex = $this->prev_page_number();
         $previousPageUri = null;
         if ($previousPageIndex != null)
         {
@@ -77,25 +127,50 @@ class Paginator
         }
         return $thisPageUri;
     }
-    
+   
     /**
-     * Gets thenext page's URI.
+     * Gets the next page's URI.
      *
      * This method is meant to be called from the layouts via the template engine.
      */
     public function next_page()
     {
-        $this->ensurePaginationData();
-        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfigValue('single_page')))
+        $nextPageIndex = $this->next_page_number();
+        if ($nextPageIndex != null)
         {
-            $nextPageIndex = $this->page->getPageNumber() + 1;
             return $this->page->getUri() . '/' . $nextPageIndex;
         }
         return null;
     }
+
+    /**
+     * Gets the total number of posts.
+     */
+    public function total_post_count()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->getTotalPostCount();
+    }
+
+    /**
+     * Gets the total number of pages.
+     */
+    public function total_page_count()
+    {
+        if ($this->page->getConfig()->getValue('single_page'))
+            return 1;
+
+        $totalPostCount = $this->total_post_count(); 
+        $postsPerPage = $this->posts_per_page();
+        if (is_int($postsPerPage) && $postsPerPage > 0)
+            return ceil($totalPostCount / $postsPerPage);
+        return $totalPostCount;
+    }
     
     /**
      * Resets the pagination data, as if it had never been accessed.
+     *
+     * @ignore
      */
     public function resetPaginationData()
     {
@@ -104,6 +179,8 @@ class Paginator
     
     /**
      * Gets whether the pagination data was requested by the page.
+     *
+     * @ignore
      */
     public function wasPaginationDataAccessed()
     {
@@ -112,6 +189,8 @@ class Paginator
     
     /**
      * Gets whether the current page has more pages to show.
+     *
+     * @ignore
      */
     public function hasMorePages()
     {
@@ -121,11 +200,13 @@ class Paginator
     protected $paginationDataSource;
     /**
      * Specifies that the pagination data should be build from the given posts.
+     *
+     * @ignore
      */
     public function setPaginationDataSource(array $postInfos)
     {
         if ($this->postsIterator != null)
-            throw new PieCrustException("The pagination data source can only be set before the pagination data is build.");
+            throw new PieCrustException("The pagination data source can only be set before the pagination data is built.");
         $this->paginationDataSource = $postInfos;
     }
     
@@ -134,29 +215,30 @@ class Paginator
         if ($this->postsIterator != null)
             return;
         
-        $blogKey = $this->page->getConfigValue('blog');
         
         // If not pagination data source was provided, load up a new FileSystem
         // and get the list of posts from the disk.
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
-            $subDir = $blogKey;
-            if ($blogKey == PieCrust::DEFAULT_BLOG_KEY)
-                $subDir = null;
-            $fs = FileSystem::create($this->pieCrust, $subDir);
+            $blogKey = $this->page->getConfig()->getValue('blog');
+            $fs = FileSystem::create($this->page->getApp(), $blogKey);
             $postInfos = $fs->getPostFiles();
         }
         
         // Create the pagination iterator.
-        $postsPerPage = $this->page->getConfigValue('posts_per_page', $blogKey);
-        $postsFilter = $this->getPaginationFilter();
-        $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-        
         $this->postsIterator = new PaginationIterator($this->page, $postInfos);
+        // Add the filters for the current page.
+        $postsFilter = $this->getPaginationFilter();
         $this->postsIterator->setFilter($postsFilter);
-        $this->postsIterator->limit($postsPerPage);
-        $this->postsIterator->skip($offset);
+        // If the `posts_per_page` setting is valid, paginate accordingly.
+        $postsPerPage = $this->posts_per_page();
+        if (is_int($postsPerPage) && $postsPerPage > 0)
+        {
+            $this->postsIterator->limit($postsPerPage);
+            $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
+            $this->postsIterator->skip($offset);
+        }
     }
     
     protected function getPaginationFilter()
@@ -169,7 +251,7 @@ class Paginator
         
         // Add custom filtering clauses specified by the user in the
         // page configuration header.
-        $filterInfo = $this->page->getConfigValue('posts_filters');
+        $filterInfo = $this->page->getConfig()->getValue('posts_filters');
         if ($filterInfo != null)
             $filter->addClauses($filterInfo);
         

@@ -3,7 +3,7 @@
  * $Header$
  * $Horde: horde/lib/Log.php,v 1.15 2000/06/29 23:39:45 jon Exp $
  *
- * @version $Revision: 302787 $
+ * @version $Revision: 310238 $
  * @package Log
  */
 
@@ -84,6 +84,15 @@ class Log
      * @access protected
      */
     var $_listeners = array();
+
+    /**
+     * Starting depth to use when walking a backtrace in search of the 
+     * function that invoked the log system.
+     *
+     * @var integer
+     * @access protected
+     */
+    var $_backtrace_depth = 0;
 
     /**
      * Maps canonical format keys to position arguments for use in building
@@ -503,6 +512,21 @@ class Log
     }
 
     /**
+     * Sets the starting depth to use when walking a backtrace in search of 
+     * the function that invoked the log system.  This is used on conjunction 
+     * with the 'file', 'line', 'function', and 'class' formatters.
+     *
+     * @param int $depth    The new backtrace depth.
+     *
+     * @access  public
+     * @since   Log 1.12.7
+     */
+    public function setBacktraceDepth($depth)
+    {
+        $this->_backtrace_depth = $depth;
+    }
+
+    /**
      * Produces a formatted log line based on a format string and a set of
      * variables representing the current log record and state.
      *
@@ -518,7 +542,9 @@ class Log
          * variables (%5 %6,%7,%8), generate the backtrace and fetch them.
          */
         if (preg_match('/%[5678]/', $format)) {
-            list($file, $line, $func, $class) = $this->_getBacktraceVars(2);
+            /* Plus 2 to account for our internal function calls. */
+            $d = $this->_backtrace_depth + 2;
+            list($file, $line, $func, $class) = $this->_getBacktraceVars($d);
         }
 
         /*

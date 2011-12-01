@@ -3,7 +3,7 @@
 namespace PieCrust\Interop;
 
 use \Exception;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\Interop\Importers\IImporter;
 use PieCrust\Util\PluginLoader;
 
@@ -19,7 +19,7 @@ class PieCrustImporter
     /**
      * Creates a new instance of PieCrustImporter.
      */
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->importersLoader = new PluginLoader(
@@ -54,7 +54,7 @@ class PieCrustImporter
             echo 'Importing "' . $source . '" using "' . $importer->getName() . '".' . PHP_EOL;
             $importer->open($source);
             $importer->importPages($this->pieCrust()->getPagesDir());
-            $importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfigValue('site', 'posts_fs'));
+            $importer->importPosts($this->pieCrust()->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
             $importer->close();
         }
         catch (Exception $e)

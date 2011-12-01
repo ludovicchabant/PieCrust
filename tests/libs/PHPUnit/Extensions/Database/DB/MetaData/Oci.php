@@ -49,7 +49,7 @@
  * @author     Trond Hansen <trond@xait.no>
  * @copyright  2002-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 3.2.3
  */

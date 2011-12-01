@@ -2,7 +2,12 @@
 
 namespace PieCrust\TemplateEngines;
 
-use PieCrust\PieCrust;
+use \Dwoo;
+use \Dwoo_Template_File;
+use \Dwoo_Template_String;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
+use PieCrust\Util\PathHelper;
 
 
 class DwooTemplateEngine implements ITemplateEngine
@@ -16,26 +21,26 @@ class DwooTemplateEngine implements ITemplateEngine
     
     public static function getPostUrlFormat($blogKey)
     {
-        if ($blogKey == null) $blogKey = PieCrust::DEFAULT_BLOG_KEY;
-        return self::$currentApp->getConfigValueUnchecked($blogKey, 'post_url');
+        if ($blogKey == null) $blogKey = PieCrustDefaults::DEFAULT_BLOG_KEY;
+        return self::$currentApp->getConfig()->getValueUnchecked($blogKey.'/post_url');
     }
     
     public static function getTagUrlFormat($blogKey)
     {
-        if ($blogKey == null) $blogKey = PieCrust::DEFAULT_BLOG_KEY;
-        return self::$currentApp->getConfigValueUnchecked($blogKey, 'tag_url');
+        if ($blogKey == null) $blogKey = PieCrustDefaults::DEFAULT_BLOG_KEY;
+        return self::$currentApp->getConfig()->getValueUnchecked($blogKey.'/tag_url');
     }
     
     public static function getCategoryUrlFormat($blogKey)
     {
-        if ($blogKey == null) $blogKey = PieCrust::DEFAULT_BLOG_KEY;
-        return self::$currentApp->getConfigValueUnchecked($blogKey, 'category_url');
+        if ($blogKey == null) $blogKey = PieCrustDefaults::DEFAULT_BLOG_KEY;
+        return self::$currentApp->getConfig()->getValueUnchecked($blogKey.'/category_url');
     }
     
     protected $pieCrust;
     protected $dwoo;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -48,15 +53,15 @@ class DwooTemplateEngine implements ITemplateEngine
     public function renderString($content, $data)
     {
         $this->ensureLoaded();
-        $tpl = new \Dwoo_Template_String($content);
+        $tpl = new Dwoo_Template_String($content);
         $this->dwoo->output($tpl, $data);
     }
     
     public function renderFile($templateName, $data)
     {
         $this->ensureLoaded();
-        $templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
-        $tpl = new \Dwoo_Template_File($templatePath);
+        $templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
+        $tpl = new Dwoo_Template_File($templatePath);
         $this->dwoo->output($tpl, $data);
     }
     
@@ -78,8 +83,8 @@ class DwooTemplateEngine implements ITemplateEngine
             if (!is_dir($cacheDir)) mkdir($cacheDir, 0777, true);
             
             require_once 'Dwoo/dwooAutoload.php';
-            $this->dwoo = new \Dwoo($compileDir, $cacheDir);
-            $this->dwoo->getLoader()->addDirectory(PieCrust::APP_DIR . '/Plugins/Dwoo/');
+            $this->dwoo = new Dwoo($compileDir, $cacheDir);
+            $this->dwoo->getLoader()->addDirectory(PieCrustDefaults::APP_DIR . '/Plugins/Dwoo/');
         }
     }
 }

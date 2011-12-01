@@ -4,6 +4,7 @@ namespace PieCrust;
 
 use \Exception;
 use PieCrust\Util\UriParser;
+use PieCrust\Util\HttpHeaderHelper;
 
 
 /**
@@ -42,7 +43,7 @@ class PieCrustErrorHandler
     
     protected $pieCrust;
     
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -78,13 +79,14 @@ class PieCrustErrorHandler
         }
         
         // Generic error message in case we don't have anything custom.
-        $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. We'll try to do better next time.</p>";
+        $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. ".
+                        "We'll try to do better next time.</p>".PHP_EOL;
         
         // Get the URI to the custom error page.
         $errorPageUri = '_error';
         if ($e->getMessage() == '404')
         {
-            header('HTTP/1.0 404 Not Found');
+            HttpHeaderHelper::setOrAddHeader(0, 404, null);
             $errorPageUri = '_404';
         }
         try
@@ -121,9 +123,9 @@ class PieCrustErrorHandler
     
     protected function isEmptySetup()
     {
-        if (!is_dir($this->pieCrust->getRootDir() . PieCrust::CONTENT_DIR))
+        if (!is_dir($this->pieCrust->getRootDir() . PieCrustDefaults::CONTENT_DIR))
             return true;
-        if (!is_file($this->pieCrust->getRootDir() . PieCrust::CONFIG_PATH))
+        if (!is_file($this->pieCrust->getRootDir() . PieCrustDefaults::CONFIG_PATH))
             return true;
         
         return false;

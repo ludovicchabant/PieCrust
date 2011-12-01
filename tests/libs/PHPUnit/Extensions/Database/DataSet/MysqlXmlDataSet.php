@@ -49,7 +49,7 @@
  * @author     Matthew Turland <tobias382@gmail.com>
  * @copyright  2010 Matthew Turland <tobias382@gmail.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -58,12 +58,12 @@ class PHPUnit_Extensions_Database_DataSet_MysqlXmlDataSet extends PHPUnit_Extens
     protected function getTableInfo(array &$tableColumns, array &$tableValues)
     {
         if ($this->xmlFileContents->getName() != 'mysqldump') {
-            throw new Exception('The root element of a MySQL XML data set file must be called <mysqldump>');
+            throw new PHPUnit_Extensions_Database_Exception('The root element of a MySQL XML data set file must be called <mysqldump>');
         }
 
         foreach ($this->xmlFileContents->xpath('./database/table_data') as $tableElement) {
             if (empty($tableElement['name'])) {
-                throw new Exception('<table_data> elements must include a name attribute');
+                throw new PHPUnit_Extensions_Database_Exception('<table_data> elements must include a name attribute');
             }
 
             $tableName = (string)$tableElement['name'];
@@ -81,7 +81,7 @@ class PHPUnit_Extensions_Database_DataSet_MysqlXmlDataSet extends PHPUnit_Extens
 
                 foreach ($rowElement->xpath('./field') as $columnElement) {
                     if (empty($columnElement['name'])) {
-                        throw new Exception('<field> element name attributes cannot be empty');
+                        throw new PHPUnit_Extensions_Database_Exception('<field> element name attributes cannot be empty');
                     }
 
                     $columnName = (string)$columnElement['name'];
@@ -92,12 +92,19 @@ class PHPUnit_Extensions_Database_DataSet_MysqlXmlDataSet extends PHPUnit_Extens
                 }
 
                 foreach ($tableColumns[$tableName] as $columnName) {
-                    $fields                 = $rowElement->xpath('./field[@name="' . $columnName . '"]');
-                    $column                 = $fields[0];
-                    $attr                   = $column->attributes('http://www.w3.org/2001/XMLSchema-instance');
-                    $null                   = isset($column['nil']) || isset($attr[0]);
-                    $columnValue            = $null ? NULL : (string)$column;
+                    $fields          = $rowElement->xpath('./field[@name="' . $columnName . '"]');
+                    $column          = $fields[0];
+                    $attr            = $column->attributes('http://www.w3.org/2001/XMLSchema-instance');
+
+                    if (isset($attr['type']) && (string) $attr['type'] === 'xs:hexBinary') {
+                        $columnValue = pack('H*',(string)$column);
+                    } else {
+                        $null        = isset($column['nil']) || isset($attr[0]);
+                        $columnValue = $null ? NULL : (string)$column;
+                    }
+
                     $rowValues[$columnName] = $columnValue;
+
                 }
 
                 $tableValues[$tableName][] = $rowValues;
@@ -106,14 +113,14 @@ class PHPUnit_Extensions_Database_DataSet_MysqlXmlDataSet extends PHPUnit_Extens
 
         foreach ($this->xmlFileContents->xpath('./database/table_structure') as $tableElement) {
             if (empty($tableElement['name'])) {
-                throw new Exception('<table_structure> elements must include a name attribute');
+                throw new PHPUnit_Extensions_Database_Exception('<table_structure> elements must include a name attribute');
             }
 
             $tableName = (string) $tableElement['name'];
 
             foreach ($tableElement->xpath('./field') as $fieldElement) {
                 if (empty($fieldElement['Field'])) {
-                    throw new Exception('<field> elements must include a Field attribute');
+                    throw new PHPUnit_Extensions_Database_Exception('<field> elements must include a Field attribute');
                 }
 
                 $columnName = (string) $fieldElement['Field'];

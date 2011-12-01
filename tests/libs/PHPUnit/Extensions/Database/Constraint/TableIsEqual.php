@@ -49,13 +49,12 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
 class PHPUnit_Extensions_Database_Constraint_TableIsEqual extends PHPUnit_Framework_Constraint
 {
-
     /**
      * @var PHPUnit_Extensions_Database_DataSet_ITable
      */
@@ -77,36 +76,23 @@ class PHPUnit_Extensions_Database_Constraint_TableIsEqual extends PHPUnit_Framew
     }
 
     /**
-     * Determines whether or not the given table matches the table used to
-     * create this constraint.
+     * Evaluates the constraint for parameter $other. Returns TRUE if the
+     * constraint is met, FALSE otherwise.
      *
-     * @param PHPUnit_Extensions_Database_DataSet_ITable $other
+     * This method can be overridden to implement the evaluation algorithm.
+     *
+     * @param mixed $other Value or object to evaluate.
      * @return bool
      */
-    public function evaluate($other)
+    protected function matches($other)
     {
-        if ($other instanceof PHPUnit_Extensions_Database_DataSet_ITable) {
-            try {
-                $this->value->assertEquals($other);
-                return TRUE;
-            } catch (Exception $e) {
-                $this->failure_reason = $e->getMessage();
-                return FALSE;
-            }
-        } else {
-            throw new InvalidArgumentException("PHPUnit_Extensions_Database_DataSet_ITable expected");
+        if (!$other instanceof PHPUnit_Extensions_Database_DataSet_ITable) {
+            throw new InvalidArgumentException(
+              'PHPUnit_Extensions_Database_DataSet_ITable expected'
+            );
         }
-    }
 
-    protected function customFailureDescription($other, $description, $not)
-    {
-        return sprintf(
-          'Failed asserting that actual %s %s Reason: %s',
-
-           $other->__toString(),
-           $this->toString(),
-           $this->failure_reason
-         );
+        return $this->value->matches($other);
     }
 
     /**
@@ -116,8 +102,8 @@ class PHPUnit_Extensions_Database_Constraint_TableIsEqual extends PHPUnit_Framew
      */
     public function toString()
     {
-        return sprintf('is equal to expected %s',
-
-        PHPUnit_Util_Type::toString($this->value));
+        return sprintf(
+          'is equal to expected %s', PHPUnit_Util_Type::toString($this->value)
+        );
     }
 }

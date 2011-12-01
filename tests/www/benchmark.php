@@ -27,8 +27,8 @@ function init_app($cache)
 function run_query($pieCrust, $uri)
 {
     $page = Page::createFromUri($pieCrust, $uri);
-    $renderer = new PageRenderer($pieCrust);
-    return $renderer->get($page, null, false);
+    $renderer = new PageRenderer($page);
+    return $renderer->get();
 }
 
 function run_detailed_query($bench, $pieCrust, $uri)
@@ -42,10 +42,10 @@ function run_detailed_query($bench, $pieCrust, $uri)
     $page->getConfig();
     $bench->setMarker('Loaded page config and contents');
     
-    $renderer = new PageRenderer($pieCrust);
+    $renderer = new PageRenderer($page);
     $bench->setMarker('Created renderer');
     
-    $page = $renderer->get($page, null, false);
+    $page = $renderer->get();
     $bench->setMarker('Rendered page');
     
     return $page;

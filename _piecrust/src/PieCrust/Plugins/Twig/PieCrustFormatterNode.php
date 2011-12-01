@@ -1,7 +1,5 @@
 <?php
 
-use PieCrust\PieCrust;
-
 
 class PieCrustFormatterNode extends Twig_Node
 {

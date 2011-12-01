@@ -5,7 +5,7 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 
 require_once 'sfYaml/lib/sfYamlDumper.php';
 
@@ -41,17 +41,17 @@ class InitCommand implements IChefCommand
         }
         
         // Create the directory structure.
-        $this->createDirectory($rootDir, PieCrust::CACHE_DIR, true);
-        $this->createDirectory($rootDir, PieCrust::CONTENT_DIR);
-        $this->createDirectory($rootDir, PieCrust::CONTENT_PAGES_DIR);
-        $this->createDirectory($rootDir, PieCrust::CONTENT_POSTS_DIR);
-        $this->createDirectory($rootDir, PieCrust::CONTENT_TEMPLATES_DIR);
+        $this->createDirectory($rootDir, PieCrustDefaults::CACHE_DIR, true);
+        $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_DIR);
+        $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_PAGES_DIR);
+        $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_POSTS_DIR);
+        $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_TEMPLATES_DIR);
         
         // Create the basic files.
         $this->createSystemFile('htaccess', $rootDir, '.htaccess');
         $this->createSystemFile('web.config', $rootDir, 'web.config');
         $this->createBootstraper($rootDir);
-        $this->createYamlFile($rootDir, PieCrust::CONFIG_PATH, array(
+        $this->createYamlFile($rootDir, PieCrustDefaults::CONFIG_PATH, array(
             'site' => array(
                 'title' => 'My New Website',
                 'description' => 'A website recently generated with PieCrust.',
@@ -62,8 +62,8 @@ class InitCommand implements IChefCommand
                 'enable' => true
             )
         ));
-        $this->createSystemFile('default_template.html', $rootDir, PieCrust::CONTENT_TEMPLATES_DIR . PieCrust::DEFAULT_PAGE_TEMPLATE_NAME . '.html');
-        $this->createSystemFile('default_index.html', $rootDir, PieCrust::CONTENT_PAGES_DIR . PieCrust::INDEX_PAGE_NAME . '.html');
+        $this->createSystemFile('default_template.html', $rootDir, PieCrustDefaults::CONTENT_TEMPLATES_DIR . PieCrustDefaults::DEFAULT_PAGE_TEMPLATE_NAME . '.html');
+        $this->createSystemFile('default_index.html', $rootDir, PieCrustDefaults::CONTENT_PAGES_DIR . PieCrustDefaults::INDEX_PAGE_NAME . '.html');
         
         echo PHP_EOL;
         echo "PieCrust website created in: " . $rootDir . PHP_EOL;

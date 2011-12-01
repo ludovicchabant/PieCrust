@@ -34,7 +34,7 @@ class HamlMarkdownFilter extends _HamlMarkdownFilter
         $includeCode = '<?php '.
                        'if (!isset($_PIECRUST_APP)) { $markdownIncludePath = "' . $defaultIncludePath . '"; }'.
                        'else {'.
-                            '$markdownConfig = $_PIECRUST_APP->getConfig("markdown");'.
+                            '$markdownConfig = $_PIECRUST_APP->getConfig()->getValue("markdown");'.
                             'if ($markdownConfig != null and $markdownConfig["use_markdown_extra"]) { $markdownIncludePath = "' . $extraIncludePath . '"; }'.
                             'else { $markdownIncludePath = "' . $defaultIncludePath . '"; }'.
                        '}'.

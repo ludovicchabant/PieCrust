@@ -2,18 +2,18 @@
 
 namespace PieCrust\Formatters;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 class MarkdownFormatter implements IFormatter
 {
     protected $markdownLibDir;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $config = $pieCrust->getConfig();
         $this->markdownLibDir = 'Markdown';
-        if ($pieCrust->getConfigValue('markdown', 'use_markdown_extra') === true)
+        if ($pieCrust->getConfig()->getValue('markdown/use_markdown_extra') === true)
         {
             $this->markdownLibDir = 'MarkdownExtra';
         }

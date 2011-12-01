@@ -2,8 +2,8 @@
 
 namespace PieCrust\Page\Filtering;
 
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
-use PieCrust\Page\Page;
 
 
 /**
@@ -24,7 +24,7 @@ class NotClause implements IClause
         $this->child = $clause;
     }
     
-    public function postMatches(Page $post)
+    public function postMatches(IPage $post)
     {
         if (!$this->child)
             throw new PieCrustException("'not' filtering clauses must have one child clause.");

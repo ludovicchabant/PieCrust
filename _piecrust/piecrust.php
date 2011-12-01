@@ -95,7 +95,7 @@ function piecrust_setup($profile = 'web')
         });
     
     // Set the time zone.
-    date_default_timezone_set('America/Los_Angeles');
+    date_default_timezone_set('UTC');
     
     // Set error handling.
     switch ($profile)
@@ -117,11 +117,10 @@ function piecrust_setup($profile = 'web')
             break;
         }
     case 'test':
-    case 'debug':
         {
             ini_set('display_errors', true);
             ini_set('display_startup_errors', true);
-            error_reporting(E_ALL);
+            error_reporting(E_ALL | E_STRICT);
             set_error_handler('piecrust_error_handler');
             break;
         }

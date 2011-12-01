@@ -1,8 +1,9 @@
 <?php
 
-require_once (dirname(__DIR__) . '/unittest_setup.php');
+require_once 'unittest_setup.php';
 
 use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\UriBuilder;
@@ -42,12 +43,12 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
             array(
                 array(),
                 '/blah',
-                $this->makeUriInfo('blah', $pagesDir . PieCrust::CATEGORY_PAGE_NAME . '.html', false, Page::TYPE_CATEGORY, 'blog', 'blah')
+                $this->makeUriInfo('blah', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', false, Page::TYPE_CATEGORY, 'blog', 'blah')
             ),
             array(
                 array(),
                 '/tag/blah',
-                $this->makeUriInfo('tag/blah', $pagesDir . PieCrust::TAG_PAGE_NAME . '.html', false, Page::TYPE_TAG, 'blog', 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', false, Page::TYPE_TAG, 'blog', 'blah')
             ),
             array(
                 array(),
@@ -82,8 +83,8 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
         $pc = new PieCrust(array('root' => PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR, 'debug' => true, 'cache' => false));
-        $pc->setConfig($config);
-        $pc->setConfigValue('site', 'root', 'http://whatever/');
+        $pc->getConfig()->set($config);
+        $pc->getConfig()->setValue('site/root', 'http://whatever/');
         
         $uriInfo = UriParser::parseUri($pc, $uri);
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');

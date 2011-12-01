@@ -2,6 +2,8 @@
 
 namespace PieCrust\Util;
 
+use \ReflectionClass;
+use \FilesystemIterator;
 use PieCrust\PieCrustException;
 
 
@@ -68,7 +70,7 @@ class PluginLoader
     protected function loadPlugins()
     {
         $classNames = array();
-        $paths = new \FilesystemIterator($this->baseDir);
+        $paths = new FilesystemIterator($this->baseDir);
         foreach ($paths as $p)
         {
             if (substr($p->getFilename(), -4) !== '.php')    // SplFileInfo::getExtension is only PHP 5.3.6+ 
@@ -95,7 +97,7 @@ class PluginLoader
         {
             if (class_exists($className))
             {
-                $reflector = new \ReflectionClass($className);
+                $reflector = new ReflectionClass($className);
                 if (!$reflector->implementsInterface($this->interfaceName))
                     throw new PieCrustException('Class "' . $className . '" doesn\'t implement interface "' . $this->interfaceName . '".');
                 $plugin = $reflector->newInstance();

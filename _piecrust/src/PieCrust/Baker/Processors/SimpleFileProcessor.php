@@ -2,7 +2,7 @@
 
 namespace PieCrust\Baker\Processors;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
 
@@ -56,7 +56,7 @@ class SimpleFileProcessor implements IProcessor
         return $this->name;
     }
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -70,6 +70,11 @@ class SimpleFileProcessor implements IProcessor
     {
         if ($extension == null or $extension == '') return false;
         return in_array($extension, $this->inputExtensions);
+    }
+
+    public function getDependencies($path)
+    {
+        return null;
     }
     
     public function getOutputFilenames($filename)

@@ -43,8 +43,6 @@
  * @since      File available since Release 3.1.4
  */
 
-require_once 'File/Iterator/Factory.php';
-
 /**
  * Suite for .phpt test cases.
  *
@@ -53,7 +51,7 @@ require_once 'File/Iterator/Factory.php';
  * @author     Sebastian Bergmann <sebastian@phpunit.de>
  * @copyright  2002-2011 Sebastian Bergmann <sebastian@phpunit.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 3.5.15
+ * @version    Release: 3.6.3
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 3.1.4
  */
@@ -72,12 +70,11 @@ class PHPUnit_Extensions_PhptTestSuite extends PHPUnit_Framework_TestSuite
         if (is_string($directory) && is_dir($directory)) {
             $this->setName($directory);
 
-            $iterator = File_Iterator_Factory::getFileIterator(
-              $directory, '.phpt'
-            );
+            $facade = new File_Iterator_Facade;
+            $files  = $facade->getFilesAsArray($directory, '.phpt');
 
-            foreach ($iterator as $testFile) {
-                $this->addTestFile($testFile->getPathname(), TRUE, $options);
+            foreach ($files as $file) {
+                $this->addTestFile($file, $options);
             }
         } else {
             throw PHPUnit_Util_InvalidArgumentHelper::factory(1, 'directory name');

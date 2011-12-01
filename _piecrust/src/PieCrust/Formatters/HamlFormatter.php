@@ -3,7 +3,9 @@
 namespace PieCrust\Formatters;
 
 use \Exception;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 
 
 class HamlFormatter implements IFormatter
@@ -11,7 +13,7 @@ class HamlFormatter implements IFormatter
     protected $pieCrust;
     protected $haml;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -33,10 +35,12 @@ class HamlFormatter implements IFormatter
         $temp = $this->pieCrust->getCacheDir() . '__format__.haml';
         $out = $this->pieCrust->getCacheDir() . '__format__.php';
         
-        @file_put_contents($temp, $text);
+        if (@file_put_contents($temp, $text) === false)
+            throw new PieCrustException("Can't write input Haml template to: " . $temp);
         
         $phpMarkup = $this->haml->parse($temp);
-        file_put_contents($out, $phpMarkup);
+        if (@file_put_contents($out, $phpMarkup) === false)
+            throw new PieCrustException("Can't write output Haml template to: " . $out);
         
         ob_start();
         try
@@ -60,7 +64,7 @@ class HamlFormatter implements IFormatter
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
             else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
-                                       array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
+                                       array('filterDir' => PieCrustDefaults::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'PhamlP/haml/HamlParser.php';

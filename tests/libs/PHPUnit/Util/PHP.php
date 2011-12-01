@@ -51,18 +51,16 @@
  * @author     Sebastian Bergmann <sebastian@phpunit.de>
  * @copyright  2002-2011 Sebastian Bergmann <sebastian@phpunit.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 3.5.15
+ * @version    Release: 3.6.3
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 3.4.0
  */
 abstract class PHPUnit_Util_PHP
 {
     /**
-     * Path to the PHP interpreter that is to be used.
-     *
-     * @var    string $phpBinary
+     * @var string $phpBinary
      */
-    protected static $phpBinary = NULL;
+    protected $phpBinary;
 
     /**
      * Returns the path to a PHP interpreter.
@@ -92,28 +90,33 @@ abstract class PHPUnit_Util_PHP
      *
      * @return string
      */
-    public static function getPhpBinary()
+    protected function getPhpBinary()
     {
-        if (self::$phpBinary === NULL) {
+        if ($this->phpBinary === NULL) {
             if (is_readable('/usr/bin/php')) {
-                self::$phpBinary = '/usr/bin/php';
+                $this->phpBinary = '/usr/bin/php';
             }
 
             else if (PHP_SAPI == 'cli' && isset($_SERVER['_']) &&
                      strpos($_SERVER['_'], 'phpunit') !== FALSE) {
-                $file            = file($_SERVER['_']);
-                $tmp             = explode(' ', $file[0]);
-                self::$phpBinary = trim($tmp[1]);
+                $file = file($_SERVER['_']);
+
+                if (strpos($file[0], ' ') !== FALSE) {
+                    $tmp = explode(' ', $file[0]);
+                    $this->phpBinary = trim($tmp[1]);
+                } else {
+                    $this->phpBinary = ltrim(trim($file[0]), '#!');
+                }
             }
 
-            if (!is_readable(self::$phpBinary)) {
-                self::$phpBinary = 'php';
+            if (!is_readable($this->phpBinary)) {
+                $this->phpBinary = 'php';
             } else {
-                self::$phpBinary = escapeshellcmd(self::$phpBinary);
+                $this->phpBinary = escapeshellcmd($this->phpBinary);
             }
         }
 
-        return self::$phpBinary;
+        return $this->phpBinary;
     }
 
     /**
@@ -141,7 +144,7 @@ abstract class PHPUnit_Util_PHP
     public function runJob($job, PHPUnit_Framework_Test $test = NULL, PHPUnit_Framework_TestResult $result = NULL)
     {
         $process = proc_open(
-          self::getPhpBinary(),
+          $this->getPhpBinary(),
           array(
             0 => array('pipe', 'r'),
             1 => array('pipe', 'w'),
@@ -224,14 +227,9 @@ abstract class PHPUnit_Util_PHP
                 $childResult = $childResult['result'];
 
                 if ($result->getCollectCodeCoverageInformation()) {
-                    $codeCoverageInformation = $childResult->getRawCodeCoverageInformation();
-
-                    if (isset($codeCoverageInformation[0]) &&
-                         is_array($codeCoverageInformation[0])) {
-                        $result->getCodeCoverage()->append(
-                          $codeCoverageInformation[0], $test
-                        );
-                    }
+                    $result->getCodeCoverage()->merge(
+                      $childResult->getCodeCoverage()
+                    );
                 }
 
                 $time           = $childResult->time();
@@ -242,25 +240,25 @@ abstract class PHPUnit_Util_PHP
 
                 if (!empty($notImplemented)) {
                     $result->addError(
-                      $test, $notImplemented[0]->thrownException(), $time
+                      $test, $this->getException($notImplemented[0]), $time
                     );
                 }
 
                 else if (!empty($skipped)) {
                     $result->addError(
-                      $test, $skipped[0]->thrownException(), $time
+                      $test, $this->getException($skipped[0]), $time
                     );
                 }
 
                 else if (!empty($errors)) {
                     $result->addError(
-                      $test, $errors[0]->thrownException(), $time
+                      $test, $this->getException($errors[0]), $time
                     );
                 }
 
                 else if (!empty($failures)) {
                     $result->addFailure(
-                      $test, $failures[0]->thrownException(), $time
+                      $test, $this->getException($failures[0]), $time
                     );
                 }
             } else {
@@ -273,5 +271,39 @@ abstract class PHPUnit_Util_PHP
         }
 
         $result->endTest($test, $time);
+    }
+
+    /**
+     * Gets the thrown exception from a PHPUnit_Framework_TestFailure.
+     *
+     * @param PHPUnit_Framework_TestFailure $error
+     * @since Method available since Release 3.6.0
+     * @see   https://github.com/sebastianbergmann/phpunit/issues/74
+     */
+    protected function getException(PHPUnit_Framework_TestFailure $error)
+    {
+        $exception = $error->thrownException();
+
+        if ($exception instanceof __PHP_Incomplete_Class) {
+            $exceptionArray = array();
+            foreach ((array)$exception as $key => $value) {
+                $key = substr($key, strrpos($key, "\0") + 1);
+                $exceptionArray[$key] = $value;
+            }
+
+            $exception = new PHPUnit_Framework_SyntheticError(
+              sprintf(
+                '%s: %s',
+                $exceptionArray['_PHP_Incomplete_Class_Name'],
+                $exceptionArray['message']
+              ),
+              $exceptionArray['code'],
+              $exceptionArray['file'],
+              $exceptionArray['line'],
+              $exceptionArray['trace']
+            );
+        }
+
+        return $exception;
     }
 }

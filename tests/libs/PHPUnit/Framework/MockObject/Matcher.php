@@ -43,7 +43,7 @@
  */
 
 /**
- * Main matcher which defines a full expectation using method, parameter and 
+ * Main matcher which defines a full expectation using method, parameter and
  * invocation matchers.
  * This matcher encapsulates all the other matchers and allows the builder to
  * set the specific matchers when the appropriate methods are called (once(),
@@ -55,7 +55,7 @@
  * @author     Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @copyright  2010-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.9
+ * @version    Release: 1.1.0
  * @link       http://github.com/sebastianbergmann/phpunit-mock-objects
  * @since      Class available since Release 1.0.0
  */
@@ -183,7 +183,7 @@ class PHPUnit_Framework_MockObject_Matcher implements PHPUnit_Framework_MockObje
 
                 $this->methodNameMatcher->toString(),
                 $this->invocationMatcher->toString(),
-                $e->getDescription()
+                $e->getMessage()
               ),
               $e->getComparisonFailure()
             );
@@ -255,7 +255,7 @@ class PHPUnit_Framework_MockObject_Matcher implements PHPUnit_Framework_MockObje
 
                 $this->methodNameMatcher->toString(),
                 $this->invocationMatcher->toString(),
-                $e->getDescription()
+                $e->getMessage()
               ),
               $e->getComparisonFailure()
             );
@@ -295,7 +295,7 @@ class PHPUnit_Framework_MockObject_Matcher implements PHPUnit_Framework_MockObje
 
                 $this->methodNameMatcher->toString(),
                 $this->invocationMatcher->toString(),
-                $e->getDescription()
+                $e->getMessage()
               )
             );
         }

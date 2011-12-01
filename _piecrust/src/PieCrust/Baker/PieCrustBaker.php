@@ -5,14 +5,17 @@ namespace PieCrust\Baker;
 use \Exception;
 use \RecursiveDirectoryIterator;
 use \RecursiveIteratorIterator;
-use PieCrust\PieCrust;
+use PieCrust\IPage;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
-use PieCrust\Page\Page;
 use PieCrust\Page\PageRepository;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -88,11 +91,13 @@ class PieCrustBaker
             {
                 if (!is_dir($this->bakeDir))
                 {
-                    @mkdir($dir, 0777, true);
+                    if (@mkdir($this->bakeDir, 0777, true) === false)
+                        throw new PieCrustException("Can't create bake directory: " . $this->bakeDir);
                 }
                 else
                 {
-                    @chmod($this->bakeDir, 0777);
+                    if (@chmod($this->bakeDir, 0777) === false)
+                        throw new PieCrustException("Can't make bake directory writeable: " . $this->bakeDir);
                 }
             }
             catch (Exception $e)
@@ -105,12 +110,12 @@ class PieCrustBaker
     /**
      * Creates a new instance of the PieCrustBaker.
      */
-    public function __construct(array $appParameters = array(), array $bakerParameters = array())
+    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array())
     {
-        $this->pieCrust = new PieCrust($appParameters);
-        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        $this->pieCrust = $pieCrust;
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         
-        $bakerParametersFromApp = $this->pieCrust->getConfig('baker');
+        $bakerParametersFromApp = $this->pieCrust->getConfig()->getValue('baker');
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
@@ -121,7 +126,8 @@ class PieCrustBaker
                                             'show_banner' => true,
                                             'copy_assets' => true,
                                             'processors' => '*',
-                                            'skip_patterns' => array('/^_/'),
+                                            'skip_patterns' => array(),
+                                            'force_patterns' => array(),
                                             'tag_combinations' => array()
                                         ),
                                         $bakerParametersFromApp,
@@ -144,25 +150,18 @@ class PieCrustBaker
         }
         
         // Validate skip patterns.
-        if (!is_array($this->parameters['skip_patterns']))
-        {
-            $this->parameters['skip_patterns'] = array($this->parameters['skip_patterns']);
-        }
-        // Convert glob patterns to regex patterns.
-        for ($i = 0; $i < count($this->parameters['skip_patterns']); ++$i)
-        {
-            $pattern = $this->parameters['skip_patterns'][$i];
-            $pattern = PieCrustBaker::globToRegex($pattern);
-            $this->parameters['skip_patterns'][$i] = $pattern;
-        }
-        // Add the default skip patterns.
-        $this->parameters['skip_patterns'][] = '/^_cache/';
-        $this->parameters['skip_patterns'][] = '/^_content/';
-        $this->parameters['skip_patterns'][] = '/^_counter/';
-        $this->parameters['skip_patterns'][] = '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/';
+        $this->parameters['skip_patterns'] = self::validatePatterns(
+            $this->parameters['skip_patterns'],
+            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
+        );
+        
+        // Validate force-bake patterns.
+        $this->parameters['force_patterns'] = self::validatePatterns(
+            $this->parameters['force_patterns']
+        );
         
         // Apply the default configuration variant, if it exists.
-        $variants = $this->pieCrust->getConfigValue('baker', 'config_variants');
+        $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
         if ($variants and isset($variants['default']))
         {
             if (!is_array($variants['default']))
@@ -201,17 +200,17 @@ class PieCrustBaker
         $overallStart = microtime(true);
         
         // Set the root for file-url mode, if specified.
-        if ($this->pieCrust->getConfigValue('baker', 'file_urls'))
+        if ($this->pieCrust->getConfig()->getValue('baker/file_urls'))
         {
-            $this->pieCrust->setConfigValue('site', 'root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
+            $this->pieCrust->getConfig()->setValue('site/root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
         }
         
         if ($this->parameters['show_banner'] or $this->parameters['info_only'])
         {
-            echo "PieCrust Baker v." . PieCrust::VERSION . PHP_EOL . PHP_EOL;
+            echo "PieCrust Baker v." . PieCrustDefaults::VERSION . PHP_EOL . PHP_EOL;
             echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
             echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
-            echo "  for url :  " . $this->pieCrust->getConfigValueUnchecked('site', 'root') . PHP_EOL;
+            echo "  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root') . PHP_EOL;
             echo PHP_EOL . PHP_EOL;
             
             if ($this->parameters['info_only'])
@@ -220,11 +219,12 @@ class PieCrustBaker
         
         // Setup the PieCrust environment.
         LinkCollector::enable();
-        $this->pieCrust->setConfigValue('baker', 'is_baking', true);
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', true);
         
         // Create the bake record.
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         $bakeInfoPath = $this->getBakeDir() . self::BAKE_INFO_FILE;
-        $this->bakeRecord = new BakeRecord($this->pieCrust, $bakeInfoPath);
+        $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
         
         // Get the cache validity information.
         $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
@@ -294,6 +294,7 @@ class PieCrustBaker
                                        array(
                                             'smart' => $this->parameters['smart'],
                                             'skip_patterns' => $this->parameters['skip_patterns'],
+                                            'force_patterns' => $this->parameters['force_patterns'],
                                             'processors' => $this->parameters['processors']
                                             )
                                        );
@@ -303,7 +304,7 @@ class PieCrustBaker
         $this->bakeRecord->saveBakeInfo($bakeInfoPath);
         $this->bakeRecord = null;
         
-        $this->pieCrust->setConfigValue('baker', 'is_baking', false);
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         LinkCollector::disable();
         
         if ($this->parameters['show_banner'])
@@ -329,11 +330,10 @@ class PieCrustBaker
     
     protected function bakePage($path)
     {
-        $pagesDir = $this->pieCrust->getPagesDir();
-        $relativePath = str_replace('\\', '/', substr($path, strlen($pagesDir)));
+        $relativePath = PathHelper::getRelativePagePath($this->pieCrust, $path, IPage::TYPE_REGULAR);
         $relativePathInfo = pathinfo($relativePath);
-        if ($relativePathInfo['filename'] == PieCrust::CATEGORY_PAGE_NAME or
-            $relativePathInfo['filename'] == PieCrust::TAG_PAGE_NAME or
+        if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
+            $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or
             $relativePathInfo['extension'] != 'html')
         {
             return false;
@@ -351,10 +351,10 @@ class PieCrustBaker
         $start = microtime(true);
         $page = PageRepository::getOrCreatePage(
                 $this->pieCrust,
-                Page::buildUri($relativePath),
+                UriBuilder::buildUri($relativePath),
                 $path
             );
-        $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+        $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
         $baker->bake($page);
         if ($baker->wasPaginationDataAccessed())
         {
@@ -370,13 +370,13 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake posts without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $fs = FileSystem::create($this->pieCrust, $blogKey);
             $postInfos = $fs->getPostFiles();
             
-            $postUrlFormat = $this->pieCrust->getConfigValue($blogKey, 'post_url');
+            $postUrlFormat = $this->pieCrust->getConfig()->getValue($blogKey.'/post_url');
             foreach ($postInfos as $postInfo)
             {
                 $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
@@ -384,26 +384,26 @@ class PieCrustBaker
                     $this->pieCrust,
                     $uri,
                     $postInfo['path'],
-                    Page::TYPE_POST,
+                    IPage::TYPE_POST,
                     $blogKey
                 );
-                $page->setDate($postInfo);
+                $page->setDate(PageHelper::getPostDate($postInfo));
                 
                 $pageWasBaked = false;
                 if ($this->shouldRebakeFile($postInfo['path']))
                 {
                     $start = microtime(true);
-                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page);
                     $pageWasBaked = true;
-                    $hasBaked = true;
                     echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
                 }
                 
                 $postInfo['blogKey'] = $blogKey;
-                $postInfo['tags'] = $page->getConfigValue('tags');
-                $postInfo['category'] = $page->getConfigValue('category');
-                $this->bakeRecord->addPostInfo($postInfo, $pageWasBaked);
+                $postInfo['tags'] = $page->getConfig()->getValue('tags');
+                $postInfo['category'] = $page->getConfig()->getValue('category');
+                $postInfo['wasBaked'] = $pageWasBaked;
+                $this->bakeRecord->addPostInfo($postInfo);
             }
         }
     }
@@ -413,20 +413,20 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
             
-            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::TAG_PAGE_NAME . '.html';
+            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
             if (!is_file($tagPagePath)) return;
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
             $combinations = $this->parameters['tag_combinations'];
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             {
                 if (array_key_exists($blogKey, $combinations))
                     $combinations = $combinations[$blogKey];
@@ -463,16 +463,16 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
-                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfigValue($blogKey, 'tag_url'), $tag);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
                     $page = PageRepository::getOrCreatePage(
                         $this->pieCrust,
                         $uri,
                         $tagPagePath,
-                        Page::TYPE_TAG,
+                        IPage::TYPE_TAG,
                         $blogKey,
                         $tag
                     );
-                    $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page, $postInfos);
                     echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
                 }
@@ -485,30 +485,30 @@ class PieCrustBaker
         if (!$this->hasPosts()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
         
-        $blogKeys = $this->pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
             $prefix = '';
-            if ($blogKey != PieCrust::DEFAULT_BLOG_KEY)
+            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
                 
-            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrust::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
             if (!is_file($categoryPagePath)) return;
             
             foreach ($this->bakeRecord->getCategoriesToBake($blogKey) as $category)
             {
                 $start = microtime(true);
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
-                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfigValue($blogKey, 'category_url'), $category);
+                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
                 $page = PageRepository::getOrCreatePage(
                     $this->pieCrust, 
                     $uri, 
                     $categoryPagePath,
-                    Page::TYPE_CATEGORY,
+                    IPage::TYPE_CATEGORY,
                     $blogKey,
                     $category
                 );
-                $baker = new PageBaker($this->pieCrust, $this->getBakeDir(), $this->getPageBakerParameters());
+                $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page, $postInfos);
                 echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
             }
@@ -561,8 +561,27 @@ class PieCrustBaker
         }
         
         $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '.*', $pattern);
-        $pattern = str_replace('\\?', '.', $pattern);
+        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
+        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
         return '/'.$pattern.'/';
+    }
+
+    public static function validatePatterns($patterns, array $defaultPatterns = array())
+    {
+        if (!is_array($patterns))
+        {
+            $patterns = array($patterns);
+        }
+        // Convert glob patterns to regex patterns.
+        for ($i = 0; $i < count($patterns); ++$i)
+        {
+            $patterns[$i] = self::globToRegex($patterns[$i]);
+        }
+        // Add the default patterns.
+        foreach ($defaultPatterns as $p)
+        {
+            $patterns[] = $p;
+        }
+        return $patterns;
     }
 }

@@ -1,8 +1,7 @@
 <?php
 
-require_once (dirname(__DIR__) . '/unittest_setup.php');
+require_once 'unittest_setup.php';
 
-use PieCrust\PieCrust;
 use PieCrust\IO\FileSystem;
 
 
@@ -22,11 +21,12 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
      */
     public function testGetPostFiles($fsType)
     {
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType);
-        $pc->setConfigValue('site', 'posts_fs', $fsType);
+        $pc = new MockPieCrust();
+        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType . '/');
+        $pc->getConfig()->setValue('site/posts_fs', $fsType);
         
         $fs = FileSystem::create($pc);
+        $this->assertNotNull($fs);
         $postFiles = $fs->getPostFiles();
         $this->assertNotNull($postFiles);
         $this->assertEquals(4, count($postFiles));
@@ -80,9 +80,9 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
      */
     public function testGetPathInfo($fsType, $wildcardComponent)
     {
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
-        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType);
-        $pc->setConfigValue('site', 'posts_fs', $fsType);
+        $pc = new MockPieCrust();
+        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType . '/');
+        $pc->getConfig()->setValue('site/posts_fs', $fsType);
         
         $fs = FileSystem::create($pc);
         $postFiles = $fs->getPostFiles();

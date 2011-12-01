@@ -2,7 +2,7 @@
 
 namespace PieCrust\Formatters;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 class SmartyPantsFormatter implements IFormatter
@@ -10,7 +10,7 @@ class SmartyPantsFormatter implements IFormatter
     protected $enabled;
     protected $smartypantsLibDir;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $config = $pieCrust->getConfig();
         $this->smartypantsLibDir = 'Smartypants';

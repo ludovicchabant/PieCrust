@@ -5,6 +5,7 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\PieCrust;
 use PieCrust\IO\FileSystem;
 use PieCrust\Baker\PieCrustBaker;
 
@@ -87,32 +88,42 @@ class BakeCommand implements IChefCommand
         }
         $outputDir = $result->command->options['output'];
         
-        // Start baking!
-        $appParameters = array('root' => $rootDir);
-        $bakerParameters = array(
-            'smart' => !$result->command->options['force'],
-            'clean_cache' => $result->command->options['force'],
-            'info_only' => $result->command->options['info_only'],
-            'config_variant' => $result->command->options['config_variant']
-        );
-        $baker = new PieCrustBaker($appParameters, $bakerParameters);
-        if ($outputDir)
+        // Set-up the app and the baker.
+        try
         {
-            $baker->setBakeDir($outputDir);
+            $appParameters = array('root' => $rootDir);
+            $app = new PieCrust($appParameters);
+            $bakerParameters = array(
+                'smart' => !$result->command->options['force'],
+                'clean_cache' => $result->command->options['force'],
+                'info_only' => $result->command->options['info_only'],
+                'config_variant' => $result->command->options['config_variant']
+            );
+            $baker = new PieCrustBaker($app, $bakerParameters);
+            if ($outputDir)
+            {
+                $baker->setBakeDir($outputDir);
+            }
+            if ($result->command->options['pretty_urls'])
+            {
+                $baker->getApp()->getConfig()->setValue('site/pretty_urls', true);
+            }
+            if ($result->command->options['root_url'])
+            {
+                $baker->getApp()->getConfig()->setValue('site/root', $result->command->options['root_url']);
+            }
+            if ($result->command->options['file_urls'])
+            {
+                $baker->getApp()->getConfig()->setValue('baker/file_urls', true);
+            }
         }
-        if ($result->command->options['pretty_urls'])
+        catch (Exception $e)
         {
-            $baker->getApp()->setConfigValue('site', 'pretty_urls', true);
-        }
-        if ($result->command->options['root_url'])
-        {
-            $baker->getApp()->setConfigValue('site', 'root', $result->command->options['root_url']);
-        }
-        if ($result->command->options['file_urls'])
-        {
-            $baker->getApp()->setConfigValue('baker', 'file_urls', true);
+            $parser->displayError($e->getMessage());
+            die();
         }
         
+        // Start baking!
         $baker->bake();
     }
 }

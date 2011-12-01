@@ -2,9 +2,8 @@
 
 namespace PieCrust\Page\Filtering;
 
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
-use PieCrust\Page\Page;
 
 
 /**
@@ -34,13 +33,13 @@ class PaginationFilter
         $this->addClausesRecursive($filterInfo, $this->getSafeRootClause());
     }
     
-    public function addPageClauses(Page $page)
+    public function addPageClauses(IPage $page)
     {
         // If the current page is a tag/category page, add filtering
         // for that.
         switch ($page->getPageType())
         {
-        case Page::TYPE_TAG:
+        case IPage::TYPE_TAG:
             $pageKey = $page->getPageKey();
             if (is_array($pageKey))
             {
@@ -56,13 +55,13 @@ class PaginationFilter
                 $this->addClause(new HasFilterClause('tags', $pageKey));
             }
             break;
-        case Page::TYPE_CATEGORY:
+        case IPage::TYPE_CATEGORY:
             $this->addClause(new IsFilterClause('category', $page->getPageKey()));
             break;
         }
     }
     
-    public function postMatches(Page $post)
+    public function postMatches(IPage $post)
     {
         if ($this->rootClause == null)
             return true;

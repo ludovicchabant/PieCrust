@@ -11,6 +11,23 @@ use PieCrust\PieCrustException;
 class ServerHelper
 {
     /**
+     * Gets the root URL of the current site, given server variables.
+     */
+    public static function getSiteRoot(array $server)
+    {
+        if (isset($server['HTTP_HOST']))
+        {
+            $host = ((isset($server['HTTPS']) and $server['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $server['HTTP_HOST'];
+            $folder = rtrim(dirname($server['PHP_SELF']), '/') .'/';
+            return $host . $folder;
+        }
+        else
+        {
+            return '/';
+        }
+    }
+
+    /**
      * Gets the requested PieCrust URI based on given server variables.
      */
     public static function getRequestUri(array $server, $prettyUrls)

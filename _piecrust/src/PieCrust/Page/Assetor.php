@@ -3,8 +3,9 @@
 namespace PieCrust\Page;
 
 use \FilesystemIterator;
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -12,7 +13,6 @@ use PieCrust\PieCrustException;
  *
  * The Assetor (worst class name ever) handles lazy loading of a page's
  * assets, stored in a subdirectory with the same name as the page file.
- *
  */
 class Assetor implements \ArrayAccess, \Iterator
 {
@@ -56,7 +56,7 @@ class Assetor implements \ArrayAccess, \Iterator
     /**
      * Creates a new instance of Assetor.
      */
-    public function __construct(PieCrust $pieCrust, Page $page)
+    public function __construct(IPage $page)
     {
         $pathParts = pathinfo($page->getPath());
         $this->assetsDir = $pathParts['dirname'] . '/' . $pathParts['filename'] . self::ASSET_DIR_SUFFIX;
@@ -64,12 +64,12 @@ class Assetor implements \ArrayAccess, \Iterator
         {
             if ($page->getAssetUrlBaseRemap() != null)
             {
-                $this->urlBase = self::buildUrlBase($pieCrust, $page);
+                $this->urlBase = self::buildUrlBase($page);
             }
             else
             {
-                $relativePath = str_replace('\\', '/', $page->getRelativePath(true));
-                $this->urlBase = $pieCrust->getConfigValueUnchecked('site', 'root') . $relativePath . self::ASSET_DIR_SUFFIX;
+                $relativePath = str_replace('\\', '/', PathHelper::getRelativePath($page->getApp(), $page->getPath(), true));
+                $this->urlBase = $page->getApp()->getConfig()->getValueUnchecked('site/root') . $relativePath . self::ASSET_DIR_SUFFIX;
             }
         }
         else
@@ -80,16 +80,6 @@ class Assetor implements \ArrayAccess, \Iterator
     }
     
     // {{{ ArrayAccess members
-    public function __isset($name)
-    {
-        return $this->offsetExists($name);
-    }
-    
-    public function __get($name)
-    {
-        return $this->offsetGet($name);
-    }
-    
     public function offsetExists($offset)
     {
         $this->ensureAssetsCache();
@@ -164,11 +154,11 @@ class Assetor implements \ArrayAccess, \Iterator
         }
     }
     
-    protected static function buildUrlBase(PieCrust $pieCrust, Page $page)
+    protected static function buildUrlBase(IPage $page)
     {
         $replacements = array(
-            '%site_root%' => $pieCrust->getConfigValueUnchecked('site', 'root'),
-            '%path' => $page->getRelativePath(true),
+            '%site_root%' => $page->getApp()->getConfig()->getValueUnchecked('site/root'),
+            '%path' => PathHelper::getRelativePath($page->getApp(), $page->getPath(), true),
             '%uri%' => $page->getUri()
         );
         return str_replace(array_keys($replacements), array_values($replacements), $page->getAssetUrlBaseRemap());

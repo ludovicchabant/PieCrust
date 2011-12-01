@@ -2,7 +2,7 @@
 
 namespace PieCrust\Page\Filtering;
 
-use PieCrust\Page\Page;
+use PieCrust\IPage;
 
 
 /**
@@ -15,9 +15,9 @@ class IsFilterClause extends FilterClause
         FilterClause::__construct($settingName, $settingValue);
     }
     
-    public function postMatches(Page $post)
+    public function postMatches(IPage $post)
     {
-        $actualValue = $post->getConfigValue($this->settingName);
+        $actualValue = $post->getConfig()->getValue($this->settingName);
         return $actualValue != null && $actualValue == $this->settingValue;
     }
 }

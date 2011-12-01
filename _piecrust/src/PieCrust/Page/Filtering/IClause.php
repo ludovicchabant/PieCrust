@@ -2,7 +2,7 @@
 
 namespace PieCrust\Page\Filtering;
 
-use PieCrust\Page\Page;
+use PieCrust\IPage;
 
 
 /**
@@ -11,5 +11,5 @@ use PieCrust\Page\Page;
 interface IClause
 {
     public function addClause(IClause $clause);
-    public function postMatches(Page $post);
+    public function postMatches(IPage $post);
 }

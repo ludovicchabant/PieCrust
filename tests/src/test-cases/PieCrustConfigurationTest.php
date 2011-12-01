@@ -1,6 +1,6 @@
 <?php
 
-require_once (dirname(__DIR__) . '/unittest_setup.php');
+require_once 'unittest_setup.php';
 
 use PieCrust\PieCrustConfiguration;
 
@@ -63,43 +63,24 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
         $pc = new PieCrustConfiguration();
         $pc->set($config);
         
-        $actualConfig = $pc->get();
         foreach ($expectedConfig as $key => $value)
         {
-            $paths = explode('/', $key);
-            $cur = $actualConfig;
-            foreach ($paths as $p)
-            {
-                $this->assertArrayHasKey($p, $cur);
-                $cur = $cur[$p];
-            }
-            $this->assertEquals($value, $cur);
+            $this->assertEquals($value, $pc->getValue($key));
         }
     }
     
-    public function testMerge()
+    public function testValidate()
     {
         $pc = new PieCrustConfiguration();
         
-        $this->assertEquals("Untitled PieCrust Website", $pc->getSectionValue('site', 'title'));
-        $this->assertEquals(null, $pc->getSectionValue('site', 'other'));
-        $this->assertEquals(null, $pc->getSectionValue('foo', 'bar'));
-        $this->assertEquals(null, $pc->getSection('simple'));
+        $this->assertEquals("Untitled PieCrust Website", $pc->getValue('site/title'));
         $pc->merge(array(
             'site' => array(
                 'title' => "Merged Title",
-                'root' => "http://without-slash",
-                'other' => "Something"
-            ),
-            'foo' => array(
-                'bar' => "FOO BAR!"
-            ),
-            'simple' => "simple value"
+                'root' => "http://without-slash"
+            )
         ));
-        $this->assertEquals("Merged Title", $pc->getSectionValue('site', 'title'));
-        $this->assertEquals("http://without-slash/", $pc->getSectionValue('site', 'root')); // should have added the trailing slash.
-        $this->assertEquals("Something", $pc->getSectionValue('site', 'other'));
-        $this->assertEquals("FOO BAR!", $pc->getSectionValue('foo', 'bar'));
-        $this->assertEquals("simple value", $pc->getSection('simple'));
+        $this->assertEquals("Merged Title", $pc->getValue('site/title'));
+        $this->assertEquals("http://without-slash/", $pc->getValue('site/root')); // should have added the trailing slash.
     }
 }

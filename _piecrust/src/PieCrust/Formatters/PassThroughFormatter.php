@@ -2,12 +2,12 @@
 
 namespace PieCrust\Formatters;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 
 
 class PassThroughFormatter implements IFormatter
 {
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
     }
     

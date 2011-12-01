@@ -49,7 +49,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -143,15 +143,14 @@ class PHPUnit_Extensions_Database_DataSet_AbstractTable implements PHPUnit_Exten
      *
      * @param PHPUnit_Extensions_Database_DataSet_ITable $other
      */
-    public function assertEquals(PHPUnit_Extensions_Database_DataSet_ITable $other)
+    public function matches(PHPUnit_Extensions_Database_DataSet_ITable $other)
     {
         $thisMetaData  = $this->getTableMetaData();
         $otherMetaData = $other->getTableMetaData();
 
-        $thisMetaData->assertEquals($otherMetaData);
-
-        if ($this->getRowCount() != $other->getRowCount()) {
-            throw new Exception("Expected row count of {$this->getRowCount()}, has a row count of {$other->getRowCount()}");
+        if (!$thisMetaData->matches($otherMetaData) ||
+            $this->getRowCount() != $other->getRowCount()) {
+            return FALSE;
         }
 
         $columns  = $thisMetaData->getColumns();
@@ -160,12 +159,24 @@ class PHPUnit_Extensions_Database_DataSet_AbstractTable implements PHPUnit_Exten
         for ($i = 0; $i < $rowCount; $i++) {
             foreach ($columns as $columnName) {
                 if ($this->getValue($i, $columnName) != $other->getValue($i, $columnName)) {
-                    throw new Exception("Expected value of {$this->getValue($i, $columnName)} for row {$i} column {$columnName}, has a value of {$other->getValue($i, $columnName)}");
+                    return FALSE;
                 }
             }
         }
 
         return TRUE;
+    }
+
+    /**
+     * Checks if a given row is in the table
+     *
+     * @param array $row
+     *
+     * @return bool
+     */
+    public function assertContainsRow(array $row)
+    {
+        return in_array($row, $this->data);
     }
 
     public function __toString()

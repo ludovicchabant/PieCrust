@@ -5,10 +5,11 @@ namespace PieCrust\Page;
 use \Iterator;
 use \Countable;
 use \ArrayAccess;
-use PieCrust\PieCrust;
+use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PageHelper;
 
 
 /**
@@ -16,6 +17,9 @@ use PieCrust\Util\UriBuilder;
  *
  * The data-source must be an array with the same keys/values as what's returned
  * by FileSystem::getPostFiles().
+ *
+ * @formatObject
+ * @explicitInclude
  */
 class PaginationIterator implements Iterator, ArrayAccess, Countable
 {
@@ -28,8 +32,9 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     
     protected $posts;
     protected $hasMorePosts;
+    protected $totalPostCount;
     
-    public function __construct(Page $parentPage, array $dataSource)
+    public function __construct(IPage $parentPage, array $dataSource)
     {
         $this->parentPage = $parentPage;
         $this->dataSource = $dataSource;
@@ -40,12 +45,19 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         
         $this->posts = null;
         $this->hasMorePosts = false;
+        $this->totalPostCount = 0;
     }
     
     public function setFilter(PaginationFilter $filter)
     {
         $this->ensureNotLoaded('setFilter');
         $this->filter = $filter;
+    }
+
+    public function getTotalPostCount()
+    {
+        $this->ensureLoaded();
+        return $this->totalPostCount;
     }
     
     public function hasMorePosts()
@@ -55,6 +67,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     }
     
     // {{{ Fluent-interface filtering members
+    /**
+     * @include
+     * @noCall
+     */
     public function skip($count)
     {
         $this->ensureNotLoaded('skip');
@@ -62,6 +78,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         return $this;
     }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function limit($count)
     {
         $this->ensureNotLoaded('limit');
@@ -69,18 +89,73 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         return $this;
     }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function filter($filterName)
     {
         $this->ensureNotLoaded('filter');
-        if (!$this->parentPage->hasConfigValue($filterName))
+        if (!$this->parentPage->getConfig()->hasValue($filterName))
             throw new PieCrustException("Couldn't find filter '".$filterName."' in the page's configuration header.");
         
-        $filterDefinition = $this->parentPage->getConfigValue($filterName);
+        $filterDefinition = $this->parentPage->getConfig()->getValue($filterName);
         $this->filter = new PaginationFilter();
         $this->filter->addClauses($filterDefinition);
         return $this;
     }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function in_category($category)
+    {
+        $this->ensureNotLoaded('in_category');
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('is_category' => $category));
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function with_tag($tag)
+    {
+        $this->ensureNotLoaded('with_tag');
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('has_tags' => $tag));
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function with_tags($tag1, $tag2 /*, $tag3, ... */)
+    {
+        $this->ensureNotLoaded('with_tags');
+
+        $tagClauses = array();
+        $argCount = func_num_args();
+        for ($i = 0; $i < $argCount; ++$i)
+        {
+            $tag = func_get_arg($i);
+            $tagClauses['has_tags'] = $tag;
+        }
+
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses(array('and' => $tagClauses));
+        return $this;
+    }
     
+    /**
+     * @include
+     * @noCall
+     */
     public function all()
     {
         $this->ensureNotLoaded('all');
@@ -92,6 +167,10 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     // }}}
     
     // {{{ Countable members
+    /**
+     * @include
+     * @noCall
+     */
     public function count()
     {
         $this->ensureLoaded();
@@ -178,50 +257,51 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         
         $this->hasMorePosts = false;
         $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfigValue('blog');
-        $postsUrlFormat = $pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
+        $blogKey = $this->parentPage->getConfig()->getValue('blog');
+        $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
         
         if ($this->filter != null and $this->filter->hasClauses())
         {
             // We have some filtering clause: that's tricky because we
             // need to filter posts using those clauses from the start to
-            // know what offset to start from. This is not very efficient and
-            // at this point the user might as well bake his website but hey,
-            // this can still be useful for debugging.
+            // know what offset to start from, and we need to enumerate it
+            // all until the end to know the total number of posts.
+            // This is not very efficient and at this point the user might 
+            // as well bake his website but this is still fast enough for 
+            // previewing in the 'chef server'.
+            $this->totalPostCount = 0;
             $filteredDataSource = array();
             foreach ($this->dataSource as $postInfo)
             {
+                // TODO: this will load *all* pages matching the given filter!
+                // TODO: we should probably, inside the loop, unload pages we
+                // TODO: know won't get into the relevant slice.
                 if (!isset($postInfo['page']))
                 {
                     $postInfo['page'] = PageRepository::getOrCreatePage(
                         $pieCrust,
                         UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                         $postInfo['path'],
-                        Page::TYPE_POST,
+                        IPage::TYPE_POST,
                         $blogKey);
                 }
                 
                 if ($this->filter->postMatches($postInfo['page']))
                 {
                     $filteredDataSource[] = $postInfo;
-                    
-                    if ($this->limit > 0)
-                    {
-                        // Exit if we have more than enough posts.
-                        // (the extra post is to make sure there is a next page)
-                        if (count($filteredDataSource) >= ($this->skip + $this->limit + 1))
-                        {
-                            $this->hasMorePosts = true;
-                            break;
-                        }
-                    }
                 }
             }
             
             // Now get the slice of the filtered post infos that is relevant
-            // for the current page number.
-            $filteredDataSource = array_slice($filteredDataSource, $this->skip, $upperLimit - $this->skip);
-            $this->posts = $this->getPostsData($filteredDataSource);
+            // for the current page number, the total number of posts, and see
+            // if there's more past our current page.
+            $limitedFilteredDataSource = array_slice($filteredDataSource, $this->skip, $upperLimit - $this->skip);
+            $this->posts = $this->getPostsData($limitedFilteredDataSource);
+            $this->totalPostCount = count($filteredDataSource);
+            if ($this->limit > 0)
+            {
+                $this->hasMorePosts = (count($filteredDataSource) > ($this->skip + $this->limit));
+            }
         }
         else
         {
@@ -239,15 +319,17 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                         $pieCrust,
                         UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
                         $postInfo['path'],
-                        Page::TYPE_POST,
+                        IPage::TYPE_POST,
                         $blogKey);
                 }
                 
                 $filteredDataSource[] = $postInfo;
             }
             
-            // Get the posts data, and see if this slice reaches the end of the data source.
+            // Get the posts data, the total number of posts, and see if this slice 
+            // reaches the end of the data source.
             $this->posts = $this->getPostsData($filteredDataSource);
+            $this->totalPostCount = count($this->dataSource);
             if ($this->limit > 0)
             {
                 $this->hasMorePosts = (count($this->dataSource) > ($this->skip + $this->limit));
@@ -259,14 +341,14 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     {
         $postsData = array();
         $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfigValue('blog');
-        $postsDateFormat = $this->parentPage->getConfigValue('date_format', $blogKey);
+        $blogKey = $this->parentPage->getConfig()->getValue('blog');
+        $postsDateFormat = PageHelper::getConfigValue($this->parentPage, 'date_format', $blogKey);
         foreach ($postInfos as $postInfo)
         {
             // Create the post with all the stuff we already know.
             $post = $postInfo['page'];
             $post->setAssetUrlBaseRemap($this->parentPage->getAssetUrlBaseRemap());
-            $post->setDate($postInfo);
+            $post->setDate(PageHelper::getPostDate($postInfo));
 
             // Build the pagination data entry for this post.
             $postData = $post->getConfig();
@@ -274,19 +356,19 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             $postData['slug'] = $post->getUri();
             
             $timestamp = $post->getDate();
-            if ($post->getConfigValue('time'))
+            if ($post->getConfig()->getValue('time'))
             {
-                $timestamp = strtotime($post->getConfigValue('time'), $timestamp);
+                $timestamp = strtotime($post->getConfig()->getValue('time'), $timestamp);
             }
             $postData['timestamp'] = $timestamp;
             $postData['date'] = date($postsDateFormat, $timestamp);
             
-            $postHasMore = true;
-            $postContents = $post->getContentSegment('content.abstract');
-            if ($postContents == null)
+            $postHasMore = false;
+            $postContents = $post->getContentSegment('content');
+            if ($post->hasContentSegment('content.abstract'))
             {
-                $postHasMore = false;
-                $postContents = $post->getContentSegment('content');
+                $postContents = $post->getContentSegment('content.abstract');
+                $postHasMore = true;
             }
             $postData['content'] = $postContents;
             $postData['has_more'] = $postHasMore;

@@ -48,7 +48,7 @@
  * @author    Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @copyright 2009-2011 Sebastian Bergmann <sb@sebastian-bergmann.de>
  * @license   http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version   Release: 1.2.6
+ * @version   Release: 1.3.0
  * @link      http://github.com/sebastianbergmann/php-file-iterator/tree
  * @since     Class available since Release 1.0.0
  */
@@ -194,4 +194,3 @@ class File_Iterator extends FilterIterator
         return $matched;
     }
 }
-?>

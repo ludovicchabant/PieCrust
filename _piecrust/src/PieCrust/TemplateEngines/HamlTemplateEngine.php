@@ -2,28 +2,11 @@
 
 namespace PieCrust\TemplateEngines;
 
-use PieCrust\PieCrust;
+use \HamlParser;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
+use PieCrust\Util\PathHelper;
 
-
-class ArrayWrapper
-{
-    protected $array;
-    
-    public function __construct(array $array)
-    {
-        $this->array = $array;
-    }
-    
-    public function __isset($name)
-    {
-        return isset($this->array[$name]);
-    }
-    
-    public function __get($name)
-    {
-        return $this->array[$name];
-    }
-}
 
 class HamlTemplateEngine implements ITemplateEngine
 {
@@ -31,7 +14,7 @@ class HamlTemplateEngine implements ITemplateEngine
     protected $cacheDir;
     protected $haml;
     
-    public function initialize(PieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
@@ -51,10 +34,12 @@ class HamlTemplateEngine implements ITemplateEngine
         $temp = $dir . '__haml_string_tpl__.haml';
         $out = $dir . '__haml_string_tpl__.php';
         
-        @file_put_contents($temp, $content);
+        if (@file_put_contents($temp, $content) === false)
+            throw new PieCrustException("Can't write input Haml template to: " . $temp);
         
         $phpMarkup = $this->haml->parse($temp);
-        file_put_contents($out, $phpMarkup);
+        if (@file_put_contents($out, $phpMarkup) === false)
+            throw new PieCrustException("Can't write output Haml template to: " . $out);
         
         // Declare all top-level data as local-scope variables before including the HAML PHP.
         $_PIECRUST_APP = $this->pieCrust;
@@ -62,7 +47,7 @@ class HamlTemplateEngine implements ITemplateEngine
         {
             if (is_array($value))
             {
-                $$key = new ArrayWrapper($value);
+                $$key = (object)$value;
             }
             else
             {
@@ -76,7 +61,7 @@ class HamlTemplateEngine implements ITemplateEngine
     {
         $this->ensureLoaded();
         
-        $templatePath = PieCrust::getTemplatePath($this->pieCrust, $templateName);
+        $templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
         $outputPath = $this->haml->parse($templatePath, $this->cacheDir);
         if ($outputPath === false) throw new PieCrustException("An error occured processing template: " . $templateName);
         
@@ -86,7 +71,7 @@ class HamlTemplateEngine implements ITemplateEngine
         {
             if (is_array($value))
             {
-                $$key = new ArrayWrapper($value);
+                $$key = (object)$value;
             }
             else
             {
@@ -114,11 +99,11 @@ class HamlTemplateEngine implements ITemplateEngine
             if (isset($appConfig['haml'])) $hamlOptions = $appConfig['haml'];
             else $hamlOptions = array('ugly' => false, 'style' => 'nested');
             $hamlOptions = array_merge(
-                                       array('filterDir' => PieCrust::APP_DIR . '/Plugins/Haml'),
+                                       array('filterDir' => PieCrustDefaults::APP_DIR . '/Plugins/Haml'),
                                        $hamlOptions
                                        );
             require_once 'PhamlP/haml/HamlParser.php';
-            $this->haml = new \HamlParser($hamlOptions);
+            $this->haml = new HamlParser($hamlOptions);
         }
     }
 }

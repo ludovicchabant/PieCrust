@@ -4,7 +4,8 @@ namespace PieCrust\Baker;
 
 use \Exception;
 use \DirectoryIterator;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PluginLoader;
 
@@ -18,6 +19,15 @@ class DirectoryBaker
     protected $rootDirLength;
     protected $bakeDir;
     protected $parameters;
+
+    protected $bakedFiles;
+    /**
+     * Gets the files baked last time.
+     */
+    public function getBakedFiles()
+    {
+        return $this->bakedFiles;
+    }
     
     protected $processorsLoader;
     /**
@@ -29,14 +39,14 @@ class DirectoryBaker
         {
             $processorsToFilter = $this->parameters['processors'];
             $this->processorsLoader = new PluginLoader(
-                                            'PieCrust\\Baker\\Processors\\IProcessor',
-                                            PieCrust::APP_DIR . '/Baker/Processors',
-                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
-                                            $processorsToFilter == '*' ?
-                                                null :
-                                                function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
-                                            'SimpleFileProcessor.php'
-                                            );
+                'PieCrust\\Baker\\Processors\\IProcessor',
+                PieCrustDefaults::APP_DIR . '/Baker/Processors',
+                function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
+                $processorsToFilter == '*' ?
+                    null :
+                    function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
+                'SimpleFileProcessor.php'
+            );
             foreach ($this->processorsLoader->getPlugins() as $proc)
             {
                 $proc->initialize($this->pieCrust);
@@ -48,21 +58,27 @@ class DirectoryBaker
     /**
      * Creates a new instance of DirectoryBaker.
      */
-    public function __construct(PieCrust $pieCrust, $bakeDir, array $parameters = array())
+    public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array())
     {
         $this->pieCrust = $pieCrust;
-        $this->bakeDir = rtrim(str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $bakeDir), '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
                                         array(
                                               'smart' => true,
                                               'skip_patterns' => array(),
+                                              'force_patterns' => array(),
                                               'processors' => array('copy')
                                               ),
                                         $parameters
                                         );
         
+        // Compute the number of characters we need to remove from file paths
+        // to get their relative paths.
         $rootDir = $this->pieCrust->getRootDir();
+        $rootDir = rtrim($rootDir, '/\\') . '/';
         $this->rootDirLength = strlen($rootDir);
+
+        $this->bakedFiles = null;
         
         if (!is_dir($this->bakeDir) or !is_writable($this->bakeDir))
         {
@@ -75,6 +91,7 @@ class DirectoryBaker
      */
     public function bake()
     {
+        $this->bakedFiles = array();
         $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
     }
     
@@ -87,33 +104,45 @@ class DirectoryBaker
             {
                 continue;
             }
-            if ($i->getPathname() . DIRECTORY_SEPARATOR == $this->bakeDir)
-            {
-                continue;
-            }
+
+            // Figure out the root-relative path.
+            $relative = substr($i->getPathname(), $this->rootDirLength);
+
+            // See if we need to skip this file/directory.
             $shouldSkip = false;
             foreach ($this->parameters['skip_patterns'] as $p)
             {
-                if (preg_match($p, $i->getFilename()))
+                if (preg_match($p, $relative))
                 {
                     $shouldSkip = true;
                     break;
                 }
             }
-            if ($shouldSkip) continue;
+            if ($shouldSkip)
+                continue;
             
-            $relative = substr($i->getPathname(), $this->rootDirLength);
             if ($i->isDir())
             {
+                // Current path is a directory... recurse into it, unless it's
+                // actually the directory we're baking *into* (which would cause
+                // an infinite loop and lots of files being created!).
+                $normalizedPathname = rtrim(str_replace('\\', '/', $i->getPathname()), '/') . '/';
+                if ($normalizedPathname == $this->bakeDir)
+                {
+                    continue;
+                }
+
                 $destination = $this->bakeDir . $relative;
                 if (!is_dir($destination))
                 {
-                    @mkdir($destination, 0777, true);
+                    if (@mkdir($destination, 0777, true) === false)
+                        throw new PieCrustException("Can't create directory: " . $destination);
                 }
                 $this->bakeDirectory($i->getPathname(), $level + 1);
             }
             else if ($i->isFile())
             {
+                // Current path is a file... first, find a processor for it.
                 $fileProcessor = null;
                 foreach ($this->getProcessorsLoader()->getPlugins() as $proc)
                 {
@@ -125,23 +154,72 @@ class DirectoryBaker
                 }
                 if ($fileProcessor != null)
                 {
-                    $isUpToDate = false;
                     $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
-                    $outputFilenames = $fileProcessor->getOutputFilenames($i->getFilename());
-                    if (!is_array($outputFilenames))
+
+                    // Figure out if we need to actually process this file.
+                    $isUpToDate = false;
+                    
+                    // Should the file be force-baked?
+                    foreach ($this->parameters['force_patterns'] as $p)
                     {
-                        $outputFilenames = array($outputFilenames);
+                        if (preg_match($p, $i->getFilename()))
+                        {
+                            $shouldSkip = true;
+                            break;
+                        }
                     }
+
+                    // Is the output file up to date with its input and dependencies?
                     if ($this->parameters['smart'])
                     {
                         $isUpToDate = true;
-                        foreach ($outputFilenames as $f)
+
+                        // Get the paths and last modification times for the input file and
+                        // all its dependencies, if any.
+                        $inputFilenames = array($i->getPathname() => $i->getMTime());
+                        try
                         {
-                            $destination = $destinationDir . $f;
-                            if (!is_file($destination) or $i->getMTime() >= filemtime($destination))
+                            $dependencies = $fileProcessor->getDependencies($i->getPathname());
+                            if ($dependencies)
                             {
-                                $isUpToDate = false;
-                                break;
+                                foreach ($dependencies as $dep)
+                                {
+                                    $inputFilenames[$dep] = filemtime($dep);
+                                }
+                            }
+                        }
+                        catch(Exception $e)
+                        {
+                            echo "Warning: " . $e->getMessage() . " -- Will force-bake " . $relative . PHP_EOL;
+                            $isUpToDate = false;
+                        }
+
+                        if ($isUpToDate)
+                        {
+                            // Get the paths and last modification times for the output files.
+                            $outputFilenames = array();
+                            $outputs = $fileProcessor->getOutputFilenames($i->getFilename());
+                            if (!is_array($outputs))
+                            {
+                                $outputs = array($outputs);
+                            }
+                            foreach ($outputs as $out)
+                            {
+                                $fullOut = $destinationDir . $out;
+                                $outputFilenames[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
+                            }
+
+                            // Compare those times to see if the output file is up to date.
+                            foreach ($inputFilenames as $iFn => $iTime)
+                            {
+                                foreach ($outputFilenames as $oFn => $oTime)
+                                {
+                                    if (!$oTime || $iTime >= $oTime)
+                                    {
+                                        $isUpToDate = false;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -151,6 +229,7 @@ class DirectoryBaker
                         {
                             $start = microtime(true);
                             $fileProcessor->process($i->getPathname(), $destinationDir);
+                            $this->bakedFiles[] = $relative;
                             echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
                         }
                         catch (Exception $e)
@@ -161,7 +240,7 @@ class DirectoryBaker
                 }
                 else
                 {
-                    echo "Warning: no processor for " . $relative . PHP_EOL;
+                    echo "Warning: No processor for " . $relative . PHP_EOL;
                 }
             }
         }

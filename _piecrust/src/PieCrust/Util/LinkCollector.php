@@ -2,7 +2,7 @@
 
 namespace PieCrust\Util;
 
-use PieCrust\PieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 
 
@@ -77,7 +77,7 @@ class LinkCollector
         }
         if ($blogKey == null)
         {
-            $blogKey = PieCrust::DEFAULT_BLOG_KEY;
+            $blogKey = PieCrustDefaults::DEFAULT_BLOG_KEY;
         }
         if (!array_key_exists($blogKey, $this->tagCombinations))
         {

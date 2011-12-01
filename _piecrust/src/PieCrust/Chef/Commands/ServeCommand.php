@@ -39,21 +39,6 @@ class ServeCommand implements IChefCommand
             'default'     => 8080,
             'help_name'   => 'PORT'
         ));
-        $serverParser->addOption('autobake', array(
-            'short_name'  => '-b',
-            'long_name'   => '--autobake',
-            'description' => "Auto-bakes the website to the specified directory, and serve that directory instead of running PieCrust on-demand.",
-            'default'     => null,
-            'help_name'   => 'OUTPUT_PATH'
-        ));
-        $serverParser->addOption('full_first_bake', array(
-            'short_name'  => '-f',
-            'long_name'   => '--forcefirstbake',
-            'description' => "When 'autobake' is turned on, do a full first bake before running the server.",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'FORCE'
-        ));
         $serverParser->addOption('log_file', array(
             'short_name'  => '-l',
             'long_name'   => '--log',
@@ -88,13 +73,10 @@ class ServeCommand implements IChefCommand
             die();
         }
         $port = intval($result->command->options['port']);
-        $autobakeDir = $result->command->options['autobake'];
-        $fullFirstBake = $result->command->options['full_first_bake'];
         $templatesDir = $result->command->options['templates_dir'];
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $logConsole = $result->command->options['log_console'];
-
         if ($templatesDir)
         {
             $parser->displayError("-t/--templates_dir is deprecated. You should now define your templates directories with 'site/template_dirs' in the website configuration file.", false);
@@ -106,8 +88,6 @@ class ServeCommand implements IChefCommand
                                      array(
                                         'port' => $port,
                                         'templates_dir' => $templatesDir,
-                                        'autobake' => (($autobakeDir != null) ? $autobakeDir : false),
-                                        'full_first_bake' => $fullFirstBake,
                                         'log_file' => $logFile,
                                         'log_console' => $logConsole
                                      ));

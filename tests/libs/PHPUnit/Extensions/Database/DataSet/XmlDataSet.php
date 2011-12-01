@@ -49,7 +49,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -59,12 +59,12 @@ class PHPUnit_Extensions_Database_DataSet_XmlDataSet extends PHPUnit_Extensions_
     protected function getTableInfo(Array &$tableColumns, Array &$tableValues)
     {
         if ($this->xmlFileContents->getName() != 'dataset') {
-            throw new Exception("The root element of an xml data set file must be called <dataset>");
+            throw new PHPUnit_Extensions_Database_Exception("The root element of an xml data set file must be called <dataset>");
         }
 
         foreach ($this->xmlFileContents->xpath('/dataset/table') as $tableElement) {
             if (empty($tableElement['name'])) {
-                throw new Exception("Table elements must include a name attribute specifying the table name.");
+                throw new PHPUnit_Extensions_Database_Exception("Table elements must include a name attribute specifying the table name.");
             }
 
             $tableName = (string)$tableElement['name'];
@@ -82,7 +82,7 @@ class PHPUnit_Extensions_Database_DataSet_XmlDataSet extends PHPUnit_Extensions_
             foreach ($tableElement->xpath('./column') as $columnElement) {
                 $columnName = (string)$columnElement;
                 if (empty($columnName)) {
-                    throw new Exception("column elements cannot be empty");
+                    throw new PHPUnit_Extensions_Database_Exception("column elements cannot be empty");
                 }
 
                 if (!in_array($columnName, $tableColumns[$tableName])) {
@@ -107,7 +107,7 @@ class PHPUnit_Extensions_Database_DataSet_XmlDataSet extends PHPUnit_Extensions_
                             $index++;
                             break;
                         default:
-                            throw new Exception("Unknown child in the a row element.");
+                            throw new PHPUnit_Extensions_Database_Exception("Unknown child in the a row element.");
                     }
                 }
 

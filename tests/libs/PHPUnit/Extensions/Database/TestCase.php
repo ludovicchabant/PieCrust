@@ -50,7 +50,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -246,5 +246,32 @@ abstract class PHPUnit_Extensions_Database_TestCase extends PHPUnit_Framework_Te
         $constraint = new PHPUnit_Extensions_Database_Constraint_DataSetIsEqual($expected);
 
         self::assertThat($actual, $constraint, $message);
+    }
+
+    /**
+     * Assert that a given table has a given amount of rows
+     *
+     * @param string $tableName Name of the table
+     * @param int $expected Expected amount of rows in the table
+     * @param string $message Optional message
+     */
+    public static function assertTableRowCount($tableName, $expected, $message = '')
+    {
+        $constraint = new PHPUnit_Extensions_Database_Constraint_TableRowCount($tableName, $expected);
+        $actual = $this->getConnection()->getRowCount($tableName);
+
+        self::assertThat($actual, $constraint, $message);
+    }
+
+    /**
+     * Asserts that a given table contains a given row
+     *
+     * @param array $expectedRow Row expected to find
+     * @param PHPUnit_Extensions_Database_DataSet_ITable $table Table to look into
+     * @param string $message Optional message
+     */
+    public function assertTableContains(array $expectedRow, PHPUnit_Extensions_Database_DataSet_ITable $table, $message = '')
+    {
+        self::assertThat($table->assertContainsRow($expectedRow), self::isTrue(), $message);
     }
 }

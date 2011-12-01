@@ -2,8 +2,13 @@
 
 namespace PieCrust\Page;
 
-use PieCrust\PieCrust;
+use \Exception;
+use \FilesystemIterator;
+use PieCrust\IPage;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PathHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -11,45 +16,40 @@ use PieCrust\PieCrustException;
  */
 class Linker implements \ArrayAccess, \Iterator
 {
-    /**
-     * Default naming.
-     */
-    const DIR_SUFFIX = '_';
-    
-    protected $pieCrust;
+    protected $parentPage;
     protected $baseDir;
-    protected $selfKey;
+    protected $selfName;
     protected $linksCache;
     
     /**
      * Creates a new instance of Linker.
      */
-    public function __construct(PieCrust $pieCrust, $pageOrBaseDir)
+    public function __construct(IPage $page, $dir = null)
     {
-        $this->pieCrust = $pieCrust;
-        if ($pageOrBaseDir instanceof Page)
+        $this->page = $page;
+        if ($dir)
         {
-            $this->baseDir = dirname($pageOrBaseDir->getPath()) . '/';
-            $this->selfKey = basename($pageOrBaseDir->getPath(), '.html');
+            $this->baseDir = $dir;
+            $this->selfName = null;
         }
         else
         {
-            $this->baseDir = $pageOrBaseDir;
-            $this->selfKey = null;
+            $this->baseDir = dirname($page->getPath()) . '/';
+            $this->selfName = basename($page->getPath());
         }
     }
     
+    public function is_dir()
+    {
+        return true;
+    }
+    
+    public function is_self()
+    {
+        return false;
+    }
+    
     // {{{ ArrayAccess members
-    public function __isset($name)
-    {
-        return $this->offsetExists($name);
-    }
-    
-    public function __get($name)
-    {
-        return $this->offsetGet($name);
-    }
-    
     public function offsetExists($offset)
     {
         $this->ensureLinksCache();
@@ -96,7 +96,7 @@ class Linker implements \ArrayAccess, \Iterator
     {
         $this->ensureLinksCache();
         $res = next($this->linksCache);
-        while ($res !== null and ($res instanceof Linker))
+        while ($res and $res instanceof Linker)
         {
             $res = next($this->linksCache);
         }
@@ -114,28 +114,74 @@ class Linker implements \ArrayAccess, \Iterator
     {
         if ($this->linksCache === null)
         {
-            $this->linksCache = array();
-            $it = new \FilesystemIterator($this->baseDir);
-            foreach ($it as $item)
+            try
             {
-                if ($item->isDir())
+                $this->linksCache = array();
+                $it = new FilesystemIterator($this->baseDir);
+                foreach ($it as $item)
                 {
-                    $key = $item->getBasename() . self::DIR_SUFFIX;
-                    $linker = new Linker($this->pieCrust, $item->getPathname(), null);
-                    $this->linksCache[$key] = $linker;
+                    $basename = $item->getBasename();
+                    if (!$basename or $basename[0] == '.')
+                    {
+                        continue;
+                    }
+                    else if ($item->isDir())
+                    {
+                        $linker = new Linker($this->page, $item->getPathname());
+                        $this->linksCache[$basename . '_'] = $linker;
+                        // We add '_' at the end of the directory name to avoid
+                        // collisions with a possibly existing page with the same
+                        // name (since we strip out the '.html' extension).
+                        // This means the user must access directories with
+                        // 'link.dirname_' instead of 'link.dirname' but hey, if
+                        // you have a better idea, send me an email!
+                    }
+                    else if (pathinfo($basename, PATHINFO_EXTENSION) == 'html')
+                    {
+                        $path = $item->getPathname();
+                        $key = $item->getBasename('.html');
+                        try
+                        {
+                            $relativePath = PathHelper::getRelativePagePath($this->page->getApp(), $path, $this->page->getPageType());
+                            $uri = UriBuilder::buildUri($relativePath);
+                            $page = PageRepository::getOrCreatePage($this->page->getApp(), $uri, $path);
+                            $this->linksCache[$key] = array(
+                                'uri' => $uri,
+                                'name' => $key,
+                                'is_dir' => false,
+                                'is_self' => ($basename == $this->selfName),
+                                'page' => $page->getConfig()->get()
+                            );
+                        }
+                        catch (Exception $e)
+                        {
+                            throw new PieCrustException("Error while loading page '" . $path .
+                                                        "' for linking from '" . $this->page->getUri() .
+                                                        "': " . $e->getMessage(), 0, $e);
+                        }
+                    }
                 }
-                else
+                
+                if ($this->selfName != null)
                 {
-                    $key = $item->getBasename('.html');
-                    $uri = Page::buildUri($item->getPathname(), Page::TYPE_REGULAR);
-                    $pageInfo = array(
-                        'uri' => $uri,
-                        'name' => $key,
-                        'is_self' => ($key == $this->selfKey),
-                        'page' => new PageWrapper(PageRepository::getOrCreatePage($this->pieCrust, $uri, $item->getPathname()))
-                    );
-                    $this->linksCache[$key] = $pageInfo;
+                    // Add a link to go up to the parent directory, but stay inside
+                    // the app's pages directory.
+                    $parentBaseDir = dirname($this->baseDir);
+                    if (strlen($parentBaseDir) >= $this->page->getApp()->getPagesDir())
+                    {
+                        $linker = new Linker($this->page, dirname($this->baseDir));
+                        $this->linksCache['_'] = $linker;
+                    }
+                    
+                    // Also add a shortcut to the pages directory.
+                    $linker = new Linker($this->page, $this->page->getApp()->getPagesDir());
+                    $this->linksCache['_pages_'] = $linker;
                 }
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException("Error while building the links from page '" . $this->page->getUri() .
+                                            "': " . $e->getMessage(), 0, $e);
             }
         }
     }

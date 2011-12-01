@@ -2,7 +2,8 @@
 
 namespace PieCrust\Baker;
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\Util\LinkCollector;
 
 
@@ -25,7 +26,7 @@ class BakeRecord
     /**
      * Creates a new instance of the BakeRecord.
      */
-    public function __construct(PieCrust $pieCrust, $lastBakeInfoPath)
+    public function __construct(array $blogKeys, $lastBakeInfoPath = false)
     {
         $this->postInfos = array();
         $this->postTags = array();
@@ -34,7 +35,7 @@ class BakeRecord
         $this->categoriesToBake = array();
         $this->wasAnyPostBaked = false;
         
-        foreach ($pieCrust->getConfigValueUnchecked('site', 'blogs') as $blogKey)
+        foreach ($blogKeys as $blogKey)
         {
             $this->postTags[$blogKey] = array();
             $this->tagsToBake[$blogKey] = array();
@@ -59,12 +60,13 @@ class BakeRecord
      * The information must contain the blog that the post belongs to,
      * its tags, and its category.
      */
-    public function addPostInfo(array $postInfo, $wasBaked)
+    public function addPostInfo(array $postInfo)
     {
         $postIndex = count($this->postInfos);
         $this->postInfos[] = $postInfo;
         
         $blogKey = $postInfo['blogKey'];
+        $wasBaked = (isset($postInfo['wasBaked']) and $postInfo['wasBaked']);
         
         $tags = $postInfo['tags'];
         if ($tags != null)
@@ -220,15 +222,10 @@ class BakeRecord
     /**
      * Saves the current bake record to disk.
      */
-    public function saveBakeInfo($bakeInfoPath, array $infos = array())
+    public function saveBakeInfo($bakeInfoPath)
     {
-        $infos = array_merge(
-            array('time' => time()),
-            $infos
-        );
-        
-        $this->bakeInfo['time'] = $infos['time'];
-        
+        $this->bakeInfo['version'] = PieCrustDefaults::VERSION;
+        $this->bakeInfo['time'] = time();
         $jsonMarkup = json_encode($this->bakeInfo);
         file_put_contents($bakeInfoPath, $jsonMarkup);
     }
@@ -236,26 +233,27 @@ class BakeRecord
     protected function loadBakeInfo($bakeInfoPath)
     {
         $bakeInfo = array(
+            'version' => false,
             'time' => false,
             'pagesUsingPosts' => array(),
             'knownTagCombinations' => array()
         );
     
-        if (is_file($bakeInfoPath))
+        if (is_string($bakeInfoPath) and is_file($bakeInfoPath))
         {
             $loadedBakeInfo = json_decode(file_get_contents($bakeInfoPath), true);
             $bakeInfo = array_merge($bakeInfo, $loadedBakeInfo);
-            
-            // Do a full bake if we don't have enough information from the existing bake info file.
-            $this->shouldDoFullBake = (!array_key_exists('time', $loadedBakeInfo) or
-                                       !array_key_exists('knownTagCombinations', $loadedBakeInfo));
         }
-        else
+        else if (is_array($bakeInfoPath))
         {
-            // Do a full bake if we don't know if there was a bake before.
-            $this->shouldDoFullBake = true;
+            $bakeInfo = array_merge($bakeInfo, $bakeInfoPath);
         }
+        
         $this->bakeInfo = $bakeInfo;
+        $this->shouldDoFullBake = (
+            !$bakeInfo['time'] or
+            $bakeInfo['version'] != PieCrustDefaults::VERSION
+        );
     }
 }
 

@@ -2,7 +2,7 @@
 
 require_once 'PieCrustFormatterTokenParser.php';
 
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\Util\LinkCollector;
 use PieCrust\Util\UriBuilder;
 
@@ -15,15 +15,15 @@ class PieCrustExtension extends Twig_Extension
     protected $tagUrlFormat;
     protected $categoryUrlFormat;
     
-    public function __construct(PieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         
-        $blogKeys = $pieCrust->getConfigValueUnchecked('site', 'blogs');
+        $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         $this->defaultBlogKey = $blogKeys[0];
-        $this->postUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'post_url');
-        $this->tagUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'tag_url');
-        $this->categoryUrlFormat = $pieCrust->getConfigValueUnchecked($blogKeys[0], 'category_url');
+        $this->postUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/post_url');
+        $this->tagUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/tag_url');
+        $this->categoryUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/category_url');
     }
     
     public function getName()
@@ -48,6 +48,13 @@ class PieCrustExtension extends Twig_Extension
         );
     }
     
+    public function getFilters()
+    {
+        return array(
+            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter'),
+        );
+    }
+    
     public function getUrl($value)
     {
         return $this->pieCrust->formatUri($value);
@@ -61,20 +68,34 @@ class PieCrustExtension extends Twig_Extension
             'day' => $day,
             'name' => $slug
         );
-        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'post_url');
+        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
         return $this->pieCrust->formatUri(UriBuilder::buildPostUri($format, $postInfo));
     }
     
     public function getTagUrl($value, $blogKey = null)
     {
         if (LinkCollector::isEnabled()) LinkCollector::instance()->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
-        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'tag_url');
+        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url');
         return $this->pieCrust->formatUri(UriBuilder::buildTagUri($format, $value));
     }
     
     public function getCategoryUrl($value, $blogKey = null)
     {
-        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfigValueUnchecked($blogKey, 'category_url');
+        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
+    }
+
+    public function addNoCacheParameter($value, $parameterName = 't', $parameterValue = null)
+    {
+        if (!$parameterValue)
+            $parameterValue = time();
+
+        if (strpos($value, '?') === false)
+            $value .= '?';
+        else
+            $value .= '&';
+        $value .= $parameterName . '=' . $parameterValue;
+
+        return $value;
     }
 }

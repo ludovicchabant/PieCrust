@@ -49,7 +49,7 @@
  * @author     Mike Lively <m@digitalsandwich.com>
  * @copyright  2010 Mike Lively <m@digitalsandwich.com>
  * @license    http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version    Release: 1.0.3
+ * @version    Release: 1.1.1
  * @link       http://www.phpunit.de/
  * @since      Class available since Release 1.0.0
  */
@@ -110,14 +110,11 @@ abstract class PHPUnit_Extensions_Database_DataSet_AbstractTableMetaData impleme
      *
      * @param PHPUnit_Extensions_Database_DataSet_ITableMetaData $other
      */
-    public function assertEquals(PHPUnit_Extensions_Database_DataSet_ITableMetaData $other)
+    public function matches(PHPUnit_Extensions_Database_DataSet_ITableMetaData $other)
     {
-        if ($this->getTableName() != $other->getTableName()) {
-            throw new Exception("Expected table name of {$this->getTableName()}, has a name of {$other->getTableName()}");
-        }
-
-        if ($this->getColumns() != $other->getColumns()) {
-            throw new Exception("Expected following columns: " . implode(', ', $this->getColumns()) . "; has columns: " . implode(', ', $other->getColumns()));
+        if ($this->getTableName() != $other->getTableName() ||
+            $this->getColumns() != $other->getColumns()) {
+            return FALSE;
         }
 
         return TRUE;

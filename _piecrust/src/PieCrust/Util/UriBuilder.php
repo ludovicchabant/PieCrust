@@ -2,12 +2,31 @@
 
 namespace PieCrust\Util;
 
+use PieCrust\IPage;
+
 
 /**
  * A utility class for building page URIs and URI patterns.
  */
 class UriBuilder
 {
+    /**
+     * Gets the URI of a page given a relative path.
+     */
+    public static function buildUri($relativePath, $stripExtension = true, $stripIndex = true)
+    {
+        $uri = $relativePath;
+        if ($stripExtension)
+        {
+            $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);    // strip the extension
+        }
+        if ($stripIndex)
+        {
+            $uri = str_replace('_index', '', $uri); // strip special name
+        }
+        return $uri;
+    }
+    
     /**
      * Builds the URL of a post given a URL format.
      */
