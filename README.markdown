@@ -36,7 +36,10 @@ There are 2 branches:
 Breaking Changes
 ================
 
-These are the latest breaking changes in the main branch:
+These are the latest breaking changes.
+
+Stable Branch
+-------------
 
 * __Baking__: the `skip_patterns` setting is now applied to the relative path of files
   instead of the filename. This means that patterns like `/^blah/` will only skip
@@ -48,4 +51,9 @@ These are the latest breaking changes in the main branch:
   now more naturally specify additional templates directories in the configuration file
   with the `site/templates_dirs` setting.
 
+
+Main Branch
+-----------
+
+_none_.
 
