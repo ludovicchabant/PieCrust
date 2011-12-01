@@ -162,7 +162,9 @@ class Paginator
 
         $totalPostCount = $this->total_post_count(); 
         $postsPerPage = $this->posts_per_page();
-        return ceil($totalPostCount / $postsPerPage);
+        if (is_int($postsPerPage) && $postsPerPage > 0)
+            return ceil($totalPostCount / $postsPerPage);
+        return $totalPostCount;
     }
     
     /**
@@ -213,26 +215,30 @@ class Paginator
         if ($this->postsIterator != null)
             return;
         
-        $blogKey = $this->page->getConfig()->getValue('blog');
         
         // If not pagination data source was provided, load up a new FileSystem
         // and get the list of posts from the disk.
         $postInfos = $this->paginationDataSource;
         if ($postInfos === null)
         {
+            $blogKey = $this->page->getConfig()->getValue('blog');
             $fs = FileSystem::create($this->page->getApp(), $blogKey);
             $postInfos = $fs->getPostFiles();
         }
         
         // Create the pagination iterator.
-        $postsPerPage = PageHelper::getConfigValue($this->page, 'posts_per_page', $blogKey);
-        $postsFilter = $this->getPaginationFilter();
-        $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-        
         $this->postsIterator = new PaginationIterator($this->page, $postInfos);
+        // Add the filters for the current page.
+        $postsFilter = $this->getPaginationFilter();
         $this->postsIterator->setFilter($postsFilter);
-        $this->postsIterator->limit($postsPerPage);
-        $this->postsIterator->skip($offset);
+        // If the `posts_per_page` setting is valid, paginate accordingly.
+        $postsPerPage = $this->posts_per_page();
+        if (is_int($postsPerPage) && $postsPerPage > 0)
+        {
+            $this->postsIterator->limit($postsPerPage);
+            $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
+            $this->postsIterator->skip($offset);
+        }
     }
     
     protected function getPaginationFilter()
