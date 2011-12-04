@@ -19,6 +19,9 @@ class HierarchicalFileSystem extends FileSystem
     
     public function getPostFiles()
     {
+        if (!$this->pieCrust->getPostsDir())
+            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+
         $result = array();
         
         $years = array();

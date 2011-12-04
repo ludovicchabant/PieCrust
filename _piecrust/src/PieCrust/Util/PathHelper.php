@@ -38,6 +38,8 @@ class PathHelper
             default:
                 throw new InvalidArgumentException("Unknown page type given: " . $pageType);
         }
+        if (!$basePath)
+            throw new PieCrustException("Can't get a relative page path if no pages or posts directory exsists in the website.");
         
         $relativePath = substr($path, strlen($basePath));
         if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);

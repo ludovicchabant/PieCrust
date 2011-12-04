@@ -7,6 +7,7 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\UriBuilder;
 
@@ -164,18 +165,42 @@ class Linker implements \ArrayAccess, \Iterator
                 
                 if ($this->selfName != null)
                 {
-                    // Add a link to go up to the parent directory, but stay inside
-                    // the app's pages directory.
-                    $parentBaseDir = dirname($this->baseDir);
-                    if (strlen($parentBaseDir) >= $this->page->getApp()->getPagesDir())
+                    if (PageHelper::isRegular($this->parentPage))
                     {
-                        $linker = new Linker($this->page, dirname($this->baseDir));
-                        $this->linksCache['_'] = $linker;
+                        // Add a link to go up to the parent directory, but stay inside
+                        // the app's pages directory.
+                        $parentBaseDir = dirname($this->baseDir);
+                        if (strlen($parentBaseDir) >= strlen($this->page->getApp()->getPagesDir()))
+                        {
+                            $linker = new Linker($this->page, dirname($this->baseDir));
+                            $this->linksCache['_'] = $linker;
+                        }
+                    }
+                    else if (PageHelper::isPost($this->parentPage))
+                    {
+                        // Add a link to go up to the parent directory, but stay inside
+                        // the app's posts directory.
+                        $parentBaseDir = dirname($this->baseDir);
+                        if (strlen($parentBaseDir) >= strlen($this->page->getApp()->getPostsDir()))
+                        {
+                            $linker = new Linker($this->page, dirname($this->baseDir));
+                            $this->linksCache['_'] = $linker;
+                        }
+                    }
+
+                    if ($this->page->getApp()->getPagesDir())
+                    {
+                        // Add a shortcut to the pages directory.
+                        $linker = new Linker($this->page, $this->page->getApp()->getPagesDir());
+                        $this->linksCache['_pages_'] = $linker;
                     }
                     
-                    // Also add a shortcut to the pages directory.
-                    $linker = new Linker($this->page, $this->page->getApp()->getPagesDir());
-                    $this->linksCache['_pages_'] = $linker;
+                    if ($this->page->getApp()->getPostsDir())
+                    {
+                        // Add a shortcut to the posts directory.
+                        $linker = new Linker($this->page, $this->page->getApp()->getPostsDir());
+                        $this->linksCache['_posts_'] = $linker;
+                    }
                 }
             }
             catch (Exception $e)

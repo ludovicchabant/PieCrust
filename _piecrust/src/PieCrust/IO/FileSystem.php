@@ -30,6 +30,10 @@ abstract class FileSystem
     
     public function getPathInfo($captureGroups)
     {
+        $postsDir = $this->pieCrust->getPostsDir();
+        if (!$postsDir)
+            throw new PieCrustException("Can't get the path info for a captured post URL when no post directory exists in the website.");
+
         $needsRecapture = false;
         if (array_key_exists('year', $captureGroups))
         {
@@ -66,7 +70,7 @@ abstract class FileSystem
             array($year, $month, $day, $slug),
             $path
         );
-        $path = $this->pieCrust->getPostsDir() . $this->subDir . $path;
+        $path = $postsDir . $this->subDir . $path;
         
         $pathInfo = array(
             'year' => $year,
