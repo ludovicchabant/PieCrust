@@ -11,7 +11,7 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.3.0-dev';
+    const VERSION = '0.2.1';
     
     /**
      * The application's source code directory.
