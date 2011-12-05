@@ -109,7 +109,7 @@ function piecrust_setup($profile = 'web')
             break;
         }
     case 'chef':
-    {
+        {
             ini_set('display_errors', true);
             error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');

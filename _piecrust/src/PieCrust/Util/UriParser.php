@@ -83,6 +83,10 @@ class UriParser
     
     private static function tryParsePageUri(IPieCrust $pieCrust, $uri, array &$pageInfo)
     {
+        $pagesDir = $pieCrust->getPagesDir();
+        if ($pagesDir === false)
+            return false;
+
         $matches = array();
         $uriWithoutExtension = $uri;
         if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
@@ -93,7 +97,7 @@ class UriParser
             $uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
         }
         
-        $path = $pieCrust->getPagesDir() . $uriWithoutExtension . '.html';
+        $path = $pagesDir . $uriWithoutExtension . '.html';
         if (is_file($path))
         {
             $pageInfo['path'] = $path;
@@ -105,6 +109,10 @@ class UriParser
     
     private static function tryParsePostUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
+        $postsDir = $pieCrust->getPostsDir();
+        if ($postsDir === false)
+            return false;
+
         $matches = array();
         $postsPattern = UriBuilder::buildPostUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url'));
         if (preg_match($postsPattern, $uri, $matches))
@@ -124,6 +132,10 @@ class UriParser
     
     private static function tryParseTagUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
+        $pagesDir = $pieCrust->getPagesDir();
+        if ($pagesDir === false)
+            return false;
+
         $matches = array();
         $tagsPattern = UriBuilder::buildTagUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url'));
         if (preg_match($tagsPattern, $uri, $matches))
@@ -132,7 +144,7 @@ class UriParser
             if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . '/';
             
-            $path = $pieCrust->getPagesDir() . $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
+            $path = $pagesDir . $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
             
             $tags = explode('/', trim($matches['tag'], '/'));
             if (count($tags) > 1)
@@ -160,6 +172,10 @@ class UriParser
     
     private static function tryParseCategoryUri(IPieCrust $pieCrust, $blogKey, $uri, array &$pageInfo)
     {
+        $pagesDir = $pieCrust->getPagesDir();
+        if ($pagesDir === false)
+            return false;
+
         $categoryPattern = UriBuilder::buildCategoryUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url'));
         if (preg_match($categoryPattern, $uri, $matches))
         {
@@ -167,7 +183,7 @@ class UriParser
             if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . '/';
             
-            $path = $pieCrust->getPagesDir() . $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+            $path = $pagesDir . $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
             
             $pageInfo['type'] = IPage::TYPE_CATEGORY;
             $pageInfo['blogKey'] = $blogKey;

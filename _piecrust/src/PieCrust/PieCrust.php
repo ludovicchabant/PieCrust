@@ -56,7 +56,15 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
+            try
+            {
+                $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
+            }
+            catch (PieCrustException $e)
+            {
+                // The default template directory doesn't exist... whatever. Just don't use it.
+                $this->templatesDirs = array();
+            }
             
             // Add custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
@@ -109,7 +117,14 @@ class PieCrust implements IPieCrust
     {
         if ($this->pagesDir === null)
         {
-            $this->setPagesDir($this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR);
+            try
+            {
+                $this->setPagesDir($this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR);
+            }
+            catch (PieCrustException $e)
+            {
+                $this->pagesDir = false;
+            }
         }
         return $this->pagesDir;
     }
@@ -134,7 +149,14 @@ class PieCrust implements IPieCrust
     {
         if ($this->postsDir === null)
         {
-            $this->setPostsDir($this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR);
+            try
+            {
+                $this->setPostsDir($this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR);
+            }
+            catch (PieCrustException $e)
+            {
+                $this->postsDir = false;
+            }
         }
         return $this->postsDir;
     }

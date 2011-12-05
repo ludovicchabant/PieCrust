@@ -18,6 +18,9 @@ class ShallowFileSystem extends FileSystem
     
     public function getPostFiles()
     {
+        if (!$this->pieCrust->getPostsDir())
+            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+
         $years = array();
         $yearsIterator = new \DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir);
         foreach ($yearsIterator as $year)

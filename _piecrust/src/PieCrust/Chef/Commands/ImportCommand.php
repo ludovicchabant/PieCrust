@@ -6,6 +6,7 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\PieCrust;
+use PieCrust\IO\FileSystem;
 use PieCrust\Interop\PieCrustImporter;
 
 
@@ -27,13 +28,13 @@ class ImportCommand implements IChefCommand
         $importParser->addOption('format', array(
             'short_name'  => '-f',
             'long_name'   => '--format',
-            'description' => 'The format of the source data to import.',
+            'description' => 'The format of the source data to import (right now, only \'wordpress\' is supported).',
             'help_name'   => 'FORMAT'
         ));
         $importParser->addOption('source', array(
             'short_name'  => '-s',
             'long_name'   => '--source',
-            'description' => 'The path or resource string for the source data.',
+            'description' => 'The path or resource string for the source data (right now, only XML exported from WordPress is supported).',
             'help_name'   => 'SOURCE'
         ));
     }
@@ -41,10 +42,10 @@ class ImportCommand implements IChefCommand
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = $result->command->args['root'];
+        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
         if (!is_dir($rootDir))
         {
-            $parser->displayError("No such root directory: " . $rootDir, 1);
+            $parser->displayError("No such root directory: " . $rootDir . PHP_EOL . "Run 'chef init' to create a website.", 1);
             die();
         }
         $format = $result->command->options['format'];
@@ -61,7 +62,6 @@ class ImportCommand implements IChefCommand
         }
         
         // Start importing!
-        PieCrust::setup('shell');
         $pieCrust = new PieCrust(array('root' => $rootDir));
         $importer = new PieCrustImporter($pieCrust);
         $importer->import($format, $source);

@@ -6,6 +6,7 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\PieCrustDefaults;
+use PieCrust\IO\FileSystem;
 
 require_once 'sfYaml/lib/sfYamlDumper.php';
 
@@ -30,9 +31,15 @@ class InitCommand implements IChefCommand
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         $rootDir = $result->command->args['root'];
+        $this->initializeWebsite($rootDir);
+    }
+
+    public function initializeWebsite($rootDir)
+    {
         $rootDir = rtrim($rootDir, '/\\') . DIRECTORY_SEPARATOR;
         if (!is_dir($rootDir))
         {
+            $this->createDirectory($rootDir, '');
             throw new Exception("The given root is not a directory: ".$rootDir);
         }
         if (!is_writable($rootDir))
@@ -78,14 +85,9 @@ class InitCommand implements IChefCommand
     
     protected function createDirectory($rootDir, $dir, $makeWritable = false)
     {
-        if (!is_dir($rootDir . $dir))
+        if (FileSystem::ensureDirectory($rootDir . $dir, $makeWritable))
         {
-            echo "Creating " . $dir . PHP_EOL;
-            mkdir($rootDir . $dir);
-            if ($makeWritable)
-            {
-                chmod($rootDir . $dir, 0777);
-            }
+            echo "Creating " . (empty($dir) ? "root directory" : $dir) . PHP_EOL;
         }
     }
     

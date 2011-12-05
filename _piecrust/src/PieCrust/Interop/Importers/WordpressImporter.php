@@ -69,12 +69,12 @@ class WordpressImporter implements IImporter
                 'author' => $author,
                 'tags' => array_map(function($n) { return strval($n['nicename']); }, $tags)
             );
-            if ($excerpt != null && $excerpt != '')
+            if (isset($item->excerpt) && $item->excerpt)
             {
-                $data['excerpt'] = $excerpt;
+                $data['excerpt'] = $item->excerpt;
             }
             
-            $yaml = new sfYamlDumper();
+            $yaml = new \sfYamlDumper();
             $header = $yaml->dump($data, 1);
 
             if (!is_dir(dirname($filename)))

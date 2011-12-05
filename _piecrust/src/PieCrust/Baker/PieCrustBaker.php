@@ -317,7 +317,8 @@ class PieCrustBaker
     protected function bakePages()
     {
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake pages without a bake-record active.");
-        
+        if (!$this->pieCrust->getPagesDir()) return;
+
         $pagesDir = $this->pieCrust->getPagesDir();
         $directory = new RecursiveDirectoryIterator($pagesDir);
         $iterator = new RecursiveIteratorIterator($directory);
@@ -411,6 +412,7 @@ class PieCrustBaker
     protected function bakeTags()
     {
         if (!$this->hasPosts()) return;
+        if (!$this->pieCrust->getPagesDir()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake tags without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
@@ -483,6 +485,7 @@ class PieCrustBaker
     protected function bakeCategories()
     {
         if (!$this->hasPosts()) return;
+        if (!$this->pieCrust->getPagesDir()) return;
         if ($this->bakeRecord == null) throw new PieCrustException("Can't bake categories without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
@@ -517,15 +520,7 @@ class PieCrustBaker
     
     protected function hasPosts()
     {
-        try
-        {
-            $dir = $this->pieCrust->getPostsDir();
-            return true;
-        }
-        catch (Exception $e)
-        {
-            return false;
-        }
+        return ($this->pieCrust->getPostsDir() !== false);
     }
     
     protected function shouldRebakeFile($path)
