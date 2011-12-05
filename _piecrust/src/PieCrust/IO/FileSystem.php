@@ -129,15 +129,22 @@ abstract class FileSystem
         }
     }
     
-    public static function ensureDirectory($dir)
+    public static function ensureDirectory($dir, $writable = false)
     {
         if (!is_dir($dir))
         {
             if (!mkdir($dir, 0777, true))
-                throw new PieCrustException("Can't create directory: ".$dir);
+                throw new PieCrustException("Can't create directory: " . $dir);
+
+            if ($writable && !is_writable($dir))
+                if (!chmod($dir, 0777))
+                    throw new PieCrustException("Can't make directory '" . $dir . "' writable.");
+
+            return true;
         }
+        return false;
     }
-    
+
     public static function deleteDirectoryContents($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
     {
         $skippedFiles = false;
@@ -173,7 +180,7 @@ abstract class FileSystem
     
     public static function getAbsolutePath($path)
     {
-        if ($path[0] != '/' && $path[0] != '\\' && $path[1] != ':')
+        if ($path[0] != '/' && $path[0] != '\\' && (count($path) < 2 || $path[1] != ':'))
             $path = getcwd() . '/' . $path;
         
         $path = str_replace('\\', '/', $path);
