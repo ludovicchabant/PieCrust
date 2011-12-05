@@ -17,7 +17,7 @@ use PieCrust\Util\UriBuilder;
  */
 class Linker implements \ArrayAccess, \Iterator
 {
-    protected $parentPage;
+    protected $page;
     protected $baseDir;
     protected $selfName;
     protected $linksCache;
@@ -165,7 +165,7 @@ class Linker implements \ArrayAccess, \Iterator
                 
                 if ($this->selfName != null)
                 {
-                    if (PageHelper::isRegular($this->parentPage))
+                    if (PageHelper::isRegular($this->page))
                     {
                         // Add a link to go up to the parent directory, but stay inside
                         // the app's pages directory.
@@ -176,7 +176,7 @@ class Linker implements \ArrayAccess, \Iterator
                             $this->linksCache['_'] = $linker;
                         }
                     }
-                    else if (PageHelper::isPost($this->parentPage))
+                    else if (PageHelper::isPost($this->page))
                     {
                         // Add a link to go up to the parent directory, but stay inside
                         // the app's posts directory.
