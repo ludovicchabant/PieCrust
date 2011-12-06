@@ -16,31 +16,37 @@ use PieCrust\Util\PluginLoader;
  */
 class PieCrustImporter
 {
-    protected $pieCrust;
     protected $importersLoader;
-    
+
     /**
      * Creates a new instance of PieCrustImporter.
      */
-    public function __construct(IPieCrust $pieCrust)
+    public function __construct()
     {
-        $this->pieCrust = $pieCrust;
         $this->importersLoader = new PluginLoader(
             'PieCrust\\Interop\\Importers\\IImporter',
             PieCrustDefaults::APP_DIR . '/Interop/Importers');
+    }
+
+    /**
+     * Gets the known importers.
+     */
+    public function getImporters()
+    {
+        return $this->importersLoader->getPlugins();
     }
     
     /**
      * Imports content at the given source, using the given importer format.
      */
-    public function import($format, $source)
+    public function import(IPieCrust $pieCrust, $format, $source)
     {
         // Find the importer that matches the given name and run the import.
         foreach ($this->importersLoader->getPlugins() as $importer)
         {
             if ($importer->getName() == $format)
             {
-                $this->doImport($importer, $source);
+                $this->doImport($pieCrust, $importer, $source);
                 return;
             }
         }
@@ -48,19 +54,12 @@ class PieCrustImporter
         throw new PieCrustException('Importer format "' . $format . '" is unknown.');
     }
     
-    protected function doImport(IImporter $importer, $source)
+    protected function doImport(IPieCrust $pieCrust, IImporter $importer, $source)
     {
-        try
-        {
-            echo 'Importing "' . $source . '" using "' . $importer->getName() . '".' . PHP_EOL;
-            $importer->open($source);
-            $importer->importPages($this->pieCrust->getPagesDir());
-            $importer->importPosts($this->pieCrust->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
-            $importer->close();
-        }
-        catch (Exception $e)
-        {
-            echo 'Error importing from "' . $source . '": ' . $e->getMessage();
-        }
+        echo 'Importing "' . $source . '" using "' . $importer->getName() . '".' . PHP_EOL;
+        $importer->open($source);
+        $importer->importPages($pieCrust->getPagesDir());
+        $importer->importPosts($pieCrust->getPostsDir(), $pieCrust->getConfig()->getValue('site/posts_fs'));
+        $importer->close();
     }
 }

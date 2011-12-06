@@ -24,17 +24,29 @@ class ImportCommand implements IChefCommand
     
     public function setupParser(Console_CommandLine $importParser)
     {
+        $importer = new PieCrustImporter();
+        $formatValues = array();
+        $formatsDescription = "";
+        foreach ($importer->getImporters() as $i)
+        {
+            $formatValues[] = $i->getName();
+            $formatsDescription .= $i->getName() . " : " . $i->getDescription() . PHP_EOL . PHP_EOL;
+        }
+
         $importParser->description = 'Imports content from another CMS into PieCrust.';
         $importParser->addOption('format', array(
             'short_name'  => '-f',
             'long_name'   => '--format',
-            'description' => 'The format of the source data to import (right now, only \'wordpress\' is supported).',
+            'choices'     => $formatValues,
+            'description' => "The format of the source data to import." . PHP_EOL .
+                "The supported formats are:" . PHP_EOL .
+                $formatsDescription,
             'help_name'   => 'FORMAT'
         ));
         $importParser->addOption('source', array(
             'short_name'  => '-s',
             'long_name'   => '--source',
-            'description' => 'The path or resource string for the source data (right now, only XML exported from WordPress is supported).',
+            'description' => 'The path or resource string for the source data, depending on the `format`.',
             'help_name'   => 'SOURCE'
         ));
     }
@@ -63,7 +75,7 @@ class ImportCommand implements IChefCommand
         
         // Start importing!
         $pieCrust = new PieCrust(array('root' => $rootDir));
-        $importer = new PieCrustImporter($pieCrust);
-        $importer->import($format, $source);
+        $importer = new PieCrustImporter();
+        $importer->import($pieCrust, $format, $source);
     }
 }

@@ -28,6 +28,17 @@ class WordpressImporter implements IImporter
     {
         return "wordpress";
     }
+
+    public function getDescription()
+    {
+        return "Imports pages and posts from a Wordpress blog. " . 
+            "The source must be a path to an XML file exported from the Wordpress dashboard, " .
+            "or a connection string to the MySQL database the blog is running on. " .
+            "That connection string must be of the form: " . PHP_EOL .
+            "username:password@server/database_name" . PHP_EOL .
+            "A suffix of the form `/prefix` can also be specified if the tables " . PHP_EOL .
+            "in the database don't have the default `wp_` prefix.";
+    }
     
     public function open($connection)
     {
