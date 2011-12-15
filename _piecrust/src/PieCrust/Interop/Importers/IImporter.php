@@ -13,6 +13,11 @@ interface IImporter
      * Gets the name of this importer.
      */
     public function getName();
+
+    /**
+     * Gets the description of this importer.
+     */
+    public function getDescription();
     
     /**
      * Opens the file/database/whatever.

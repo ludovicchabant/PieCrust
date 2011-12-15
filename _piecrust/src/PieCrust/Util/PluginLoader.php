@@ -73,6 +73,10 @@ class PluginLoader
         $paths = new FilesystemIterator($this->baseDir);
         foreach ($paths as $p)
         {
+            if ($p->isDir())
+            {
+                continue;
+            }
             if (substr($p->getFilename(), -4) !== '.php')    // SplFileInfo::getExtension is only PHP 5.3.6+ 
             {                                                // so let's not use that just yet.
                 continue;
