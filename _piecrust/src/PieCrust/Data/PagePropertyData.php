@@ -30,13 +30,15 @@ class PagePropertyData implements \ArrayAccess, \Iterator
     // {{{ Template Methods
     public function blog($blogName)
     {
-        if ($this->values)
-            $this->values = null;
+        // This invalidates any values already cached.
+        $this->values = null;
 
         $blogKeys = $pc->getConfig()->getValueUnchecked('site/blogs');
         if (!in_array($blogName, $blogKeys))
             throw new PieCrustException("No blog named '" . $blogName . "' was declared in the configuration file.");
         $this->blogKey = $blogName;
+
+        return $this;
     }
     // }}}
 
