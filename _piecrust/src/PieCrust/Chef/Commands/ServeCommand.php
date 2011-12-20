@@ -77,6 +77,7 @@ class ServeCommand implements IChefCommand
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $logConsole = $result->command->options['log_console'];
+        $debug = $result->command->options['debug'];
         if ($templatesDir)
         {
             $parser->displayError("-t/--templates_dir is deprecated. You should now define your templates directories with 'site/template_dirs' in the website configuration file.", false);
@@ -89,7 +90,8 @@ class ServeCommand implements IChefCommand
                                         'port' => $port,
                                         'templates_dir' => $templatesDir,
                                         'log_file' => $logFile,
-                                        'log_console' => $logConsole
+                                        'log_console' => $logConsole,
+                                        'debug' => $debug
                                      ));
         $server->run(array(
                            'list_directories' => false,

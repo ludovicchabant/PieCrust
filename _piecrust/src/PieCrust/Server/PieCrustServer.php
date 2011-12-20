@@ -24,6 +24,7 @@ class PieCrustServer
 {
     protected $server;
     protected $rootDir;
+    protected $debugMode;
     protected $additionalTemplatesDir;
     
     /**
@@ -37,11 +38,13 @@ class PieCrustServer
                   'templates_dir' => null,
                   'mime_types' => array('less' => 'text/css'),
                   'log_file' => null,
-                  'log_console' => false
+                  'log_console' => false,
+                  'debug' => false
                   ),
             $options
         );
         $this->rootDir = rtrim($appDir, '/\\');
+        $this->debugMode = $options['debug'];
         $this->additionalTemplatesDir = $options['templates_dir'];
         
         // Set-up the stupid web server.
@@ -109,6 +112,10 @@ class PieCrustServer
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);
             $pieCrust->getConfig()->setValue('site/root', '/');
+            if ($this->debugMode)
+            {
+                $pieCrust->getConfig()->setValue('site/display_errors', true);
+            }
             if ($this->additionalTemplatesDir != null)
             {
                 $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
@@ -164,8 +171,9 @@ class PieCrustServer
         
         if ($pieCrustException)
         {
+            $headers = array();
             $handler = new PieCrustErrorHandler($pieCrust);
-            $handler->handleError($pieCrustException);
+            $handler->handleError($pieCrustException, null, $headers);
         }
         
         $endTime = microtime(true);

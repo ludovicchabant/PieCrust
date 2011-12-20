@@ -14,31 +14,28 @@ use PieCrust\Util\HttpHeaderHelper;
 class PieCrustErrorHandler
 {
     /**
-     * Formats an array of exceptions into an HTML chunk.
+     * Formats an exception, along with its inner exceptions, into a chunk of HTML.
      */
-    public static function formatErrors($errors, $printDetails = false)
+    public static function formatException($error, $printDetails = false)
     {
-        $errorMessages = '<ul>';
-        foreach ($errors as $e)
+        $errorMessage = "<h3>{$error->getMessage()}</h3>" . PHP_EOL;
+        if ($printDetails)
         {
-            $errorMessages .= '<li><h3>' . $e->getMessage() . '</h3>';
-            if ($printDetails)
+            $cur = $error;
+            $errorMessage .= "<ul>" . PHP_EOL;
+            while ($cur != null)
             {
-                $cur = $e;
-                while ($cur != null)
-                {
-                    $errorMessages .= '<p>Message: <code>' . $cur->getMessage() . '</code></br>' .
-                                      '   Error: <code>' . $cur->getCode() . '</code><br/>' .
-                                      '   File: <code>' . $cur->getFile() . '</code><br/>' .
-                                      '   Line <code>' . $cur->getLine() . '</code><br/>' .
-                                      '   Trace: <code><pre>' . $cur->getTraceAsString() . '</pre></code></p>';
-                    $cur = $cur->getPrevious();
-                }
+                $errorMessage .= "<li><h4>{$cur->getMessage()}</h4>" . PHP_EOL;
+                $errorMessage .= "<p>Error: <code>{$cur->getCode()}</code><br/>" .
+                    "File: <code>{$cur->getFile()}</code><br/>" .
+                    "Line <code>{$cur->getLine()}</code><br/>" .
+                    "Trace: <code><pre>{$cur->getTraceAsString()}</pre></code></p>";
+                $cur = $cur->getPrevious();
+                $errorMessage .= "</li>";
             }
-            $errorMessages .= '</li>';
+            $errorMessage .= "</ul>";
         }
-        $errorMessages .= '</ul>';
-        return $errorMessages;
+        return $errorMessage;
     }
     
     protected $pieCrust;
@@ -52,9 +49,10 @@ class PieCrustErrorHandler
      * Handles an exception by showing an appropriate
      * error page.
      */
-    public function handleError(Exception $e)
+    public function handleError(Exception $e, $server = null, array &$headers = null)
     {
-        $displayErrors = ((bool)ini_get('display_errors') or $this->pieCrust->isDebuggingEnabled());
+        $displayErrors = ($this->pieCrust->isDebuggingEnabled() ||
+                          $this->pieCrust->getConfig()->getValue('site/display_errors'));
         
         // If debugging is enabled, just display the error and exit.
         if ($displayErrors)
@@ -65,7 +63,7 @@ class PieCrustErrorHandler
                 piecrust_show_system_message('404');
                 return;
             }
-            $errorMessage = self::formatErrors(array($e), true);
+            $errorMessage = self::formatException($e, true);
             piecrust_show_system_message('error', $errorMessage);
             return;
         }
@@ -82,13 +80,19 @@ class PieCrustErrorHandler
         $errorMessage = "<p>We're sorry but something very wrong happened, and we don't know what. ".
                         "We'll try to do better next time.</p>".PHP_EOL;
         
-        // Get the URI to the custom error page.
-        $errorPageUri = '_error';
+        // Get the URI to the custom error page, and the error code.
         if ($e->getMessage() == '404')
         {
-            HttpHeaderHelper::setOrAddHeader(0, 404, null);
+            HttpHeaderHelper::setOrAddHeader(0, 404, $headers);
             $errorPageUri = '_404';
         }
+        else
+        {
+            HttpHeaderHelper::setOrAddHeader(0, 500, $headers);
+            $errorPageUri = '_error';
+        }
+
+        // Get the error page's info.
         try
         {
             $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri);
@@ -99,13 +103,15 @@ class PieCrustErrorHandler
             piecrust_show_system_message('critical', $errorMessage);
             return;
         }
+
+        // Render the error page (either a custom one, or a generic one).
         if ($errorPageUriInfo != null and is_file($errorPageUriInfo['path']))
         {
             // We have a custom error page. Show it, or display
             // the "fatal error" page if even this doesn't work.
             try
             {
-                $this->pieCrust->runUnsafe($errorPageUri);
+                $this->pieCrust->runUnsafe($errorPageUri, $server, null, $headers);
             }
             catch (Exception $inner)
             {
@@ -115,8 +121,9 @@ class PieCrustErrorHandler
         }
         else
         {
-            // We don't have a custom error page. Just show a generic
-            // error page and exit.
+            // We don't have a custom error page. Just show the generic
+            // error page.
+            $errorMessage = self::formatException($e, false);
             piecrust_show_system_message(substr($errorPageUri, 1), $errorMessage);
         }
     }

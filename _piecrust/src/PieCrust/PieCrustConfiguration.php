@@ -129,7 +129,8 @@ class PieCrustConfiguration extends Configuration
                         'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
                         'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
                         'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
-                        'cache_time' => 28800
+                        'cache_time' => 28800,
+                        'display_errors' => false
                     ),
                     $config['site']);
         
