@@ -178,9 +178,12 @@ abstract class FileSystem
         return $skippedFiles;
     }
     
+    /**
+     * Gets an absolute path, like `realpath`, but without resolving symbolic links.
+     */
     public static function getAbsolutePath($path)
     {
-        if ($path[0] != '/' && $path[0] != '\\' && (count($path) < 2 || $path[1] != ':'))
+        if ($path[0] != '/' && $path[0] != '\\' && (strlen($path) < 2 || $path[1] != ':'))
             $path = getcwd() . '/' . $path;
         
         $path = str_replace('\\', '/', $path);
