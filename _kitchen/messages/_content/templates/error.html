@@ -3,8 +3,8 @@
 {% block footer %}
 {% pcformat textile %}
 p(note). To see your custom error pages, make sure you don't initialize *PieCrust*
-    with the @debug@ parameter, and turn off the @display_errors@ setting in
-    your @php.ini@. Note that with the @chef@ development server, @PieCrust@
-    is always in @debug@ mode.
+    with the @debug@ parameter, and don't turn on the @site/display_errors@ configuration
+    setting. To see detailed errors, on the other hand, use the @--debug@ parameter
+    in @chef@, append @?!debug@ to the URL, or turn on @site/display_errors@.
 {% endpcformat %}
 {% endblock %}
