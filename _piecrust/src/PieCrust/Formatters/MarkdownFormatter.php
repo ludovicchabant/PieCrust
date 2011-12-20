@@ -23,10 +23,15 @@ class MarkdownFormatter implements IFormatter
     {
         return IFormatter::PRIORITY_DEFAULT;
     }
-    
-    public function supportsFormat($format, $isUnformatted)
+
+    public function isExclusive()
     {
-        return $isUnformatted && preg_match('/markdown|mdown|mkdn?|md/i', $format);
+        return true;
+    }
+    
+    public function supportsFormat($format)
+    {
+        return preg_match('/markdown|mdown|mkdn?|md/i', $format);
     }
     
     public function format($text)

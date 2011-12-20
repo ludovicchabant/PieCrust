@@ -22,10 +22,15 @@ class HamlFormatter implements IFormatter
     {
         return IFormatter::PRIORITY_DEFAULT;
     }
-    
-    public function supportsFormat($format, $isUnformatted)
+
+    public function isExclusive()
     {
-        return $isUnformatted && ($format == 'haml');
+        return true;
+    }
+    
+    public function supportsFormat($format)
+    {
+        return $format == 'haml';
     }
     
     public function format($text)

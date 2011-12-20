@@ -34,8 +34,13 @@ class SmartyPantsFormatter implements IFormatter
     {
         return IFormatter::PRIORITY_LOW;
     }
+
+    public function isExclusive()
+    {
+        return false;
+    }
     
-    public function supportsFormat($format, $isUnformatted)
+    public function supportsFormat($format)
     {
         return $format != 'none' and $this->enabled;
     }

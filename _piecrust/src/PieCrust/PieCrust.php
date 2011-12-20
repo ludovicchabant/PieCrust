@@ -227,6 +227,8 @@ class PieCrust implements IPieCrust
     
     /**
      * Formats a given text using the registered page formatters.
+     * 
+     * Throws an exception if no 'exclusive' formatter was found.
      */
     public function formatText($text, $format = null)
     {
@@ -235,14 +237,21 @@ class PieCrust implements IPieCrust
         
         $unformatted = true;
         $formattedText = $text;
+        $gotExclusiveFormatter = false;
         foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
         {
-            if ($formatter->supportsFormat($format, $unformatted))
+            $isExclusive = $formatter->isExclusive();
+            if ((!$isExclusive || $unformatted) && 
+                $formatter->supportsFormat($format))
             {
                 $formattedText = $formatter->format($formattedText);
                 $unformatted = false;
+                if ($isExclusive)
+                    $gotExclusiveFormatter = true;
             }
         }
+        if (!$gotExclusiveFormatter)
+            throw new PieCrustException("Unknown page format: " . $format);
         return $formattedText;
     }
     

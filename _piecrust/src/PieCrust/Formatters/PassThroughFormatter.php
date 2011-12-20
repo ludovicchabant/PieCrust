@@ -15,10 +15,15 @@ class PassThroughFormatter implements IFormatter
     {
         return IFormatter::PRIORITY_LOW;
     }
-    
-    public function supportsFormat($format, $isUnformatted)
+
+    public function isExclusive()
     {
-        return $isUnformatted;
+        return true;
+    }
+    
+    public function supportsFormat($format)
+    {
+        return $format == 'none';
     }
     
     public function format($text)
