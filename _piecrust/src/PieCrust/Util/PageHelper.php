@@ -8,6 +8,14 @@ use PieCrust\IPage;
 class PageHelper
 {
     /**
+     * Gets the relative path of a page.
+     */
+    public static function getRelativePath(IPage $page, $stripExtension = false)
+    {
+        return PathHelper::getRelativePath($page->getApp(), $page->getPath(), $stripExtension);
+    }
+
+    /**
      * Gets a configuration value either on the given page, or on its parent
      * application.
      */
