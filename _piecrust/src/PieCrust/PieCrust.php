@@ -56,16 +56,12 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            try
-            {
-                $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
-            }
-            catch (PieCrustException $e)
-            {
-                // The default template directory doesn't exist... whatever. Just don't use it.
-                $this->templatesDirs = array();
-            }
-            
+            // Add the default template directory if it exists.
+            $this->templatesDirs = array();
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
+            if (is_dir($default))
+                $this->templatesDirs[] = $default;
+
             // Add custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
             if ($additionalPaths)
@@ -115,14 +111,9 @@ class PieCrust implements IPieCrust
     {
         if ($this->pagesDir === null)
         {
-            try
-            {
-                $this->setPagesDir($this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR);
-            }
-            catch (PieCrustException $e)
-            {
+            $this->pagesDir = $this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR;
+            if (!is_dir($this->pagesDir))
                 $this->pagesDir = false;
-            }
         }
         return $this->pagesDir;
     }
@@ -135,7 +126,7 @@ class PieCrust implements IPieCrust
         $this->pagesDir = rtrim($dir, '/\\') . '/';
         if (is_dir($this->pagesDir) === false)
         {
-            throw new PieCrustException('The pages directory doesn\'t exist: ' . $this->pagesDir);
+            throw new PieCrustException("The specified pages directory doesn't exist: " . $this->pagesDir);
         }
     }
     
@@ -147,14 +138,9 @@ class PieCrust implements IPieCrust
     {
         if ($this->postsDir === null)
         {
-            try
-            {
-                $this->setPostsDir($this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR);
-            }
-            catch (PieCrustException $e)
-            {
+            $this->postsDir = $this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR;
+            if (!is_dir($this->postsDir))
                 $this->postsDir = false;
-            }
         }
         return $this->postsDir;
     }
@@ -167,7 +153,7 @@ class PieCrust implements IPieCrust
         $this->postsDir = rtrim($dir, '/\\') . '/';
         if (is_dir($this->postsDir) === false)
         {
-            throw new PieCrustException('The posts directory doesn\'t exist: ' . $this->postsDir);
+            throw new PieCrustException("The specified posts directory doesn't exist: " . $this->postsDir);
         }
     }
 
@@ -179,15 +165,11 @@ class PieCrust implements IPieCrust
     {
         if ($this->pluginsDirs === null)
         {
-            try
-            {
-                $this->setPluginsDirs($this->rootDir . PieCrustDefaults::CONTENT_PLUGINS_DIR);
-            }
-            catch (PieCrustException $e)
-            {
-                // The default plugins directory doesn't exist... whatever, just don't use it.
-                $this->pluginsDirs = array();
-            }
+            // Add the default plugins directory if it exists.
+            $this->pluginsDirs = array();
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_PLUGINS_DIR;
+            if (is_dir($default))
+                $this->pluginsDirs[] = $default;
 
             // Add custom plugin directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/plugins_dirs');
@@ -266,7 +248,7 @@ class PieCrust implements IPieCrust
             }
             catch (Exception $e)
             {
-                throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->cacheDir);
+                throw new PieCrustException("The cache directory must exist and be writable, and we can't create it or change the permissions ourselves: " . $this->cacheDir);
             }
         }
     }
