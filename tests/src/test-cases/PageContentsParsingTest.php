@@ -48,7 +48,6 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
             )
         ));
         $pc->addTemplateEngine('dwoo', 'DwooTemplateEngine');
-        $pc->addTemplateEngine('haml', 'HamlTemplateEngine');
         $pc->addTemplateEngine('mustache', 'MustacheTemplateEngine');
         $pc->addTemplateEngine('twig', 'TwigTemplateEngine');
         $pc->expects($this->any())
