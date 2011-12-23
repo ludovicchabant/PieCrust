@@ -8,6 +8,7 @@ use \Console_CommandLine_Result;
 use PieCrust\PieCrust;
 use PieCrust\IO\FileSystem;
 use PieCrust\Baker\PieCrustBaker;
+use PieCrust\Util\PathHelper;
 
 
 class BakeCommand implements IChefCommand
@@ -80,7 +81,7 @@ class BakeCommand implements IChefCommand
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
+        $rootDir = PathHelper::getAbsolutePath($result->command->args['root']);
         if (!is_dir($rootDir))
         {
             $parser->displayError("No such root directory: " . $rootDir, 1);

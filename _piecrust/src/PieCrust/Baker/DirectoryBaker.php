@@ -7,7 +7,8 @@ use \DirectoryIterator;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
-use PieCrust\Util\PluginLoader;
+use PieCrust\Plugins\PluginLoader;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -29,30 +30,35 @@ class DirectoryBaker
         return $this->bakedFiles;
     }
     
-    protected $processorsLoader;
+    protected $processors;
     /**
-    * Gets the PluginLoader for the file processors.
+    * Gets the file processors.
     */
-    public function getProcessorsLoader()
+    public function getProcessors()
     {
-        if ($this->processorsLoader === null)
+        if ($this->processors === null)
         {
+            // Load the plugin processors.
+            $this->processors = $this->pieCrust->getPluginLoader()->getProcessors();
+
+            // Filter processors to use.
             $processorsToFilter = $this->parameters['processors'];
-            $this->processorsLoader = new PluginLoader(
-                'PieCrust\\Baker\\Processors\\IProcessor',
-                PieCrustDefaults::APP_DIR . '/Baker/Processors',
-                function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); },
-                $processorsToFilter == '*' ?
-                    null :
-                    function ($p) use ($processorsToFilter) { return in_array($p->getName(), $processorsToFilter); },
-                'SimpleFileProcessor.php'
-            );
-            foreach ($this->processorsLoader->getPlugins() as $proc)
+            if ($processorsToFilter != '*')
+            {
+                $filter = function ($p) use ($processorsToFilter)
+                    {
+                        return in_array($p->getName(), $processorsToFilter);
+                    };
+                $this->processors = array_filter($this->processors, $filter);
+            }
+
+            // Initialize the processors we have left.
+            foreach ($this->processors as $proc)
             {
                 $proc->initialize($this->pieCrust);
             }
         }
-        return $this->processorsLoader;
+        return $this->processors;
     }
     
     /**
@@ -144,7 +150,7 @@ class DirectoryBaker
             {
                 // Current path is a file... first, find a processor for it.
                 $fileProcessor = null;
-                foreach ($this->getProcessorsLoader()->getPlugins() as $proc)
+                foreach ($this->getProcessors() as $proc)
                 {
                     if ($proc->supportsExtension(pathinfo($i->getFilename(), PATHINFO_EXTENSION)))
                     {

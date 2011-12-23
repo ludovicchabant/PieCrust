@@ -6,7 +6,7 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\PieCrustDefaults;
-use PieCrust\Util\PluginLoader;
+use PieCrust\Plugins\PluginLoader;
 
 require_once 'Console/CommandLine.php';
 
@@ -17,7 +17,7 @@ require_once 'Console/CommandLine.php';
 class Chef
 {
     protected $parser;
-    protected $commandLoader;
+    protected $pieCrust;
     
     public function __construct()
     {
@@ -27,12 +27,9 @@ class Chef
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
-        
-        $this->commandLoader = new PluginLoader(
-            'PieCrust\\Chef\\Commands\\IChefCommand',
-            PieCrustDefaults::APP_DIR . '/Chef/Commands');
-        
-        foreach ($this->commandLoader->getPlugins() as $command)
+
+        $this->pieCrust = new NullPieCrust();
+        foreach ($this->pieCrust->getPluginLoader()->getCommands() as $command)
         {
             $commandParser = $this->parser->addCommand($command->getName());
             $command->setupParser($commandParser);
@@ -77,7 +74,7 @@ class Chef
         // Run the command.
         if (!empty($result->command_name))
         {
-            foreach ($this->commandLoader->getPlugins() as $command)
+            foreach ($this->pieCrust->getPluginLoader()->getCommands() as $command)
             {
                 if ($command->getName() == $result->command_name)
                 {

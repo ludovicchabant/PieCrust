@@ -58,6 +58,21 @@ interface IPieCrust
      * Sets the directory that contains the posts and their assets.
      */
     public function setPostsDir($dir);
+
+    /**
+     * Gets the directories that contain the user plugins.
+     */
+    public function getPluginsDirs();
+
+    /**
+     * Sets the directories that contain the user plugins.
+     */
+    public function setPluginsDirs($dir);
+
+    /**
+     * Adds a directory that contains some user plugins.
+     */
+    public function addPluginsDir($dir);
     
     /**
      * Gets the cache directory ('/_cache' by default).
@@ -68,6 +83,11 @@ interface IPieCrust
      * Sets the cache directory ('/_cache' by default).
      */
     public function setCacheDir($dir);
+
+    /**
+     * Gets the plugin loader for this app.
+     */
+    public function getPluginLoader();
     
     /**
      * Gets the application's configuration.

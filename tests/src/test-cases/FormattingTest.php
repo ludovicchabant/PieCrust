@@ -28,7 +28,7 @@ class FormattingTest extends PHPUnit_Framework_TestCase
     {
         $stub = $this->getMockBuilder('PieCrust\PieCrust')
                      ->disableOriginalConstructor()
-                     ->setMethods(array('ensureConfig', 'getConfig', 'getFormattersLoader'))
+                     ->setMethods(array('ensureConfig', 'getConfig', 'getPluginLoader'))
                      ->getMock();
         
         $config = new Configuration(array(
@@ -40,9 +40,10 @@ class FormattingTest extends PHPUnit_Framework_TestCase
              ->method('getConfig')
              ->will($this->returnValue($config));
         
-        $loader = new MockPluginLoader(array(new MockFormatter($supportedFormats)));
+        $loader = new MockPluginLoader();
+        $loader->formatters = array(new MockFormatter($supportedFormats));
         $stub->expects($this->any())
-             ->method('getFormattersLoader')
+             ->method('getPluginLoader')
              ->will($this->returnValue($loader));
 
         return $stub;

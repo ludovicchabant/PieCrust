@@ -5,9 +5,10 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
-use PieCrust\PieCrust;
+use PieCrust\IPieCrust;
 use PieCrust\IO\FileSystem;
 use PieCrust\Interop\PieCrustImporter;
+use PieCrust\Util\PathHelper;
 
 
 class ImportCommand implements IChefCommand
@@ -24,23 +25,11 @@ class ImportCommand implements IChefCommand
     
     public function setupParser(Console_CommandLine $importParser)
     {
-        $importer = new PieCrustImporter();
-        $formatValues = array();
-        $formatsDescription = "";
-        foreach ($importer->getImporters() as $i)
-        {
-            $formatValues[] = $i->getName();
-            $formatsDescription .= $i->getName() . " : " . $i->getDescription() . PHP_EOL . PHP_EOL;
-        }
-
         $importParser->description = 'Imports content from another CMS into PieCrust.';
         $importParser->addOption('format', array(
             'short_name'  => '-f',
             'long_name'   => '--format',
-            'choices'     => $formatValues,
-            'description' => "The format of the source data to import." . PHP_EOL .
-                "The supported formats are:" . PHP_EOL .
-                $formatsDescription,
+            'description' => "The format of the source data to import.",
             'help_name'   => 'FORMAT'
         ));
         $importParser->addOption('source', array(
@@ -54,7 +43,7 @@ class ImportCommand implements IChefCommand
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
+        $rootDir = PathHelper::getAbsolutePath($result->command->args['root']);
         if (!is_dir($rootDir))
         {
             $parser->displayError("No such root directory: " . $rootDir . PHP_EOL . "Run 'chef init' to create a website.", 1);

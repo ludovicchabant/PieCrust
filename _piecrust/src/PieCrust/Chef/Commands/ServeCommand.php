@@ -7,6 +7,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IO\FileSystem;
 use PieCrust\Server\PieCrustServer;
+use PieCrust\Util\PathHelper;
 
 
 class ServeCommand implements IChefCommand
@@ -66,7 +67,7 @@ class ServeCommand implements IChefCommand
     public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
+        $rootDir = PathHelper::getAbsolutePath($result->command->args['root']);
         if (!is_dir($rootDir))
         {
             $parser->displayError("No such root directory: " . $rootDir, 1);
