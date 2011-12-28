@@ -5,21 +5,18 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
 use PieCrust\Server\PieCrustServer;
 use PieCrust\Util\PathHelper;
 
 
-class ServeCommand implements IChefCommand
+class ServeCommand extends ChefCommand
 {
     public function getName()
     {
         return 'serve';
-    }
-    
-    public function supportsDefaultOptions()
-    {
-        return true;
     }
     
     public function setupParser(Console_CommandLine $serverParser)
@@ -55,41 +52,21 @@ class ServeCommand implements IChefCommand
             'action'      => 'StoreTrue',
             'help_name'   => 'LOG'
         ));
-        $serverParser->addOption('templates_dir', array(
-            'short_name'  => '-t',
-            'long_name'   => '--templates_dir',
-            'description' => "DEPRECATED: you should now define your template directories with 'site/template_dirs' in the website configuration file.",
-            'default'     => null,
-            'help_name'   => 'DIR'
-        ));
     }
 
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
     {
-        // Validate arguments.
-        $rootDir = PathHelper::getAbsolutePath($result->command->args['root']);
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir, 1);
-            die();
-        }
+        $rootDir = $pieCrust->getRootDir();
         $port = intval($result->command->options['port']);
-        $templatesDir = $result->command->options['templates_dir'];
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $logConsole = $result->command->options['log_console'];
         $debug = $result->command->options['debug'];
-        if ($templatesDir)
-        {
-            $parser->displayError("-t/--templates_dir is deprecated. You should now define your templates directories with 'site/template_dirs' in the website configuration file.", false);
-            $templatesDir = realpath($templatesDir);
-        }
 
         // Start serving!
         $server = new PieCrustServer($rootDir,
                                      array(
                                         'port' => $port,
-                                        'templates_dir' => $templatesDir,
                                         'log_file' => $logFile,
                                         'log_console' => $logConsole,
                                         'debug' => $debug

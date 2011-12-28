@@ -5,6 +5,8 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 
 
 define('FTP_SYNC_ALWAYS', 0);
@@ -21,16 +23,11 @@ $TEXT_FILE_NAMES = array(
 );
 
 
-class UploadCommand implements IChefCommand
+class UploadCommand extends ChefCommand
 {
     public function getName()
     {
         return 'upload';
-    }
-    
-    public function supportsDefaultOptions()
-    {
-        return false;
     }
     
     public function setupParser(Console_CommandLine $uploadParser)
@@ -74,22 +71,14 @@ class UploadCommand implements IChefCommand
         ));
     }
 
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
     {
-        // Validate arguments.
-        $rootDir = $result->command->args['root'];
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir, 1);
-            die();
-        }
-    
+        $rootDir = $pieCrust->getRootDir();
         $fullAddress = $result->command->args['server'];
         $matches = array();
         if (!preg_match('/^([^:]+)(\:([^@]+))?@(.*)$/', $fullAddress, $matches))
         {
-            $parser->displayError("The given upload address was not valid. Must be of form: user:password@domain.tld", 1);
-            die();
+            throw new PieCrustException("The given upload address was not valid. Must be of form: user:password@domain.tld");
         }
         $user = $matches[1];
         $password = $matches[3];
@@ -122,8 +111,7 @@ class UploadCommand implements IChefCommand
         $conn = ftp_connect($server);
         if ($conn === false)
         {
-            $parser->displayError("Can't connect to FTP server ".$server.".", 1);
-            die();
+            throw new PieCrustException("Can't connect to FTP server '{$server}'.");
         }
         if (!isset($password) or $password == "")
         {
@@ -146,12 +134,12 @@ class UploadCommand implements IChefCommand
             }
             else
             {
-                throw new PieCrustException("Couldn't connect to FTP server ".$server.", login incorrect.");
+                throw new PieCrustException("Couldn't connect to FTP server '{$server}', login incorrect.");
             }
         }
         catch (Exception $e)
         {
-            $parser->displayError($e->getMessage(), 1);
+            throw new PieCrustException($e->getMessage());
         }
         ftp_close($conn);
     }

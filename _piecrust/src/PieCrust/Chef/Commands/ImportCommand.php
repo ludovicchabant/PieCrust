@@ -11,16 +11,11 @@ use PieCrust\Interop\PieCrustImporter;
 use PieCrust\Util\PathHelper;
 
 
-class ImportCommand implements IChefCommand
+class ImportCommand extends ChefCommand
 {
     public function getName()
     {
         return 'import';
-    }
-    
-    public function supportsDefaultOptions()
-    {
-        return true;
     }
     
     public function setupParser(Console_CommandLine $importParser)
@@ -40,31 +35,22 @@ class ImportCommand implements IChefCommand
         ));
     }
     
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
     {
         // Validate arguments.
-        $rootDir = PathHelper::getAbsolutePath($result->command->args['root']);
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir . PHP_EOL . "Run 'chef init' to create a website.", 1);
-            die();
-        }
         $format = $result->command->options['format'];
         if (empty($format))
         {
-            $parser->displayError("No format was specified.");
-            die();
+            throw new PieCrustException("No format was specified.");
         }
         $source = $result->command->options['source'];
         if (empty($source))
         {
-            $parser->displayError("No source was specified.");
-            die();
+            throw new PieCrustException("No source was specified.");
         }
         
         // Start importing!
-        $pieCrust = new PieCrust(array('root' => $rootDir));
-        $importer = new PieCrustImporter();
-        $importer->import($pieCrust, $format, $source);
+        $importer = new PieCrustImporter($pieCrust);
+        $importer->import($format, $source);
     }
 }

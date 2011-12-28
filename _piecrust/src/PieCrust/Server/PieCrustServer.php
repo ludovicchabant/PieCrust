@@ -25,7 +25,6 @@ class PieCrustServer
     protected $server;
     protected $rootDir;
     protected $debugMode;
-    protected $additionalTemplatesDir;
     
     /**
      * Creates a new chef server.
@@ -35,7 +34,6 @@ class PieCrustServer
         $options = array_merge(
             array(
                   'port' => 8080,
-                  'templates_dir' => null,
                   'mime_types' => array('less' => 'text/css'),
                   'log_file' => null,
                   'log_console' => false,
@@ -45,7 +43,6 @@ class PieCrustServer
         );
         $this->rootDir = rtrim($appDir, '/\\');
         $this->debugMode = $options['debug'];
-        $this->additionalTemplatesDir = $options['templates_dir'];
         
         // Set-up the stupid web server.
         $port = $options['port'];
@@ -115,10 +112,6 @@ class PieCrustServer
             if ($this->debugMode)
             {
                 $pieCrust->getConfig()->setValue('site/display_errors', true);
-            }
-            if ($this->additionalTemplatesDir != null)
-            {
-                $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
             }
         }
         catch (Exception $e)
