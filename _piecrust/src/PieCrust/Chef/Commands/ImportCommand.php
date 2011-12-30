@@ -33,6 +33,24 @@ class ImportCommand extends ChefCommand
             'description' => 'The path or resource string for the source data, depending on the `format`.',
             'help_name'   => 'SOURCE'
         ));
+
+        $helpParser = $importParser->parent->commands['help'];
+        $helpParser->helpTopics['about_import'] = <<<EOT
+The `import` command lets you import content from another CMS into PieCrust.
+
+If format is `wordpress`:
+
+ - The source must be a path to an XML file exported from the Wordpress dashboard,
+   or a connection string to the MySQL database the blog is running on. That 
+   connection string must be of the form:
+
+     username:password@server/database_name
+
+   A suffix of the form `/prefix` can also be specified if the tables in the 
+   database don't have the default `wp_` prefix.
+
+
+EOT;
     }
     
     public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)

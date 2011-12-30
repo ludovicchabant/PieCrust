@@ -51,6 +51,7 @@ class BuiltinPlugin extends PieCrustPlugin
     public function getCommands()
     {
         return array(
+            new \PieCrust\Chef\Commands\HelpCommand(),
             new \PieCrust\Chef\Commands\BakeCommand(),
             new \PieCrust\Chef\Commands\ImportCommand(),
             new \PieCrust\Chef\Commands\InitCommand(),
