@@ -25,7 +25,6 @@ class BuiltinPlugin extends PieCrustPlugin
     public function getTemplateEngines()
     {
         return array(
-            new \PieCrust\TemplateEngines\DwooTemplateEngine(),
             new \PieCrust\TemplateEngines\MustacheTemplateEngine(),
             new \PieCrust\TemplateEngines\PassThroughTemplateEngine(),
             new \PieCrust\TemplateEngines\TwigTemplateEngine()
