@@ -125,33 +125,32 @@ class Chef
             die();
         }
 
+        // If no command was given, use `help`.
+        if (empty($result->command_name))
+            $result->command_name = 'help';
+
         // Run the command.
-        if (!empty($result->command_name))
+        foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
         {
-            foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
+            if ($command->getName() == $result->command_name)
             {
-                if ($command->getName() == $result->command_name)
+                try
                 {
-                    try
+                    if ($rootDir == null && $command->requiresWebsite())
                     {
-                        if ($rootDir == null && $command->requiresWebsite())
-                        {
-                            $cwd = getcwd();
-                            throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content' not found!).");
-                        }
-                        $command->run($pieCrust, $result);
-                        return;
+                        $cwd = getcwd();
+                        throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content' not found!).");
                     }
-                    catch (Exception $e)
-                    {
-                        $this->parser->displayError(self::getErrorMessage($result, $e));
-                        die();
-                    }
+                    $command->run($pieCrust, $result);
+                    return;
+                }
+                catch (Exception $e)
+                {
+                    $this->parser->displayError(self::getErrorMessage($result, $e));
+                    die();
                 }
             }
         }
-        
-        $this->parser->displayUsage();
     }
 
     public static function getErrorMessage(Console_CommandLine_Result $result, Exception $e)
