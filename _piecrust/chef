@@ -13,4 +13,7 @@ if [ -z "$PHP" ]; then
 fi
 
 CHEF_DIR=$(dirname $0)
+if `hash readlink 2>&-`; then
+    CHEF_DIR=$(dirname $(readlink $0))
+fi
 $PHP $CHEF_DIR/chef.php $@
