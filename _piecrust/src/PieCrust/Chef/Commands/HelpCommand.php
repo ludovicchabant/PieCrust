@@ -51,10 +51,23 @@ class HelpCommand extends ChefCommand
         }
 
         $topic = $result->command->args['topic'];
-        if (!isset($this->parser->helpTopics[$topic]))
-            throw new PieCrustException("No such help topic: " . $topic);
 
-        echo $this->parser->helpTopics[$topic];
+        // Look for a help topic.
+        if (isset($this->parser->helpTopics[$topic]))
+        {
+            echo $this->parser->helpTopics[$topic];
+            exit(0);
+        }
+
+        // Command help.
+        $parentParser = $this->parser->parent;
+        if (isset($parentParser->commands[$topic]))
+        {
+            echo $parentParser->commands[$topic]->displayUsage(false);
+            exit(0);
+        }
+
+        throw new PieCrustException("No such command or help topic: " . $topic);
     }
 }
 
