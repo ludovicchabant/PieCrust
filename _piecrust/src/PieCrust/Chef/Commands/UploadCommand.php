@@ -7,6 +7,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Chef\ChefContext;
 
 
 define('FTP_SYNC_ALWAYS', 0);
@@ -71,9 +72,12 @@ class UploadCommand extends ChefCommand
         ));
     }
 
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
-        $rootDir = $pieCrust->getRootDir();
+        $result = $context->getResult();
+        $log = $context->getLog();
+
+        $rootDir = $context->getApp()->getRootDir();
         $fullAddress = $result->command->args['server'];
         $matches = array();
         if (!preg_match('/^([^:]+)(\:([^@]+))?@(.*)$/', $fullAddress, $matches))
@@ -106,7 +110,7 @@ class UploadCommand extends ChefCommand
         
         $simulate = $result->command->options['simulate'];
         
-        echo "Uploading to ".$server." [".$remoteRootDir."] as ".$user.PHP_EOL;
+        $log->info("Uploading to '{$server}' [{$remoteRootDir}] as {$user}");
         
         $conn = ftp_connect($server);
         if ($conn === false)
@@ -123,10 +127,10 @@ class UploadCommand extends ChefCommand
         {
             if (ftp_login($conn, $user, $password))
             {
-                echo "Connected to FTP server ".$server.PHP_EOL;
+                $log->info("Connected to FTP server '{$server}'.");
                 if ($passiveMode)
                 {
-                    echo "Enabling passive mode.".PHP_EOL;
+                    $log->info("Enabling passive mode.");
                     if (!ftp_pasv($conn, true))
                         throw new PieCrustException("Can't enable passive mode.");
                 }
@@ -208,7 +212,7 @@ class UploadCommand extends ChefCommand
             }
             if ($doTransfer)
             {
-                echo $relativePathname." [".$doTransferReason."][".($transferMode == FTP_ASCII ? 'A' : 'B')."]".PHP_EOL;
+                $log->info("{$relativePathname} [{$doTransferReason}][".($transferMode == FTP_ASCII ? 'A' : 'B')."]");
                 if (!$simulate)
                     ftp_put($conn, $remotePathname, $cur->getPathname(), $transferMode);
             }

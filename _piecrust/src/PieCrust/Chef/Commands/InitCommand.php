@@ -8,6 +8,7 @@ use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustDefaults;
+use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
 
 require_once 'sfYaml/lib/sfYamlDumper.php';
@@ -15,6 +16,8 @@ require_once 'sfYaml/lib/sfYamlDumper.php';
 
 class InitCommand extends ChefCommand
 {
+    protected $log;
+
     public function getName()
     {
         return 'init';
@@ -48,8 +51,11 @@ class InitCommand extends ChefCommand
         ));
     }
     
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
+        $this->log = $context->getLog();
+        $result = $context->getResult();
+
         $rootDir = $result->command->args['destination'];
         if (!$rootDir)
             $rootDir = getcwd();
@@ -59,7 +65,7 @@ class InitCommand extends ChefCommand
         $this->initializeWebsite($rootDir, array('apache' => $apache, 'iis' => $iis));
     }
 
-    public function initializeWebsite($rootDir, $options = array())
+    protected function initializeWebsite($rootDir, $options = array())
     {
         // Validate the options.
         $options = array_merge(
@@ -112,20 +118,20 @@ class InitCommand extends ChefCommand
             $this->createBootstraper($rootDir);
         }
         
-        echo "PieCrust website created in: " . $rootDir . PHP_EOL;
-        echo PHP_EOL;
+        $this->log->info("PieCrust website created in: " . $rootDir);
+        $this->log->info("");
 
         if ($options['apache'] || $options['iis'])
         {
-            echo "Please edit '".$rootDir."index.php' to fix the relative path to '_piecrust/piecrust.php'.";
-            echo PHP_EOL;
-            echo "If your webserver runs under a different user, you may have to change the root directory's permissions so that it's readable." . PHP_EOL;
-            echo "You may have to also change the permissions on the '_cache' directory so that it's readable." . PHP_EOL;
+            $this->log->info("Please edit '".$rootDir."index.php' to fix the relative path to '_piecrust/piecrust.php'.");
+            $this->log->info();
+            $this->log->info("If your webserver runs under a different user, you may have to change the root directory's permissions so that it's readable.");
+            $this->log->info("You may have to also change the permissions on the '_cache' directory so that it's readable.");
         }
         else
         {
-            echo "Run 'chef serve' on this directory to preview it." . PHP_EOL;
-            echo "Run 'chef bake' on this directory to generate the static files." . PHP_EOL;
+            $this->log->info("Run 'chef serve' on this directory to preview it.");
+            $this->log->info("Run 'chef bake' on this directory to generate the static files.");
         }
     }
     
@@ -138,6 +144,7 @@ class InitCommand extends ChefCommand
     {
         $source = __DIR__ . '/../../../../resources/webinit/' . $fileName;
         $contents = file_get_contents($source);
+        $this->log->debug("Writing '{$destination}'");
         file_put_contents($rootDir . $destination, $contents);
     }
     
@@ -149,6 +156,7 @@ class InitCommand extends ChefCommand
 require '../_piecrust/piecrust.php';
 piecrust_run();
 EOD;
+        $this->log->debug("Writing 'index.php'");
         file_put_contents($rootDir . 'index.php', $bootstrapCode);
     }
     
@@ -156,6 +164,7 @@ EOD;
     {
         $yaml = new \sfYamlDumper();
         $contents = $yaml->dump($data, 3);
+        $this->log->debug("Writing '{$destination}'");
         file_put_contents($rootDir . $destination, $contents);
     }
 }

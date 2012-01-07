@@ -8,8 +8,9 @@ use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\IO\FileSystem;
 use PieCrust\Baker\PieCrustBaker;
+use PieCrust\Chef\ChefContext;
+use PieCrust\IO\FileSystem;
 use PieCrust\Util\PathHelper;
 
 
@@ -75,8 +76,11 @@ class BakeCommand extends ChefCommand
         ));
     }
 
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
+        $pieCrust = $context->getApp();
+        $result = $context->getResult();
+
         $outputDir = $result->command->options['output'];
 
         // Set-up the app and the baker.
@@ -86,7 +90,7 @@ class BakeCommand extends ChefCommand
             'info_only' => $result->command->options['info_only'],
             'config_variant' => $result->command->options['config_variant']
         );
-        $baker = new PieCrustBaker($pieCrust, $bakerParameters);
+        $baker = new PieCrustBaker($pieCrust, $bakerParameters, $context->getLog());
         if ($outputDir)
         {
             $baker->setBakeDir($outputDir);

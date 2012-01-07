@@ -2,11 +2,12 @@
 
 namespace PieCrust\Chef\Commands;
 
+require_once 'Console/CommandLine.php';
+
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
-
-require_once 'Console/CommandLine.php';
+use PieCrust\Chef\ChefContext;
 
 
 /**
@@ -35,5 +36,5 @@ abstract class ChefCommand
     /**
      * Runs the command.
      */
-    public abstract function run(IPieCrust $pieCrust, Console_CommandLine_Result $result);
+    public abstract function run(ChefContext $context);
 }

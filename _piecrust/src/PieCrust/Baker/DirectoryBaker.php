@@ -17,6 +17,7 @@ use PieCrust\Util\PathHelper;
 class DirectoryBaker
 {
     protected $pieCrust;
+    protected $logger;
     protected $rootDirLength;
     protected $bakeDir;
     protected $parameters;
@@ -64,19 +65,25 @@ class DirectoryBaker
     /**
      * Creates a new instance of DirectoryBaker.
      */
-    public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array())
+    public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array(), $logger = null)
     {
         $this->pieCrust = $pieCrust;
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
-                                        array(
-                                              'smart' => true,
-                                              'skip_patterns' => array(),
-                                              'force_patterns' => array(),
-                                              'processors' => array('copy')
-                                              ),
-                                        $parameters
-                                        );
+            array(
+                  'smart' => true,
+                  'skip_patterns' => array(),
+                  'force_patterns' => array(),
+                  'processors' => array('copy')
+                  ),
+            $parameters
+        );
+        if ($logger == null)
+        {
+            require_once 'Log.php';
+            $logger = Log::singleton('console', '', '');
+        }
+        $this->logger = $logger;
         
         // Compute the number of characters we need to remove from file paths
         // to get their relative paths.
@@ -196,7 +203,7 @@ class DirectoryBaker
                         }
                         catch(Exception $e)
                         {
-                            echo "Warning: " . $e->getMessage() . " -- Will force-bake " . $relative . PHP_EOL;
+                            $this->logger->warn($e->getMessage() . " -- Will force-bake {$relative}");
                             $isUpToDate = false;
                         }
 
@@ -236,7 +243,7 @@ class DirectoryBaker
                             $start = microtime(true);
                             $fileProcessor->process($i->getPathname(), $destinationDir);
                             $this->bakedFiles[] = $relative;
-                            echo PieCrustBaker::formatTimed($start, $relative) . PHP_EOL;
+                            $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
                         }
                         catch (Exception $e)
                         {
@@ -246,7 +253,7 @@ class DirectoryBaker
                 }
                 else
                 {
-                    echo "Warning: No processor for " . $relative . PHP_EOL;
+                    $this->logger->warning("No processor for {$relative}");
                 }
             }
         }

@@ -11,6 +11,25 @@ use PieCrust\PieCrustException;
 class PathHelper
 {
     /**
+     * Given a path, figure out if that path is inside a PieCrust website by
+     * looking for a `_content/config.yml` file somewhere up in the hierarchy.
+     * Returns `null` if no website is found.
+     */
+    public static function getAppRootDir($path)
+    {
+        while (!is_file($path . DIRECTORY_SEPARATOR . '_content' . DIRECTORY_SEPARATOR . 'config.yml'))
+        {
+            $pathParent = rtrim(dirname($path), '/\\');
+            if ($path == $pathParent)
+            {
+                return null;
+            }
+            $path = $pathParent;
+        }
+        return $path;
+    }
+
+    /**
      * Gets an absolute path, like `realpath`, but without resolving symbolic links.
      *
      * A root path can be specified, if the path must be made absolute relative

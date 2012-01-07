@@ -2,15 +2,20 @@
 
 namespace PieCrust\Chef;
 
+require_once 'Log.php';
+require_once 'Console/CommandLine.php';
+require_once 'Console/Getopt.php';
+
+use \Log;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use \Console_Getopt;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Plugins\PluginLoader;
-
-require_once 'Console/CommandLine.php';
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -24,28 +29,30 @@ class Chef
     
     public function run($userArgc = null, $userArgv = null)
     {
+        try
+        {
+            return $this->runUnsafe($userArgc, $userArgv);
+        }
+        catch (Exception $e)
+        {
+            echo "Fatal Error: " . $e->getMessage() . PHP_EOL;
+            echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
+            echo $e->getTraceAsString() . PHP_EOL;
+            return 2;
+        }
+    }
+
+    public function runUnsafe($userArgc = null, $userArgv = null)
+    {
         // Get the arguments.
         if ($userArgc == null || $userArgv == null)
         {
-            if (php_sapi_name() != 'cli')
-                throw new PieCrustException("PieCrust 'chef' must be run through the command-line.");
-
-            if (isset($argc) && isset($argv))
-            {
-                // case of register_argv_argc = 1
-                $userArgc = $argc;
-                $userArgv = $argv;
-            }
-            if (isset($_SERVER['argc']) && isset($_SERVER['argv']))
-            {
-                $userArgc = $_SERVER['argc'];
-                $userArgv = $_SERVER['argv'];
-            }
-            else
-            {
-                $userArgc = 0;
-                $userArgv = array();
-            }
+            $userArgv = Console_Getopt::readPHPArgv();
+            // `readPHPArgv` returns a `PEAR_Error` (or something like it) if
+            // it can't figure out the CLI arguments.
+            if (!is_array($userArgv))
+                throw new PieCrustException($userArgv->getMessage());
+            $userArgc = count($userArgv);
         }
 
         // Find whether the '--root' parameter was given.
@@ -53,17 +60,7 @@ class Chef
         if ($rootArgIndex === false)
         {
             // No root given. Find it ourselves.
-            $rootDir = getcwd();
-            while (!is_dir($rootDir . DIRECTORY_SEPARATOR . '_content'))
-            {
-                $rootDirParent = rtrim(dirname($rootDir), '/\\');
-                if ($rootDir == $rootDirParent)
-                {
-                    $rootDir = null;
-                    break;
-                }
-                $rootDir = $rootDirParent;
-            }
+            $rootDir = PathHelper::getAppRootDir(getcwd());
         }
         else
         {
@@ -81,10 +78,7 @@ class Chef
             }
 
             if ($rootDir == null)
-            {
-                $this->parser->displayError("The given root directory doesn't exist: {$rootDir}");
-                die();
-            }
+                throw new PieCrustException("The given root directory doesn't exist: " . $userArgv[$rootArgIndex + 1]);
         }
 
         // Build the appropriate app.
@@ -101,14 +95,14 @@ class Chef
         }
 
         // Set up the command line parser.
-        $this->parser = new Console_CommandLine(array(
+        $parser = new Console_CommandLine(array(
             'name' => 'chef',
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
         foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
         {
-            $commandParser = $this->parser->addCommand($command->getName());
+            $commandParser = $parser->addCommand($command->getName());
             $command->setupParser($commandParser);
             $this->addCommonOptionsAndArguments($commandParser);
         }
@@ -116,18 +110,25 @@ class Chef
         // Parse the command line.
         try
         {
-            $result = $this->parser->parse($userArgc, $userArgv);
+            $result = $parser->parse($userArgc, $userArgv);
         }
         catch (Exception $e)
         {
-            $this->parser->displayError($e->getMessage());
-            self::displayDebugInformation($this, $e);
-            die();
+            $parser->displayError($e->getMessage());
+            return 1;
         }
 
         // If no command was given, use `help`.
         if (empty($result->command_name))
-            $result->command_name = 'help';
+        {
+            $result = $parser->parse(2, array('chef', 'help'));
+        }
+
+        // Create the log.
+        $debugMode = $result->command->options['debug'];
+        $log = Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
+        if (!$debugMode)
+            $log->setMask(Log::MAX(PEAR_LOG_INFO));
 
         // Run the command.
         foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
@@ -141,22 +142,24 @@ class Chef
                         $cwd = getcwd();
                         throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content' not found!).");
                     }
-                    $command->run($pieCrust, $result);
+
+                    $context = new ChefContext($pieCrust, $result, $log);
+                    $command->run($context);
                     return;
                 }
                 catch (Exception $e)
                 {
-                    $this->parser->displayError(self::getErrorMessage($result, $e));
-                    die();
+                    $log->emerg(self::getErrorMessage($e, $debugMode));
+                    return 1;
                 }
             }
         }
     }
 
-    public static function getErrorMessage(Console_CommandLine_Result $result, Exception $e)
+    public static function getErrorMessage(Exception $e, $debugMode = false)
     {
         $message = $e->getMessage();
-        if ($result->command->options['debug'])
+        if ($debugMode)
         {
             $message .= PHP_EOL;
             $message .= PHP_EOL;

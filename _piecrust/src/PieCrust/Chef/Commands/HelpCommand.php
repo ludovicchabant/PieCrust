@@ -6,6 +6,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Chef\ChefContext;
 
 
 class HelpCommand extends ChefCommand
@@ -36,8 +37,11 @@ class HelpCommand extends ChefCommand
         $this->parser = $helpParser;
     }
 
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
+        $result = $context->getResult();
+
+        // Display usage for `chef` along with the list of known additional topics.
         if (!isset($result->command->args['topic']))
         {
             $this->parser->parent->displayUsage(false);

@@ -7,6 +7,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
 use PieCrust\Server\PieCrustServer;
 use PieCrust\Util\PathHelper;
@@ -44,33 +45,26 @@ class ServeCommand extends ChefCommand
             'default'     => null,
             'help_name'   => 'LOG_FILE'
         ));
-        $serverParser->addOption('log_console', array(
-            'short_name'  => '-c',
-            'long_name'   => '--console',
-            'description' => "Specify whether StupidHttp should output stuff to the console.",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'LOG'
-        ));
     }
 
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
-        $rootDir = $pieCrust->getRootDir();
+        $result = $context->getResult();
+
+        $rootDir = $context->getApp()->getRootDir();
         $port = intval($result->command->options['port']);
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
-        $logConsole = $result->command->options['log_console'];
         $debug = $result->command->options['debug'];
 
         // Start serving!
         $server = new PieCrustServer($rootDir,
-                                     array(
-                                        'port' => $port,
-                                        'log_file' => $logFile,
-                                        'log_console' => $logConsole,
-                                        'debug' => $debug
-                                     ));
+             array(
+                'port' => $port,
+                'log_file' => $logFile,
+                'debug' => $debug
+            ),
+            $context->getLog());
         $server->run(array(
                            'list_directories' => false,
                            'run_browser' => $runBrowser

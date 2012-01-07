@@ -6,6 +6,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Chef\ChefContext;
 
 
 class RootCommand extends ChefCommand
@@ -20,9 +21,11 @@ class RootCommand extends ChefCommand
         $rootParser->description = "Get the root directory of the current website.";
     }
 
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
-        echo rtrim($pieCrust->getRootDir(), '/\\') . PHP_EOL;
+        // Don't use the context logger because we want this to be the "pure" value
+        // so it can be re-used in other shell commands.
+        echo rtrim($context->getApp()->getRootDir(), '/\\') . PHP_EOL;
     }
 }
 

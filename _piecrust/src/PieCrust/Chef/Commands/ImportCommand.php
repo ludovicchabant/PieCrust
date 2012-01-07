@@ -6,8 +6,9 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
-use PieCrust\IO\FileSystem;
+use PieCrust\Chef\ChefContext;
 use PieCrust\Interop\PieCrustImporter;
+use PieCrust\IO\FileSystem;
 use PieCrust\Util\PathHelper;
 
 
@@ -53,8 +54,10 @@ If format is `wordpress`:
 EOT;
     }
     
-    public function run(IPieCrust $pieCrust, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
+        $result = $context->getResult();
+
         // Validate arguments.
         $format = $result->command->options['format'];
         if (empty($format))
@@ -68,7 +71,7 @@ EOT;
         }
         
         // Start importing!
-        $importer = new PieCrustImporter($pieCrust);
+        $importer = new PieCrustImporter($context->getApp(), $context->getLog());
         $importer->import($format, $source);
     }
 }

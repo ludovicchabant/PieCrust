@@ -29,37 +29,41 @@ class PieCrustServer
     /**
      * Creates a new chef server.
      */
-    public function __construct($appDir, array $options = array())
+    public function __construct($appDir, array $options = array(), $logger = null)
     {
+        $this->rootDir = rtrim($appDir, '/\\');
+
         $options = array_merge(
             array(
                   'port' => 8080,
                   'mime_types' => array('less' => 'text/css'),
                   'log_file' => null,
-                  'log_console' => false,
                   'debug' => false
                   ),
             $options
         );
-        $this->rootDir = rtrim($appDir, '/\\');
         $this->debugMode = $options['debug'];
+
+        if ($logger == null)
+        {
+            require_once 'Log.php';
+            $logger = \Log::singleton('console', '', '');
+        }
         
         // Set-up the stupid web server.
         $port = $options['port'];
         $this->server = new StupidHttp_WebServer($this->rootDir, $port);
-        
-        if ($options['log_file'])
+        if ($logger != null)
         {
-            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
-        }
-        
-        if ($options['log_console'])
-        {
-            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_DEBUG));
+            $this->server->addLog(new StupidHttp_PearLog($logger));
         }
         else
         {
             $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
+        }
+        if ($options['log_file'])
+        {
+            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
         }
         
         foreach ($options['mime_types'] as $ext => $mime)

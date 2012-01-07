@@ -17,13 +17,21 @@ use PieCrust\Plugins\PluginLoader;
 class PieCrustImporter
 {
     protected $pieCrust;
+    protected $logger;
 
     /**
      * Creates a new instance of PieCrustImporter.
      */
-    public function __construct(IPieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust, $logger = null)
     {
         $this->pieCrust = $pieCrust;
+
+        if ($logger == null)
+        {
+            require_once 'Log.php';
+            $logger = \Log::singleton('console', '', '');
+        }
+        $this->logger = $logger;
     }
 
     /**
@@ -54,7 +62,7 @@ class PieCrustImporter
     
     protected function doImport(IImporter $importer, $source)
     {
-        echo "Importing '{$source}' using '{$importer->getName()}'" . PHP_EOL;
+        $log->info("Importing '{$source}' using '{$importer->getName()}'");
 
         $importer->open($source);
         $importer->importPages($this->pieCrust->getPagesDir());
