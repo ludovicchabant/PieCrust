@@ -18,7 +18,7 @@ class RootCommand extends ChefCommand
     
     public function setupParser(Console_CommandLine $rootParser)
     {
-        $rootParser->description = "Get the root directory of the current website.";
+        $rootParser->description = "Gets the root directory of the current website.";
     }
 
     public function run(ChefContext $context)
