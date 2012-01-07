@@ -143,7 +143,7 @@ class Chef
                         throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content' not found!).");
                     }
 
-                    $context = new ChefContext($pieCrust, $result, $log);
+                    $context = new ChefContext($pieCrust, $result, $log, $debugMode);
                     $command->run($context);
                     return;
                 }

@@ -45,11 +45,21 @@ class ChefContext
         return $this->log;
     }
 
-    public function __construct(IPieCrust $pieCrust, Console_CommandLine_Result $result, Log $log)
+    protected $debuggingEnabled;
+    /**
+     * Returns whether the command should print debug messages.
+     */
+    public function isDebuggingEnabled()
+    {
+        return $this->debuggingEnabled;
+    }
+
+    public function __construct(IPieCrust $pieCrust, Console_CommandLine_Result $result, Log $log, $enableDebug = false)
     {
         $this->app = $pieCrust;
         $this->result = $result;
         $this->log = $log;
+        $this->debuggingEnabled = $enableDebug;
     }
 }
 
