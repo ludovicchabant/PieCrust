@@ -111,28 +111,7 @@ class PluginLoader
                 if (!$pluginDir->isDir())
                     continue;
 
-                // A plugin should have a '<PluginName>Plugin.php' file
-                // with a similarly-named class in it located at the root.
-                $pluginClassName = $pluginDir->getFilename() . 'Plugin';
-                $pluginFile = $pluginDir->getPathname() . DIRECTORY_SEPARATOR . $pluginClassName . '.php';
-                if (!is_readable($pluginFile))
-                    throw new PieCrustException("No plugin class found for plugin '{$pluginDir->getFilename()}'.");
-
-                // It may also have a `libs` directory. If that's the case, add it to
-                // the include paths.
-                $libsDir = $pluginDir->getPathname() . DIRECTORY_SEPARATOR . 'libs';
-                if (is_dir($libsDir))
-                    set_include_path(get_include_path() . PATH_SEPARATOR . $libsDir);
-                
-                // Add an instance of the plugin class to our plugins.
-                require_once $pluginFile;
-                if (!class_exists($pluginClassName))
-                    throw new PieCrustException("Class '{$pluginClassName}' doesn't exist in file '{$pluginFile}'.");
-                $reflector = new ReflectionClass($pluginClassName);
-                if (!$reflector->isSubClassOf("PieCrust\\PieCrustPlugin"))
-                    throw new PieCrustException("Class '{$pluginClassName}' doesn't implement interface 'PieCrust\\IPieCrustPlugin'.");
-                $plugin = $reflector->newInstance();
-                $this->plugins[] = $plugin;
+                $this->loadPlugin($pluginDir->getFilename(), $pluginDir->getPathname());
             }
         }
 
@@ -141,6 +120,32 @@ class PluginLoader
         {
             $plugin->initialize($this->pieCrust);
         }
+    }
+
+    protected function loadPlugin($pluginName, $pluginDir)
+    {
+        // A plugin should have a '<PluginName>Plugin.php' file
+        // with a similarly-named class in it located at the root.
+        $pluginClassName = $pluginName . 'Plugin';
+        $pluginFile = $pluginDir . DIRECTORY_SEPARATOR . $pluginClassName . '.php';
+        if (!is_readable($pluginFile))
+            throw new PieCrustException("No plugin class found for plugin '{$pluginName}'.");
+
+        // It may also have a `libs` directory. If that's the case, add it to
+        // the include paths.
+        $libsDir = $pluginDir . DIRECTORY_SEPARATOR . 'libs';
+        if (is_dir($libsDir))
+            set_include_path(get_include_path() . PATH_SEPARATOR . $libsDir);
+
+        // Add an instance of the plugin class to our plugins.
+        require_once $pluginFile;
+        if (!class_exists($pluginClassName))
+            throw new PieCrustException("Class '{$pluginClassName}' doesn't exist in file '{$pluginFile}'.");
+        $reflector = new ReflectionClass($pluginClassName);
+        if (!$reflector->isSubClassOf("PieCrust\\PieCrustPlugin"))
+            throw new PieCrustException("Class '{$pluginClassName}' doesn't implement interface 'PieCrust\\IPieCrustPlugin'.");
+        $plugin = $reflector->newInstance();
+        $this->plugins[] = $plugin;
     }
 
     protected function getPluginsComponents($getter, $initialize = false, $order = null)
