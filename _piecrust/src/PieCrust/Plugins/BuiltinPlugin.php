@@ -52,11 +52,14 @@ class BuiltinPlugin extends PieCrustPlugin
         return array(
             new \PieCrust\Chef\Commands\HelpCommand(),
             new \PieCrust\Chef\Commands\BakeCommand(),
+            new \PieCrust\Chef\Commands\CategoriesCommand(),
             new \PieCrust\Chef\Commands\ImportCommand(),
             new \PieCrust\Chef\Commands\InitCommand(),
             new \PieCrust\Chef\Commands\PluginsCommand(),
             new \PieCrust\Chef\Commands\ServeCommand(),
             new \PieCrust\Chef\Commands\RootCommand(),
+            new \PieCrust\Chef\Commands\StatsCommand(),
+            new \PieCrust\Chef\Commands\TagsCommand(),
             new \PieCrust\Chef\Commands\UploadCommand()
         );
     }
