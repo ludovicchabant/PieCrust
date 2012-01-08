@@ -16,9 +16,9 @@ class PluginsCommand extends ChefCommand
         return 'plugins';
     }
     
-    public function setupParser(Console_CommandLine $rootParser)
+    public function setupParser(Console_CommandLine $pluginsParser)
     {
-        $rootParser->description = "Gets the list of plugins currently loaded.";
+        $pluginsParser->description = "Gets the list of plugins currently loaded.";
     }
 
     public function run(ChefContext $context)
