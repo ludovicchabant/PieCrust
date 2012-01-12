@@ -100,7 +100,11 @@ class Chef
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
-        foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
+        // Sort commands by name.
+        $sortedCommands = $pieCrust->getPluginLoader()->getCommands();
+        usort($sortedCommands, function ($c1, $c2) { return strcmp($c1->getName(), $c2->getName()); });
+        // Add commands to the parser.
+        foreach ($sortedCommands as $command)
         {
             $commandParser = $parser->addCommand($command->getName());
             $command->setupParser($commandParser);
