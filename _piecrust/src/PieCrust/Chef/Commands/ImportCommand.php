@@ -36,7 +36,7 @@ class ImportCommand extends ChefCommand
         ));
 
         $helpParser = $importParser->parent->commands['help'];
-        $helpParser->helpTopics['about_import'] = <<<EOT
+        $helpParser->helpTopics['about-import'] = <<<EOT
 The `import` command lets you import content from another CMS into PieCrust.
 
 If format is `wordpress`:
