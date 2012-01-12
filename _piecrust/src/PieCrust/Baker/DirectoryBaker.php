@@ -157,9 +157,10 @@ class DirectoryBaker
             {
                 // Current path is a file... first, find a processor for it.
                 $fileProcessor = null;
+                $extension = pathinfo($i->getFilename(), PATHINFO_EXTENSION);
                 foreach ($this->getProcessors() as $proc)
                 {
-                    if ($proc->supportsExtension(pathinfo($i->getFilename(), PATHINFO_EXTENSION)))
+                    if ($proc->supportsExtension($extension))
                     {
                         $fileProcessor = $proc;
                         break;
