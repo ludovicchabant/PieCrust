@@ -47,7 +47,7 @@ class PieCrustServer
         if ($logger == null)
         {
             require_once 'Log.php';
-            $logger = \Log::singleton('console', '', '');
+            $logger = \Log::singleton('null', '', '');
         }
         
         // Set-up the stupid web server.

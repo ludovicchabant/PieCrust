@@ -81,7 +81,7 @@ class DirectoryBaker
         if ($logger == null)
         {
             require_once 'Log.php';
-            $logger = Log::singleton('console', '', '');
+            $logger = \Log::singleton('null', '', '');
         }
         $this->logger = $logger;
         
