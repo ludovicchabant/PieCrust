@@ -45,8 +45,10 @@ class PathHelper
             $rootPath[strlen($rootPath) - 1] != '\\')
             $rootPath .= DIRECTORY_SEPARATOR;
 
-        if ($path[0] != '/' && $path[0] != '\\' && (strlen($path) < 2 || $path[1] != ':'))
+        if ($path[0] != '/' && $path[0] != '\\' && $path[0] != '~' && (strlen($path) < 2 || $path[1] != ':'))
             $path = $rootPath . $path;
+        if ($path[0] == '~')
+            $path = $_SERVER['HOME'] . substr($path, 1);
 
         $path = str_replace('\\', '/', $path);
         $parts = explode('/', $path);
