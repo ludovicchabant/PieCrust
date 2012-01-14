@@ -56,8 +56,16 @@ class Chef
         }
 
         // Find whether the '--root' parameter was given.
-        $rootArgIndex = array_search('--root', $userArgv);
-        if ($rootArgIndex === false)
+        $rootDir = null;
+        foreach ($userArgv as $arg)
+        {
+            if (substr($arg, 0, strlen('--root=')) == '--root=')
+            {
+                $rootDir = substr($arg, strlen('--root='));
+                break;
+            }
+        }
+        if ($rootDir == null)
         {
             // No root given. Find it ourselves.
             $rootDir = PathHelper::getAppRootDir(getcwd());
@@ -65,20 +73,9 @@ class Chef
         else
         {
             // The root was given.
-            if (count($userArgv) > $rootArgIndex + 1)
-            {
-                $rootDir = $userArgv[$rootArgIndex + 1];
-                $rootDir = PathHelper::getAbsolutePath($rootDir);
-                if (!is_dir($rootDir))
-                    $rootDir = null;
-            }
-            else
-            {
-                $rootDir = null;
-            }
-
-            if ($rootDir == null)
-                throw new PieCrustException("The given root directory doesn't exist: " . $userArgv[$rootArgIndex + 1]);
+            $rootDir = PathHelper::getAbsolutePath($rootDir);
+            if (!is_dir($rootDir))
+                throw new PieCrustException("The given root directory doesn't exist: " . $rootDir);
         }
 
         // Build the appropriate app.
