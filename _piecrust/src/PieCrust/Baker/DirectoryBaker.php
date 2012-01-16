@@ -46,9 +46,13 @@ class DirectoryBaker
             $processorsToFilter = $this->parameters['processors'];
             if ($processorsToFilter != '*')
             {
-                $filter = function ($p) use ($processorsToFilter)
+                $all = in_array('*', $processorsToFilter);
+                $filter = function ($p) use ($processorsToFilter, $all)
                     {
-                        return in_array($p->getName(), $processorsToFilter);
+                        if ($all)
+                            return !in_array('-'.$p->getName(), $processorsToFilter);
+                        else
+                            return in_array($p->getName(), $processorsToFilter);
                     };
                 $this->processors = array_filter($this->processors, $filter);
             }
@@ -84,6 +88,17 @@ class DirectoryBaker
             $logger = \Log::singleton('null', '', '');
         }
         $this->logger = $logger;
+        
+        // Validate skip patterns.
+        $this->parameters['skip_patterns'] = self::validatePatterns(
+            $this->parameters['skip_patterns'],
+            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
+        );
+        
+        // Validate force-bake patterns.
+        $this->parameters['force_patterns'] = self::validatePatterns(
+            $this->parameters['force_patterns']
+        );
         
         // Compute the number of characters we need to remove from file paths
         // to get their relative paths.
@@ -155,108 +170,158 @@ class DirectoryBaker
             }
             else if ($i->isFile())
             {
-                // Current path is a file... first, find a processor for it.
-                $fileProcessor = null;
-                $extension = pathinfo($i->getFilename(), PATHINFO_EXTENSION);
-                foreach ($this->getProcessors() as $proc)
+                $this->bakeFile($i->getPathname());
+            }
+        }
+    }
+
+    public function bakeFile($path)
+    {
+        // Figure out the root-relative path.
+        $relative = substr($path, $this->rootDirLength);
+
+        // Find a processor for the given file.
+        $fileProcessor = null;
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        foreach ($this->getProcessors() as $proc)
+        {
+            if ($proc->supportsExtension($extension))
+            {
+                $fileProcessor = $proc;
+                break;
+            }
+        }
+        if ($fileProcessor == null)
+        {
+            $this->logger->warning("No processor for {$relative}");
+            return;
+        }
+
+        $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
+
+        // Figure out if we need to actually process this file.
+        $isUpToDate = true;
+
+        // Should the file be force-baked?
+        foreach ($this->parameters['force_patterns'] as $p)
+        {
+            if (preg_match($p, $relative))
+            {
+                $isUpToDate = false;
+                break;
+            }
+        }
+
+        // Is the output file up to date with its input and dependencies?
+        if ($isUpToDate && 
+            $this->parameters['smart'] && 
+            $fileProcessor->isDelegatingDependencyCheck())
+        {
+            // Get the paths and last modification times for the input file and
+            // all its dependencies, if any.
+            $pathMTime = filemtime($path);
+            $inputFilenames = array($path => $pathMTime);
+            try
+            {
+                $dependencies = $fileProcessor->getDependencies($path);
+                if ($dependencies)
                 {
-                    if ($proc->supportsExtension($extension))
+                    foreach ($dependencies as $dep)
                     {
-                        $fileProcessor = $proc;
-                        break;
+                        $inputFilenames[$dep] = filemtime($dep);
                     }
                 }
-                if ($fileProcessor != null)
-                {
-                    $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
+            }
+            catch(Exception $e)
+            {
+                $this->logger->warn($e->getMessage() . " -- Will force-bake {$relative}");
+                $isUpToDate = false;
+            }
 
-                    // Figure out if we need to actually process this file.
-                    $isUpToDate = false;
-                    
-                    // Should the file be force-baked?
-                    foreach ($this->parameters['force_patterns'] as $p)
+            if ($isUpToDate)
+            {
+                // Get the paths and last modification times for the output files.
+                $outputFilenames = array();
+                $filename = pathinfo($path, PATHINFO_BASENAME);
+                $outputs = $fileProcessor->getOutputFilenames($filename);
+                if (!is_array($outputs))
+                {
+                    $outputs = array($outputs);
+                }
+                foreach ($outputs as $out)
+                {
+                    $fullOut = $destinationDir . $out;
+                    $outputFilenames[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
+                }
+
+                // Compare those times to see if the output file is up to date.
+                foreach ($inputFilenames as $iFn => $iTime)
+                {
+                    foreach ($outputFilenames as $oFn => $oTime)
                     {
-                        if (preg_match($p, $i->getFilename()))
+                        if (!$oTime || $iTime >= $oTime)
                         {
-                            $shouldSkip = true;
+                            $isUpToDate = false;
                             break;
                         }
                     }
-
-                    // Is the output file up to date with its input and dependencies?
-                    if ($this->parameters['smart'])
-                    {
-                        $isUpToDate = true;
-
-                        // Get the paths and last modification times for the input file and
-                        // all its dependencies, if any.
-                        $inputFilenames = array($i->getPathname() => $i->getMTime());
-                        try
-                        {
-                            $dependencies = $fileProcessor->getDependencies($i->getPathname());
-                            if ($dependencies)
-                            {
-                                foreach ($dependencies as $dep)
-                                {
-                                    $inputFilenames[$dep] = filemtime($dep);
-                                }
-                            }
-                        }
-                        catch(Exception $e)
-                        {
-                            $this->logger->warn($e->getMessage() . " -- Will force-bake {$relative}");
-                            $isUpToDate = false;
-                        }
-
-                        if ($isUpToDate)
-                        {
-                            // Get the paths and last modification times for the output files.
-                            $outputFilenames = array();
-                            $outputs = $fileProcessor->getOutputFilenames($i->getFilename());
-                            if (!is_array($outputs))
-                            {
-                                $outputs = array($outputs);
-                            }
-                            foreach ($outputs as $out)
-                            {
-                                $fullOut = $destinationDir . $out;
-                                $outputFilenames[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
-                            }
-
-                            // Compare those times to see if the output file is up to date.
-                            foreach ($inputFilenames as $iFn => $iTime)
-                            {
-                                foreach ($outputFilenames as $oFn => $oTime)
-                                {
-                                    if (!$oTime || $iTime >= $oTime)
-                                    {
-                                        $isUpToDate = false;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (!$isUpToDate)
-                    {
-                        try
-                        {
-                            $start = microtime(true);
-                            $fileProcessor->process($i->getPathname(), $destinationDir);
-                            $this->bakedFiles[] = $relative;
-                            $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
-                        }
-                        catch (Exception $e)
-                        {
-                            throw new PieCrustException("Error processing '" . $relative . "': " . $e->getMessage(), 0, $e);
-                        }
-                    }
-                }
-                else
-                {
-                    $this->logger->warning("No processor for {$relative}");
                 }
             }
         }
+        else
+        {
+            $isUpToDate = false;
+        }
+
+        if (!$isUpToDate)
+        {
+            try
+            {
+                $start = microtime(true);
+                if ($fileProcessor->process($path, $destinationDir) !== false)
+                {
+                    $this->bakedFiles[] = $relative;
+                    $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
+                }
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException("Error processing '" . $relative . "': " . $e->getMessage(), 0, $e);
+            }
+        }
+    }
+    
+    public static function globToRegex($pattern)
+    {
+        if (substr($pattern, 0, 1) == "/" and
+            substr($pattern, -1) == "/")
+        {
+            // Already a regex.
+            return $pattern;
+        }
+        
+        $pattern = preg_quote($pattern, '/');
+        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
+        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
+        return '/'.$pattern.'/';
+    }
+
+    public static function validatePatterns($patterns, array $defaultPatterns = array())
+    {
+        if (!is_array($patterns))
+        {
+            $patterns = array($patterns);
+        }
+        // Convert glob patterns to regex patterns.
+        for ($i = 0; $i < count($patterns); ++$i)
+        {
+            $patterns[$i] = self::globToRegex($patterns[$i]);
+        }
+        // Add the default patterns.
+        foreach ($defaultPatterns as $p)
+        {
+            $patterns[] = $p;
+        }
+        return $patterns;
     }
 }

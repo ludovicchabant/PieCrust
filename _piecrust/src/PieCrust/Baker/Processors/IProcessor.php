@@ -41,6 +41,13 @@ interface IProcessor
     public function supportsExtension($extension);
 
     /**
+     * Returns `true` if PieCrust should handle dependency checking with 
+     * `getDependencies`, and `false` if the processor handles its own 
+     * dependency checks.
+     */
+    public function isDelegatingDependencyCheck();
+
+    /**
      * Gets zero or more input dependency file names for the given input file.
      */
     public function getDependencies($path);

@@ -28,7 +28,7 @@ class PieCrustBaker
      */
     const DEFAULT_BAKE_DIR = '_counter';
     const BAKE_INFO_FILE = 'bakeinfo.json';
-    
+
     protected $bakeRecord;
     protected $logger;
     
@@ -120,19 +120,20 @@ class PieCrustBaker
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
-                                            'smart' => true,
-                                            'clean_cache' => false,
-                                            'info_only' => false,
-                                            'config_variant' => null,
-                                            'show_banner' => true,
-                                            'copy_assets' => true,
-                                            'processors' => '*',
-                                            'skip_patterns' => array(),
-                                            'force_patterns' => array(),
-                                            'tag_combinations' => array()
-                                        ),
-                                        $bakerParametersFromApp,
-                                        $bakerParameters);
+                'smart' => true,
+                'clean_cache' => false,
+                'info_only' => false,
+                'config_variant' => null,
+                'show_banner' => true,
+                'copy_assets' => true,
+                'processors' => '*',
+                'skip_patterns' => array(),
+                'force_patterns' => array(),
+                'tag_combinations' => array()
+            ),
+            $bakerParametersFromApp,
+            $bakerParameters
+        );
 
         if ($logger == null)
         {
@@ -156,17 +157,6 @@ class PieCrustBaker
             }
             $this->parameters['tag_combinations'] = $combinationsExploded;
         }
-        
-        // Validate skip patterns.
-        $this->parameters['skip_patterns'] = self::validatePatterns(
-            $this->parameters['skip_patterns'],
-            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
-        );
-        
-        // Validate force-bake patterns.
-        $this->parameters['force_patterns'] = self::validatePatterns(
-            $this->parameters['force_patterns']
-        );
         
         // Apply the default configuration variant, if it exists.
         $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
@@ -295,7 +285,7 @@ class PieCrustBaker
         $this->bakeRecord->collectTagCombinations();
         $this->bakeTags();
         $this->bakeCategories();
-        
+    
         $dirBaker = new DirectoryBaker($this->pieCrust,
             $this->getBakeDir(),
             array(
@@ -552,39 +542,5 @@ class PieCrustBaker
     {
         $endTime = microtime(true);
         return sprintf('[%8.1f ms] ', ($endTime - $startTime)*1000.0) . $message;
-    }
-    
-    public static function globToRegex($pattern)
-    {
-        if (substr($pattern, 0, 1) == "/" and
-            substr($pattern, -1) == "/")
-        {
-            // Already a regex.
-            return $pattern;
-        }
-        
-        $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
-        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
-        return '/'.$pattern.'/';
-    }
-
-    public static function validatePatterns($patterns, array $defaultPatterns = array())
-    {
-        if (!is_array($patterns))
-        {
-            $patterns = array($patterns);
-        }
-        // Convert glob patterns to regex patterns.
-        for ($i = 0; $i < count($patterns); ++$i)
-        {
-            $patterns[$i] = self::globToRegex($patterns[$i]);
-        }
-        // Add the default patterns.
-        foreach ($defaultPatterns as $p)
-        {
-            $patterns[] = $p;
-        }
-        return $patterns;
     }
 }
