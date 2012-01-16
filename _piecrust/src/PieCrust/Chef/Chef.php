@@ -168,6 +168,7 @@ class Chef
             while ($e)
             {
                 $message .= "-----------------" . PHP_EOL;
+                $message .= $e->getMessage() . PHP_EOL;
                 $message .= $e->getTraceAsString();
                 $message .= PHP_EOL;
                 $e = $e->getPrevious();
