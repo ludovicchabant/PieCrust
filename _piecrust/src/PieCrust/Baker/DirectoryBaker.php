@@ -106,7 +106,7 @@ class DirectoryBaker
         $rootDir = rtrim($rootDir, '/\\') . '/';
         $this->rootDirLength = strlen($rootDir);
 
-        $this->bakedFiles = null;
+        $this->bakedFiles = array();
         
         if (!is_dir($this->bakeDir) or !is_writable($this->bakeDir))
         {
@@ -115,12 +115,16 @@ class DirectoryBaker
     }
     
     /**
-     * Bakes the given directory and all its files and sub-directories.
+     * Bakes the app's root directory and all its files and sub-directories,
+     * or just bakes the given file, if any.
      */
-    public function bake()
+    public function bake($path = null)
     {
         $this->bakedFiles = array();
-        $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
+        if ($path == null)
+            $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
+        else
+            $this->bakeFile($path);
     }
     
     protected function bakeDirectory($currentDir, $level)
@@ -175,7 +179,7 @@ class DirectoryBaker
         }
     }
 
-    public function bakeFile($path)
+    protected function bakeFile($path)
     {
         // Figure out the root-relative path.
         $relative = substr($path, $this->rootDirLength);
@@ -197,7 +201,16 @@ class DirectoryBaker
             return;
         }
 
-        $destinationDir = $this->bakeDir . dirname($relative) . DIRECTORY_SEPARATOR;
+        // Get the destination directories.
+        $relativeDir = dirname($relative);
+        $relativeDestinationDir = $relativeDir == '.' ? '' : ($relativeDir . DIRECTORY_SEPARATOR);
+        $destinationDir = $this->bakeDir . ($relativeDir == '.' ? '' : ($relativeDir . DIRECTORY_SEPARATOR));
+
+        // Get the output files.
+        $filename = pathinfo($path, PATHINFO_BASENAME);
+        $outputFilenames = $fileProcessor->getOutputFilenames($filename);
+        if (!is_array($outputFilenames))
+            $outputFilenames = array($outputFilenames);
 
         // Figure out if we need to actually process this file.
         $isUpToDate = true;
@@ -220,7 +233,7 @@ class DirectoryBaker
             // Get the paths and last modification times for the input file and
             // all its dependencies, if any.
             $pathMTime = filemtime($path);
-            $inputFilenames = array($path => $pathMTime);
+            $inputTimes = array($path => $pathMTime);
             try
             {
                 $dependencies = $fileProcessor->getDependencies($path);
@@ -228,7 +241,7 @@ class DirectoryBaker
                 {
                     foreach ($dependencies as $dep)
                     {
-                        $inputFilenames[$dep] = filemtime($dep);
+                        $inputTimes[$dep] = filemtime($dep);
                     }
                 }
             }
@@ -241,23 +254,17 @@ class DirectoryBaker
             if ($isUpToDate)
             {
                 // Get the paths and last modification times for the output files.
-                $outputFilenames = array();
-                $filename = pathinfo($path, PATHINFO_BASENAME);
-                $outputs = $fileProcessor->getOutputFilenames($filename);
-                if (!is_array($outputs))
-                {
-                    $outputs = array($outputs);
-                }
-                foreach ($outputs as $out)
+                $outputTimes = array();
+                foreach ($outputFilenames as $out)
                 {
                     $fullOut = $destinationDir . $out;
-                    $outputFilenames[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
+                    $outputTimes[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
                 }
 
                 // Compare those times to see if the output file is up to date.
-                foreach ($inputFilenames as $iFn => $iTime)
+                foreach ($inputTimes as $iFn => $iTime)
                 {
-                    foreach ($outputFilenames as $oFn => $oTime)
+                    foreach ($outputTimes as $oFn => $oTime)
                     {
                         if (!$oTime || $iTime >= $oTime)
                         {
@@ -280,7 +287,17 @@ class DirectoryBaker
                 $start = microtime(true);
                 if ($fileProcessor->process($path, $destinationDir) !== false)
                 {
-                    $this->bakedFiles[] = $relative;
+                    $this->bakedFiles[$path] = array(
+                        'relativeInput' => $relative,
+                        'relativeOutputs' => array_map(
+                            function ($p) use ($relativeDestinationDir) { return $relativeDestinationDir . $p; },
+                            $outputFilenames
+                        ),
+                        'outputs' => array_map(
+                            function ($p) use ($destinationDir) { return $destinationDir . $p; },
+                            $outputFilenames
+                        )
+                    );
                     $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
                 }
             }
