@@ -121,15 +121,29 @@ class PieCrustServer
     public function _preprocessRequest(\StupidHttp_WebRequest $request)
     {
         $documentPath = $this->bakeCacheDir . $request->getUri();
-        if (is_file($documentPath))
+        if (is_file($documentPath) && isset($this->bakeCacheFiles[$documentPath]))
         {
-            if (isset($this->bakeCacheFiles[$documentPath]))
+            // Make sure this file is up-to-date.
+            $this->prebake(
+                $request->getServerVariables(),
+                $this->bakeCacheFiles[$documentPath],
+                true
+            );
+        }
+        else
+        {
+            // Perhaps a new file? Re-bake and update our index.
+            $bakedFiles = $this->prebake(
+                $request->getServerVariables(),
+                null,
+                true
+            );
+            foreach ($bakedFiles as $f => $info)
             {
-                $this->prebake(
-                    $request->getServerVariables(),
-                    $this->bakeCacheFiles[$documentPath],
-                    true
-                );
+                foreach ($info['outputs'] as $out)
+                {
+                    $this->bakeCacheFiles[$out] = $f;
+                }
             }
         }
     }
