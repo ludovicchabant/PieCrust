@@ -14,6 +14,7 @@ use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
+use PieCrust\Baker\DirectoryBaker;
 use PieCrust\Page\PageRepository;
 
 
@@ -24,7 +25,11 @@ class PieCrustServer
 {
     protected $server;
     protected $rootDir;
+    protected $logger;
     protected $debugMode;
+
+    protected $bakeCacheDir;
+    protected $bakeCacheFiles;
     
     /**
      * Creates a new chef server.
@@ -32,6 +37,15 @@ class PieCrustServer
     public function __construct($appDir, array $options = array(), $logger = null)
     {
         $this->rootDir = rtrim($appDir, '/\\');
+
+        $pieCrust = new PieCrust(array(
+                'root' => $this->rootDir,
+                'cache' => true
+            )
+        );
+        $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
+        if (!is_dir($this->bakeCacheDir))
+            mkdir($this->bakeCacheDir);
 
         $options = array_merge(
             array(
@@ -49,10 +63,11 @@ class PieCrustServer
             require_once 'Log.php';
             $logger = \Log::singleton('null', '', '');
         }
+        $this->logger = $logger;
         
         // Set-up the stupid web server.
         $port = $options['port'];
-        $this->server = new StupidHttp_WebServer($this->rootDir, $port);
+        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $port);
         if ($logger != null)
         {
             $this->server->addLog(new StupidHttp_PearLog($logger));
@@ -77,6 +92,7 @@ class PieCrustServer
                             {
                                 $self->_runPieCrustRequest($context);
                             });
+        $this->server->setPreprocess(function($req) use ($self) { $self->_preprocessRequest($req); });
     }
 
     /**
@@ -84,7 +100,38 @@ class PieCrustServer
      */
     public function run(array $options = array())
     {
+        $bakedFiles = $this->prebake();
+
+        // Build a reverse-index of what file creates each output file.
+        $this->bakeCacheFiles = array();
+        foreach ($bakedFiles as $f => $info)
+        {
+            foreach ($info['outputs'] as $out)
+            {
+                $this->bakeCacheFiles[$out] = $f;
+            }
+        }
+
         $this->server->run($options);
+    }
+
+    /**
+     * For internal use only.
+     */
+    public function _preprocessRequest(\StupidHttp_WebRequest $request)
+    {
+        $documentPath = $this->bakeCacheDir . $request->getUri();
+        if (is_file($documentPath))
+        {
+            if (isset($this->bakeCacheFiles[$documentPath]))
+            {
+                $this->prebake(
+                    $request->getServerVariables(),
+                    $this->bakeCacheFiles[$documentPath],
+                    true
+                );
+            }
+        }
     }
     
     /**
@@ -104,11 +151,11 @@ class PieCrustServer
             PageRepository::clearPages();
 
             $pieCrust = new PieCrust(array(
-                                            'root' => $this->rootDir,
-                                            'cache' => true
-                                          ),
-                                     $context->getRequest()->getServerVariables()
-                                    );
+                    'root' => $this->rootDir,
+                    'cache' => true
+                ),
+                $context->getRequest()->getServerVariables()
+            );
             $pieCrust->getConfig()->setValue('server/is_hosting', true);
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);
@@ -180,5 +227,41 @@ class PieCrustServer
         {
             $context->getLog()->logError("    PieCrust error: " . $pieCrustException->getMessage());
         }
+    }
+
+    protected function prebake($server = null, $path = null, $smart = false)
+    {
+        $pieCrust = new PieCrust(array(
+                'root' => $this->rootDir,
+                'cache' => true
+            ),
+            $server
+        );
+
+        $parameters = $pieCrust->getConfig()->getValue('baker');
+        if ($parameters == null)
+            $parameters = array();
+        $parameters = array_merge(array(
+                'smart' => true,
+                'processors' => '*',
+                'skip_patterns' => array(),
+                'force_patterns' => array()
+            ),
+            $parameters
+        );
+
+        $dirBaker = new DirectoryBaker($pieCrust,
+            $this->bakeCacheDir,
+            array(
+                'smart' => $smart,
+                'skip_patterns' => $parameters['skip_patterns'],
+                'force_patterns' => $parameters['force_patterns'],
+                'processors' => $parameters['processors']
+            ),
+            $this->logger
+        );
+        $dirBaker->bake($path);
+
+        return $dirBaker->getBakedFiles();
     }
 }
