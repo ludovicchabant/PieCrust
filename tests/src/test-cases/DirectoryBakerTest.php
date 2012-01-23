@@ -8,6 +8,7 @@ require_once 'vfsStream/visitor/vfsStreamStructureVisitor.php';
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\DirectoryBaker;
+use PieCrust\Baker\Processors\IProcessor;
 
 
 class DirectoryBakerTest extends PHPUnit_Framework_TestCase
@@ -323,5 +324,26 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(preg_match($pattern, 'dir/blah1.css') == 1);
         $this->assertTrue(preg_match($pattern, 'dir/blahh.css') == 1);
         $this->assertFalse(preg_match($pattern, 'dir/blah/yo.css') == 1);
+    }
+
+    public function testProcessorOrdering()
+    {
+        $first = new MockProcessor('FIRST', 'ext', IProcessor::PRIORITY_HIGH);
+        $second = new MockProcessor('SECOND', 'ext', IProcessor::PRIORITY_DEFAULT);
+        $third = new MockProcessor('THIRD', 'ext', IProcessor::PRIORITY_LOW);
+
+        $app = new MockPieCrust();
+        $mockPlugin = new MockPlugin();
+        $mockPlugin->processors = array($third, $first, $second);
+
+        $stub = $this->getMockBuilder('PieCrust\Plugins\PluginLoader')
+                     ->setMethods(array('getPlugins', 'ensureLoaded'))
+                     ->setConstructorArgs(array($app))
+                     ->getMock();
+        $stub->expects($this->any())
+             ->method('getPlugins')
+             ->will($this->returnValue(array($mockPlugin)));
+
+        $this->assertEquals(array($first, $second, $third), $stub->getProcessors());
     }
 }

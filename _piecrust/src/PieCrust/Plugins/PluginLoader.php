@@ -47,7 +47,9 @@ class PluginLoader
             true,
             function ($p1, $p2)
             {
-                return $p1->getPriority() < $p2->getPriority();
+                if ($p1->getPriority() == $p2->getPriority())
+                    return 0;
+                return ($p1->getPriority() > $p2->getPriority()) ? -1 : 1;
             }
         );
     }
@@ -70,7 +72,9 @@ class PluginLoader
             true,
             function ($p1, $p2)
             {
-                return $p1->getPriority() < $p2->getPriority();
+                if ($p1->getPriority() == $p2->getPriority())
+                    return 0;
+                return ($p1->getPriority() > $p2->getPriority()) ? -1 : 1;
             }
         );
     }

@@ -7,13 +7,15 @@ use PieCrust\PieCrustConfiguration;
 
 class MockFormatter implements IFormatter
 {
+    public $name;
     public $priority;
     public $formats;
     public $exclusive;
 
-    public function __construct($formats)
+    public function __construct($formats, $priority = IFormatter::PRIORITY_DEFAULT, $name = null)
     {
-        $this->priority = IFormatter::PRIORITY_DEFAULT;
+        $this->name = $name;
+        $this->priority = $priority;
         $this->exclusive = true;
 
         if (!is_array($formats))
@@ -42,7 +44,9 @@ class MockFormatter implements IFormatter
     
     public function format($text)
     {
-        return "Formatted: " . $text;
+        if ($this->name == null)
+            return "Formatted: {$text}";
+        return "Formatted [{$this->name}]: {$text}";
     }
 }
 
