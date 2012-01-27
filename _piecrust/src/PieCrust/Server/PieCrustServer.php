@@ -15,6 +15,7 @@ use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
 use PieCrust\Baker\DirectoryBaker;
+use PieCrust\IO\FileSystem;
 use PieCrust\Page\PageRepository;
 
 
@@ -44,8 +45,7 @@ class PieCrustServer
             )
         );
         $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
-        if (!is_dir($this->bakeCacheDir))
-            mkdir($this->bakeCacheDir);
+        FileSystem::ensureDirectory($this->bakeCacheDir);
 
         $options = array_merge(
             array(
@@ -85,6 +85,9 @@ class PieCrustServer
         {
             $this->server->setMimeType($ext, $mime);
         }
+
+        // Mount the `_content` directory so that we can see page assets.
+        $this->server->mount($this->rootDir . DIRECTORY_SEPARATOR . '_content', '_content');
         
         $self = $this; // Workaround for $this not being capturable in closures.
         $this->server->onPattern('GET', '.*')
