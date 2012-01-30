@@ -23,13 +23,13 @@ class PageBaker
     protected $bakeDir;
     protected $parameters;
     
-    protected $wasPaginationDataAccessed;
+    protected $paginationDataAccessed;
     /**
      * Gets whether pagination data was accessed during baking.
      */
     public function wasPaginationDataAccessed()
     {
-        return $this->wasPaginationDataAccessed;
+        return $this->paginationDataAccessed;
     }
     
     /**
@@ -54,7 +54,7 @@ class PageBaker
      */
     public function __construct($bakeDir, array $parameters = array())
     {
-        $this->bakeDir = $bakeDir;
+        $this->bakeDir = rtrim($bakeDir, '/\\') . DIRECTORY_SEPARATOR;
         $this->parameters = array_merge(array(
             'copy_assets' => false
         ), $parameters);
@@ -69,7 +69,7 @@ class PageBaker
         try
         {
             $this->bakedFiles = array();
-            $this->wasPaginationDataAccessed = false;
+            $this->paginationDataAccessed = false;
             
             $pageRenderer = new PageRenderer($page);
             
@@ -180,7 +180,7 @@ class PageBaker
             }
         }
         
-        $this->wasPaginationDataAccessed = ($this->wasPaginationDataAccessed or $paginator->wasPaginationDataAccessed());
+        $this->paginationDataAccessed = ($this->paginationDataAccessed or $paginator->wasPaginationDataAccessed());
     }
     
     protected function getBakedExtension($contentType)
