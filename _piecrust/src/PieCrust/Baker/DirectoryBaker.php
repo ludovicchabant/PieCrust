@@ -138,7 +138,8 @@ class DirectoryBaker
             }
 
             // Figure out the root-relative path.
-            $relative = substr($i->getPathname(), $this->rootDirLength);
+            $absolute = str_replace('\\', '/', $i->getPathname());
+            $relative = substr($absolute, $this->rootDirLength);
 
             // See if we need to skip this file/directory.
             $shouldSkip = false;
@@ -158,8 +159,8 @@ class DirectoryBaker
                 // Current path is a directory... recurse into it, unless it's
                 // actually the directory we're baking *into* (which would cause
                 // an infinite loop and lots of files being created!).
-                $normalizedPathname = rtrim(str_replace('\\', '/', $i->getPathname()), '/') . '/';
-                if ($normalizedPathname == $this->bakeDir)
+                $normalizedAbsolute = rtrim($absolute, '/') . '/';
+                if ($normalizedAbsolute == $this->bakeDir)
                 {
                     continue;
                 }
@@ -170,11 +171,11 @@ class DirectoryBaker
                     if (@mkdir($destination, 0777, true) === false)
                         throw new PieCrustException("Can't create directory: " . $destination);
                 }
-                $this->bakeDirectory($i->getPathname(), $level + 1);
+                $this->bakeDirectory($absolute, $level + 1);
             }
             else if ($i->isFile())
             {
-                $this->bakeFile($i->getPathname());
+                $this->bakeFile($absolute);
             }
         }
     }
@@ -203,8 +204,8 @@ class DirectoryBaker
 
         // Get the destination directories.
         $relativeDir = dirname($relative);
-        $relativeDestinationDir = $relativeDir == '.' ? '' : ($relativeDir . DIRECTORY_SEPARATOR);
-        $destinationDir = $this->bakeDir . ($relativeDir == '.' ? '' : ($relativeDir . DIRECTORY_SEPARATOR));
+        $relativeDestinationDir = $relativeDir == '.' ? '' : ($relativeDir . '/');
+        $destinationDir = $this->bakeDir . ($relativeDir == '.' ? '' : ($relativeDir . '/'));
 
         // Get the output files.
         $filename = pathinfo($path, PATHINFO_BASENAME);

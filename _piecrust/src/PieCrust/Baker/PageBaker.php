@@ -54,7 +54,7 @@ class PageBaker
      */
     public function __construct($bakeDir, array $parameters = array())
     {
-        $this->bakeDir = rtrim($bakeDir, '/\\') . DIRECTORY_SEPARATOR;
+        $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(array(
             'copy_assets' => false
         ), $parameters);
@@ -138,8 +138,8 @@ class PageBaker
         {
             $bakePath = ($this->bakeDir . 
                          $page->getUri() . 
-                         (($page->getUri() == '') ? '' : DIRECTORY_SEPARATOR) . 
-                         (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . DIRECTORY_SEPARATOR)) .
+                         (($page->getUri() == '') ? '' : '/') . 
+                         (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . '/')) .
                          self::BAKE_INDEX_DOCUMENT);
         }
         else
@@ -158,13 +158,13 @@ class PageBaker
         {
             if ($useDirectory)
             {
-                $bakeAssetDir = dirname($bakePath) . DIRECTORY_SEPARATOR;
+                $bakeAssetDir = dirname($bakePath) . '/';
             }
             else
             {
                 $bakePathInfo = pathinfo($bakePath);
-                $bakeAssetDir = $bakePathInfo['dirname'] . DIRECTORY_SEPARATOR . 
-                                (($page->getUri() == '') ? '' : $bakePathInfo['filename']) . DIRECTORY_SEPARATOR;
+                $bakeAssetDir = $bakePathInfo['dirname'] . '/' . 
+                                (($page->getUri() == '') ? '' : $bakePathInfo['filename']) . '/';
             }
             
             $assetPaths = $assetor->getAssetPathnames();
