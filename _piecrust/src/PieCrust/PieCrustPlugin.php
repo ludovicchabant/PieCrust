@@ -6,15 +6,12 @@ namespace PieCrust;
 /**
  * The base class for a PieCrust plugin.
  */
-class PieCrustPlugin
+abstract class PieCrustPlugin
 {
     /**
      * Gets the name of the plugin.
      */
-    public function getName()
-    {
-        throw new PieCrustException("No name was defined for this plugin.");
-    }
+    public abstract function getName();
 
     /**
      * Gets the formatters in this plugin.
