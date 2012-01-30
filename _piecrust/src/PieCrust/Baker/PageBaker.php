@@ -106,14 +106,14 @@ class PageBaker
         if ($extraData != null) $page->setExtraPageData($extraData);
         if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
-        // Set the custom stuff.
+        // Render the page.
+        if ($postInfos != null) $page->setPaginationDataSource($postInfos);
+        $bakedContents = $pageRenderer->get();
+
+        // Get some objects we need.
         $data = $page->getPageData();
         $assetor = $data['asset'];
         $paginator = $data['pagination'];
-        if ($postInfos != null) $paginator->setPaginationDataSource($postInfos);
-        
-        // Render the page.
-        $bakedContents = $pageRenderer->get();
         
         // Figure out the output HTML path.
         $useDirectory = PageHelper::getConfigValue($page, 'pretty_urls', 'site');

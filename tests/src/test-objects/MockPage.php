@@ -137,6 +137,18 @@ class MockPage implements IPage
         $this->assetUrlBaseRemap = $remap;
     }
     
+    public $paginationDataSource;
+
+    public function getPaginationDataSource()
+    {
+        return $this->paginationDataSource;
+    }
+
+    public function setPaginationDataSource($postInfos)
+    {
+        $this->paginationDataSource = $postInfos;
+    }
+
     public function __construct(IPieCrust $pieCrust)
     {
         if (!$pieCrust)

@@ -231,6 +231,23 @@ class Page implements IPage
     {
         $this->assetUrlBaseRemap = $remap;
     }
+
+    protected $paginationDataSource;
+    /**
+     * Gets the pagination data source.
+     */
+    public function getPaginationDataSource()
+    {
+        return $this->paginationDataSource;
+    }
+
+    /**
+     * Sets the pagination data source.
+     */
+    public function setPaginationDataSource($postInfos)
+    {
+        $this->paginationDataSource = $postInfos;
+    }
     
     /**
      * Creates a new Page instance.

@@ -57,6 +57,9 @@ class DataBuilder
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
+
+        if ($page->getPaginationDataSource() != null)
+            $paginator->setPaginationDataSource($page->getPaginationDataSource());
         
         $data = array(
             'page' => $page->getConfig()->get(),
