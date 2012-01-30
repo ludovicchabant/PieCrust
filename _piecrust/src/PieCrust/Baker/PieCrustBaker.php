@@ -360,7 +360,8 @@ class PieCrustBaker
             $this->bakeRecord->addPageUsingPosts($relativePath);
         }
         
-        $this->logger->info(self::formatTimed($start, $relativePath));
+        $pageCount = $baker->getPageCount();
+        $this->logger->info(self::formatTimed($start, $relativePath . (($pageCount > 1) ? " [{$pageCount}]" : "")));
         return true;
     }
     
