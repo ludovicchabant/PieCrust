@@ -475,7 +475,9 @@ class PieCrustBaker
                     );
                     $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page, $postInfos);
-                    $this->logger->info(self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)'));
+
+                    $pageCount = $baker->getPageCount();
+                    $this->logger->info(self::formatTimed($start, $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
@@ -512,7 +514,9 @@ class PieCrustBaker
                 );
                 $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page, $postInfos);
-                $this->logger->info(self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)'));
+
+                $pageCount = $baker->getPageCount();
+                $this->logger->info(self::formatTimed($start, $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
             }
         }
     }
