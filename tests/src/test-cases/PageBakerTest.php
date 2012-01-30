@@ -125,4 +125,39 @@ EOD
         $this->assertEquals("SEVEN\nSIX\nFIVE\nFOUR\nTHREE\n", file_get_contents(vfsStream::url('root/counter/blah/index.html')));
         $this->assertEquals("TWO\nONE\n", file_get_contents(vfsStream::url('root/counter/blah/2/index.html')));
     }
+
+    public function testPageWithAsset()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'site' => array(
+                    'pretty_urls' => false
+                )))
+            ->withPage(
+                'blah',
+                array('layout' => 'none', 'format' => 'none'),
+                "Some contents:\n{{ asset.foo }}"
+            )
+            ->withAsset('_content/pages/blah-assets/foo.txt', 'FOO!');
+
+        $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
+        $page = Page::createFromUri($app, '/blah');
+        
+        $baker = new PageBaker(vfsStream::url('root/counter'), array('copy_assets' => true));
+        $baker->bake($page);
+
+        $this->assertFalse($baker->wasPaginationDataAccessed());
+        $this->assertEquals(1, $baker->getPageCount());
+        $this->assertEquals(array(vfsStream::url('root/counter/blah.html')), $baker->getBakedFiles());
+        $this->assertFileExists(vfsStream::url('root/counter/blah.html'));
+        $this->assertEquals(
+            "Some contents:\n/blah/foo.txt",
+            file_get_contents(vfsStream::url('root/counter/blah.html'))
+        );
+        $this->assertFileExists(vfsStream::url('root/counter/blah/foo.txt'));
+        $this->assertEquals(
+            'FOO!',
+            file_get_contents(vfsStream::url('root/counter/blah/foo.txt'))
+        );
+    }
 }
