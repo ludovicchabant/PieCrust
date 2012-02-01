@@ -123,8 +123,10 @@ class DirectoryBaker
         $this->bakedFiles = array();
         if ($path == null)
             $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
-        else
+        else if (is_file($path))
             $this->bakeFile($path);
+        else if (is_dir($path))
+            $this->bakeDirectory($path, 0);
     }
     
     protected function bakeDirectory($currentDir, $level)
