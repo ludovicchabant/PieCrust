@@ -57,6 +57,30 @@ class MockFileSystem
         return $this->withAsset($path, $text);
     }
 
+    public function withDummyPosts(array $dates, array $commonConfig = array())
+    {
+        $i = 0;
+        foreach ($dates as $d)
+        {
+            $bits = explode('/', $d);
+            $year = $bits[0];
+            $month = $bits[1];
+            $day = $bits[2];
+            $slug = "test-slug-{$i}";
+            $pageConfig = array_merge(
+                array(
+                    'title' => "Test Title {$i}"
+                ),
+                $commonConfig
+            );
+            $pageContents = "Contents {$i}";
+
+            $this->withPost($slug, $day, $month, $year, $pageConfig, $pageContents);
+            ++$i;
+        }
+        return $this;
+    }
+
     public function withTemplate($name, $contents)
     {
         return $this->withAsset('_content/templates/' . $name . '.html', $contents);
