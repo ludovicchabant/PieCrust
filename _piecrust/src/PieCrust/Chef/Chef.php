@@ -141,7 +141,7 @@ class Chef
                     if ($rootDir == null && $command->requiresWebsite())
                     {
                         $cwd = getcwd();
-                        throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content' not found!).");
+                        throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
                     }
 
                     $context = new ChefContext($pieCrust, $result, $log, $debugMode);
