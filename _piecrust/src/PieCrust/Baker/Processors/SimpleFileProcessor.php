@@ -24,33 +24,11 @@ class SimpleFileProcessor implements IProcessor
     protected $inputExtensions;
     protected $outputExtensions;
     
-    public function __construct($name, $inputExtensions, $outputExtensions, $priority = IProcessor::PRIORITY_DEFAULT)
+    public function __construct($name = '__unnamed__', $inputExtensions = array(), $outputExtensions = array(), $priority = IProcessor::PRIORITY_DEFAULT)
     {
-        if (is_array($inputExtensions))
-        {
-            $this->inputExtensions = $inputExtensions;
-            
-            if (is_array($outputExtensions))
-            {
-                if (count($inputExtensions) != count($outputExtensions)) throw new PieCrustException('The input and output extensions arrays must have the same length');
-                $this->outputExtensions = $outputExtensions;
-            }
-            else
-            {
-                $this->outputExtensions = array_fill(0, count($inputExtensions), $outputExtensions);
-            }
-        }
-        else
-        {
-            if (is_array($outputExtensions)) throw new PieCrustException('The output extensions parameter can only be an array if the input extensions parameter is an array of the same length.');
-            $this->inputExtensions = array($inputExtensions);
-            $this->outputExtensions = array($outputExtensions);
-        }
-        
-        $this->name = $name;
-        $this->priority = $priority;
+        $this->doInitialize($name, $inputExtensions, $outputExtensions, $priority);
     }
-    
+
     public function getName()
     {
         return $this->name;
@@ -70,6 +48,11 @@ class SimpleFileProcessor implements IProcessor
     {
         if ($extension == null or $extension == '') return false;
         return in_array($extension, $this->inputExtensions);
+    }
+
+    public function isDelegatingDependencyCheck()
+    {
+        return true;
     }
 
     public function getDependencies($path)
@@ -99,6 +82,34 @@ class SimpleFileProcessor implements IProcessor
     {
         $outputPath = $outputDir . $this->getOutputFilenames(pathinfo($inputPath, PATHINFO_BASENAME));
         $this->doProcess($inputPath, $outputPath);
+        return true;
+    }
+    
+    protected function doInitialize($name, $inputExtensions, $outputExtensions, $priority = IProcessor::PRIORITY_DEFAULT)
+    {
+        if (is_array($inputExtensions))
+        {
+            $this->inputExtensions = $inputExtensions;
+            
+            if (is_array($outputExtensions))
+            {
+                if (count($inputExtensions) != count($outputExtensions)) throw new PieCrustException('The input and output extensions arrays must have the same length');
+                $this->outputExtensions = $outputExtensions;
+            }
+            else
+            {
+                $this->outputExtensions = array_fill(0, count($inputExtensions), $outputExtensions);
+            }
+        }
+        else
+        {
+            if (is_array($outputExtensions)) throw new PieCrustException('The output extensions parameter can only be an array if the input extensions parameter is an array of the same length.');
+            $this->inputExtensions = array($inputExtensions);
+            $this->outputExtensions = array($outputExtensions);
+        }
+        
+        $this->name = $name;
+        $this->priority = $priority;
     }
     
     protected function doProcess($inputPath, $outputPath)

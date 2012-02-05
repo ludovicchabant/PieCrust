@@ -6,10 +6,10 @@ use \Exception;
 use PieCrust\Formatters\IFormatter;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;
-use PieCrust\TemplateEngines\ITemplateEngine;
+use PieCrust\Plugins\PluginLoader;
 use PieCrust\Util\HttpHeaderHelper;
 use PieCrust\Util\PageHelper;
-use PieCrust\Util\PluginLoader;
+use PieCrust\Util\PathHelper;
 use PieCrust\Util\ServerHelper;
 
 
@@ -56,16 +56,12 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            try
-            {
-                $this->setTemplatesDirs(PieCrustDefaults::CONTENT_TEMPLATES_DIR);
-            }
-            catch (PieCrustException $e)
-            {
-                // The default template directory doesn't exist... whatever. Just don't use it.
-                $this->templatesDirs = array();
-            }
-            
+            // Add the default template directory if it exists.
+            $this->templatesDirs = array();
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
+            if (is_dir($default))
+                $this->templatesDirs[] = $default;
+
             // Add custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
             if ($additionalPaths)
@@ -93,14 +89,12 @@ class PieCrust implements IPieCrust
     {
         $this->getTemplatesDirs();  // Ensure defaults are created.
         
-        if (!is_array($dir)) $dir = array($dir);
+        if (!is_array($dir)) 
+            $dir = array($dir);
+
         foreach ($dir as $d)
         {
-            $absolute = $d;
-            if ($d[0] != '/' and $d[1] != ':')
-            {
-                $absolute = $this->getRootDir() . $d;
-            }
+            $absolute = PathHelper::getAbsolutePath($d, $this->getRootDir());
             if (is_dir($absolute) === false)
             {
                 throw new PieCrustException("The specified templates directory doesn't exist: " . $absolute);
@@ -117,14 +111,9 @@ class PieCrust implements IPieCrust
     {
         if ($this->pagesDir === null)
         {
-            try
-            {
-                $this->setPagesDir($this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR);
-            }
-            catch (PieCrustException $e)
-            {
+            $this->pagesDir = $this->rootDir . PieCrustDefaults::CONTENT_PAGES_DIR;
+            if (!is_dir($this->pagesDir))
                 $this->pagesDir = false;
-            }
         }
         return $this->pagesDir;
     }
@@ -137,7 +126,7 @@ class PieCrust implements IPieCrust
         $this->pagesDir = rtrim($dir, '/\\') . '/';
         if (is_dir($this->pagesDir) === false)
         {
-            throw new PieCrustException('The pages directory doesn\'t exist: ' . $this->pagesDir);
+            throw new PieCrustException("The specified pages directory doesn't exist: " . $this->pagesDir);
         }
     }
     
@@ -149,14 +138,9 @@ class PieCrust implements IPieCrust
     {
         if ($this->postsDir === null)
         {
-            try
-            {
-                $this->setPostsDir($this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR);
-            }
-            catch (PieCrustException $e)
-            {
+            $this->postsDir = $this->rootDir . PieCrustDefaults::CONTENT_POSTS_DIR;
+            if (!is_dir($this->postsDir))
                 $this->postsDir = false;
-            }
         }
         return $this->postsDir;
     }
@@ -169,10 +153,64 @@ class PieCrust implements IPieCrust
         $this->postsDir = rtrim($dir, '/\\') . '/';
         if (is_dir($this->postsDir) === false)
         {
-            throw new PieCrustException('The posts directory doesn\'t exist: ' . $this->postsDir);
+            throw new PieCrustException("The specified posts directory doesn't exist: " . $this->postsDir);
         }
     }
+
+    protected $pluginsDirs;
+    /**
+     * Gets the directories that contain the user plugins.
+     */
+    public function getPluginsDirs()
+    {
+        if ($this->pluginsDirs === null)
+        {
+            // Add the default plugins directory if it exists.
+            $this->pluginsDirs = array();
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_PLUGINS_DIR;
+            if (is_dir($default))
+                $this->pluginsDirs[] = $default;
+
+            // Add custom plugin directories specified in the configuration.
+            $additionalPaths = $this->getConfig()->getValue('site/plugins_dirs');
+            if ($additionalPaths)
+            {
+                $this->addPluginsDir($additionalPaths);
+            }
+        }
+        return $this->pluginsDirs;
+    }
     
+    /**
+     * Sets the directories that contain the user plugins.
+     */
+    public function setPluginsDirs($dir)
+    {
+        $this->pluginsDirs = array();
+        $this->addPluginsDir($dir);
+    }
+
+    /**
+     * Adds a directory that contains some user plugins.
+     */
+    public function addPluginsDir($dir)
+    {
+        $this->getPluginsDirs();  // Ensure defaults are created.
+        
+        if (!is_array($dir)) 
+            $dir = array($dir);
+
+        foreach ($dir as $d)
+        {
+            $absolute = PathHelper::getAbsolutePath($d, $this->getRootDir());
+            if (is_dir($absolute) === false)
+            {
+                throw new PieCrustException("The specified plugins directory doesn't exist: " . $absolute);
+            }
+            $this->pluginsDirs[] = rtrim($absolute, '/\\') . '/';
+        }
+    }
+
     protected $cacheDir;
     /**
      * Gets the cache directory ('/_cache' by default).
@@ -210,11 +248,20 @@ class PieCrust implements IPieCrust
             }
             catch (Exception $e)
             {
-                throw new PieCrustException('The cache directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->cacheDir);
+                throw new PieCrustException("The cache directory must exist and be writable, and we can't create it or change the permissions ourselves: " . $this->cacheDir);
             }
         }
     }
     
+    protected $pluginLoader;
+    /**
+     * Gets the plugin loader for this app.
+     */
+    public function getPluginLoader()
+    {
+        return $this->pluginLoader;
+    }
+
     protected $config;
     /**
      * Gets the application's configuration.
@@ -227,6 +274,8 @@ class PieCrust implements IPieCrust
     
     /**
      * Formats a given text using the registered page formatters.
+     * 
+     * Throws an exception if no 'exclusive' formatter was found.
      */
     public function formatText($text, $format = null)
     {
@@ -235,14 +284,21 @@ class PieCrust implements IPieCrust
         
         $unformatted = true;
         $formattedText = $text;
-        foreach ($this->getFormattersLoader()->getPlugins() as $formatter)
+        $gotExclusiveFormatter = false;
+        foreach ($this->getPluginLoader()->getFormatters() as $formatter)
         {
-            if ($formatter->supportsFormat($format, $unformatted))
+            $isExclusive = $formatter->isExclusive();
+            if ((!$isExclusive || $unformatted) && 
+                $formatter->supportsFormat($format))
             {
                 $formattedText = $formatter->format($formattedText);
                 $unformatted = false;
+                if ($isExclusive)
+                    $gotExclusiveFormatter = true;
             }
         }
+        if (!$gotExclusiveFormatter)
+            throw new PieCrustException("Unknown page format: " . $format);
         return $formattedText;
     }
     
@@ -273,31 +329,23 @@ class PieCrust implements IPieCrust
         return $this->pathPrefix . $uri . $this->pathSuffix;
     }
     
-    protected $templateEngines;
     /**
      * Gets the template engine associated with the given extension.
      */
     public function getTemplateEngine($extension = 'html')
     {
-        if ($this->templateEngines === null)
-        {
-            $loader = new PluginLoader(
-                                        'PieCrust\\TemplateEngines\\ITemplateEngine',
-                                        PieCrustDefaults::APP_DIR . '/TemplateEngines'
-                                        );
-            $this->templateEngines = array();
-            foreach ($loader->getPlugins() as $engine)
-            {
-                $engine->initialize($this);
-                $this->templateEngines[$engine->getExtension()] = $engine;
-            }
-        }
-        
         if ($extension == 'html')
         {
             $extension = $this->getConfig()->getValueUnchecked('site/default_template_engine');
         }
-        return $this->templateEngines[$extension];
+
+        foreach ($this->getPluginLoader()->getTemplateEngines() as $templateEngine)
+        {
+            if ($templateEngine->getExtension() == $extension)
+            {
+                return $templateEngine;
+            }
+        }
     }
     
     protected $lastRunInfo = null;
@@ -343,8 +391,9 @@ class PieCrust implements IPieCrust
         $this->rootDir = rtrim($parameters['root'], '/\\') . '/';
         $this->debuggingEnabled = ((bool)$parameters['debug'] or isset($get['!debug']));
         $this->cachingEnabled = ((bool)$parameters['cache'] and !isset($get['!nocache']));
+        $this->pluginLoader = new PluginLoader($this);
     }
-    
+
     /**
      * Runs PieCrust on the given URI.
      */
@@ -381,7 +430,7 @@ class PieCrust implements IPieCrust
         {
             $this->lastRunInfo['cache_validity'] = null;
         }
-        
+
         // Get the resource URI and corresponding physical path.
         if ($server == null) $server = $_SERVER;
         if ($uri == null)
@@ -471,26 +520,5 @@ class PieCrust implements IPieCrust
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
             $this->config = new PieCrustConfiguration($this->rootDir . PieCrustDefaults::CONFIG_PATH, $configCache);
         }
-    }
-    
-    protected $formattersLoader;
-    /**
-     * Gets the PluginLoader for the page formatters.
-     */
-    protected function getFormattersLoader()
-    {
-        if ($this->formattersLoader === null)
-        {
-            $this->formattersLoader = new PluginLoader(
-                                            'PieCrust\\Formatters\\IFormatter',
-                                            PieCrustDefaults::APP_DIR . '/Formatters',
-                                            function ($p1, $p2) { return $p1->getPriority() < $p2->getPriority(); }
-                                            );
-            foreach ($this->formattersLoader->getPlugins() as $formatter)
-            {
-                $formatter->initialize($this);
-            }
-        }
-        return $this->formattersLoader;
     }
 }

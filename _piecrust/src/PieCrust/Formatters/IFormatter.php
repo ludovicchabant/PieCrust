@@ -33,13 +33,20 @@ interface IFormatter
      * it will be asked for whether it supports a given format (see format()).
      */
     public function getPriority();
+
+    /**
+     * Gets whether the formatter is exclusive, i.e. only wants unformatted text.
+     *
+     * Each page needs to be formatted with exactly one 'exclusive' formatter.
+     * Non-'exclusive' formatters can then further modify the text. Those formatters
+     * would usually have a 'LOW' priority to come after the main formatters.
+     */
+    public function isExclusive();
     
     /**
-     * Should return whether the formatter supports the given format.
-     * @param bool $isUnformatted Whether the text being formatted has already been
-     *                            formatted by another formatter with higher priority.
+     * Returns whether the formatter supports the given format.
      */
-    public function supportsFormat($format, $isUnformatted);
+    public function supportsFormat($format);
     
     /**
      * Should return the formatted text.

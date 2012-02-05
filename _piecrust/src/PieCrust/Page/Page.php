@@ -181,6 +181,14 @@ class Page implements IPage
      */
     public function getPageData()
     {
+        // Generating the page data will require the page config so
+        // make sure this is available.
+        // Also, if the page was not loaded at all, loading it from disk
+        // in `ensureConfigLoaded` will also create the page data.
+        // Man, this thing is a mess, but I can't find a cleaner way to
+        // do this.
+        $this->ensureConfigLoaded();
+
         if ($this->pageData == null)
         {
             $this->pageData = DataBuilder::getPageData($this);
@@ -222,6 +230,23 @@ class Page implements IPage
     public function setAssetUrlBaseRemap($remap)
     {
         $this->assetUrlBaseRemap = $remap;
+    }
+
+    protected $paginationDataSource;
+    /**
+     * Gets the pagination data source.
+     */
+    public function getPaginationDataSource()
+    {
+        return $this->paginationDataSource;
+    }
+
+    /**
+     * Sets the pagination data source.
+     */
+    public function setPaginationDataSource($postInfos)
+    {
+        $this->paginationDataSource = $postInfos;
     }
     
     /**

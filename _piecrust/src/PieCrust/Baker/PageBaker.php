@@ -23,13 +23,13 @@ class PageBaker
     protected $bakeDir;
     protected $parameters;
     
-    protected $wasPaginationDataAccessed;
+    protected $paginationDataAccessed;
     /**
      * Gets whether pagination data was accessed during baking.
      */
     public function wasPaginationDataAccessed()
     {
-        return $this->wasPaginationDataAccessed;
+        return $this->paginationDataAccessed;
     }
     
     /**
@@ -54,7 +54,7 @@ class PageBaker
      */
     public function __construct($bakeDir, array $parameters = array())
     {
-        $this->bakeDir = $bakeDir;
+        $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(array(
             'copy_assets' => false
         ), $parameters);
@@ -69,7 +69,7 @@ class PageBaker
         try
         {
             $this->bakedFiles = array();
-            $this->wasPaginationDataAccessed = false;
+            $this->paginationDataAccessed = false;
             
             $pageRenderer = new PageRenderer($page);
             
@@ -106,14 +106,14 @@ class PageBaker
         if ($extraData != null) $page->setExtraPageData($extraData);
         if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
-        // Set the custom stuff.
+        // Render the page.
+        if ($postInfos != null) $page->setPaginationDataSource($postInfos);
+        $bakedContents = $pageRenderer->get();
+
+        // Get some objects we need.
         $data = $page->getPageData();
         $assetor = $data['asset'];
         $paginator = $data['pagination'];
-        if ($postInfos != null) $paginator->setPaginationDataSource($postInfos);
-        
-        // Render the page.
-        $bakedContents = $pageRenderer->get();
         
         // Figure out the output HTML path.
         $useDirectory = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
@@ -138,8 +138,8 @@ class PageBaker
         {
             $bakePath = ($this->bakeDir . 
                          $page->getUri() . 
-                         (($page->getUri() == '') ? '' : DIRECTORY_SEPARATOR) . 
-                         (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . DIRECTORY_SEPARATOR)) .
+                         (($page->getUri() == '') ? '' : '/') . 
+                         (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . '/')) .
                          self::BAKE_INDEX_DOCUMENT);
         }
         else
@@ -158,13 +158,13 @@ class PageBaker
         {
             if ($useDirectory)
             {
-                $bakeAssetDir = dirname($bakePath) . DIRECTORY_SEPARATOR;
+                $bakeAssetDir = dirname($bakePath) . '/';
             }
             else
             {
                 $bakePathInfo = pathinfo($bakePath);
-                $bakeAssetDir = $bakePathInfo['dirname'] . DIRECTORY_SEPARATOR . 
-                                (($page->getUri() == '') ? '' : $bakePathInfo['filename']) . DIRECTORY_SEPARATOR;
+                $bakeAssetDir = $bakePathInfo['dirname'] . '/' . 
+                                (($page->getUri() == '') ? '' : $bakePathInfo['filename']) . '/';
             }
             
             $assetPaths = $assetor->getAssetPathnames();
@@ -180,7 +180,7 @@ class PageBaker
             }
         }
         
-        $this->wasPaginationDataAccessed = ($this->wasPaginationDataAccessed or $paginator->wasPaginationDataAccessed());
+        $this->paginationDataAccessed = ($this->paginationDataAccessed or $paginator->wasPaginationDataAccessed());
     }
     
     protected function getBakedExtension($contentType)

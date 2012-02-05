@@ -5,42 +5,27 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
-use PieCrust\PieCrust;
-use PieCrust\IO\FileSystem;
+use PieCrust\IPieCrust;
+use PieCrust\Chef\ChefContext;
 use PieCrust\Interop\PieCrustImporter;
+use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 
-class ImportCommand implements IChefCommand
+class ImportCommand extends ChefCommand
 {
     public function getName()
     {
         return 'import';
     }
     
-    public function supportsDefaultOptions()
-    {
-        return true;
-    }
-    
     public function setupParser(Console_CommandLine $importParser)
     {
-        $importer = new PieCrustImporter();
-        $formatValues = array();
-        $formatsDescription = "";
-        foreach ($importer->getImporters() as $i)
-        {
-            $formatValues[] = $i->getName();
-            $formatsDescription .= $i->getName() . " : " . $i->getDescription() . PHP_EOL . PHP_EOL;
-        }
-
         $importParser->description = 'Imports content from another CMS into PieCrust.';
         $importParser->addOption('format', array(
             'short_name'  => '-f',
             'long_name'   => '--format',
-            'choices'     => $formatValues,
-            'description' => "The format of the source data to import." . PHP_EOL .
-                "The supported formats are:" . PHP_EOL .
-                $formatsDescription,
+            'description' => "The format of the source data to import.",
             'help_name'   => 'FORMAT'
         ));
         $importParser->addOption('source', array(
@@ -49,33 +34,44 @@ class ImportCommand implements IChefCommand
             'description' => 'The path or resource string for the source data, depending on the `format`.',
             'help_name'   => 'SOURCE'
         ));
+
+        $helpParser = $importParser->parent->commands['help'];
+        $helpParser->helpTopics['about-import'] = <<<EOT
+The `import` command lets you import content from another CMS into PieCrust.
+
+If format is `wordpress`:
+
+ - The source must be a path to an XML file exported from the Wordpress dashboard,
+   or a connection string to the MySQL database the blog is running on. That 
+   connection string must be of the form:
+
+     username:password@server/database_name
+
+   A suffix of the form `/prefix` can also be specified if the tables in the 
+   database don't have the default `wp_` prefix.
+
+
+EOT;
     }
     
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
+        $result = $context->getResult();
+
         // Validate arguments.
-        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir . PHP_EOL . "Run 'chef init' to create a website.", 1);
-            die();
-        }
         $format = $result->command->options['format'];
         if (empty($format))
         {
-            $parser->displayError("No format was specified.");
-            die();
+            throw new PieCrustException("No format was specified.");
         }
         $source = $result->command->options['source'];
         if (empty($source))
         {
-            $parser->displayError("No source was specified.");
-            die();
+            throw new PieCrustException("No source was specified.");
         }
         
         // Start importing!
-        $pieCrust = new PieCrust(array('root' => $rootDir));
-        $importer = new PieCrustImporter();
-        $importer->import($pieCrust, $format, $source);
+        $importer = new PieCrustImporter($context->getApp(), $context->getLog());
+        $importer->import($format, $source);
     }
 }

@@ -8,7 +8,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Interop\Importers\IImporter;
 use PieCrust\IO\FileSystem;
-use PieCrust\Util\PluginLoader;
+use PieCrust\Plugins\PluginLoader;
 
 
 /**
@@ -16,16 +16,22 @@ use PieCrust\Util\PluginLoader;
  */
 class PieCrustImporter
 {
-    protected $importersLoader;
+    protected $pieCrust;
+    protected $logger;
 
     /**
      * Creates a new instance of PieCrustImporter.
      */
-    public function __construct()
+    public function __construct(IPieCrust $pieCrust, $logger = null)
     {
-        $this->importersLoader = new PluginLoader(
-            'PieCrust\\Interop\\Importers\\IImporter',
-            PieCrustDefaults::APP_DIR . '/Interop/Importers');
+        $this->pieCrust = $pieCrust;
+
+        if ($logger == null)
+        {
+            require_once 'Log.php';
+            $logger = \Log::singleton('null', '', '');
+        }
+        $this->logger = $logger;
     }
 
     /**
@@ -33,33 +39,34 @@ class PieCrustImporter
      */
     public function getImporters()
     {
-        return $this->importersLoader->getPlugins();
+        return $this->pieCrust->getPluginLoader()->getImporters();
     }
     
     /**
      * Imports content at the given source, using the given importer format.
      */
-    public function import(IPieCrust $pieCrust, $format, $source)
+    public function import($format, $source)
     {
         // Find the importer that matches the given name and run the import.
-        foreach ($this->importersLoader->getPlugins() as $importer)
+        foreach ($this->getImporters() as $importer)
         {
             if ($importer->getName() == $format)
             {
-                $this->doImport($pieCrust, $importer, $source);
+                $this->doImport($this->pieCrust, $importer, $source);
                 return;
             }
         }
         
-        throw new PieCrustException('Importer format "' . $format . '" is unknown.');
+        throw new PieCrustException("Importer format '{$format} ' is unknown.");
     }
     
-    protected function doImport(IPieCrust $pieCrust, IImporter $importer, $source)
+    protected function doImport(IImporter $importer, $source)
     {
-        echo 'Importing "' . $source . '" using "' . $importer->getName() . '".' . PHP_EOL;
+        $log->info("Importing '{$source}' using '{$importer->getName()}'");
+
         $importer->open($source);
-        $importer->importPages($pieCrust->getPagesDir());
-        $importer->importPosts($pieCrust->getPostsDir(), $pieCrust->getConfig()->getValue('site/posts_fs'));
+        $importer->importPages($this->pieCrust->getPagesDir());
+        $importer->importPosts($this->pieCrust->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
         $importer->close();
     }
 }

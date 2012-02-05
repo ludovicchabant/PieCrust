@@ -35,7 +35,7 @@ class PageRenderer
     /**
      * Renders the given page and sends the result to the standard output.
      */
-    public function render($data = null)
+    public function render()
     {
         $pieCrust = $this->page->getApp();
         $pageConfig = $this->page->getConfig();
@@ -60,12 +60,8 @@ class PageRenderer
             $extension = pathinfo($templateName, PATHINFO_EXTENSION);
             $templateEngine = $pieCrust->getTemplateEngine($extension);
             
-            // We need to reset the pagination data so that any filters or modifications
-            // applied to it by the page are not also applied to the template.
-            $data = $this->getRenderData();
-            $data['pagination']->resetPaginationData();
-            
             // Render the page.
+            $data = $this->getRenderData();
             $templateEngine->renderFile($templateName, $data);
         }
         else
@@ -81,12 +77,12 @@ class PageRenderer
         }
     }
     
-    public function get($data = null)
+    public function get()
     {
         ob_start();
         try
         {
-            $this->render($data);
+            $this->render();
             return ob_get_clean();
         }
         catch (Exception $e)

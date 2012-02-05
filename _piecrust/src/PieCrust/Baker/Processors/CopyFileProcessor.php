@@ -33,6 +33,11 @@ class CopyFileProcessor implements IProcessor
     {
         return true;
     }
+
+    public function isDelegatingDependencyCheck()
+    {
+        return true;
+    }
     
     public function getDependencies($path)
     {
@@ -49,5 +54,6 @@ class CopyFileProcessor implements IProcessor
         $outputPath = $outputDir . basename($inputPath);
         if (@copy($inputPath, $outputPath) == false)
             throw new PieCrustException("Can't copy '".$inputPath."' to '".$outputPath."'.");
+        return true;
     }
 }

@@ -4,11 +4,67 @@ namespace PieCrust\Util;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 
 
 class PathHelper
 {
+    /**
+     * Given a path, figure out if that path is inside a PieCrust website by
+     * looking for a `_content/config.yml` file somewhere up in the hierarchy.
+     * Returns `null` if no website is found.
+     */
+    public static function getAppRootDir($path)
+    {
+        while (!is_file($path . DIRECTORY_SEPARATOR . '_content' . DIRECTORY_SEPARATOR . 'config.yml'))
+        {
+            $pathParent = rtrim(dirname($path), '/\\');
+            if ($path == $pathParent)
+            {
+                return null;
+            }
+            $path = $pathParent;
+        }
+        return $path;
+    }
+
+    /**
+     * Gets an absolute path, like `realpath`, but without resolving symbolic links.
+     *
+     * A root path can be specified, if the path must be made absolute relative
+     * to a different directory than the current one. It must not end with a slash
+     * or backslash.
+     */
+    public static function getAbsolutePath($path, $rootPath = null)
+    {
+        if ($rootPath == null)
+            $rootPath = getcwd();
+
+        if ($rootPath[strlen($rootPath) - 1] != '/' &&
+            $rootPath[strlen($rootPath) - 1] != '\\')
+            $rootPath .= DIRECTORY_SEPARATOR;
+
+        if ($path[0] != '/' && $path[0] != '\\' && $path[0] != '~' && (strlen($path) < 2 || $path[1] != ':'))
+            $path = $rootPath . $path;
+        if ($path[0] == '~')
+            $path = $_SERVER['HOME'] . substr($path, 1);
+
+        $path = str_replace('\\', '/', $path);
+        $parts = explode('/', $path);
+        $absolutes = array();
+        foreach ($parts as $part)
+        {
+            if ('.' == $part)
+                continue;
+            if ('..' == $part)
+                array_pop($absolutes);
+            else
+                $absolutes[] = $part;
+        }
+        return implode('/', $absolutes);
+    }
+
     /**
      * Gets the relative file-system path from the app root.
      */
@@ -61,6 +117,39 @@ class PathHelper
             }
         }
         throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplateDirs()));
+    }
+
+    /**
+     * Gets the plugins directories for a given plugin type.
+     */
+    public static function getPluginsDirs(IPieCrust $pieCrust, $pluginType, $defaultDir = null)
+    {
+        $result = array();
+
+        // Add the default/built-in directory, if any.
+        if ($defaultDir)
+            $result[] = PieCrustDefaults::APP_DIR . '/' . $defaultDir;
+
+        // Look in the app's plugins directories, and for each, look at the plugins
+        // inside, looking for the correct class type.
+        $locations = $pieCrust->getPluginsDirs();
+        foreach ($locations as $loc)
+        {
+            $dirs = new \FilesystemIterator($loc);
+            foreach ($dirs as $d)
+            {
+                if (!$d->isDir())
+                    continue;
+
+                $pluginDir = $d->getPathname() . '/src/' . $pluginType;
+                if (is_dir($pluginDir))
+                {
+                    $result[] = $pluginDir;
+                }
+            }
+        }
+
+        return $result;
     }
     
     private static function validateTemplateName($name)

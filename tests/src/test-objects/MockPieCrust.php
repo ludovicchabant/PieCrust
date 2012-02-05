@@ -2,6 +2,7 @@
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustConfiguration;
+use PieCrust\Plugins\PluginLoader;
 
 
 class MockPieCrust implements IPieCrust
@@ -79,6 +80,30 @@ class MockPieCrust implements IPieCrust
     {
         $this->cacheDir = $dir;
     }
+
+    public $pluginsDirs;
+
+    public function getPluginsDirs()
+    {
+        return $this->pluginsDirs;
+    }
+
+    public function setPluginsDirs($dirs)
+    {
+        $this->pluginsDirs = $dirs;
+    }
+
+    public function addPluginsDir($dir)
+    {
+        $this->pluginsDirs[] = $dir;
+    }
+
+    public $pluginLoader;
+
+    public function getPluginLoader()
+    {
+        return $this->pluginLoader;
+    }
     
     public $config;
     
@@ -126,8 +151,11 @@ class MockPieCrust implements IPieCrust
     public function __construct()
     {
         $this->config = new PieCrustConfiguration();
+        $this->templateDirs = array();
+        $this->pluginsDirs = array();
         $this->templateEngines = array();
         $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
+        $this->pluginLoader = new PluginLoader($this);
     }
     
     public function addTemplateEngine($name, $className)

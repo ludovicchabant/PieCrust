@@ -5,6 +5,9 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
+use PieCrust\Chef\ChefContext;
 
 
 define('FTP_SYNC_ALWAYS', 0);
@@ -21,16 +24,11 @@ $TEXT_FILE_NAMES = array(
 );
 
 
-class UploadCommand implements IChefCommand
+class UploadCommand extends ChefCommand
 {
     public function getName()
     {
         return 'upload';
-    }
-    
-    public function supportsDefaultOptions()
-    {
-        return false;
     }
     
     public function setupParser(Console_CommandLine $uploadParser)
@@ -74,22 +72,17 @@ class UploadCommand implements IChefCommand
         ));
     }
 
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
-        // Validate arguments.
-        $rootDir = $result->command->args['root'];
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir, 1);
-            die();
-        }
-    
+        $result = $context->getResult();
+        $log = $context->getLog();
+
+        $rootDir = $context->getApp()->getRootDir();
         $fullAddress = $result->command->args['server'];
         $matches = array();
         if (!preg_match('/^([^:]+)(\:([^@]+))?@(.*)$/', $fullAddress, $matches))
         {
-            $parser->displayError("The given upload address was not valid. Must be of form: user:password@domain.tld", 1);
-            die();
+            throw new PieCrustException("The given upload address was not valid. Must be of form: user:password@domain.tld");
         }
         $user = $matches[1];
         $password = $matches[3];
@@ -117,13 +110,12 @@ class UploadCommand implements IChefCommand
         
         $simulate = $result->command->options['simulate'];
         
-        echo "Uploading to ".$server." [".$remoteRootDir."] as ".$user.PHP_EOL;
+        $log->info("Uploading to '{$server}' [{$remoteRootDir}] as {$user}");
         
         $conn = ftp_connect($server);
         if ($conn === false)
         {
-            $parser->displayError("Can't connect to FTP server ".$server.".", 1);
-            die();
+            throw new PieCrustException("Can't connect to FTP server '{$server}'.");
         }
         if (!isset($password) or $password == "")
         {
@@ -135,10 +127,10 @@ class UploadCommand implements IChefCommand
         {
             if (ftp_login($conn, $user, $password))
             {
-                echo "Connected to FTP server ".$server.PHP_EOL;
+                $log->info("Connected to FTP server '{$server}'.");
                 if ($passiveMode)
                 {
-                    echo "Enabling passive mode.".PHP_EOL;
+                    $log->info("Enabling passive mode.");
                     if (!ftp_pasv($conn, true))
                         throw new PieCrustException("Can't enable passive mode.");
                 }
@@ -146,12 +138,12 @@ class UploadCommand implements IChefCommand
             }
             else
             {
-                throw new PieCrustException("Couldn't connect to FTP server ".$server.", login incorrect.");
+                throw new PieCrustException("Couldn't connect to FTP server '{$server}', login incorrect.");
             }
         }
         catch (Exception $e)
         {
-            $parser->displayError($e->getMessage(), 1);
+            throw new PieCrustException($e->getMessage());
         }
         ftp_close($conn);
     }
@@ -220,7 +212,7 @@ class UploadCommand implements IChefCommand
             }
             if ($doTransfer)
             {
-                echo $relativePathname." [".$doTransferReason."][".($transferMode == FTP_ASCII ? 'A' : 'B')."]".PHP_EOL;
+                $log->info("{$relativePathname} [{$doTransferReason}][".($transferMode == FTP_ASCII ? 'A' : 'B')."]");
                 if (!$simulate)
                     ftp_put($conn, $remotePathname, $cur->getPathname(), $transferMode);
             }

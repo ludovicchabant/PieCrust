@@ -8,6 +8,7 @@ require_once 'vfsStream/visitor/vfsStreamStructureVisitor.php';
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\DirectoryBaker;
+use PieCrust\Baker\Processors\IProcessor;
 
 
 class DirectoryBakerTest extends PHPUnit_Framework_TestCase
@@ -43,6 +44,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             )),
             vfsStream::inspect(new vfsStreamStructureVisitor(), $root)->getStructure()
         );
+        $this->assertEmpty($baker->getBakedFiles());
     }
     
     public function testOneFileBake()
@@ -83,6 +85,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
                 )
             )),
             vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
+        );
+        $this->assertEquals(
+            array(
+                vfsStream::url('root/kitchen/something.html') => array(
+                    'relativeInput' => 'something.html',
+                    'relativeOutputs' => array('something.html'),
+                    'outputs' => array(vfsStream::url('root/counter/something.html'))
+                )
+            ),
+            $baker->getBakedFiles()
         );
     }
     
@@ -126,6 +138,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             )),
             vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
         );
+        $this->assertEquals(
+            array(
+                vfsStream::url('root/kitchen/something.html') => array(
+                    'relativeInput' => 'something.html',
+                    'relativeOutputs' => array('something.html'),
+                    'outputs' => array(vfsStream::url('root/kitchen/_counter/something.html'))
+                )
+            ),
+            $baker->getBakedFiles()
+        );
     }
 
     public function testSkipPattern()
@@ -155,6 +177,21 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(is_file(vfsStream::url('root/_counter/something.html')));
         $this->assertTrue(is_file(vfsStream::url('root/_counter/subdir/_important.html')));
         $this->assertFalse(is_file(vfsStream::url('root/_counter/_hidden.html')));
+        $this->assertEquals(
+            array(
+                vfsStream::url('root/kitchen/something.html') => array(
+                    'relativeInput' => 'something.html',
+                    'relativeOutputs' => array('something.html'),
+                    'outputs' => array(vfsStream::url('root/_counter/something.html'))
+                ),
+                vfsStream::url('root/kitchen/subdir/_important.html') => array(
+                    'relativeInput' => 'subdir/_important.html',
+                    'relativeOutputs' => array('subdir/_important.html'),
+                    'outputs' => array(vfsStream::url('root/_counter/subdir/_important.html'))
+                )
+            ),
+            $baker->getBakedFiles()
+        );
     }
 
     public function testUpToDate()
@@ -179,6 +216,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
+        $this->assertEquals(
+            array(
+                vfsStream::url('root/something.html') => array(
+                    'relativeInput' => 'something.html',
+                    'relativeOutputs' => array('something.html'),
+                    'outputs' => array(vfsStream::url('root/_counter/something.html'))
+                )
+            ),
+            $baker->getBakedFiles()
+        );
         clearstatcache();
         $mtime = filemtime($outFile);
         $this->assertGreaterThan(filemtime(vfsStream::url('root/something.html')), $mtime);
@@ -186,6 +233,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         sleep(1);
         $baker->bake();
         $this->assertTrue(is_file($outFile));
+        $this->assertEmpty($baker->getBakedFiles());
         clearstatcache();
         $this->assertEquals($mtime, filemtime($outFile));
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
@@ -194,6 +242,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         file_put_contents(vfsStream::url('root/something.html'), 'New content!');
         $baker->bake();
         $this->assertTrue(is_file($outFile));
+        $this->assertEquals(
+            array(
+                vfsStream::url('root/something.html') => array(
+                    'relativeInput' => 'something.html',
+                    'relativeOutputs' => array('something.html'),
+                    'outputs' => array(vfsStream::url('root/_counter/something.html'))
+                )
+            ),
+            $baker->getBakedFiles()
+        );
         clearstatcache();
         $this->assertGreaterThan($mtime, filemtime($outFile));
         $this->assertEquals('New content!', file_get_contents($outFile));
@@ -229,5 +287,63 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         clearstatcache();
         $this->assertGreaterThan($mtime, filemtime($outFile));
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
+    }
+
+    public function globToRegexDataProvider()
+    {
+        return array(
+            array('blah', '/blah/'),
+            array('/blah/', '/blah/'),
+            array('/^blah.*\\.css/', '/^blah.*\\.css/'),
+            array('blah.*', '/blah\\.[^\\/\\\\]*/'),
+            array('blah?.css', '/blah[^\\/\\\\]\\.css/')
+        );
+    }
+
+    /**
+     * @dataProvider globToRegexDataProvider
+     */
+    public function testGlobToRegex($in, $expectedOut)
+    {
+        $out = DirectoryBaker::globToRegex($in);
+        $this->assertEquals($expectedOut, $out);
+    }
+
+    public function testGlobToRegexExample()
+    {
+        $pattern = DirectoryBaker::globToRegex('blah*.css');
+        $this->assertTrue(preg_match($pattern, 'dir/blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah2.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blahblah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah.blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah.blah.css/something') == 1);
+        $this->assertFalse(preg_match($pattern, 'blah/something.css') == 1);
+
+        $pattern = DirectoryBaker::globToRegex('blah?.css');
+        $this->assertFalse(preg_match($pattern, 'dir/blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah1.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blahh.css') == 1);
+        $this->assertFalse(preg_match($pattern, 'dir/blah/yo.css') == 1);
+    }
+
+    public function testProcessorOrdering()
+    {
+        $first = new MockProcessor('FIRST', 'ext', IProcessor::PRIORITY_HIGH);
+        $second = new MockProcessor('SECOND', 'ext', IProcessor::PRIORITY_DEFAULT);
+        $third = new MockProcessor('THIRD', 'ext', IProcessor::PRIORITY_LOW);
+
+        $app = new MockPieCrust();
+        $mockPlugin = new MockPlugin();
+        $mockPlugin->processors = array($third, $first, $second);
+
+        $stub = $this->getMockBuilder('PieCrust\Plugins\PluginLoader')
+                     ->setMethods(array('getPlugins', 'ensureLoaded'))
+                     ->setConstructorArgs(array($app))
+                     ->getMock();
+        $stub->expects($this->any())
+             ->method('getPlugins')
+             ->will($this->returnValue(array($mockPlugin)));
+
+        $this->assertEquals(array($first, $second, $third), $stub->getProcessors());
     }
 }

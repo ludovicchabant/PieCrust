@@ -2,6 +2,7 @@
 
 namespace PieCrust\Page;
 
+use \Exception;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Data\DataBuilder;
@@ -80,6 +81,19 @@ class PageLoader
      */
     public function load()
     {
+        try
+        {
+            return $this->loadUnsafe();
+        }
+        catch (Exception $e)
+        {
+            $relativePath = PageHelper::getRelativePath($this->page);
+            throw new PieCrustException("Error loading page '{$relativePath}': {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    protected function loadUnsafe()
+    {
         // Caching must be disabled if we get some extra page data because then this page
         // is not self-contained anymore.
         $enableCache = ($this->page->getExtraPageData() == null);
@@ -91,7 +105,7 @@ class PageLoader
             $config = json_decode($configText, true);
             $this->page->getConfig()->set($config, false); // false = No need to validate this.
             if (!$this->page->getConfig()->hasValue('segments'))
-                throw new PieCrustException("Error in page '".$this->page->getPath()."': Can't get segments list from cache.");
+                throw new PieCrustException("Can't get segments list from cache.");
             
             $contents  = array('content' => null, 'content.abstract' => null);
             foreach ($config['segments'] as $key)
@@ -128,7 +142,7 @@ class PageLoader
             $templateEngineName = $this->page->getConfig()->getValue('template_engine');
             $templateEngine = $pieCrust->getTemplateEngine($templateEngineName);
             if (!$templateEngine)
-                throw new PieCrustException("Error in page '".$this->page->getPath()."': Unknown template engine '".$templateEngineName."'.");
+                throw new PieCrustException("Unknown template engine '".$templateEngineName."'.");
             $contents = array('content' => null, 'content.abstract' => null);
             foreach ($rawSegments as $key => $content)
             {
@@ -141,7 +155,7 @@ class PageLoader
                 catch (Exception $e)
                 {
                     ob_end_clean();
-                    throw new PieCrustException("Error in page '".$this->page->getPath()."': ".$e->getMessage(), 0, $e);
+                    throw $e;
                 }
                 
                 $config->appendValue('segments', $key);

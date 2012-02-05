@@ -177,24 +177,4 @@ abstract class FileSystem
         }
         return $skippedFiles;
     }
-    
-    public static function getAbsolutePath($path)
-    {
-        if ($path[0] != '/' && $path[0] != '\\' && (count($path) < 2 || $path[1] != ':'))
-            $path = getcwd() . '/' . $path;
-        
-        $path = str_replace('\\', '/', $path);
-        $parts = explode('/', $path);
-        $absolutes = array();
-        foreach ($parts as $part)
-        {
-            if ('.' == $part)
-                continue;
-            if ('..' == $part)
-                array_pop($absolutes);
-            else
-                $absolutes[] = $part;
-        }
-        return implode('/', $absolutes);
-    }
 }

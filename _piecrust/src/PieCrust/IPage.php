@@ -114,4 +114,14 @@ interface IPage
      * Sets the asset URL base remapping pattern.
      */
     public function setAssetUrlBaseRemap($remap);
+
+    /**
+     * Gets the pagination data source.
+     */
+    public function getPaginationDataSource();
+
+    /**
+     * Sets the pagination data source.
+     */
+    public function setPaginationDataSource($postInfos);
 }

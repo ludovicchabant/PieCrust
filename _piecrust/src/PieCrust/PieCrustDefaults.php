@@ -11,13 +11,13 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.2.3';
+    const VERSION = '0.4.0';
     
     /**
      * The application's source code directory.
      */
     const APP_DIR = __DIR__;
-    
+
     /**
      * Names for special pages.
      */
@@ -33,6 +33,7 @@ class PieCrustDefaults
     const CONTENT_TEMPLATES_DIR = '_content/templates/';
     const CONTENT_PAGES_DIR = '_content/pages/';
     const CONTENT_POSTS_DIR = '_content/posts/';
+    const CONTENT_PLUGINS_DIR = '_content/plugins/';
     const CACHE_DIR = '_cache/';
     const CACHE_INFO_FILENAME = 'cacheinfo';
     

@@ -15,10 +15,15 @@ class TextileFormatter implements IFormatter
     {
         return IFormatter::PRIORITY_DEFAULT;
     }
-    
-    public function supportsFormat($format, $isUnformatted)
+
+    public function isExclusive()
     {
-        return $isUnformatted && preg_match('/textile|tex/i', $format);
+        return true;
+    }
+    
+    public function supportsFormat($format)
+    {
+        return preg_match('/textile|tex/i', $format);
     }
     
     public function format($text)

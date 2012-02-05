@@ -28,8 +28,9 @@ class PieCrustBaker
      */
     const DEFAULT_BAKE_DIR = '_counter';
     const BAKE_INFO_FILE = 'bakeinfo.json';
-    
+
     protected $bakeRecord;
+    protected $logger;
     
     protected $pieCrust;
     /**
@@ -110,7 +111,7 @@ class PieCrustBaker
     /**
      * Creates a new instance of the PieCrustBaker.
      */
-    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array())
+    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array(), $logger = null)
     {
         $this->pieCrust = $pieCrust;
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
@@ -119,19 +120,27 @@ class PieCrustBaker
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
         $this->parameters = array_merge(array(
-                                            'smart' => true,
-                                            'clean_cache' => false,
-                                            'info_only' => false,
-                                            'config_variant' => null,
-                                            'show_banner' => true,
-                                            'copy_assets' => true,
-                                            'processors' => '*',
-                                            'skip_patterns' => array(),
-                                            'force_patterns' => array(),
-                                            'tag_combinations' => array()
-                                        ),
-                                        $bakerParametersFromApp,
-                                        $bakerParameters);
+                'smart' => true,
+                'clean_cache' => false,
+                'info_only' => false,
+                'config_variant' => null,
+                'show_banner' => true,
+                'copy_assets' => true,
+                'processors' => '*',
+                'skip_patterns' => array(),
+                'force_patterns' => array(),
+                'tag_combinations' => array()
+            ),
+            $bakerParametersFromApp,
+            $bakerParameters
+        );
+
+        if ($logger == null)
+        {
+            require_once 'Log.php';
+            $logger = \Log::singleton('null', '', '');
+        }
+        $this->logger = $logger;
         
         // Validate and explode the tag combinations.
         $combinations = $this->parameters['tag_combinations'];
@@ -148,17 +157,6 @@ class PieCrustBaker
             }
             $this->parameters['tag_combinations'] = $combinationsExploded;
         }
-        
-        // Validate skip patterns.
-        $this->parameters['skip_patterns'] = self::validatePatterns(
-            $this->parameters['skip_patterns'],
-            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
-        );
-        
-        // Validate force-bake patterns.
-        $this->parameters['force_patterns'] = self::validatePatterns(
-            $this->parameters['force_patterns']
-        );
         
         // Apply the default configuration variant, if it exists.
         $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
@@ -207,11 +205,10 @@ class PieCrustBaker
         
         if ($this->parameters['show_banner'] or $this->parameters['info_only'])
         {
-            echo "PieCrust Baker v." . PieCrustDefaults::VERSION . PHP_EOL . PHP_EOL;
-            echo "  baking  :  " . $this->pieCrust->getRootDir() . PHP_EOL;
-            echo "  into    :  " . $this->getBakeDir() . PHP_EOL;
-            echo "  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root') . PHP_EOL;
-            echo PHP_EOL . PHP_EOL;
+            $this->logger->debug("PieCrust Baker v." . PieCrustDefaults::VERSION);
+            $this->logger->debug("  baking  :  " . $this->pieCrust->getRootDir());
+            $this->logger->debug("  into    :  " . $this->getBakeDir());
+            $this->logger->debug("  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root'));
             
             if ($this->parameters['info_only'])
                 return;
@@ -277,7 +274,7 @@ class PieCrustBaker
             $start = microtime(true);
             FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
             file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
-            echo self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')') . PHP_EOL . PHP_EOL;
+            $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
             
             $this->parameters['smart'] = false;
         }
@@ -288,16 +285,17 @@ class PieCrustBaker
         $this->bakeRecord->collectTagCombinations();
         $this->bakeTags();
         $this->bakeCategories();
-        
+    
         $dirBaker = new DirectoryBaker($this->pieCrust,
-                                       $this->getBakeDir(),
-                                       array(
-                                            'smart' => $this->parameters['smart'],
-                                            'skip_patterns' => $this->parameters['skip_patterns'],
-                                            'force_patterns' => $this->parameters['force_patterns'],
-                                            'processors' => $this->parameters['processors']
-                                            )
-                                       );
+            $this->getBakeDir(),
+            array(
+                'smart' => $this->parameters['smart'],
+                'skip_patterns' => $this->parameters['skip_patterns'],
+                'force_patterns' => $this->parameters['force_patterns'],
+                'processors' => $this->parameters['processors']
+            ),
+            $this->logger
+        );
         $dirBaker->bake();
         
         // Save the bake record and clean up.
@@ -309,8 +307,8 @@ class PieCrustBaker
         
         if ($this->parameters['show_banner'])
         {
-            echo PHP_EOL;
-            echo self::formatTimed($overallStart, 'done baking') . PHP_EOL;
+            $this->logger->info('-------------------------');
+            $this->logger->info(self::formatTimed($overallStart, 'done baking'));
         }
     }
     
@@ -362,7 +360,8 @@ class PieCrustBaker
             $this->bakeRecord->addPageUsingPosts($relativePath);
         }
         
-        echo self::formatTimed($start, $relativePath) . PHP_EOL;
+        $pageCount = $baker->getPageCount();
+        $this->logger->info(self::formatTimed($start, $relativePath . (($pageCount > 1) ? " [{$pageCount}]" : "")));
         return true;
     }
     
@@ -397,7 +396,7 @@ class PieCrustBaker
                     $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page);
                     $pageWasBaked = true;
-                    echo self::formatTimed($start, $postInfo['name']) . PHP_EOL;
+                    $this->logger->info(self::formatTimed($start, $postInfo['name']));
                 }
                 
                 $postInfo['blogKey'] = $blogKey;
@@ -476,7 +475,9 @@ class PieCrustBaker
                     );
                     $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                     $baker->bake($page, $postInfos);
-                    echo self::formatTimed($start, $formattedTag . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+
+                    $pageCount = $baker->getPageCount();
+                    $this->logger->info(self::formatTimed($start, $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
@@ -513,7 +514,9 @@ class PieCrustBaker
                 );
                 $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
                 $baker->bake($page, $postInfos);
-                echo self::formatTimed($start, $category . ' (' . count($postInfos) . ' posts, '. sprintf('%.1f', (microtime(true) - $start) * 1000.0 / $baker->getPageCount()) .' ms/page)') . PHP_EOL;
+
+                $pageCount = $baker->getPageCount();
+                $this->logger->info(self::formatTimed($start, $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
             }
         }
     }
@@ -544,39 +547,5 @@ class PieCrustBaker
     {
         $endTime = microtime(true);
         return sprintf('[%8.1f ms] ', ($endTime - $startTime)*1000.0) . $message;
-    }
-    
-    public static function globToRegex($pattern)
-    {
-        if (substr($pattern, 0, 1) == "/" and
-            substr($pattern, -1) == "/")
-        {
-            // Already a regex.
-            return $pattern;
-        }
-        
-        $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
-        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
-        return '/'.$pattern.'/';
-    }
-
-    public static function validatePatterns($patterns, array $defaultPatterns = array())
-    {
-        if (!is_array($patterns))
-        {
-            $patterns = array($patterns);
-        }
-        // Convert glob patterns to regex patterns.
-        for ($i = 0; $i < count($patterns); ++$i)
-        {
-            $patterns[$i] = self::globToRegex($patterns[$i]);
-        }
-        // Add the default patterns.
-        foreach ($defaultPatterns as $p)
-        {
-            $patterns[] = $p;
-        }
-        return $patterns;
     }
 }

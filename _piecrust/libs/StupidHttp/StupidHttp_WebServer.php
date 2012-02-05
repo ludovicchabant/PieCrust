@@ -325,7 +325,7 @@ class StupidHttp_WebServer
                 {
                     if ($this->preprocessor != null)
                     {
-                        $this->logInfo('... preprocessing ' . $request->getUri() . ' ...');
+                        $this->logDebug('... preprocessing ' . $request->getUri() . ' ...');
                         $func = $this->preprocessor;
                         $func($request);
                     }

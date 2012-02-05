@@ -12,5 +12,11 @@ if [ -z "$PHP" ]; then
     exit 1
 fi
 
-CHEF_DIR=$(dirname $0)
+CHEF_DIR=`dirname $0`
+if `hash readlink 2>&-`; then
+    LINKED_EXE=`readlink $0`
+    if [ -n "$LINKED_EXE" ]; then
+        CHEF_DIR=`dirname $LINKED_EXE`
+    fi
+fi
 $PHP $CHEF_DIR/chef.php $@

@@ -2,13 +2,20 @@
 
 namespace PieCrust\Chef;
 
+require_once 'Log.php';
+require_once 'Console/CommandLine.php';
+require_once 'Console/Getopt.php';
+
+use \Log;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use \Console_Getopt;
+use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
-use PieCrust\Util\PluginLoader;
-
-require_once 'Console/CommandLine.php';
+use PieCrust\PieCrustException;
+use PieCrust\Plugins\PluginLoader;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -16,40 +23,168 @@ require_once 'Console/CommandLine.php';
  */
 class Chef
 {
-    protected $parser;
-    protected $commandLoader;
-    
     public function __construct()
     {
+    }
+    
+    public function run($userArgc = null, $userArgv = null)
+    {
+        try
+        {
+            return $this->runUnsafe($userArgc, $userArgv);
+        }
+        catch (Exception $e)
+        {
+            echo "Fatal Error: " . $e->getMessage() . PHP_EOL;
+            echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
+            echo $e->getTraceAsString() . PHP_EOL;
+            return 2;
+        }
+    }
+
+    public function runUnsafe($userArgc = null, $userArgv = null)
+    {
+        // Get the arguments.
+        if ($userArgc == null || $userArgv == null)
+        {
+            $userArgv = Console_Getopt::readPHPArgv();
+            // `readPHPArgv` returns a `PEAR_Error` (or something like it) if
+            // it can't figure out the CLI arguments.
+            if (!is_array($userArgv))
+                throw new PieCrustException($userArgv->getMessage());
+            $userArgc = count($userArgv);
+        }
+
+        // Find whether the '--root' parameter was given.
+        $rootDir = null;
+        foreach ($userArgv as $arg)
+        {
+            if (substr($arg, 0, strlen('--root=')) == '--root=')
+            {
+                $rootDir = substr($arg, strlen('--root='));
+                break;
+            }
+        }
+        if ($rootDir == null)
+        {
+            // No root given. Find it ourselves.
+            $rootDir = PathHelper::getAppRootDir(getcwd());
+        }
+        else
+        {
+            // The root was given.
+            $rootDir = PathHelper::getAbsolutePath($rootDir);
+            if (!is_dir($rootDir))
+                throw new PieCrustException("The given root directory doesn't exist: " . $rootDir);
+        }
+
+        // Build the appropriate app.
+        if ($rootDir == null)
+        {
+            $pieCrust = new NullPieCrust();
+        }
+        else
+        {
+            $pieCrust = new PieCrust(array(
+                'root' => $rootDir,
+                'debug' => in_array('--debug', $userArgv)
+            ));
+        }
+
         // Set up the command line parser.
-        $this->parser = new Console_CommandLine(array(
+        $parser = new Console_CommandLine(array(
             'name' => 'chef',
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
-        
-        $this->commandLoader = new PluginLoader(
-            'PieCrust\\Chef\\Commands\\IChefCommand',
-            PieCrustDefaults::APP_DIR . '/Chef/Commands');
-        
-        foreach ($this->commandLoader->getPlugins() as $command)
+        // Sort commands by name.
+        $sortedCommands = $pieCrust->getPluginLoader()->getCommands();
+        usort($sortedCommands, function ($c1, $c2) { return strcmp($c1->getName(), $c2->getName()); });
+        // Add commands to the parser.
+        foreach ($sortedCommands as $command)
         {
-            $commandParser = $this->parser->addCommand($command->getName());
+            $commandParser = $parser->addCommand($command->getName());
             $command->setupParser($commandParser);
-            if ($command->supportsDefaultOptions())
+            $this->addCommonOptionsAndArguments($commandParser);
+        }
+
+        // Parse the command line.
+        try
+        {
+            $result = $parser->parse($userArgc, $userArgv);
+        }
+        catch (Exception $e)
+        {
+            $parser->displayError($e->getMessage());
+            return 1;
+        }
+
+        // If no command was given, use `help`.
+        if (empty($result->command_name))
+        {
+            $result = $parser->parse(2, array('chef', 'help'));
+        }
+
+        // Create the log.
+        $debugMode = $result->command->options['debug'];
+        $log = Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
+        if (!$debugMode)
+            $log->setMask(Log::MAX(PEAR_LOG_INFO));
+
+        // Run the command.
+        foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
+        {
+            if ($command->getName() == $result->command_name)
             {
-                $this->addCommonOptionsAndArguments($commandParser);
+                try
+                {
+                    if ($rootDir == null && $command->requiresWebsite())
+                    {
+                        $cwd = getcwd();
+                        throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
+                    }
+
+                    $context = new ChefContext($pieCrust, $result, $log, $debugMode);
+                    $command->run($context);
+                    return;
+                }
+                catch (Exception $e)
+                {
+                    $log->emerg(self::getErrorMessage($e, $debugMode));
+                    return 1;
+                }
             }
         }
     }
-    
+
+    public static function getErrorMessage(Exception $e, $debugMode = false)
+    {
+        $message = $e->getMessage();
+        if ($debugMode)
+        {
+            $message .= PHP_EOL;
+            $message .= PHP_EOL;
+            $message .= "Debug Information" . PHP_EOL;
+            while ($e)
+            {
+                $message .= "-----------------" . PHP_EOL;
+                $message .= $e->getMessage() . PHP_EOL;
+                $message .= $e->getTraceAsString();
+                $message .= PHP_EOL;
+                $e = $e->getPrevious();
+            }
+            $message .= "-----------------" . PHP_EOL;
+        }
+        return $message;
+    }
+
     protected function addCommonOptionsAndArguments(Console_CommandLine $parser)
     {
-        $parser->addArgument('root', array(
-            'description' => "The directory in which we'll find '_content' and other such directories (defaults to current directory).",
-            'help_name'   => 'ROOT_DIR',
-            'default'     => getcwd(),
-            'optional'    => true
+        $parser->addOption('root', array(
+            'long_name'   => '--root',
+            'description' => "The root directory of the website (defaults to the first parent of the current directory that contains a '_content' directory).",
+            'default'     => null,
+            'help_name'   => 'ROOT_DIR'
         ));
         $parser->addOption('debug', array(
             'long_name'   => '--debug',
@@ -58,64 +193,6 @@ class Chef
             'help_name'   => 'DEBUG',
             'action'      => 'StoreTrue'
         ));
-    }
-    
-    public function run($userArgc = null, $userArgv = null)
-    {
-        // Parse the command line.
-        try
-        {
-            $result = $this->parser->parse($userArgc, $userArgv);
-        }
-        catch (Exception $e)
-        {
-            $this->parser->displayError($e->getMessage());
-            self::displayDebugInformation($this, $e);
-            die();
-        }
-        
-        // Run the command.
-        if (!empty($result->command_name))
-        {
-            foreach ($this->commandLoader->getPlugins() as $command)
-            {
-                if ($command->getName() == $result->command_name)
-                {
-                    try
-                    {
-                        $command->run($this->parser, $result);
-                        return;
-                    }
-                    catch (Exception $e)
-                    {
-                        $this->parser->displayError(self::getErrorMessage($result, $e));
-                        die();
-                    }
-                }
-            }
-        }
-        
-        $this->parser->displayUsage();
-    }
-
-    public static function getErrorMessage(Console_CommandLine_Result $result, Exception $e)
-    {
-        $message = $e->getMessage();
-        if ($result->command->options['debug'])
-        {
-            $message .= PHP_EOL;
-            $message .= PHP_EOL;
-            $message .= "Debug Information" . PHP_EOL;
-            while ($e)
-            {
-                $message .= "-----------------" . PHP_EOL;
-                $message .= $e->getTraceAsString();
-                $message .= PHP_EOL;
-                $e = $e->getPrevious();
-            }
-            $message .= "-----------------" . PHP_EOL;
-        }
-        return $message;
     }
 }
 

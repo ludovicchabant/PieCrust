@@ -49,8 +49,19 @@ class Assetor implements \ArrayAccess, \Iterator
      */
     public function getAssetPathnames()
     {
-        if ($this->assetsDir === false) return null;
-        return new FilesystemIterator($this->assetsDir, FilesystemIterator::CURRENT_AS_PATHNAME | FilesystemIterator::SKIP_DOTS);
+        if ($this->assetsDir === false)
+            return null;
+
+        $paths = array();
+        $it = new FilesystemIterator($this->assetsDir, FilesystemIterator::SKIP_DOTS);
+        foreach ($it as $p)
+        {
+            if ($it->isFile())
+                $paths[] = $p->getPathname();
+            else if ($it->isDir())
+                throw new PieCrustException("Page asset sub-directories are not supported: " . $p->getPathname());
+        }
+        return $paths;
     }
     
     /**

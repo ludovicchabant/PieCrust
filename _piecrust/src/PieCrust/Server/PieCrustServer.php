@@ -12,8 +12,11 @@ use \StupidHttp_PearLog;
 use \StupidHttp_ConsoleLog;
 use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
+use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
+use PieCrust\Baker\DirectoryBaker;
+use PieCrust\IO\FileSystem;
 use PieCrust\Page\PageRepository;
 
 
@@ -22,65 +25,108 @@ use PieCrust\Page\PageRepository;
  */
 class PieCrustServer
 {
-    protected $server;
     protected $rootDir;
-    protected $additionalTemplatesDir;
+    protected $options;
+    protected $server;
+    protected $logger;
+
+    protected $bakeCacheDir;
+    protected $bakeCacheFiles;
     
     /**
      * Creates a new chef server.
      */
-    public function __construct($appDir, array $options = array())
+    public function __construct($appDir, array $options = array(), $logger = null)
     {
-        $options = array_merge(
+        // The website's root.
+        $this->rootDir = rtrim($appDir, '/\\');
+
+        // Validate the options.
+        $this->options = array_merge(
             array(
                   'port' => 8080,
-                  'templates_dir' => null,
                   'mime_types' => array('less' => 'text/css'),
                   'log_file' => null,
-                  'log_console' => false
+                  'debug' => false
                   ),
             $options
         );
-        $this->rootDir = rtrim($appDir, '/\\');
-        $this->additionalTemplatesDir = $options['templates_dir'];
-        
-        // Set-up the stupid web server.
-        $port = $options['port'];
-        $this->server = new StupidHttp_WebServer($this->rootDir, $port);
-        
-        if ($options['log_file'])
+
+        // Get a valid logger.
+        if ($logger == null)
         {
-            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $options['log_file']));
+            require_once 'Log.php';
+            $logger = \Log::singleton('null', '', '');
         }
-        
-        if ($options['log_console'])
-        {
-            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_DEBUG));
-        }
-        else
-        {
-            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
-        }
-        
-        foreach ($options['mime_types'] as $ext => $mime)
-        {
-            $this->server->setMimeType($ext, $mime);
-        }
-        
-        $self = $this; // Workaround for $this not being capturable in closures.
-        $this->server->onPattern('GET', '.*')
-                     ->call(function($context) use ($self)
-                            {
-                                $self->_runPieCrustRequest($context);
-                            });
+        $this->logger = $logger;
+
+        // Create a temp app to get the bake cache directory.
+        $pieCrust = new PieCrust(array(
+                'root' => $this->rootDir,
+                'cache' => true
+            )
+        );
+        $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
+
+        $this->server = null;
     }
+
 
     /**
      * Runs the chef server.
      */
     public function run(array $options = array())
     {
+        // Create the web server.
+        $this->ensureWebServer();
+
+        // Re-bake all the non `_content` stuff, and build a reverse-index 
+        // of what file creates each output file.
+        $bakedFiles = $this->prebake();
+        $this->bakeCacheFiles = array();
+        foreach ($bakedFiles as $f => $info)
+        {
+            foreach ($info['outputs'] as $out)
+            {
+                $this->bakeCacheFiles[$out] = $f;
+            }
+        }
+
+        // Run!
         $this->server->run($options);
+    }
+
+    /**
+     * For internal use only.
+     */
+    public function _preprocessRequest(\StupidHttp_WebRequest $request)
+    {
+        $documentPath = $this->bakeCacheDir . $request->getUri();
+        if (is_file($documentPath) && isset($this->bakeCacheFiles[$documentPath]))
+        {
+            // Make sure this file is up-to-date.
+            $this->prebake(
+                $request->getServerVariables(),
+                $this->bakeCacheFiles[$documentPath],
+                true
+            );
+        }
+        else
+        {
+            // Perhaps a new file? Re-bake and update our index.
+            $bakedFiles = $this->prebake(
+                $request->getServerVariables(),
+                null,
+                true
+            );
+            foreach ($bakedFiles as $f => $info)
+            {
+                foreach ($info['outputs'] as $out)
+                {
+                    $this->bakeCacheFiles[$out] = $f;
+                }
+            }
+        }
     }
     
     /**
@@ -100,18 +146,18 @@ class PieCrustServer
             PageRepository::clearPages();
 
             $pieCrust = new PieCrust(array(
-                                            'root' => $this->rootDir,
-                                            'cache' => true
-                                          ),
-                                     $context->getRequest()->getServerVariables()
-                                    );
+                    'root' => $this->rootDir,
+                    'cache' => true
+                ),
+                $context->getRequest()->getServerVariables()
+            );
             $pieCrust->getConfig()->setValue('server/is_hosting', true);
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);
             $pieCrust->getConfig()->setValue('site/root', '/');
-            if ($this->additionalTemplatesDir != null)
+            if ($this->options['debug'])
             {
-                $pieCrust->addTemplatesDir($this->additionalTemplatesDir);
+                $pieCrust->getConfig()->setValue('site/display_errors', true);
             }
         }
         catch (Exception $e)
@@ -164,8 +210,9 @@ class PieCrustServer
         
         if ($pieCrustException)
         {
+            $headers = array();
             $handler = new PieCrustErrorHandler($pieCrust);
-            $handler->handleError($pieCrustException);
+            $handler->handleError($pieCrustException, null, $headers);
         }
         
         $endTime = microtime(true);
@@ -175,5 +222,89 @@ class PieCrustServer
         {
             $context->getLog()->logError("    PieCrust error: " . $pieCrustException->getMessage());
         }
+    }
+
+    protected function ensureWebServer()
+    {
+        if ($this->server != null)
+            return;
+
+        // Ensure the server's document root exists, but first, make sure the
+        // cache is valid -- we don't want the document root to be deleted on
+        // the first request because the cache was invalid.
+        $app = new PieCrust(array(
+            'root' => $this->rootDir,
+            'cache' => true
+        ));
+        $cacheInfo = new PieCrustCacheInfo($app);
+        $cacheInfo->getValidity(true);
+        FileSystem::ensureDirectory($this->bakeCacheDir);
+
+        // Set-up the stupid web server.
+        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);
+        if ($this->logger != null && !($this->logger instanceof \Log_null))
+        {
+            $this->server->addLog(new StupidHttp_PearLog($this->logger));
+        }
+        else
+        {
+            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
+        }
+        if ($this->options['log_file'])
+        {
+            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));
+        }
+        
+        foreach ($this->options['mime_types'] as $ext => $mime)
+        {
+            $this->server->setMimeType($ext, $mime);
+        }
+
+        // Mount the `_content` directory so that we can see page assets.
+        $this->server->mount($this->rootDir . DIRECTORY_SEPARATOR . '_content', '_content');
+        
+        $self = $this; // Workaround for $this not being capturable in closures.
+        $this->server->onPattern('GET', '.*')
+                     ->call(function($context) use ($self)
+                            {
+                                $self->_runPieCrustRequest($context);
+                            });
+        $this->server->setPreprocess(function($req) use ($self) { $self->_preprocessRequest($req); });
+    }
+
+    protected function prebake($server = null, $path = null, $smart = false)
+    {
+        $pieCrust = new PieCrust(array(
+                'root' => $this->rootDir,
+                'cache' => true
+            ),
+            $server
+        );
+
+        $parameters = $pieCrust->getConfig()->getValue('baker');
+        if ($parameters == null)
+            $parameters = array();
+        $parameters = array_merge(array(
+                'smart' => true,
+                'processors' => '*',
+                'skip_patterns' => array(),
+                'force_patterns' => array()
+            ),
+            $parameters
+        );
+
+        $dirBaker = new DirectoryBaker($pieCrust,
+            $this->bakeCacheDir,
+            array(
+                'smart' => $smart,
+                'skip_patterns' => $parameters['skip_patterns'],
+                'force_patterns' => $parameters['force_patterns'],
+                'processors' => $parameters['processors']
+            ),
+            $this->logger
+        );
+        $dirBaker->bake($path);
+
+        return $dirBaker->getBakedFiles();
     }
 }

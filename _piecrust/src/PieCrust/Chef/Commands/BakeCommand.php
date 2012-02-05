@@ -5,21 +5,20 @@ namespace PieCrust\Chef\Commands;
 use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrust;
-use PieCrust\IO\FileSystem;
+use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;
+use PieCrust\Chef\ChefContext;
+use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 
-class BakeCommand implements IChefCommand
+class BakeCommand extends ChefCommand
 {
     public function getName()
     {
         return 'bake';
-    }
-    
-    public function supportsDefaultOptions()
-    {
-        return true;
     }
     
     public function setupParser(Console_CommandLine $bakerParser)
@@ -77,52 +76,38 @@ class BakeCommand implements IChefCommand
         ));
     }
 
-    public function run(Console_CommandLine $parser, Console_CommandLine_Result $result)
+    public function run(ChefContext $context)
     {
-        // Validate arguments.
-        $rootDir = FileSystem::getAbsolutePath($result->command->args['root']);
-        if (!is_dir($rootDir))
-        {
-            $parser->displayError("No such root directory: " . $rootDir, 1);
-            die();
-        }
+        $pieCrust = $context->getApp();
+        $result = $context->getResult();
+
         $outputDir = $result->command->options['output'];
-        
+
         // Set-up the app and the baker.
-        try
+        $bakerParameters = array(
+            'smart' => !$result->command->options['force'],
+            'clean_cache' => $result->command->options['force'],
+            'info_only' => $result->command->options['info_only'],
+            'config_variant' => $result->command->options['config_variant']
+        );
+        $baker = new PieCrustBaker($pieCrust, $bakerParameters, $context->getLog());
+        if ($outputDir)
         {
-            $appParameters = array('root' => $rootDir);
-            $app = new PieCrust($appParameters);
-            $bakerParameters = array(
-                'smart' => !$result->command->options['force'],
-                'clean_cache' => $result->command->options['force'],
-                'info_only' => $result->command->options['info_only'],
-                'config_variant' => $result->command->options['config_variant']
-            );
-            $baker = new PieCrustBaker($app, $bakerParameters);
-            if ($outputDir)
-            {
-                $baker->setBakeDir($outputDir);
-            }
-            if ($result->command->options['pretty_urls'])
-            {
-                $baker->getApp()->getConfig()->setValue('site/pretty_urls', true);
-            }
-            if ($result->command->options['root_url'])
-            {
-                $baker->getApp()->getConfig()->setValue('site/root', $result->command->options['root_url']);
-            }
-            if ($result->command->options['file_urls'])
-            {
-                $baker->getApp()->getConfig()->setValue('baker/file_urls', true);
-            }
+            $baker->setBakeDir($outputDir);
         }
-        catch (Exception $e)
+        if ($result->command->options['pretty_urls'])
         {
-            $parser->displayError($e->getMessage());
-            die();
+            $pieCrust->getConfig()->setValue('site/pretty_urls', true);
         }
-        
+        if ($result->command->options['root_url'])
+        {
+            $pieCrust->getConfig()->setValue('site/root', $result->command->options['root_url']);
+        }
+        if ($result->command->options['file_urls'])
+        {
+            $pieCrust->getConfig()->setValue('baker/file_urls', true);
+        }
+
         // Start baking!
         $baker->bake();
     }

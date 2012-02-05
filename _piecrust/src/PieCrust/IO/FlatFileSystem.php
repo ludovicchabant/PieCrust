@@ -2,6 +2,7 @@
 
 namespace PieCrust\IO;
 
+use \FilesystemIterator;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -21,11 +22,13 @@ class FlatFileSystem extends FileSystem
         if (!$this->pieCrust->getPostsDir())
             throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
 
-        $pathPattern = $this->pieCrust->getPostsDir() . $this->subDir . '*.html';
-        $paths = glob($pathPattern, GLOB_ERR);
-        if ($paths === false)
+        $paths = array();
+        $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->subDir);
+        foreach ($pathsIterator as $p)
         {
-            throw new PieCrustException('An error occured while reading the posts directory.');
+            if ($p->getExtension() != 'html')
+                continue;
+            $paths[] = $p->getPathname();
         }
         rsort($paths);
         
