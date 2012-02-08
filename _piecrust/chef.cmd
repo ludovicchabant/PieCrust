@@ -13,6 +13,14 @@ if defined PHP_PEAR_BIN_DIR (
     goto RunChef
 )
 
+for %%i in (php.exe) do (
+    if not "%%~dp$PATH:i"=="" (
+        set PHPEXE="%%~dp$PATH:i\php.exe"
+        goto RunChef
+    )
+)
+
+
 echo Can't find the PHP executable. Is it installed somewhere?
 echo (if you're using a portable version, please define a PHPEXE environment
 echo  variable pointing to it)
