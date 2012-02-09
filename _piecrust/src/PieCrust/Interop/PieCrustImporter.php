@@ -52,7 +52,7 @@ class PieCrustImporter
         {
             if ($importer->getName() == $format)
             {
-                $this->doImport($this->pieCrust, $importer, $source);
+                $this->doImport($importer, $source);
                 return;
             }
         }
@@ -62,7 +62,7 @@ class PieCrustImporter
     
     protected function doImport(IImporter $importer, $source)
     {
-        $log->info("Importing '{$source}' using '{$importer->getName()}'");
+        $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
 
         $importer->open($source);
         $importer->importPages($this->pieCrust->getPagesDir());
