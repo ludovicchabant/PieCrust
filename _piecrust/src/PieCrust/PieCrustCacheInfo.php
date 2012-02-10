@@ -11,13 +11,15 @@ use PieCrust\IO\FileSystem;
 class PieCrustCacheInfo
 {
     protected $pieCrust;
+    protected $cacheCleaningSkipPatterns;
     
     /**
      * Creates a new instance of PieCrustCacheInfo
      */
-    public function __construct(IPieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust, $cacheCleaningSkipPatterns = '/^(\.?empty)|(server_cache)$/')
     {
         $this->pieCrust = $pieCrust;
+        $this->cacheCleaningSkipPatterns = $cacheCleaningSkipPatterns;
     }
     
     /**
@@ -57,7 +59,7 @@ class PieCrustCacheInfo
         if ($cleanCache && !$isCacheValid)
         {
             // Clean the cache!
-            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
+            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir(), $this->cacheCleaningSkipPatterns);
             file_put_contents($cacheInfoFileName, $cacheInfo);
             $cacheValidity['is_valid'] = true;
             $cacheValidity['was_cleaned'] = true;
