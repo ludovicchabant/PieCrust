@@ -145,7 +145,7 @@ abstract class FileSystem
         return false;
     }
 
-    public static function deleteDirectoryContents($dir, $printProgress = false, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
+    public static function deleteDirectoryContents($dir, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
     {
         $skippedFiles = false;
         $files = new \FilesystemIterator($dir);
@@ -159,11 +159,10 @@ abstract class FileSystem
             
             if ($file->isDir())
             {
-                $skippedFiles |= self::deleteDirectoryContents($file->getPathname(), $printProgress, $skipPattern, $level + 1);
+                $skippedFiles |= self::deleteDirectoryContents($file->getPathname(), $skipPattern, $level + 1);
             }
             else
             {
-                if ($printProgress) echo '.';
                 if (!unlink($file))
                     throw new PieCrustException("Can't unlink file: ".$file);
             }
@@ -171,7 +170,6 @@ abstract class FileSystem
         
         if ($level > 0 and !$skippedFiles and is_dir($dir))
         {
-            if ($printProgress) echo '.';
             if (!rmdir($dir))
                 throw new PieCrustException("Can't rmdir directory: ".$dir);
         }
