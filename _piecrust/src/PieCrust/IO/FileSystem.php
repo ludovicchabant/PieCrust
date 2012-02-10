@@ -145,13 +145,24 @@ abstract class FileSystem
         return false;
     }
 
-    public static function deleteDirectoryContents($dir, $skipPattern = '/^(\.)?empty(\.txt)?/i', $level = 0)
+    public static function deleteDirectoryContents($dir, $skipPattern = null)
+    {
+        self::deleteDirectoryContentsRecursive($dir, $skipPattern, 0, '');
+    }
+    
+    private static function deleteDirectoryContentsRecursive($dir, $skipPattern, $level, $relativeParent)
     {
         $skippedFiles = false;
         $files = new \FilesystemIterator($dir);
         foreach ($files as $file)
         {
-            if ($skipPattern != null and preg_match($skipPattern, $file->getFilename()))
+            $relativePathname = $file->getPathname();
+            if ($relativeParent != '')
+            {
+                $relativePathname = $relativeParent . '/' . $file->getPathname();
+            }
+
+            if ($skipPattern != null and preg_match($skipPattern, $relativePathname))
             {
                 $skippedFiles = true;
                 continue;
@@ -159,7 +170,7 @@ abstract class FileSystem
             
             if ($file->isDir())
             {
-                $skippedFiles |= self::deleteDirectoryContents($file->getPathname(), $skipPattern, $level + 1);
+                $skippedFiles |= self::deleteDirectoryContentsRecursive($file->getPathname(), $skipPattern, $level + 1, $relativePathname);
             }
             else
             {

@@ -229,15 +229,10 @@ class PieCrustServer
         if ($this->server != null)
             return;
 
-        // Ensure the server's document root exists, but first, make sure the
-        // cache is valid -- we don't want the document root to be deleted on
-        // the first request because the cache was invalid.
         $app = new PieCrust(array(
             'root' => $this->rootDir,
             'cache' => true
         ));
-        $cacheInfo = new PieCrustCacheInfo($app);
-        $cacheInfo->getValidity(true);
         FileSystem::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
