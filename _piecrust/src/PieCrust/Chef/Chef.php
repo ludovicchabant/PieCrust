@@ -127,8 +127,18 @@ class Chef
 
         // Create the log.
         $debugMode = $result->command->options['debug'];
+        $quietMode = $result->command->options['quiet'];
+        if ($debugMode && $quietMode)
+        {
+            $parser->displayError("You can't specify both --debug and --quiet.");
+            return 1;
+        }
         $log = Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
-        if (!$debugMode)
+        if ($debugMode)
+            $log->setMask(PEAR_LOG_ALL);
+        else if ($quietMode)
+            $log->setMask(Log::MAX(PEAR_LOG_NOTICE));
+        else
             $log->setMask(Log::MAX(PEAR_LOG_INFO));
 
         // Run the command.
@@ -191,6 +201,13 @@ class Chef
             'description' => "Show debug information.",
             'default'     => false,
             'help_name'   => 'DEBUG',
+            'action'      => 'StoreTrue'
+        ));
+        $parser->addOption('quiet', array(
+            'long_name'   => '--quiet',
+            'description' => "Print only important information.",
+            'default'     => false,
+            'help_name'   => 'QUIET',
             'action'      => 'StoreTrue'
         ));
     }
