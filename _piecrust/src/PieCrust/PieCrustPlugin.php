@@ -54,6 +54,14 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the Twig extensions in this plugin.
+     */
+    public function getTwigExtensions()
+    {
+        return array();
+    }
+
+    /**
      * Runs custom initialization code.
      */
     public function initialize(IPieCrust $pieCrust)
