@@ -44,14 +44,15 @@ class PieCrustExtension extends Twig_Extension
             'pcurl'    => new Twig_Function_Method($this, 'getUrl'),
             'pcposturl' => new Twig_Function_Method($this, 'getPostUrl'),
             'pctagurl' => new Twig_Function_Method($this, 'getTagUrl'),
-            'pccaturl' => new Twig_Function_Method($this, 'getCategoryUrl')
+            'pccaturl' => new Twig_Function_Method($this, 'getCategoryUrl'),
+            'wordcount' => new Twig_Function_Method($this, 'getWordCount')
         );
     }
     
     public function getFilters()
     {
         return array(
-            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter'),
+            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter')
         );
     }
     
@@ -83,6 +84,12 @@ class PieCrustExtension extends Twig_Extension
     {
         $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
+    }
+
+    public function getWordCount($value)
+    {
+        $words = explode(" ", $value);
+        return count($words);
     }
 
     public function addNoCacheParameter($value, $parameterName = 't', $parameterValue = null)
