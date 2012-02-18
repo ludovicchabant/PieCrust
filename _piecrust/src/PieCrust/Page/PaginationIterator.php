@@ -365,11 +365,9 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             
             $postHasMore = false;
             $postContents = $post->getContentSegment('content');
-            $postData['full_content'] = $postContents;
             if ($post->hasContentSegment('content.abstract'))
             {
                 $postContents = $post->getContentSegment('content.abstract');
-                $postData['abstract'] = $postContents;
                 $postHasMore = true;
             }
             $postData['content'] = $postContents;
