@@ -32,8 +32,28 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
         return array(
             array(
                 array(),
+                '',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true)
+            ),
+            array(
+                array(),
+                '/',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true)
+            ),
+            array(
+                array(),
+                '/2',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true, Page::TYPE_REGULAR, null, null, null, 2)
+            ),
+            array(
+                array(),
                 '/existing-page',
                 $this->makeUriInfo('existing-page', $pagesDir . 'existing-page.html', true)
+            ),
+            array(
+                array(),
+                '/existing-page/2',
+                $this->makeUriInfo('existing-page', $pagesDir . 'existing-page.html', true, Page::TYPE_REGULAR, null, null, null, 2)
             ),
             array(
                 array(),
