@@ -24,8 +24,7 @@ class UriParser
             throw new PieCrustException('404');
         }
         
-        $uri = trim($uri, '/');
-        if ($uri == '') $uri = PieCrustDefaults::INDEX_PAGE_NAME;
+        $uri = '/' . trim($uri, '/');
         
         $pageNumber = 1;
         $matches = array();
@@ -35,6 +34,8 @@ class UriParser
             $uri = substr($uri, 0, strlen($uri) - strlen($matches[0]));
             $pageNumber = intval($matches[1]);
         }
+
+        $uri = ltrim($uri, '/');
         
         $pageInfo = array(
                 'uri' => $uri,
@@ -86,6 +87,11 @@ class UriParser
         $pagesDir = $pieCrust->getPagesDir();
         if ($pagesDir === false)
             return false;
+
+        if ($uri == '')
+        {
+            $uri = PieCrustDefaults::INDEX_PAGE_NAME;
+        }
 
         $matches = array();
         $uriWithoutExtension = $uri;
