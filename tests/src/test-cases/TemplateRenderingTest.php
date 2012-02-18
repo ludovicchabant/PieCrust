@@ -2,6 +2,8 @@
 
 require_once 'unittest_setup.php';
 
+require_once 'vfsStream/vfsStream.php';
+
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 
@@ -34,8 +36,17 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
      */
     public function testTemplateRendering($testFilename, $expectedResultsFilename)
     {
+        $structure = array(
+            '_content' => array(
+                'pages' => array(),
+                'templates' => array(),
+                'config.yml' => ''
+            )
+        );
+        $root = vfsStream::create($structure);
+
         // Render our template.
-        $pc = new PieCrust(array('cache' => false, 'root' => PIECRUST_UNITTESTS_EMPTY_ROOT_DIR));
+        $pc = new PieCrust(array('cache' => false, 'root' => vfsStream::url('root')));
         $pc->getConfig()->setValue('site/root', 'http://whatever/');
         $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
         
