@@ -2,6 +2,8 @@
 
 require_once 'unittest_setup.php';
 
+require_once 'vfsStream/vfsStream.php';
+
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
@@ -27,13 +29,33 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
     
     public function parseUriDataProvider()
     {
-        $pagesDir = PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR . '_content/pages/';
-        $postsDir = PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR . '_content/posts/';
+        $pagesDir = vfsStream::url('root/_content/pages/');
+        $postsDir = vfsStream::url('root/_content/posts/');
         return array(
+            array(
+                array(),
+                '',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true)
+            ),
+            array(
+                array(),
+                '/',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true)
+            ),
+            array(
+                array(),
+                '/2',
+                $this->makeUriInfo('', $pagesDir . '_index.html', true, Page::TYPE_REGULAR, null, null, null, 2)
+            ),
             array(
                 array(),
                 '/existing-page',
                 $this->makeUriInfo('existing-page', $pagesDir . 'existing-page.html', true)
+            ),
+            array(
+                array(),
+                '/existing-page/2',
+                $this->makeUriInfo('existing-page', $pagesDir . 'existing-page.html', true, Page::TYPE_REGULAR, null, null, null, 2)
             ),
             array(
                 array(),
@@ -82,7 +104,18 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
-        $pc = new PieCrust(array('root' => PIECRUST_UNITTESTS_TEST_WEBSITE_ROOT_DIR, 'debug' => true, 'cache' => false));
+        $structure = array(
+            '_content' => array(
+                'pages' => array(
+                    '_index.html' => '',
+                    'existing-page.html' => ''
+                ),
+                'posts' => array()
+            )
+        );
+        $root = vfsStream::create($structure);
+
+        $pc = new PieCrust(array('root' => vfsStream::url('root'), 'debug' => true, 'cache' => false));
         $pc->getConfig()->set($config);
         $pc->getConfig()->setValue('site/root', 'http://whatever/');
         

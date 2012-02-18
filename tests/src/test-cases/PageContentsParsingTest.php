@@ -2,6 +2,8 @@
 
 require_once 'unittest_setup.php';
 
+require_once 'vfsStream/vfsStream.php';
+
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
@@ -36,9 +38,16 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
+        $structure = array(
+            '_content' => array(
+                'pages' => array()
+            )
+        );
+        $root = vfsStream::create($structure);
+
         // Create the page that will load our test file.
         $pc = $this->getMock('MockPieCrust', array('formatUri'));
-        $pc->setPagesDir(PIECRUST_UNITTESTS_EMPTY_ROOT_DIR . 'pages/');
+        $pc->setPagesDir(vfsStream::url('root/_content/pages/'));
         $pc->setTemplatesDirs(array());
         $pc->getConfig()->set(array(
             'site' => array(
