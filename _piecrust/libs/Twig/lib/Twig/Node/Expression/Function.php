@@ -10,38 +10,55 @@
  */
 class Twig_Node_Expression_Function extends Twig_Node_Expression
 {
-    public function __construct(Twig_Node_Expression_Name $name, Twig_NodeInterface $arguments, $lineno)
+    public function __construct($name, Twig_NodeInterface $arguments, $lineno)
     {
-        parent::__construct(array('name' => $name, 'arguments' => $arguments), array(), $lineno);
+        parent::__construct(array('arguments' => $arguments), array('name' => $name), $lineno);
     }
 
     public function compile(Twig_Compiler $compiler)
     {
-        $function = $compiler->getEnvironment()->getFunction($this->getNode('name')->getAttribute('name'));
-        if (false === $function) {
-            throw new Twig_Error_Syntax(sprintf('The function "%s" does not exist', $this->getNode('name')->getAttribute('name')), $this->getLine());
+        $name = $this->getAttribute('name');
+
+        if (false === $function = $compiler->getEnvironment()->getFunction($name)) {
+            $message = sprintf('The function "%s" does not exist', $name);
+            if ($alternatives = $compiler->getEnvironment()->computeAlternatives($name, array_keys($compiler->getEnvironment()->getFunctions()))) {
+                $message = sprintf('%s. Did you mean "%s"', $message, implode('", "', $alternatives));
+            }
+
+            throw new Twig_Error_Syntax($message, $this->getLine());
         }
 
-        $compiler
-            ->raw($function->compile().'(')
-            ->raw($function->needsEnvironment() ? '$this->env' : '')
-        ;
-
-        if ($function->needsContext()) {
-            $compiler->raw($function->needsEnvironment() ? ', $context' : '$context');
-        }
+        $compiler->raw($function->compile().'(');
 
         $first = true;
+
+        if ($function->needsEnvironment()) {
+            $compiler->raw('$this->env');
+            $first = false;
+        }
+
+        if ($function->needsContext()) {
+            if (!$first) {
+                $compiler->raw(', ');
+            }
+            $compiler->raw('$context');
+            $first = false;
+        }
+
+        foreach ($function->getArguments() as $argument) {
+            if (!$first) {
+                $compiler->raw(', ');
+            }
+            $compiler->string($argument);
+            $first = false;
+        }
+
         foreach ($this->getNode('arguments') as $node) {
             if (!$first) {
                 $compiler->raw(', ');
-            } else {
-                if ($function->needsEnvironment() || $function->needsContext()) {
-                    $compiler->raw(', ');
-                }
-                $first = false;
             }
             $compiler->subcompile($node);
+            $first = false;
         }
 
         $compiler->raw(')');

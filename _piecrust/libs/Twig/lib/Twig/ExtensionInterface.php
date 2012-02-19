@@ -13,7 +13,7 @@
  * Interface implemented by extension classes.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
 interface Twig_ExtensionInterface
 {
@@ -69,9 +69,9 @@ interface Twig_ExtensionInterface
     function getOperators();
 
     /**
-     * Returns a list of global functions to add to the existing list.
+     * Returns a list of global variables to add to the existing list.
      *
-     * @return array An array of global functions
+     * @return array An array of global variables
      */
     function getGlobals();
 

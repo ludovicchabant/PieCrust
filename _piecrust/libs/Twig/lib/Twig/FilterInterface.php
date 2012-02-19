@@ -13,7 +13,7 @@
  * Represents a template filter.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
 interface Twig_FilterInterface
 {
@@ -31,4 +31,8 @@ interface Twig_FilterInterface
     function getSafe(Twig_Node $filterArgs);
 
     function getPreEscape();
+
+    function setArguments($arguments);
+
+    function getArguments();
 }

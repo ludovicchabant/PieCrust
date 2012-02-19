@@ -8,6 +8,16 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
+/**
+ * Defines a macro.
+ *
+ * <pre>
+ * {% macro input(name, value, type, size) %}
+ *    <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+ * {% endmacro %}
+ * </pre>
+ */
 class Twig_TokenParser_Macro extends Twig_TokenParser
 {
     /**
@@ -37,7 +47,7 @@ class Twig_TokenParser_Macro extends Twig_TokenParser
         $this->parser->popLocalScope();
         $this->parser->getStream()->expect(Twig_Token::BLOCK_END_TYPE);
 
-        $this->parser->setMacro($name, new Twig_Node_Macro($name, $body, $arguments, $lineno, $this->getTag()));
+        $this->parser->setMacro($name, new Twig_Node_Macro($name, new Twig_Node_Body(array($body)), $arguments, $lineno, $this->getTag()));
 
         return null;
     }
@@ -50,7 +60,7 @@ class Twig_TokenParser_Macro extends Twig_TokenParser
     /**
      * Gets the tag name associated with this token parser.
      *
-     * @param string The tag name
+     * @return string The tag name
      */
     public function getTag()
     {

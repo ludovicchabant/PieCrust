@@ -13,7 +13,7 @@
  * Interface implemented by token parsers.
  *
  * @package twig
- * @author  Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author  Fabien Potencier <fabien@symfony.com>
  */
 interface Twig_TokenParserInterface
 {
@@ -36,7 +36,7 @@ interface Twig_TokenParserInterface
     /**
      * Gets the tag name associated with this token parser.
      *
-     * @param string The tag name
+     * @return string The tag name
      */
     function getTag();
 }

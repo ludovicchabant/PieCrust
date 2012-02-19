@@ -8,6 +8,16 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
+/**
+ * Filters a section of a template by applying filters.
+ *
+ * <pre>
+ * {% filter upper %}
+ *  This text becomes uppercase
+ * {% endfilter %}
+ * </pre>
+ */
 class Twig_TokenParser_Filter extends Twig_TokenParser
 {
     /**
@@ -42,7 +52,7 @@ class Twig_TokenParser_Filter extends Twig_TokenParser
     /**
      * Gets the tag name associated with this token parser.
      *
-     * @param string The tag name
+     * @return string The tag name
      */
     public function getTag()
     {
