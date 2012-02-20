@@ -38,40 +38,11 @@ There are 2 branches:
   committed.
 
 
-Breaking Changes
-================
+Changes
+=======
 
-These are the latest breaking changes.
+Check out the CHANGELOG file for new features, bug fixes and breaking changes. 
 
-Stable Branch
--------------
-
-* __Baking__: the `skip_patterns` setting is now applied to the relative path
-  of files instead of the filename. This means that patterns like `/^blah/`
-  will only skip files and directories starting with `blah` sitting in the
-  root directory. A file called `somedir/blah.html` would still be baked,
-  unless you change the pattern to `/\bblah/` or `/\/?blah/`.
-
-* __Baking__: the `templates_dir` parameter given to `chef` has been
-  deprecated. You can now more naturally specify additional templates
-  directories in the configuration file with the `site/templates_dirs`
-  setting.
-
-
-Main Branch
------------
-
-* __Plugins__: PieCrust now supports plugins. The PhamlP formatter and
-  template engine, along with the Dwoo template engine, have been removed from
-  the main PieCrust repo and moved to their own plugins, [PieCrust_PhamlP][1]
-  and [PieCrust_Dwoo][2].
-
-* __Chef__: Chef now behaves like `git` or `hg`: it knows when you're inside a
-  PieCrust directory by scanning the parent directory hierarchy for a
-  `_content` folder. This makes it simper to use it (no need to specify the
-  root directory anymore), but changed the options and arguments to most
-  commands. Also, it makes it possible to use chef commands declared in
-  site-specific plugins.
 
   [1]: https://bitbucket.org/ludovicchabant/piecrust-phamlp
   [2]: https://bitbucket.org/ludovicchabant/piecrust-dwoo
