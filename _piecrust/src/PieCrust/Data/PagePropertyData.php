@@ -126,6 +126,10 @@ class PagePropertyData implements \ArrayAccess, \Iterator
                     $this->blogKey);
             }
 
+            $urlRemap = $this->pieCrust->getConfig()->getValue('site/page_asset_url_remap');
+            if ($urlRemap != null)
+                $page->setAssetUrlBaseRemap("%site_root%%uri%");
+
             $propertyValues = $page->getConfig()->getValue($this->propertyName);
             if ($propertyValues)
             {
