@@ -18,6 +18,7 @@ Fresh changes
 * NEW: PieCrust is now using Twig version 1.6.
 * NEW: Added the `wordcount` Twig function.
 * NEW: Added the ability for PieCrust plugins to expose Twig extensions.
+* NEW: Added Twig filters: `markdown`, `textile` and `formatwith`.
 * BUG: Fixed a harmless crash in `chef init`.
 
 
