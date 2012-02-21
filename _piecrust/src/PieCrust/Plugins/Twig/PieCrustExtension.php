@@ -52,7 +52,10 @@ class PieCrustExtension extends Twig_Extension
     public function getFilters()
     {
         return array(
-            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter')
+            'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter'),
+            'formatwith' => new Twig_Filter_Method($this, 'transformGeneric'),
+            'markdown' => new Twig_Filter_Method($this, 'transformMarkdown'),
+            'textile' => new Twig_Filter_Method($this, 'transformTextile')
         );
     }
     
@@ -104,5 +107,20 @@ class PieCrustExtension extends Twig_Extension
         $value .= $parameterName . '=' . $parameterValue;
 
         return $value;
+    }
+
+    public function transformGeneric($value, $formatterName = null)
+    {
+        return $this->pieCrust->formatText($value, $formatterName);
+    }
+
+    public function transformMarkdown($value)
+    {
+        return $this->transformGeneric($value, 'markdown');
+    }
+
+    public function transformTextile($value)
+    {
+        return $this->transformGeneric($value, 'textile');
     }
 }
