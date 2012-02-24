@@ -20,7 +20,9 @@ Fresh changes
 * NEW: Added the ability for PieCrust plugins to expose Twig extensions.
 * NEW: Added Twig filters: `markdown`, `textile` and `formatwith`.
 * BUG: Fixed a harmless crash in `chef init`.
-
+* BUG: Fixed crash when baking with caching disabled.
+* BUG: Fixed a bug with page asset URLs being incorrect when baking in some rare
+  occasions.
 
 
 Frozen changes
