@@ -230,56 +230,8 @@ class PieCrustBaker
         $cacheValidity = $cacheInfo->getValidity(false);
         
         // Figure out if we need to clean the cache.
-        $cleanCache = $this->parameters['clean_cache'];
-        $cleanCacheReason = "ordered to";
-        if (!$cleanCache)
-        {
-            if (!$cacheValidity['is_valid'])
-            {
-                $cleanCache = true;
-                $cleanCacheReason = "not valid anymore";
-            }
-        }
-        if (!$cleanCache)
-        {
-            if ($this->bakeRecord->shouldDoFullBake())
-            {
-                $cleanCache = true;
-                $cleanCacheReason = "need bake info regen";
-            }
-        }
-        // If any template file changed since last time, we also need to re-bake everything
-        // (there's no way to know what weird conditional template inheritance/inclusion
-        //  could be in use...).
-        if (!$cleanCache)
-        {
-            $maxMTime = 0;
-            foreach ($this->pieCrust->getTemplatesDirs() as $dir)
-            {
-                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST);
-                foreach ($iterator as $path)
-                {
-                    if ($path->isFile())
-                    {
-                        $maxMTime = max($maxMTime, $path->getMTime());
-                    }
-                }
-            }
-            if ($maxMTime >= $this->bakeRecord->getLast('time'))
-            {
-                $cleanCache = true;
-                $cleanCacheReason = "templates modified";
-            }
-        }
-        if ($cleanCache)
-        {
-            $start = microtime(true);
-            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
-            file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
-            $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
-            
-            $this->parameters['smart'] = false;
-        }
+        if ($this->pieCrust->isCachingEnabled())
+            $this->cleanCacheIfNeeded($cacheValidity);
         
         // Bake!
         $this->bakePosts();
@@ -311,6 +263,63 @@ class PieCrustBaker
         {
             $this->logger->info('-------------------------');
             $this->logger->info(self::formatTimed($overallStart, 'done baking'));
+        }
+    }
+
+    protected function cleanCacheIfNeeded(array $cacheValidity)
+    {
+        $cleanCache = $this->parameters['clean_cache'];
+        $cleanCacheReason = "ordered to";
+        if (!$cleanCache)
+        {
+            if (!$cacheValidity['is_valid'])
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "not valid anymore";
+            }
+        }
+        if (!$cleanCache)
+        {
+            if ($this->bakeRecord->shouldDoFullBake())
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "need bake info regen";
+            }
+        }
+        // If any template file changed since last time, we also need to re-bake everything
+        // (there's no way to know what weird conditional template inheritance/inclusion
+        //  could be in use...).
+        if (!$cleanCache)
+        {
+            $maxMTime = 0;
+            foreach ($this->pieCrust->getTemplatesDirs() as $dir)
+            {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($dir), 
+                    RecursiveIteratorIterator::CHILD_FIRST
+                );
+                foreach ($iterator as $path)
+                {
+                    if ($path->isFile())
+                    {
+                        $maxMTime = max($maxMTime, $path->getMTime());
+                    }
+                }
+            }
+            if ($maxMTime >= $this->bakeRecord->getLast('time'))
+            {
+                $cleanCache = true;
+                $cleanCacheReason = "templates modified";
+            }
+        }
+        if ($cleanCache)
+        {
+            $start = microtime(true);
+            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
+            file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
+            $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
+            
+            $this->parameters['smart'] = false;
         }
     }
     
