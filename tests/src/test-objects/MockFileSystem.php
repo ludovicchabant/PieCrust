@@ -26,6 +26,13 @@ class MockFileSystem
         ));
     }
 
+    public function withCacheDir()
+    {
+        mkdir(vfsStream::url('root/kitchen/_cache'));
+        mkdir(vfsStream::url('root/kitchen/_cache/pages_r'));
+        mkdir(vfsStream::url('root/kitchen/_cache/templates_c'));
+    }
+
     public function withConfig(array $config)
     {
         $configPath = vfsStream::url('root/kitchen/_content/config.yml');
