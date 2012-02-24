@@ -6,12 +6,15 @@ use PieCrust\PieCrust;
 use PieCrust\Baker\PageBaker;
 use PieCrust\Baker\Processors\IProcessor;
 use PieCrust\Page\Page;
+use PieCrust\Page\PageRepository;
 
 
 class PageBakerTest extends PHPUnit_Framework_TestCase
 {
     public function testPageBake()
     {
+        PageRepository::clearPages();
+
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
@@ -38,6 +41,8 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
 
     public function testSinglePageBake()
     {
+        PageRepository::clearPages();
+
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
@@ -79,6 +84,8 @@ EOD
 
     public function testMultiplePageBake()
     {
+        PageRepository::clearPages();
+
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
@@ -128,6 +135,8 @@ EOD
 
     public function testPageWithAsset()
     {
+        PageRepository::clearPages();
+
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(

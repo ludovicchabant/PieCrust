@@ -216,9 +216,9 @@ class PieCrustBaker
         
         // Setup the PieCrust environment.
         LinkCollector::enable();
-        $this->pieCrust->getConfig()->setValue('baker/is_baking', true);
         if ($this->parameters['copy_assets'])
-            $this->pieCrust->getConfig()->setValue('site/page_asset_url_remap', "%site_root%%uri%");
+            PageRepository::setAssetUrlBaseRemap('%site_root%%uri%');
+        $this->pieCrust->getConfig()->setValue('baker/is_baking', true);
         
         // Create the bake record.
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
@@ -542,7 +542,9 @@ class PieCrustBaker
     
     protected function getPageBakerParameters()
     {
-        return array('copy_assets' => $this->parameters['copy_assets']);
+        return array(
+            'copy_assets' => $this->parameters['copy_assets']
+        );
     }
     
     public static function formatTimed($startTime, $message)

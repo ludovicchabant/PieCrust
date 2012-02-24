@@ -14,6 +14,7 @@ class PageRepository
 {
     protected static $enabled = true;
     protected static $pages = array();
+    protected static $assetUrlBaseRemap = null;
     
     public static function isEnabled()
     {
@@ -32,26 +33,33 @@ class PageRepository
     
     public static function addPage(IPage $page)
     {
+        if (!self::$enabled)
+            return;
         self::$pages[$page->getUri()] = $page;
+    }
+
+    public static function getPages()
+    {
+        return self::$pages;
     }
     
     public static function getPage($uri)
     {
-        if (!isset(self::$pages[$uri])) return null;
+        if (!self::$enabled)
+            return null;
+        if (!isset(self::$pages[$uri]))
+            return null;
         return self::$pages[$uri];
     }
     
     public static function getOrCreatePage(IPieCrust $pieCrust, $uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
     {
-        if (!self::$enabled)
-        {
-            return new Page($pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber);
-        }
-        
         $page = self::getPage($uri);
         if ($page == null)
         {
             $page = new Page($pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber);
+            if (self::$assetUrlBaseRemap != null)
+                $page->setAssetUrlBaseRemap(self::$assetUrlBaseRemap);
             self::addPage($page);
         }
         else
@@ -64,5 +72,10 @@ class PageRepository
             $page->setPageNumber($pageNumber);
         }
         return $page;
+    }
+
+    public static function setAssetUrlBaseRemap($remap)
+    {
+        self::$assetUrlBaseRemap = $remap;
     }
 }
