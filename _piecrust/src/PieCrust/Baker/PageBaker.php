@@ -55,9 +55,12 @@ class PageBaker
     public function __construct($bakeDir, array $parameters = array())
     {
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
-        $this->parameters = array_merge(array(
-            'copy_assets' => false
-        ), $parameters);
+        $this->parameters = array_merge(
+            array(
+                'copy_assets' => false
+            ), 
+            $parameters
+        );
     }
     
     /**
@@ -103,11 +106,14 @@ class PageBaker
         $page = $pageRenderer->getPage();
         
         // Set the extraData and asset URL remapping before the page's data is computed.        
-        if ($extraData != null) $page->setExtraPageData($extraData);
-        if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
+        if ($extraData != null)
+            $page->setExtraPageData($extraData);
+        if ($this->parameters['copy_assets'] === true)
+            $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Render the page.
-        if ($postInfos != null) $page->setPaginationDataSource($postInfos);
+        if ($postInfos != null)
+            $page->setPaginationDataSource($postInfos);
         $bakedContents = $pageRenderer->get();
 
         // Get some objects we need.
