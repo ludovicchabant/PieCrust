@@ -375,6 +375,24 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             
             $postsData[] = $postData;
         }
+
+        // Usually posts will be sorted at least by day, but not necessarily
+        // by time (in case several articles have been posted in the same day)
+        // because post file-systems only have date information in the file name.
+        // We need to sort the posts by timestamp to be sure.
+        usort($postsData, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
+
         return $postsData;
+    }
+
+    protected static function sortByReverseTimestamp($data1, $data2)
+    {
+        $timestamp1 = $data1['timestamp'];
+        $timestamp2 = $data2['timestamp'];
+        if ($timestamp1 == $timestamp2)
+            return 0;
+        if ($timestamp1 < $timestamp2)
+            return 1;
+        return -1;
     }
 }
