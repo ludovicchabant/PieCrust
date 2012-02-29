@@ -4,7 +4,6 @@ namespace PieCrust\Runner;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustCacheInfo;
-use PieCrust\PieCrustErrorHandler;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;

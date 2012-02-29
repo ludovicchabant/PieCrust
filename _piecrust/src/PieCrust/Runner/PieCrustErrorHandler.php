@@ -1,9 +1,11 @@
 <?php
 
-namespace PieCrust;
+namespace PieCrust\Runner;
 
 use \Exception;
-use PieCrust\Runner\PieCrustRunner;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\HttpHeaderHelper;
 

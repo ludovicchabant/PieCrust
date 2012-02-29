@@ -14,9 +14,9 @@ use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
-use PieCrust\PieCrustErrorHandler;
 use PieCrust\Baker\DirectoryBaker;
 use PieCrust\IO\FileSystem;
+use PieCrust\Runner\PieCrustErrorHandler;
 use PieCrust\Runner\PieCrustRunner;
 
 
