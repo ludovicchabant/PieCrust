@@ -4,8 +4,6 @@ namespace PieCrust\Util;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Environment\PageRepository;
-use PieCrust\IO\FileSystem;
 
 
 /**

@@ -9,7 +9,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Chef\ChefContext;
-use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 require_once 'sfYaml/lib/sfYamlDumper.php';
 
@@ -137,7 +137,7 @@ class InitCommand extends ChefCommand
     
     protected function createDirectory($rootDir, $dir, $makeWritable = false)
     {
-        FileSystem::ensureDirectory($rootDir . $dir, $makeWritable);
+        PathHelper::ensureDirectory($rootDir . $dir, $makeWritable);
     }
     
     protected function createSystemFile($fileName, $rootDir, $destination)

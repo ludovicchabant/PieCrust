@@ -7,9 +7,7 @@ use \Countable;
 use \ArrayAccess;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
-use PieCrust\Environment\PageRepository;
 use PieCrust\Page\Filtering\PaginationFilter;
-use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
 

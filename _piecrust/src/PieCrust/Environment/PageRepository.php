@@ -6,10 +6,7 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
-use PieCrust\IO\FileSystem;
 use PieCrust\Page\Page;
-use PieCrust\Util\PageHelper;
-use PieCrust\Util\UriBuilder;
 
 
 /**

@@ -5,8 +5,6 @@ namespace PieCrust\Util;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
-use PieCrust\IO\FileSystem;
-use PieCrust\Page\PageRepository;
 use PieCrust\Util\UriBuilder;
 
 

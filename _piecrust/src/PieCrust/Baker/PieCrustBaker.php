@@ -10,9 +10,6 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
-use PieCrust\Environment\PageRepository;
-use PieCrust\Environment\LinkCollector;
-use PieCrust\IO\FileSystem;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
@@ -313,7 +310,7 @@ class PieCrustBaker
         if ($cleanCache)
         {
             $start = microtime(true);
-            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir());
+            PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir());
             file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
             $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
             

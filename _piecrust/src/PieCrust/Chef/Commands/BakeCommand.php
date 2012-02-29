@@ -9,8 +9,6 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Chef\ChefContext;
-use PieCrust\IO\FileSystem;
-use PieCrust\Util\PathHelper;
 
 
 class BakeCommand extends ChefCommand

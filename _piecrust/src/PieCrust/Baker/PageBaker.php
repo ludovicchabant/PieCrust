@@ -6,8 +6,8 @@ use \Exception;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Page\PageRenderer;
-use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -153,7 +153,7 @@ class PageBaker
         }
         
         // Copy the page.
-        FileSystem::ensureDirectory(dirname($bakePath));
+        PathHelper::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
         $this->bakedFiles[] = $bakePath;
         
@@ -174,7 +174,7 @@ class PageBaker
             $assetPaths = $assetor->getAssetPathnames();
             if ($assetPaths != null)
             {
-                FileSystem::ensureDirectory($bakeAssetDir);
+                PathHelper::ensureDirectory($bakeAssetDir);
                 foreach ($assetPaths as $assetPath)
                 {
                     $destinationAssetPath = $bakeAssetDir . basename($assetPath);

@@ -7,8 +7,6 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Interop\Importers\IImporter;
-use PieCrust\IO\FileSystem;
-use PieCrust\Plugins\PluginLoader;
 
 
 /**

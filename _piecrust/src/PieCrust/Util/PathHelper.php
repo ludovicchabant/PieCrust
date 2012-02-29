@@ -177,4 +177,72 @@ class PathHelper
         
         return $name;
     }
+
+    /**
+     * Makes sure the given directory exists, and optionally makes
+     * sure it's writable.
+     *
+     * Returns whether the directory was just created.
+     */
+    public static function ensureDirectory($dir, $writable = false)
+    {
+        if (!is_dir($dir))
+        {
+            if (!mkdir($dir, 0777, true))
+                throw new PieCrustException("Can't create directory: {$dir}");
+            return true;
+        }
+        else if ($writable && !is_writable($dir))
+        {
+            if (!chmod($dir, 0777))
+                throw new PieCrustException("Can't make directory '{$dir}' writable.");
+        }
+        return false;
+    }
+
+    /**
+     * Deletes the contents of a directory, but optionally skips files
+     * matching a given pattern.
+     */
+    public static function deleteDirectoryContents($dir, $skipPattern = null)
+    {
+        self::deleteDirectoryContentsRecursive($dir, $skipPattern, 0, '');
+    }
+    
+    private static function deleteDirectoryContentsRecursive($dir, $skipPattern, $level, $relativeParent)
+    {
+        $skippedFiles = false;
+        $files = new \FilesystemIterator($dir);
+        foreach ($files as $file)
+        {
+            $relativePathname = $file->getPathname();
+            if ($relativeParent != '')
+            {
+                $relativePathname = $relativeParent . '/' . $file->getPathname();
+            }
+
+            if ($skipPattern != null and preg_match($skipPattern, $relativePathname))
+            {
+                $skippedFiles = true;
+                continue;
+            }
+            
+            if ($file->isDir())
+            {
+                $skippedFiles |= self::deleteDirectoryContentsRecursive($file->getPathname(), $skipPattern, $level + 1, $relativePathname);
+            }
+            else
+            {
+                if (!unlink($file))
+                    throw new PieCrustException("Can't unlink file: ".$file);
+            }
+        }
+        
+        if ($level > 0 and !$skippedFiles and is_dir($dir))
+        {
+            if (!rmdir($dir))
+                throw new PieCrustException("Can't rmdir directory: ".$dir);
+        }
+        return $skippedFiles;
+    }
 }

@@ -5,9 +5,7 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
-use PieCrust\Util\UriBuilder;
 
 
 class PagePropertyData implements \ArrayAccess, \Iterator

@@ -15,9 +15,9 @@ use PieCrust\PieCrust;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\DirectoryBaker;
-use PieCrust\IO\FileSystem;
 use PieCrust\Runner\PieCrustErrorHandler;
 use PieCrust\Runner\PieCrustRunner;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -229,7 +229,7 @@ class PieCrustServer
             'root' => $this->rootDir,
             'cache' => true
         ));
-        FileSystem::ensureDirectory($this->bakeCacheDir);
+        PathHelper::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
         $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);
