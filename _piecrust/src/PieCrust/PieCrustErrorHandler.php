@@ -3,6 +3,7 @@
 namespace PieCrust;
 
 use \Exception;
+use PieCrust\Runner\PieCrustRunner;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\HttpHeaderHelper;
 
@@ -111,7 +112,8 @@ class PieCrustErrorHandler
             // the "fatal error" page if even this doesn't work.
             try
             {
-                $this->pieCrust->runUnsafe($errorPageUri, $server, null, $headers);
+                $runner = new PieCrustRunner($this->pieCrust);
+                $runner->runUnsafe($errorPageUri, $server, null, $headers);
             }
             catch (Exception $inner)
             {

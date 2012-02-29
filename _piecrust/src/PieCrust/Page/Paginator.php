@@ -9,6 +9,7 @@ use PieCrust\IO\FileSystem;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -166,6 +167,30 @@ class Paginator
             return ceil($totalPostCount / $postsPerPage);
         return $totalPostCount;
     }
+
+    protected $dataSource;
+    /**
+     * Gets the list of posts to use for the pagination.
+     * If `null`, it will use all of the posts in the website.
+     *
+     * @ignore
+     */
+    public function getPaginationDataSource()
+    {
+        return $this->dataSource;
+    }
+
+    /**
+     * Sets the list of posts to use for the pagination.
+     *
+     * @ignore
+     */
+    public function setPaginationDataSource(array $posts)
+    {
+        if ($this->postsIterator != null)
+            throw new PieCrustException("Can't set the pagination data source after the pagination data has been loaded.");
+        $this->dataSource = $posts;
+    }
     
     /**
      * Resets the pagination data, as if it had never been accessed.
@@ -197,37 +222,21 @@ class Paginator
         return ($this->next_page() != null);
     }
     
-    protected $paginationDataSource;
-    /**
-     * Specifies that the pagination data should be build from the given posts.
-     *
-     * @ignore
-     */
-    public function setPaginationDataSource(array $postInfos)
-    {
-        if ($this->postsIterator != null)
-            throw new PieCrustException("The pagination data source can only be set before the pagination data is built.");
-        $this->paginationDataSource = $postInfos;
-    }
-    
     protected function ensurePaginationData()
     {
         if ($this->postsIterator != null)
             return;
-        
-        
-        // If not pagination data source was provided, load up a new FileSystem
-        // and get the list of posts from the disk.
-        $postInfos = $this->paginationDataSource;
-        if ($postInfos === null)
+
+        // Get the post infos.
+        $posts = $this->dataSource;
+        if ($posts === null)
         {
             $blogKey = $this->page->getConfig()->getValue('blog');
-            $fs = FileSystem::create($this->page->getApp(), $blogKey);
-            $postInfos = $fs->getPostFiles();
+            $posts = PageHelper::getPosts($this->page->getApp(), $blogKey);
         }
         
         // Create the pagination iterator.
-        $this->postsIterator = new PaginationIterator($this->page, $postInfos);
+        $this->postsIterator = new PaginationIterator($this->page, $posts);
         // Add the filters for the current page.
         $postsFilter = $this->getPaginationFilter();
         $this->postsIterator->setFilter($postsFilter);

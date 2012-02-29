@@ -9,6 +9,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
@@ -117,6 +118,8 @@ class Linker implements \ArrayAccess, \Iterator
         {
             try
             {
+                $pageRepository = PieCrustHelper::getPageRepository($this->page->getApp());
+
                 $this->linksCache = array();
                 $it = new FilesystemIterator($this->baseDir);
                 foreach ($it as $item)
@@ -145,7 +148,7 @@ class Linker implements \ArrayAccess, \Iterator
                         {
                             $relativePath = PathHelper::getRelativePagePath($this->page->getApp(), $path, $this->page->getPageType());
                             $uri = UriBuilder::buildUri($relativePath);
-                            $page = PageRepository::getOrCreatePage($this->page->getApp(), $uri, $path);
+                            $page = $pageRepository->getOrCreatePage($uri, $path);
                             $this->linksCache[$key] = array(
                                 'uri' => $uri,
                                 'name' => $key,

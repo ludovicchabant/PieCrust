@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Util;
+namespace PieCrust\Environment;
 
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
@@ -12,34 +12,6 @@ use PieCrust\PieCrustException;
  */
 class LinkCollector
 {
-    protected static $instance;
-    
-    public static function instance()
-    {
-        return self::$instance;
-    }
-    
-    public static function isEnabled()
-    {
-        return self::$instance != null;
-    }
-    
-    public static function enable()
-    {
-        if (self::$instance != null)
-            throw new PieCrustException("The LinkCollector is already enabled.");
-        
-        self::$instance = new LinkCollector();
-    }
-    
-    public static function disable()
-    {
-        if (self::$instance == null)
-            throw new PieCrustException("The LinkCollector has not been enabled.");
-        
-        self::$instance = null;
-    }
-    
     protected $tagCombinations;
     
     public function getTagCombinations($blogKey)

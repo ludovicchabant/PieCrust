@@ -9,6 +9,7 @@ use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -57,10 +58,10 @@ class DataBuilder
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
-
+ 
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
-        
+
         $data = array(
             'page' => $page->getConfig()->get(),
             'asset'=> $assetor,
@@ -68,7 +69,7 @@ class DataBuilder
             'link' => $linker
         );
         
-        $data['page']['url'] = $pieCrust->formatUri($page->getUri());
+        $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
         
         if ($page->getConfig()->getValue('date'))

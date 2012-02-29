@@ -4,15 +4,12 @@ require_once 'unittest_setup.php';
 
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
-use PieCrust\Page\PageRepository;
 
 
 class PieCrustBakerTest extends PHPUnit_Framework_TestCase
 {
     public function testBakePageWithTagList()
     {
-        PageRepository::clearPages();
-
         $templateContents = <<<EOD
 {% for t in site.tags %}
 {{ t.name }}, {{ t.post_count }}
@@ -47,8 +44,6 @@ EOD;
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
-        $this->assertEquals(4, count(PageRepository::getPages()));
-
         $this->assertFileExists(
             vfsStream::url('root/kitchen/_counter/2010/01/01/first-post.html')
         );
@@ -78,8 +73,6 @@ EOD;
 
     public function testBakePageWithSeveralPostsInTheSameDay()
     {
-        PageRepository::clearPages();
-
         $indexContents = <<<EOD
 {% for p in pagination.posts %}
 {{ p.content|raw }}
@@ -112,6 +105,44 @@ EOD;
         $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo/index.html'));
         $this->assertEquals(
             "Third post.\nSecond post.\nFirst post.\n",
+            file_get_contents(vfsStream::url('root/kitchen/_counter/foo/index.html'))
+        );
+    }
+
+    public function testBakePageWithSeveralPostsInTheSameDayFiltered()
+    {
+        $indexContents = <<<EOD
+{% for p in pagination.posts.skip(1) %}
+{{ p.content|raw }}
+{% endfor %}
+EOD;
+
+        $fs = MockFileSystem::create();
+        $fs->withPage(
+            'foo',
+            array('layout' => 'none', 'format' => 'none'),
+            $indexContents);
+        $fs->withPost(
+            'z-first-post', 1, 1, 2012,
+            array('layout' => 'none', 'format' => 'none', 'time' => '08:50'),
+            'First post.');
+        $fs->withPost(
+            'a-second-post', 1, 1, 2012,
+            array('layout' => 'none', 'format' => 'none', 'time' => '12:30'),
+            'Second post.');
+        $fs->withPost(
+            'b-third-post', 1, 1, 2012,
+            array('layout' => 'none', 'format' => 'none', 'time' => '17:05:32'),
+            'Third post.');
+
+        $app = new PieCrust(array('cache' => false, 'root' => vfsStream::url('root/kitchen')));
+
+        $baker = new PieCrustBaker($app);
+        $baker->bake();
+
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo/index.html'));
+        $this->assertEquals(
+            "Second post.\nFirst post.\n",
             file_get_contents(vfsStream::url('root/kitchen/_counter/foo/index.html'))
         );
     }

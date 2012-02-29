@@ -3,6 +3,7 @@
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustConfiguration;
 use PieCrust\Plugins\PluginLoader;
+use PieCrust\Environment\Environment;
 
 
 class MockPieCrust implements IPieCrust
@@ -111,41 +112,12 @@ class MockPieCrust implements IPieCrust
     {
         return $this->config;
     }
+
+    public $environment;
     
-    public function formatText($text, $format = null)
+    public function getEnvironment()
     {
-        return $text;
-    }
-    
-    public function formatUri($uri)
-    {
-        return $uri;
-    }
-    
-    public $templateEngines;
-    
-    public function getTemplateEngine($extension = 'html')
-    {
-        if (!$this->templateEngines or !isset($this->templateEngines[$extension]))
-            return null;
-        return $this->templateEngines[$extension];
-    }
-    
-    public $lastRunInfo;
-    
-    public function getLastRunInfo()
-    {
-        return $this->lastRunInfo;
-    }
-    
-    public function run($uri = null, $server = null)
-    {
-        return null;
-    }
-    
-    public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null)
-    {
-        return null;
+        return $this->environment;
     }
     
     public function __construct()
@@ -153,16 +125,25 @@ class MockPieCrust implements IPieCrust
         $this->config = new PieCrustConfiguration();
         $this->templateDirs = array();
         $this->pluginsDirs = array();
-        $this->templateEngines = array();
+        $this->pluginLoader = new MockPluginLoader();
+        $this->environment = new Environment($this);
+        $this->addFormatter('none', 'PassThroughFormatter');
         $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
-        $this->pluginLoader = new PluginLoader($this);
     }
-    
+
+    public function addFormatter($name, $className)
+    {
+        $className = 'PieCrust\\Formatters\\' . $className;
+        $formatter = new $className;
+        $formatter->initialize($this);
+        $this->pluginLoader->formatters[$name] = $formatter;
+    }
+
     public function addTemplateEngine($name, $className)
     {
         $className = 'PieCrust\\TemplateEngines\\' . $className;
         $engine = new $className;
         $engine->initialize($this);
-        $this->templateEngines[$name] = $engine;
+        $this->pluginLoader->templateEngines[$name] = $engine;
     }
 }

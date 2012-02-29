@@ -17,7 +17,7 @@ use PieCrust\PieCrustException;
 use PieCrust\PieCrustErrorHandler;
 use PieCrust\Baker\DirectoryBaker;
 use PieCrust\IO\FileSystem;
-use PieCrust\Page\PageRepository;
+use PieCrust\Runner\PieCrustRunner;
 
 
 /**
@@ -140,11 +140,6 @@ class PieCrustServer
         $pieCrustException = null;
         try
         {
-            // We need to clear pages between requests, otherwise the user
-            // could have modified some of the posts and we would keep using
-            // the cached versions until the actual posts' pages are requested.
-            PageRepository::clearPages();
-
             $pieCrust = new PieCrust(array(
                     'root' => $this->rootDir,
                     'cache' => true
@@ -171,12 +166,13 @@ class PieCrustServer
         {
             try
             {
-                $pieCrust->runUnsafe(
-                                     null,
-                                     $context->getRequest()->getServerVariables(),
-                                     null,
-                                     $headers
-                                     );
+                $runner = new PieCrustRunner($pieCrust);
+                $runner->runUnsafe(
+                    null,
+                    $context->getRequest()->getServerVariables(),
+                    null,
+                    $headers
+                );
             }
             catch (Exception $e)
             {

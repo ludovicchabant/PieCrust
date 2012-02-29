@@ -79,7 +79,7 @@ class CategoriesCommand extends ChefCommand
                 $categories[$c] += 1;
             }
         };
-        PageHelper::processPosts($context->getApp(), $callback, $blogKey);
+        PageHelper::processPosts($context->getApp(), $blogKey, $callback);
 
         // Only print the count?
         if ($result->command->options['count'])

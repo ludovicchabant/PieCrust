@@ -8,7 +8,6 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
-use PieCrust\Page\PageRepository;
 use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\UriBuilder;

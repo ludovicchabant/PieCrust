@@ -9,6 +9,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\DirectoryBaker;
 use PieCrust\Baker\Processors\IProcessor;
+use PieCrust\Baker\Processors\CopyFileProcessor;
 
 
 class DirectoryBakerTest extends PHPUnit_Framework_TestCase
@@ -23,6 +24,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/counter');
         $parameters = array(
             'processors' => array('copy')
@@ -59,6 +61,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/counter');
         $parameters = array(
             'processors' => array('copy')
@@ -110,6 +113,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/kitchen/_counter');
         $parameters = array(
             'processors' => array('copy'),
@@ -166,6 +170,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/_counter');
         $parameters = array(
             'processors' => array('copy'),
@@ -204,6 +209,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/_counter');
         $parameters = array(
             'processors' => array('copy')
@@ -267,6 +273,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root');
+        $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
         $bakeDir = vfsStream::url('root/_counter');
         $parameters = array(
             'processors' => array('copy'),

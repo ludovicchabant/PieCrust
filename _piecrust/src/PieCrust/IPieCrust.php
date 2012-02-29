@@ -93,35 +93,9 @@ interface IPieCrust
      * Gets the application's configuration.
      */
     public function getConfig();
-    
+
     /**
-     * Formats a given text using the registered page formatters.
+     * Gets the applicaiton's execution environment.
      */
-    public function formatText($text, $format = null);
-    
-    /**
-     * Gets a formatted page URL.
-     */
-    public function formatUri($uri);
-    
-    /**
-     * Gets the template engine associated with the given extension.
-     */
-    public function getTemplateEngine($extension = 'html');
-    
-    /**
-     * Gets the information about the last execution (call to run() or runUnsafe()).
-     */
-    public function getLastRunInfo();
-    
-    /**
-     * Runs PieCrust on the given URI.
-     */
-    public function run($uri = null, $server = null);
-    
-    /**
-     * Runs PieCrust on the given URI with the given extra page rendering data,
-     * but without any error handling.
-     */
-    public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null);
+    public function getEnvironment();
 }

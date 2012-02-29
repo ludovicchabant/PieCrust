@@ -3,13 +3,15 @@
 require_once 'PieCrustFormatterTokenParser.php';
 
 use PieCrust\IPieCrust;
-use PieCrust\Util\LinkCollector;
+use PieCrust\Environment\LinkCollector;
+use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
 class PieCrustExtension extends Twig_Extension
 {
     protected $pieCrust;
+    protected $linkCollector;
     protected $defaultBlogKey;
     protected $postUrlFormat;
     protected $tagUrlFormat;
@@ -18,6 +20,7 @@ class PieCrustExtension extends Twig_Extension
     public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
+        $this->linkCollector = $pieCrust->getEnvironment()->getLinkCollector();
         
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         $this->defaultBlogKey = $blogKeys[0];
@@ -61,7 +64,7 @@ class PieCrustExtension extends Twig_Extension
     
     public function getUrl($value)
     {
-        return $this->pieCrust->formatUri($value);
+        return PieCrustHelper::formatUri($this->pieCrust, $value);
     }
     
     public function getPostUrl($year, $month, $day, $slug, $blogKey = null)
@@ -73,20 +76,22 @@ class PieCrustExtension extends Twig_Extension
             'name' => $slug
         );
         $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
-        return $this->pieCrust->formatUri(UriBuilder::buildPostUri($format, $postInfo));
+        return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildPostUri($format, $postInfo));
     }
     
     public function getTagUrl($value, $blogKey = null)
     {
-        if (LinkCollector::isEnabled()) LinkCollector::instance()->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
+        if ($this->linkCollector)
+            $this->linkCollector->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
+
         $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url');
-        return $this->pieCrust->formatUri(UriBuilder::buildTagUri($format, $value));
+        return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildTagUri($format, $value));
     }
     
     public function getCategoryUrl($value, $blogKey = null)
     {
         $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
-        return $this->pieCrust->formatUri(UriBuilder::buildCategoryUri($format, $value));
+        return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildCategoryUri($format, $value));
     }
 
     public function getWordCount($value)
@@ -111,7 +116,7 @@ class PieCrustExtension extends Twig_Extension
 
     public function transformGeneric($value, $formatterName = null)
     {
-        return $this->pieCrust->formatText($value, $formatterName);
+        return PieCrustHelper::formatText($this->pieCrust, $value, $formatterName);
     }
 
     public function transformMarkdown($value)

@@ -7,16 +7,17 @@ use \Countable;
 use \ArrayAccess;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
+use PieCrust\Environment\PageRepository;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
  * A class that can return several pages with filtering and all.
  *
- * The data-source must be an array with the same keys/values as what's returned
- * by FileSystem::getPostFiles().
+ * The data-source must be an array of IPages.
  *
  * @formatObject
  * @explicitInclude
@@ -251,108 +252,66 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         if ($this->posts != null)
             return;
         
-        $upperLimit = count($this->dataSource);
-        if ($this->limit > 0)
-            $upperLimit = min($this->skip + $this->limit, count($this->dataSource));
-        
-        $this->hasMorePosts = false;
         $pieCrust = $this->parentPage->getApp();
         $blogKey = $this->parentPage->getConfig()->getValue('blog');
         $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
-        
+        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
+
+        // If we have any filter, apply it to the pagination data source.
         if ($this->filter != null and $this->filter->hasClauses())
         {
-            // We have some filtering clause: that's tricky because we
-            // need to filter posts using those clauses from the start to
-            // know what offset to start from, and we need to enumerate it
-            // all until the end to know the total number of posts.
-            // This is not very efficient and at this point the user might 
-            // as well bake his website but this is still fast enough for 
-            // previewing in the 'chef server'.
-            $this->totalPostCount = 0;
-            $filteredDataSource = array();
-            foreach ($this->dataSource as $postInfo)
+            $actualDataSource = array();
+            foreach ($this->dataSource as $post)
             {
-                // TODO: this will load *all* pages matching the given filter!
-                // TODO: we should probably, inside the loop, unload pages we
-                // TODO: know won't get into the relevant slice.
-                if (!isset($postInfo['page']))
+                if ($this->filter->postMatches($post))
                 {
-                    $postInfo['page'] = PageRepository::getOrCreatePage(
-                        $pieCrust,
-                        UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
-                        $postInfo['path'],
-                        IPage::TYPE_POST,
-                        $blogKey);
+                    $actualDataSource[] = $post;
                 }
-                
-                if ($this->filter->postMatches($postInfo['page']))
-                {
-                    $filteredDataSource[] = $postInfo;
-                }
-            }
-            
-            // Now get the slice of the filtered post infos that is relevant
-            // for the current page number, the total number of posts, and see
-            // if there's more past our current page.
-            $limitedFilteredDataSource = array_slice($filteredDataSource, $this->skip, $upperLimit - $this->skip);
-            $this->posts = $this->getPostsData($limitedFilteredDataSource);
-            $this->totalPostCount = count($filteredDataSource);
-            if ($this->limit > 0)
-            {
-                $this->hasMorePosts = (count($filteredDataSource) > ($this->skip + $this->limit));
             }
         }
         else
         {
-            // This is a normal page, or a situation where we don't do any filtering.
-            // That's easy, we just return the portion of the posts-infos array that
-            // is relevant to the current page. We just need to add the built page objects.
-            $relevantSlice = array_slice($this->dataSource, $this->skip, $upperLimit - $this->skip);
-            
-            $filteredDataSource = array();
-            foreach ($relevantSlice as $postInfo)
-            {
-                if (!isset($postInfo['page']))
-                {
-                    $postInfo['page'] = PageRepository::getOrCreatePage(
-                        $pieCrust,
-                        UriBuilder::buildPostUri($postsUrlFormat, $postInfo), 
-                        $postInfo['path'],
-                        IPage::TYPE_POST,
-                        $blogKey);
-                }
-                
-                $filteredDataSource[] = $postInfo;
-            }
-            
-            // Get the posts data, the total number of posts, and see if this slice 
-            // reaches the end of the data source.
-            $this->posts = $this->getPostsData($filteredDataSource);
-            $this->totalPostCount = count($this->dataSource);
-            if ($this->limit > 0)
-            {
-                $this->hasMorePosts = (count($this->dataSource) > ($this->skip + $this->limit));
-            }
+            $actualDataSource = $this->dataSource;
+        }
+        $this->totalPostCount = count($actualDataSource);
+
+        // The given data source is usually from the post FileSystem, which
+        // orders posts by reverse-chronological date. The problem is that
+        // it doesn't know about the time at which a post was posted because
+        // at this point none of the posts have been loaded from disk.
+        // We need to sort by the actual date and time of the post.
+        usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
+
+        // Now honour the skip and limit clauses.
+        $upperLimit = count($this->dataSource);
+        if ($this->limit > 0)
+            $upperLimit = min($this->skip + $this->limit, $upperLimit);
+        $actualDataSource = array_slice($actualDataSource, $this->skip, $upperLimit - $this->skip);
+        
+        // Get the posts data and see whether there's more than this slice.
+        $this->posts = $this->getPostsData($actualDataSource);
+        if ($this->limit > 0)
+        {
+            $this->hasMorePosts = ($this->totalPostCount > ($this->skip + $this->limit));
+        }
+        else
+        {
+            $this->hasMorePosts = false;
         }
     }
     
-    protected function getPostsData($postInfos)
+    protected function getPostsData($posts)
     {
         $postsData = array();
         $pieCrust = $this->parentPage->getApp();
         $blogKey = $this->parentPage->getConfig()->getValue('blog');
         $postsDateFormat = PageHelper::getConfigValue($this->parentPage, 'date_format', $blogKey);
-        foreach ($postInfos as $postInfo)
-        {
-            // Create the post with all the stuff we already know.
-            $post = $postInfo['page'];
-            $post->setAssetUrlBaseRemap($this->parentPage->getAssetUrlBaseRemap());
-            $post->setDate(PageHelper::getPostDate($postInfo));
 
+        foreach ($posts as $post)
+        {
             // Build the pagination data entry for this post.
             $postData = $post->getConfig();
-            $postData['url'] = $pieCrust->formatUri($post->getUri());
+            $postData['url'] = PieCrustHelper::formatUri($pieCrust, $post->getUri());
             $postData['slug'] = $post->getUri();
             
             $timestamp = $post->getDate();
@@ -376,19 +335,19 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             $postsData[] = $postData;
         }
 
-        // Usually posts will be sorted at least by day, but not necessarily
-        // by time (in case several articles have been posted in the same day)
-        // because post file-systems only have date information in the file name.
-        // We need to sort the posts by timestamp to be sure.
-        usort($postsData, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
-
         return $postsData;
     }
 
-    protected static function sortByReverseTimestamp($data1, $data2)
+    protected static function sortByReverseTimestamp($post1, $post2)
     {
-        $timestamp1 = $data1['timestamp'];
-        $timestamp2 = $data2['timestamp'];
+        $timestamp1 = $post1->getDate();
+        if ($post1->getConfig()->getValue('time'))
+            $timestamp1 = strtotime($post1->getConfig()->getValue('time'), $timestamp1);
+
+        $timestamp2 = $post2->getDate();
+        if ($post2->getConfig()->getValue('time'))
+            $timestamp2 = strtotime($post2->getConfig()->getValue('time'), $timestamp2);
+
         if ($timestamp1 == $timestamp2)
             return 0;
         if ($timestamp1 < $timestamp2)

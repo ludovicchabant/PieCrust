@@ -39,6 +39,7 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         
         $paginator = new Paginator($page);
         $paginator->setPaginationDataSource($this->buildPaginationDataSource($pc, $postCount));
+        $this->assertNotNull($paginator->getPaginationDataSource());
         
         $posts = $paginator->posts();
         $this->assertNotNull($posts);
@@ -134,15 +135,9 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $dummyPage = new MockPage($pc);
             $dummyPage->uri = $name;
             $dummyPage->path = $path;
+            $dummyPage->date = mktime(0, 0, 0, $month, $day, $year);
             $dummyPage->contents = array('content' => ('Test page ' . $i . ' contents.'));
-            $posts[] = array(
-                'year' => $year,
-                'month' => $month,
-                'day' => $day,
-                'name' => $name,
-                'path' => $path,
-                'page' => $dummyPage
-            );
+            $posts[] = $dummyPage;
         }
 
         // Reverse the array because we want to return it in reverse

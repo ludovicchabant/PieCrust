@@ -77,11 +77,27 @@ class PageHelper
     /**
      * Calls a function on every page found in the application.
      */
-    public function processPages(IPieCrust $pieCrust, $callback)
+    public static function processPages(IPieCrust $pieCrust, $callback)
     {
+        $pages = self::getPages($pieCrust);
+        foreach ($pages as $page)
+        {
+            if (call_user_func($callback, $page) === false)
+                break;
+        }
+    }
+
+    /**
+     * Gets all the pages found for in a website.
+     */
+    public static function getPages(IPieCrust $pieCrust)
+    {
+        $pages = array();
+        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
         $pagesDir = $pieCrust->getPagesDir();
         $directory = new \RecursiveDirectoryIterator($pagesDir);
         $iterator = new \RecursiveIteratorIterator($directory);
+
         foreach ($iterator as $path)
         {
             if ($iterator->isDot())
@@ -97,42 +113,86 @@ class PageHelper
                 continue;
             }
 
-            $page = PageRepository::getOrCreatePage(
-                $pieCrust,
+            $page = $pageRepository->getOrCreatePage(
                 UriBuilder::buildUri($relativePath),
                 $pagePath
             );
-            $callback($page);
+
+            $pages[] = $page;
         }
+
+        return $pages;
     }
 
     /**
      * Calls a function on every post found in the given blog.
      */
-    public function processPosts(IPieCrust $pieCrust, $callback, $blogKey = null)
+    public static function processPosts(IPieCrust $pieCrust, $blogKey, $callback)
     {
-        if ($blogKey == null)
+        $posts = self::getPosts($pieCrust, $blogKey);
+        foreach ($posts as $post)
         {
-            $blogs = $pieCrust->getConfig()->getValue('site/blogs');
-            $blogKey = $blogs[0];
+            if (call_user_func($callback, $post) === false)
+                break;
         }
+    }
 
-        $fs = FileSystem::create($pieCrust, $blogKey);
-        $postInfos = $fs->getPostFiles();
-
+    /**
+     * Gets all the posts found for in a website for a particular blog.
+     */
+    public static function getPosts(IPieCrust $pieCrust, $blogKey)
+    {
+        $posts = array();
+        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
+        $postInfos = PieCrustHelper::ensurePostInfosCached($pieCrust, $blogKey);
         $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
+
         foreach ($postInfos as $postInfo)
         {
             $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
-            $page = PageRepository::getOrCreatePage(
-                $pieCrust,
+            $page = $pageRepository->getOrCreatePage(
                 $uri,
                 $postInfo['path'],
                 IPage::TYPE_POST,
                 $blogKey
             );
             $page->setDate(self::getPostDate($postInfo));
-            $callback($page);
+            $postInfo['page'] = $page;
+
+            $posts[] = $page;
         }
+
+        return $posts;
+    }
+
+    /**
+     * Gets a tag listing page.
+     */
+    public static function getTagPage(IPieCrust $pieCrust, $tag, $blogKey = null)
+    {
+        if ($blogKey == null)
+        {
+            $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
+            $blogKey = $blogKeys[0];
+        }
+        $pathPrefix = '';
+        if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
+            $pathPrefix = $blogKey . DIRECTORY_SEPARATOR;
+
+        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
+
+        $uri = UriBuilder::buildTagUri($pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
+        $path = $pieCrust->getPagesDir() . $pathPrefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
+        if (!is_file($path))
+            return null;
+
+        $page = $pageRepository->getOrCreatePage(
+            $uri,
+            $tagPagePath,
+            IPage::TYPE_TAG,
+            $blogKey,
+            $tag
+        );
+        return $page;
     }
 }

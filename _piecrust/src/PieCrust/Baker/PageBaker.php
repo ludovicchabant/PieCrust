@@ -67,7 +67,7 @@ class PageBaker
      * Bakes the given page. Additional template data can be provided, along with
      * a specific set of posts for the pagination data.
      */
-    public function bake(IPage $page, array $postInfos = null, array $extraData = null)
+    public function bake(IPage $page, array $extraData = null)
     {
         try
         {
@@ -79,7 +79,7 @@ class PageBaker
             $hasMorePages = true;
             while ($hasMorePages)
             {
-                $this->bakeSinglePage($pageRenderer, $postInfos, $extraData);
+                $this->bakeSinglePage($pageRenderer, $extraData);
                 
                 $data = $page->getPageData();
                 if ($data and isset($data['pagination']))
@@ -101,7 +101,7 @@ class PageBaker
         }
     }
     
-    protected function bakeSinglePage(PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
+    protected function bakeSinglePage(PageRenderer $pageRenderer, array $extraData = null)
     {
         $page = $pageRenderer->getPage();
         
@@ -112,8 +112,6 @@ class PageBaker
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Render the page.
-        if ($postInfos != null)
-            $page->setPaginationDataSource($postInfos);
         $bakedContents = $pageRenderer->get();
 
         // Get some objects we need.

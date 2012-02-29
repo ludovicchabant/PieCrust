@@ -12,6 +12,18 @@ class MockPluginLoader
     public $processors;
     public $importers;
     public $commands;
+    public $twigExtensions;
+
+    public function __construct()
+    {
+        $this->plugins = array();
+        $this->formatters = array();
+        $this->templateEngines = array();
+        $this->processors = array();
+        $this->importers = array();
+        $this->commands = array();
+        $this->twigExtensions = array();
+    }
 
     public function getPlugins()
     {
@@ -41,6 +53,11 @@ class MockPluginLoader
     public function getCommands()
     {
         return $this->commands;
+    }
+
+    public function getTwigExtensions()
+    {
+        return $this->twigExtensions;
     }
 }
 

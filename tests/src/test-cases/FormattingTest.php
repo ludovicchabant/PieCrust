@@ -5,6 +5,7 @@ require_once 'unittest_setup.php';
 use PieCrust\IPieCrust;
 use PieCrust\Formatters\IFormatter;
 use PieCrust\Util\Configuration;
+use PieCrust\Util\PieCrustHelper;
 
 
 class FormattingTest extends PHPUnit_Framework_TestCase
@@ -12,7 +13,7 @@ class FormattingTest extends PHPUnit_Framework_TestCase
     public function testMockFormatter()
     {
         $stub = $this->getApp('mock');
-        $text = $stub->formatText('### Test Title', 'mock');
+        $text = PieCrustHelper::formatText($stub, '### Test Title', 'mock');
         $this->assertEquals('Formatted: ### Test Title', $text);
     }
 
@@ -22,7 +23,7 @@ class FormattingTest extends PHPUnit_Framework_TestCase
     public function testMissingFormatter()
     {
         $stub = $this->getApp('mock');
-        $stub->formatText('### Test Title', 'missing');
+        PieCrustHelper::formatText($stub, '### Test Title', 'missing');
     }
 
     public function testFormatterOrdering()
@@ -63,7 +64,7 @@ class FormattingTest extends PHPUnit_Framework_TestCase
              ->will($this->returnValue($config));
         
         $loader = new MockPluginLoader();
-        $loader->formatters = array(new MockFormatter($supportedFormats));
+        $loader->formatters[] = new MockFormatter($supportedFormats);
         $stub->expects($this->any())
              ->method('getPluginLoader')
              ->will($this->returnValue($loader));

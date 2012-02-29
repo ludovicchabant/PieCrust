@@ -86,7 +86,7 @@ class TagsCommand extends ChefCommand
                     }
                 }
             };
-            PageHelper::processPosts($pieCrust, $callback, $blogKey);
+            PageHelper::processPosts($pieCrust, $blogKey, $callback);
         }
 
         // Only print the count?
