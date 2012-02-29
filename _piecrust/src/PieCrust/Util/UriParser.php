@@ -124,7 +124,7 @@ class UriParser
         if (preg_match($postsPattern, $uri, $matches))
         {
             $fs = FileSystem::create($pieCrust, $blogKey);
-            $pathInfo = $fs->getPathInfo($matches);
+            $pathInfo = $fs->getPostPathInfo($matches);
             $date = mktime(0, 0, 0, intval($pathInfo['month']), intval($pathInfo['day']), intval($pathInfo['year']));
             
             $pageInfo['type'] = IPage::TYPE_POST;

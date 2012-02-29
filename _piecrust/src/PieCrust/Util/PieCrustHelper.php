@@ -65,71 +65,14 @@ class PieCrustHelper
     }
 
     /**
-     * Gets the page repository associated with the given app, or a new
-     * one with caching disabled if none was found.
-     */
-    public static function getPageRepository(IPieCrust $pieCrust)
-    {
-        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-        if($pageRepository)
-            return $pageRepository;
-        return new PageRepository($pieCrust, false);
-    }
-
-    /**
-     * Gets a formatted page URL.
+     * Gets a formatted page URI.
      */
     public static function formatUri(IPieCrust $pieCrust, $uri)
     {
-        $uriDecorators = $pieCrust->getEnvironment()->getUrlDecorators();
+        $uriDecorators = $pieCrust->getEnvironment()->getUriDecorators();
         $uriPrefix = $uriDecorators[0];
         $uriSuffix = $uriDecorators[1];
-
-        if ($uriPrefix == null or $uriSuffix == null)
-        {
-            $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
-            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
-            $uriPrefix = $pieCrust->getConfig()->getValueUnchecked('site/root') . (($isPretty or $isBaking) ? '' : '?/');
-            $uriSuffix = ($isBaking and !$isPretty) ? '.html' : '';
-
-            // Preserve the debug flag if needed.
-            if ($pieCrust->isDebuggingEnabled() && !$isBaking)
-            {
-                if ($isPretty)
-                    $uriSuffix .= '?!debug';
-                else if (strpos($uriPrefix, '?') === false)
-                    $uriSuffix .= '?!debug';
-                else
-                    $uriSuffix .= '&!debug';
-            }
-
-            // Cache the values in the app's environment.
-            $pieCrust->getEnvironment()->setUrlDecorators($uriPrefix, $uriSuffix);
-        }
-        
         return $uriPrefix . $uri . $uriSuffix;
-    }
-
-    /**
-     * Makes sure the website's posts infos are cached in the app's environment.
-     */
-    public static function ensurePostInfosCached(IPieCrust $pieCrust, $blogKey)
-    {
-        $postsInfos = $pieCrust->getEnvironment()->getCachedPostsInfos($blogKey);
-        if ($postsInfos == null)
-            return self::cachePostInfos($pieCrust, $blogKey);
-        return $postsInfos;
-    }
-
-    /**
-     * Cache the website's posts infos in the app's environment.
-     */
-    public static function cachePostInfos(IPieCrust $pieCrust, $blogKey)
-    {
-        $fs = FileSystem::create($pieCrust, $blogKey);
-        $postInfos = $fs->getPostFiles();
-        $pieCrust->getEnvironment()->setCachedPostsInfos($blogKey, $postInfos);
-        return $postInfos;
     }
 }
 

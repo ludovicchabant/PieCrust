@@ -2,9 +2,11 @@
 
 namespace PieCrust\IO;
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -25,10 +27,44 @@ abstract class FileSystem
         if ($subDir == null) $this->subDir = '';
         else $this->subDir = trim($subDir, '\\/') . '/';
     }
+
+    public function getPageFiles()
+    {
+        $pagesDir = $this->pieCrust->getPagesDir();
+        if (!$pagesDir)
+            return array();
+
+        $pages = array();
+        $directory = new \RecursiveDirectoryIterator($pagesDir);
+        $iterator = new \RecursiveIteratorIterator($directory);
+
+        foreach ($iterator as $path)
+        {
+            if ($iterator->isDot())
+                continue;
+
+            $pagePath = $path->getPathname();
+            $relativePath = PathHelper::getRelativePagePath($this->pieCrust, $pagePath, IPage::TYPE_REGULAR);
+            $relativePathInfo = pathinfo($relativePath);
+            if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
+                $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or
+                $relativePathInfo['extension'] != 'html')
+            {
+                continue;
+            }
+
+            $pages[] = array(
+                'path' => $pagePath, 
+                'relative_path' => $relativePath
+            );
+        }
+
+        return $pages;
+    }
     
     public abstract function getPostFiles();
     
-    public function getPathInfo($captureGroups)
+    public function getPostPathInfo($captureGroups)
     {
         $postsDir = $this->pieCrust->getPostsDir();
         if (!$postsDir)
@@ -64,7 +100,7 @@ abstract class FileSystem
         }
         $slug = $captureGroups['slug']; // 'slug' is required.
         
-        $path = $this->getPathFormat();
+        $path = $this->getPostPathFormat();
         $path = str_replace(
             array('%year%', '%month%', '%day%', '%slug%'),
             array($year, $month, $day, $slug),
@@ -91,7 +127,7 @@ abstract class FileSystem
             
             $pathInfo['path'] = $possiblePaths[0];
             
-            $pathComponentsRegex = preg_quote($this->getPathFormat(), '/');
+            $pathComponentsRegex = preg_quote($this->getPostPathFormat(), '/');
             $pathComponentsRegex = str_replace(
                 array('%year%', '%month%', '%day%', '%slug%'),
                 array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)'),
@@ -110,7 +146,7 @@ abstract class FileSystem
         return $pathInfo;
     }
     
-    public abstract function getPathFormat();
+    public abstract function getPostPathFormat();
     
     public static function create(IPieCrust $pieCrust, $subDir = null)
     {

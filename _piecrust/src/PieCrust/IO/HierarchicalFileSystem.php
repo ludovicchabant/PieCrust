@@ -20,7 +20,7 @@ class HierarchicalFileSystem extends FileSystem
     public function getPostFiles()
     {
         if (!$this->pieCrust->getPostsDir())
-            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+            return array();
 
         $result = array();
         
@@ -81,7 +81,7 @@ class HierarchicalFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPathFormat()
+    public function getPostPathFormat()
     {
         return '%year%/%month%/%day%_%slug%.html';
     }

@@ -20,7 +20,7 @@ class FlatFileSystem extends FileSystem
     public function getPostFiles()
     {
         if (!$this->pieCrust->getPostsDir())
-            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+            return array();
 
         $paths = array();
         $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->subDir);
@@ -51,7 +51,7 @@ class FlatFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPathFormat()
+    public function getPostPathFormat()
     {
         return '%year%-%month%-%day%_%slug%.html';
     }

@@ -215,8 +215,6 @@ class PieCrustBaker
         }
         
         // Setup the PieCrust environment.
-        $this->pieCrust->getEnvironment()->createLinkCollector();
-        $this->pieCrust->getEnvironment()->createPageRepository();
         if ($this->parameters['copy_assets'])
             $this->pieCrust->getEnvironment()->getPageRepository()->setAssetUrlBaseRemap('%site_root%%uri%');
         $this->pieCrust->getConfig()->setValue('baker/is_baking', true);

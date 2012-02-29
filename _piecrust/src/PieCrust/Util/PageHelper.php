@@ -20,7 +20,7 @@ class PageHelper
      */
     public static function getRelativePath(IPage $page, $stripExtension = false)
     {
-        return PathHelper::getRelativePath($page->getApp(), $page->getPath(), $stripExtension);
+        return PathHelper::getRelativePagePath($page->getApp(), $page->getPath(), $page->getPageType(), $stripExtension);
     }
 
     /**
@@ -93,29 +93,14 @@ class PageHelper
     public static function getPages(IPieCrust $pieCrust)
     {
         $pages = array();
-        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
-        $pagesDir = $pieCrust->getPagesDir();
-        $directory = new \RecursiveDirectoryIterator($pagesDir);
-        $iterator = new \RecursiveIteratorIterator($directory);
+        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+        $pageInfos = $pieCrust->getEnvironment()->getPageInfos();
 
-        foreach ($iterator as $path)
+        foreach ($pageInfos as $pageInfo)
         {
-            if ($iterator->isDot())
-                continue;
-
-            $pagePath = $path->getPathname();
-            $relativePath = PathHelper::getRelativePagePath($pieCrust, $pagePath, IPage::TYPE_REGULAR);
-            $relativePathInfo = pathinfo($relativePath);
-            if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
-                $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or
-                $relativePathInfo['extension'] != 'html')
-            {
-                continue;
-            }
-
             $page = $pageRepository->getOrCreatePage(
-                UriBuilder::buildUri($relativePath),
-                $pagePath
+                UriBuilder::buildUri($pageInfo['relative_path']),
+                $pageInfo['path']
             );
 
             $pages[] = $page;
@@ -143,8 +128,8 @@ class PageHelper
     public static function getPosts(IPieCrust $pieCrust, $blogKey)
     {
         $posts = array();
-        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
-        $postInfos = PieCrustHelper::ensurePostInfosCached($pieCrust, $blogKey);
+        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+        $postInfos = $pieCrust->getEnvironment()->getPostInfos($blogKey);
         $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
 
         foreach ($postInfos as $postInfo)
@@ -157,7 +142,6 @@ class PageHelper
                 $blogKey
             );
             $page->setDate(self::getPostDate($postInfo));
-            $postInfo['page'] = $page;
 
             $posts[] = $page;
         }
@@ -179,7 +163,7 @@ class PageHelper
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $pathPrefix = $blogKey . DIRECTORY_SEPARATOR;
 
-        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
+        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
         $uri = UriBuilder::buildTagUri($pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
         $path = $pieCrust->getPagesDir() . $pathPrefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';

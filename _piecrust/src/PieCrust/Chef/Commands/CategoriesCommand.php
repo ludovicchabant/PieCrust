@@ -67,19 +67,22 @@ class CategoriesCommand extends ChefCommand
 
         $blogKeys = $pieCrust->getConfig()->getValue('site/blogs');
         if ($result->command->args['blog'])
-            $blogKeys = $result->command->args['blog'];
+            $blogKeys = array($result->command->args['blog']);
 
         $categories = array();
-        $callback = function($post) use (&$categories) {
-            $c = $post->getConfig()->getValue('category');
-            if ($c)
-            {
-                if (!isset($categories[$c]))
-                    $categories[$c] = 0;
-                $categories[$c] += 1;
-            }
-        };
-        PageHelper::processPosts($context->getApp(), $blogKey, $callback);
+        foreach ($blogKeys as $blogKey)
+        {
+            $callback = function($post) use (&$categories) {
+                $c = $post->getConfig()->getValue('category');
+                if ($c)
+                {
+                    if (!isset($categories[$c]))
+                        $categories[$c] = 0;
+                    $categories[$c] += 1;
+                }
+            };
+            PageHelper::processPosts($context->getApp(), $blogKey, $callback);
+        }
 
         // Only print the count?
         if ($result->command->options['count'])

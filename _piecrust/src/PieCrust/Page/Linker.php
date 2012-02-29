@@ -118,7 +118,7 @@ class Linker implements \ArrayAccess, \Iterator
         {
             try
             {
-                $pageRepository = PieCrustHelper::getPageRepository($this->page->getApp());
+                $pageRepository = $this->page->getApp()->getEnvironment()->getPageRepository();
 
                 $this->linksCache = array();
                 $it = new FilesystemIterator($this->baseDir);

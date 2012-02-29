@@ -3,7 +3,7 @@
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustConfiguration;
 use PieCrust\Plugins\PluginLoader;
-use PieCrust\Environment\Environment;
+use PieCrust\Environment\CachedEnvironment;
 
 
 class MockPieCrust implements IPieCrust
@@ -126,7 +126,7 @@ class MockPieCrust implements IPieCrust
         $this->templateDirs = array();
         $this->pluginsDirs = array();
         $this->pluginLoader = new MockPluginLoader();
-        $this->environment = new Environment($this);
+        $this->environment = new CachedEnvironment($this);
         $this->addFormatter('none', 'PassThroughFormatter');
         $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
     }

@@ -78,7 +78,7 @@ class PrepareCommand extends ChefCommand
             '%slug%' => $slug
         );
         $fs = FileSystem::create($app);
-        $pathFormat = $fs->getPathFormat();
+        $pathFormat = $fs->getPostPathFormat();
         $path = str_replace(
             array_keys($replacements),
             array_values($replacements),

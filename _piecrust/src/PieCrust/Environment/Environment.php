@@ -2,7 +2,6 @@
 
 namespace PieCrust\Environment;
 
-use \ArrayAccess;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -11,66 +10,29 @@ use PieCrust\PieCrustException;
  * A class that stores information about the environment
  * a PieCrust app is running in.
  */
-class Environment
+abstract class Environment
 {
     protected $pieCrust;
 
-    protected $pageRepository;
     /**
      * Gets the environment's page repository.
      */
-    public function getPageRepository()
-    {
-        return $this->pageRepository;
-    }
+    public abstract function getPageRepository();
 
-    /**
-     * Create the environment's page repository.
-     */
-    public function createPageRepository()
-    {
-        $this->pageRepository = new PageRepository($this->pieCrust);
-    }
-
-    protected $linkCollector;
     /**
      * Gets the environment's link collector.
      */
-    public function getLinkCollector()
-    {
-        return $this->linkCollector;
-    }
+    public abstract function getLinkCollector();
 
     /**
-     * Create the environment's link collector.
+     * Gets the page infos.
      */
-    public function createLinkCollector()
-    {
-        $this->linkCollector = new LinkCollector();
-    }
-
-    protected $cachedPostsInfos;
-    /**
-     * Gets the cached posts infos.
-     */
-    public function getCachedPostsInfos($blogKey = null)
-    {
-        if ($blogKey != null)
-        {
-            if (!isset($this->cachedPostsInfos[$blogKey]))
-                return null;
-            return $this->cachedPostsInfos[$blogKey];
-        }
-        return $this->cachedPostsInfos;
-    }
+    public abstract function getPageInfos();
 
     /**
-     * Sets the posts infos for a blog.
+     * Gets the post infos.
      */
-    public function setCachedPostsInfos($blogKey, array $posts)
-    {
-        $this->cachedPostsInfos[$blogKey] = $posts;
-    }
+    public abstract function getPostInfos($blogKey);
 
     protected $lastRunInfo;
     /**
@@ -89,32 +51,44 @@ class Environment
         $this->lastRunInfo = $runInfo;
     }
 
-    protected $urlPrefix;
-    protected $urlSuffix;
+    protected $uriPrefix;
+    protected $uriSuffix;
     /**
-     * Gets the URL decorators for the current application.
+     * Gets the URI decorators for the current application.
      */
-    public function getUrlDecorators()
+    public function getUriDecorators()
     {
-        return array($this->urlPrefix, $this->urlSuffix);
-    }
+        if ($this->uriPrefix == null or $this->uriSuffix == null)
+        {
+            $pieCrust = $this->pieCrust;
+            $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
+            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
+            $uriPrefix = $pieCrust->getConfig()->getValueUnchecked('site/root') . (($isPretty or $isBaking) ? '' : '?/');
+            $uriSuffix = ($isBaking and !$isPretty) ? '.html' : '';
 
-    /**
-     * Sets the URL decorators for the current application.
-     */
-    public function setUrlDecorators($urlPrefix, $urlSuffix)
-    {
-        $this->urlPrefix = $urlPrefix;
-        $this->urlSuffix = $urlSuffix;
+            // Preserve the debug flag if needed.
+            if ($pieCrust->isDebuggingEnabled() && !$isBaking)
+            {
+                if ($isPretty)
+                    $uriSuffix .= '?!debug';
+                else if (strpos($uriPrefix, '?') === false)
+                    $uriSuffix .= '?!debug';
+                else
+                    $uriSuffix .= '&!debug';
+            }
+
+            $this->uriPrefix = $uriPrefix;
+            $this->uriSuffix = $uriSuffix;
+        }
+        return array($this->uriPrefix, $this->uriSuffix);
     }
 
     /**
      * Creates a new instance of Environment.
      */
-    public function __construct(IPieCrust $pieCrust)
+    protected function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
-        $this->cachedPostsInfos = array();
     }
 }
 

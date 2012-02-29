@@ -5,6 +5,7 @@ namespace PieCrust\Chef;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustConfiguration;
 use PieCrust\PieCrustException;
+use PieCrust\Environment\CachedEnvironment;
 use PieCrust\Plugins\PluginLoader;
 
 
@@ -113,6 +114,6 @@ class NullPieCrust implements IPieCrust
     {
         $this->config = new PieCrustConfiguration();
         $this->pluginLoader = new PluginLoader($this);
-        $this->environment = new Environment($this);
+        $this->environment = new CachedEnvironment($this);
     }
 }

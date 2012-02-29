@@ -3,7 +3,7 @@
 namespace PieCrust;
 
 use \Exception;
-use PieCrust\Environment\Environment;
+use PieCrust\Environment\CachedEnvironment;
 use PieCrust\Formatters\IFormatter;
 use PieCrust\Page\Page;
 use PieCrust\Plugins\PluginLoader;
@@ -299,7 +299,7 @@ class PieCrust implements IPieCrust
         $this->debuggingEnabled = (bool)$parameters['debug'];
         $this->cachingEnabled = (bool)$parameters['cache'];
         $this->pluginLoader = new PluginLoader($this);
-        $this->environment = new Environment($this);
+        $this->environment = new CachedEnvironment($this);
     }
     
     /**

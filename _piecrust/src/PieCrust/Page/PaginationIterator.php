@@ -255,7 +255,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         $pieCrust = $this->parentPage->getApp();
         $blogKey = $this->parentPage->getConfig()->getValue('blog');
         $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
-        $pageRepository = PieCrustHelper::getPageRepository($pieCrust);
+        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
         // If we have any filter, apply it to the pagination data source.
         if ($this->filter != null and $this->filter->hasClauses())
