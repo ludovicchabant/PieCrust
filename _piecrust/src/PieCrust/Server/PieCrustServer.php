@@ -44,11 +44,12 @@ class PieCrustServer
         // Validate the options.
         $this->options = array_merge(
             array(
-                  'port' => 8080,
-                  'mime_types' => array('less' => 'text/css'),
-                  'log_file' => null,
-                  'debug' => false
-                  ),
+                'port' => 8080,
+                'mime_types' => array('less' => 'text/css'),
+                'log_file' => null,
+                'debug' => false,
+                'cache' => true
+            ),
             $options
         );
 
@@ -142,7 +143,7 @@ class PieCrustServer
         {
             $pieCrust = new PieCrust(array(
                     'root' => $this->rootDir,
-                    'cache' => true
+                    'cache' => $this->options['cache']
                 ),
                 $context->getRequest()->getServerVariables()
             );
@@ -225,10 +226,6 @@ class PieCrustServer
         if ($this->server != null)
             return;
 
-        $app = new PieCrust(array(
-            'root' => $this->rootDir,
-            'cache' => true
-        ));
         PathHelper::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
