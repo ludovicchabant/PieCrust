@@ -7,6 +7,7 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PageConfigWrapper;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -29,7 +30,7 @@ class Linker implements \ArrayAccess, \Iterator
     public function __construct(IPage $page, $dir = null)
     {
         $this->page = $page;
-        if ($dir)
+        if ($dir != null)
         {
             $this->baseDir = $dir;
             $this->selfName = null;
@@ -97,12 +98,7 @@ class Linker implements \ArrayAccess, \Iterator
     public function next()
     {
         $this->ensureLinksCache();
-        $res = next($this->linksCache);
-        while ($res and $res instanceof Linker)
-        {
-            $res = next($this->linksCache);
-        }
-        return $res;
+        return next($this->linksCache);
     }
   
     public function valid()
@@ -154,7 +150,7 @@ class Linker implements \ArrayAccess, \Iterator
                                 'name' => $key,
                                 'is_dir' => false,
                                 'is_self' => ($basename == $this->selfName),
-                                'page' => $page->getConfig()->get()
+                                'page' => new PageConfigWrapper($page)
                             );
                         }
                         catch (Exception $e)
