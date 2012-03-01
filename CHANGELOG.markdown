@@ -22,6 +22,7 @@ Fresh changes
 * NEW: Added `--nocache` parameter to Chef.
 * NEW: Added `prepare` command in Chef.
 * CHANGE: Looping over the page linker now returns both files and directories.
+* CHANGE: Chef server doesn't use the cache for the requested page's contents.
 * BUG: Fixed a harmless crash in `chef init`.
 * BUG: Fixed crash when baking with caching disabled.
 * BUG: Fixed a bug with page asset URLs being incorrect when baking in some rare
