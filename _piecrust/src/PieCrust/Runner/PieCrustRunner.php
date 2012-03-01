@@ -194,8 +194,8 @@ class PieCrustRunner
                 throw new PieCrustException("Can't figure out the default root directory for the website.");
             $parameters['root'] = dirname($server['SCRIPT_FILENAME']);
         }
-        $parameters['debug'] = $parameters['debug'] or isset($get['!debug']);
-        $parameters['cache'] = $parameters['cache'] and !isset($get['!nocache']);
+        $parameters['debug'] = ((bool)$parameters['debug'] or isset($get['!debug']));
+        $parameters['cache'] = ((bool)$parameters['cache'] and !isset($get['!nocache']));
 
         return $parameters;
     }

@@ -141,12 +141,14 @@ class PieCrustServer
         $pieCrustException = null;
         try
         {
-            $pieCrust = new PieCrust(array(
+            $params = PieCrustRunner::getPieCrustParameters(
+                array(
                     'root' => $this->rootDir,
                     'cache' => $this->options['cache']
                 ),
                 $context->getRequest()->getServerVariables()
             );
+            $pieCrust = new PieCrust($params);
             $pieCrust->getConfig()->setValue('server/is_hosting', true);
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);

@@ -106,16 +106,16 @@ class PageRenderer
         
         echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - ";
         echo ($this->page->wasCached() ? "baked this morning" : "baked just now");
-        if ($runInfo['cache_validity'] != null)
+        if ($this->runInfo['cache_validity'] != null)
         {
-            $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
+            $wasCacheCleaned = $this->runInfo['cache_validity']['was_cleaned'];
             echo ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
         }
         else
         {
             echo ", with no cache";
         }
-        $timeSpan = microtime(true) - $runInfo['start_time'];
+        $timeSpan = microtime(true) - $this->runInfo['start_time'];
         echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
     }
     
