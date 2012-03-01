@@ -19,10 +19,15 @@ Fresh changes
 * NEW: Added the `wordcount` Twig function.
 * NEW: Added the ability for PieCrust plugins to expose Twig extensions.
 * NEW: Added Twig filters: `markdown`, `textile` and `formatwith`.
+* NEW: Added `--nocache` parameter to Chef.
+* NEW: Added `prepare` command in Chef.
+* CHANGE: Looping over the page linker now returns both files and directories.
 * BUG: Fixed a harmless crash in `chef init`.
 * BUG: Fixed crash when baking with caching disabled.
 * BUG: Fixed a bug with page asset URLs being incorrect when baking in some rare
   occasions.
+* BUG: Fixed a bug with posts published on the same day not being correctly
+  sorted by time.
 
 
 Frozen changes
