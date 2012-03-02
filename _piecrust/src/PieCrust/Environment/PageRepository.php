@@ -75,11 +75,6 @@ class PageRepository
         }
         else
         {
-            assert($uri == $page->getUri());
-            assert($path == $page->getPath());
-            assert($pageType == $page->getPageType());
-            assert($blogKey == $page->getBlogKey());
-            assert($pageKey == $page->getPageKey());
             $page->setPageNumber($pageNumber);
         }
         return $page;
