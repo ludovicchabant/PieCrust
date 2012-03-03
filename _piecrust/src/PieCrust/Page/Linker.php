@@ -41,16 +41,35 @@ class Linker implements \ArrayAccess, \Iterator
             $this->selfName = basename($page->getPath());
         }
     }
+
+    // {{{ Template Data Members
+    /**
+     * Gets the name of the current directory.
+     * @include
+     */
+    public function name()
+    {
+        return basename($this->baseDir);
+    }
     
+    /**
+     * Gets whether this maps to a directory. Always returns true.
+     * @include
+     */
     public function is_dir()
     {
         return true;
     }
-    
+
+    /**
+     * Gets whether this maps to the current page. Always returns false.
+     * @include
+     */
     public function is_self()
     {
         return false;
     }
+    // }}}
     
     // {{{ ArrayAccess members
     public function offsetExists($offset)
