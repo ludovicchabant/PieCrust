@@ -85,6 +85,8 @@ class DataFormatter
         
     protected function formatArray($data)
     {
+        $includedObjectMethods = array();
+        $includedObjectProperties = array();
         if (is_object($data))
         {
             // If this is an object that passes for an array, take some time to
@@ -98,11 +100,46 @@ class DataFormatter
             {
                 echo $this->getIndent() . '<span style="' . DataStyles::CSS_DOC . '">' . $classParams['documentation'] . '</span>' . PHP_EOL;
             }
+
+            // See if there are some methods that are explicitely included in 
+            // addition to its array contents.
+            foreach ($r->getMethods(ReflectionMethod::IS_PUBLIC) as $method)
+            {
+                $docComment = $method->getDocComment();
+                $params = $this->getReflectionFormattingParameters($docComment);
+                if ($params['include'])
+                    $includedObjectMethods[] = $method;
+            }
+            foreach ($r->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
+            {
+                $docComment = $property->getDocComment();
+                $params = $this->getReflectionFormattingParameters($docComment);
+                if ($params['include'])
+                    $includedObjectProperties[] = $property;
+            }
         }
         
-        // Render the formatted array contents.
+        // Render the data!
         echo PHP_EOL . $this->getIndent() . '<div style="' . DataStyles::CSS_DATABLOCK . '">' . PHP_EOL;
         $this->indent++;
+        // Render any included object methods or properties.
+        if (count($includedObjectMethods) > 0 or
+            count($includedObjectProperties) > 0)
+        {
+            foreach ($includedObjectMethods as $method)
+            {
+                $docComment = $method->getDocComment();
+                $params = $this->getReflectionFormattingParameters($docComment);
+                $this->formatObjectMethod($data, $method, $params);
+            }
+            foreach ($includedObjectProperties as $property)
+            {
+                $docComment = $property->getDocComment();
+                $params = $this->getReflectionFormattingParameters($docComment);
+                $this->formatObjectProperty($data, $property, $params);
+            }
+        }
+        // Render the formatted array contents.
         foreach ($data as $key => $value)
         {
             echo $this->getIndent() . '<div style="' . DataStyles::CSS_VALUE . '">' . $key;
@@ -137,6 +174,12 @@ class DataFormatter
         
         foreach ($r->getMethods(ReflectionMethod::IS_PUBLIC) as $method)
         {
+            // Filter special methods out.
+            if ($method->isConstructor() or
+                $method->isDestructor())
+                continue;
+
+            // Filter ignored or non-explicitely-included methods.
             $docComment = $method->getDocComment();
             $params = $this->getReflectionFormattingParameters($docComment);
             if ($params['ignore'])
@@ -144,44 +187,7 @@ class DataFormatter
             if ($classParams['explicitInclude'] and !$params['include'])
                 continue;
             
-            $name = strtolower($method->getName());
-            
-            // If this method can be called without arguments, and there's no
-            // '@noCall' annotation on it, get the value so we can display it.
-            // Otherwise, display only the method's signature.
-            $value = null;
-            $argCount = $method->getNumberOfRequiredParameters();
-            if ($argCount == 0 && !$params['noCall'])
-            {
-                $value = $method->invoke($data);
-            }
-            else
-            {
-                $args = $method->getParameters();
-                $name .= '(';
-                $firstArg = true;
-                foreach ($args as $a)
-                {
-                    if (!$firstArg)
-                        $name .= ', ';
-                    $firstArg = false;
-                    
-                    $name .= $a->getName();
-                }
-                $name .= ')';
-            }
-            
-            echo $this->getIndent() . '<div style="' . DataStyles::CSS_VALUE . '">' . $name;
-            if ($params['documentation'])
-            {
-                echo ' <span style="' . DataStyles::CSS_DOC . '">&ndash; ' . $params['documentation'] . '</span>' . PHP_EOL;
-            }
-            if ($value !== null)
-            {
-                echo ' : ' . PHP_EOL;
-                $this->format($value);
-            }
-            echo $this->getIndent() . '</div>' . PHP_EOL;
+            $this->formatObjectMethod($data, $method, $params);
         }
         
         foreach ($r->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
@@ -193,31 +199,78 @@ class DataFormatter
             if ($classParams['explicitInclude'] and !$params['include'])
                 continue;
             
-            $name = $property->getName();
-            
-            // Only get the value of this property if there's no '@noCall'
-            // annotation on it.
-            $value = null;
-            if (!$params['noCall'])
-            {
-                $value = $property->getValue($data);
-            }
-            
-            echo $this->getIndent() . '<div style="' . DataStyles::CSS_VALUE . '">' . $name;
-            if ($params['documentation'])
-            {
-                echo ' <span style="' . DataStyles::CSS_DOC . '">' . $params['documentation'] . '</span>' . PHP_EOL;
-            }
-            if ($value !== null)
-            {
-                echo ' : ' . PHP_EOL;
-                $this->format($value);
-            }
-            echo $this->getIndent() . '</div>' . PHP_EOL;
+            $this->formatObjectProperty($data, $property, $params);
         }
         
         $this->indent--;
         
+        echo $this->getIndent() . '</div>' . PHP_EOL;
+    }
+
+    protected function formatObjectMethod($data, $method, $params)
+    {
+        $name = strtolower($method->getName());
+
+        // If this method can be called without arguments, and there's no
+        // '@noCall' annotation on it, get the value so we can display it.
+        // Otherwise, display only the method's signature.
+        $value = null;
+        $argCount = $method->getNumberOfRequiredParameters();
+        if ($argCount == 0 && !$params['noCall'])
+        {
+            $value = $method->invoke($data);
+        }
+        else
+        {
+            $args = $method->getParameters();
+            $name .= '(';
+            $firstArg = true;
+            foreach ($args as $a)
+            {
+                if (!$firstArg)
+                    $name .= ', ';
+                $firstArg = false;
+
+                $name .= $a->getName();
+            }
+            $name .= ')';
+        }
+
+        echo $this->getIndent() . '<div style="' . DataStyles::CSS_VALUE . '">' . $name;
+        if ($params['documentation'])
+        {
+            echo ' <span style="' . DataStyles::CSS_DOC . '">&ndash; ' . $params['documentation'] . '</span>' . PHP_EOL;
+        }
+        if ($value !== null)
+        {
+            echo ' : ' . PHP_EOL;
+            $this->format($value);
+        }
+        echo $this->getIndent() . '</div>' . PHP_EOL;
+    }
+
+    protected function formatObjectProperty($data, $property, $params)
+    {
+        $name = $property->getName();
+
+        // Only get the value of this property if there's no '@noCall'
+        // annotation on it.
+        $value = null;
+        if (!$params['noCall'])
+        {
+            $value = $property->getValue($data);
+        }
+
+        echo $this->getIndent() . '<div style="' . DataStyles::CSS_VALUE . '">' . $name;
+        if ($params['documentation'])
+        {
+            echo ' <span style="' . DataStyles::CSS_DOC . '">' . $params['documentation'] . '</span>' . PHP_EOL;
+        }
+        if ($value !== null)
+        {
+            echo ' : ' . PHP_EOL;
+            $this->format($value);
+        }
         echo $this->getIndent() . '</div>' . PHP_EOL;
     }
     
