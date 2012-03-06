@@ -17,7 +17,7 @@ use PieCrust\Util\UriBuilder;
 /**
  * A class that exposes the list of pages in a folder to another page.
  */
-class Linker implements \ArrayAccess, \Iterator
+class Linker implements \ArrayAccess, \Iterator, \Countable
 {
     protected $page;
     protected $baseDir;
@@ -71,6 +71,14 @@ class Linker implements \ArrayAccess, \Iterator
     }
     // }}}
     
+    // {{{ Countable members
+    public function count()
+    {
+        $this->ensureLinksCache();
+        return count($this->linksCache);
+    }
+    // }}}
+
     // {{{ ArrayAccess members
     public function offsetExists($offset)
     {
@@ -99,7 +107,7 @@ class Linker implements \ArrayAccess, \Iterator
     public function rewind()
     {
         $this->ensureLinksCache();
-        return reset($this->linksCache);
+        reset($this->linksCache);
     }
   
     public function current()
@@ -117,7 +125,7 @@ class Linker implements \ArrayAccess, \Iterator
     public function next()
     {
         $this->ensureLinksCache();
-        return next($this->linksCache);
+        next($this->linksCache);
     }
   
     public function valid()
@@ -133,7 +141,8 @@ class Linker implements \ArrayAccess, \Iterator
         {
             try
             {
-                $pageRepository = $this->page->getApp()->getEnvironment()->getPageRepository();
+                $pieCrust = $this->page->getApp();
+                $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
                 $this->linksCache = array();
                 $it = new FilesystemIterator($this->baseDir);
@@ -161,9 +170,22 @@ class Linker implements \ArrayAccess, \Iterator
                         $key = $item->getBasename('.html');
                         try
                         {
-                            $relativePath = PathHelper::getRelativePagePath($this->page->getApp(), $path, $this->page->getPageType());
+                            $relativePath = PathHelper::getRelativePagePath($pieCrust, $path, $this->page->getPageType());
                             $uri = UriBuilder::buildUri($relativePath);
-                            $page = $pageRepository->getOrCreatePage($uri, $path);
+
+                            // To get the link's page, we need to be careful with the case
+                            // where that page is the currently rendering one. This is
+                            // because it could be rendering a sub-page -- but we would be
+                            // requesting the default first page, which would effectively
+                            // change the page number *while* we're rendering, which leads
+                            // to all kinds of bad things!
+                            // TODO: obviously, there needs to be some design changes to
+                            // prevent this kind of chaotic behaviour. 
+                            if ($path == $this->page->getPath())
+                                $page = $this->page;
+                            else
+                                $page = $pageRepository->getOrCreatePage($uri, $path);
+                            
                             $this->linksCache[$key] = array(
                                 'uri' => $uri,
                                 'name' => $key,
@@ -183,12 +205,14 @@ class Linker implements \ArrayAccess, \Iterator
                 
                 if ($this->selfName != null)
                 {
+                    // Add special stuff only for the original Linker
+                    // (the one directly created by the current page).
                     if (PageHelper::isRegular($this->page))
                     {
                         // Add a link to go up to the parent directory, but stay inside
                         // the app's pages directory.
                         $parentBaseDir = dirname($this->baseDir);
-                        if (strlen($parentBaseDir) >= strlen($this->page->getApp()->getPagesDir()))
+                        if (strlen($parentBaseDir) >= strlen($pieCrust->getPagesDir()))
                         {
                             $linker = new Linker($this->page, dirname($this->baseDir));
                             $this->linksCache['_'] = $linker;
@@ -199,24 +223,24 @@ class Linker implements \ArrayAccess, \Iterator
                         // Add a link to go up to the parent directory, but stay inside
                         // the app's posts directory.
                         $parentBaseDir = dirname($this->baseDir);
-                        if (strlen($parentBaseDir) >= strlen($this->page->getApp()->getPostsDir()))
+                        if (strlen($parentBaseDir) >= strlen($pieCrust->getPostsDir()))
                         {
                             $linker = new Linker($this->page, dirname($this->baseDir));
                             $this->linksCache['_'] = $linker;
                         }
                     }
 
-                    if ($this->page->getApp()->getPagesDir())
+                    if ($pieCrust->getPagesDir())
                     {
                         // Add a shortcut to the pages directory.
-                        $linker = new Linker($this->page, $this->page->getApp()->getPagesDir());
+                        $linker = new Linker($this->page, $pieCrust->getPagesDir());
                         $this->linksCache['_pages_'] = $linker;
                     }
                     
-                    if ($this->page->getApp()->getPostsDir())
+                    if ($pieCrust->getPostsDir())
                     {
                         // Add a shortcut to the posts directory.
-                        $linker = new Linker($this->page, $this->page->getApp()->getPostsDir());
+                        $linker = new Linker($this->page, $pieCrust->getPostsDir());
                         $this->linksCache['_posts_'] = $linker;
                     }
                 }
