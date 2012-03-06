@@ -14,10 +14,18 @@ use PieCrust\IO\FileSystem;
  */
 class UriParser
 {
+    // {{{ Uri types
+    const PAGE_URI_REGULAR = 1;
+    const PAGE_URI_POST = 2;
+    const PAGE_URI_TAG = 4;
+    const PAGE_URI_CATEGORY = 8;
+    const PAGE_URI_ANY = 15;
+    // }}}
+
     /**
      * Parse a relative URI and returns information about it.
      */
-    public static function parseUri(IPieCrust $pieCrust, $uri)
+    public static function parseUri(IPieCrust $pieCrust, $uri, $uriTypes = self::PAGE_URI_ANY)
     {
         if (strpos($uri, '..') !== false)   // Some bad boy's trying to access files outside of our standard folders...
         {
@@ -49,7 +57,8 @@ class UriParser
             );
         
         // Try first with a regular page path.
-        if (UriParser::tryParsePageUri($pieCrust, $uri, $pageInfo))
+        if (($uriTypes & self::PAGE_URI_REGULAR) != 0 and
+            UriParser::tryParsePageUri($pieCrust, $uri, $pageInfo))
         {
             return $pageInfo;
         }
@@ -57,24 +66,32 @@ class UriParser
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         
         // Try with a post.
-        foreach ($blogKeys as $blogKey)
+        if (($uriTypes & self::PAGE_URI_POST) != 0)
         {
-            if (UriParser::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
+            foreach ($blogKeys as $blogKey)
             {
-                return $pageInfo;
+                if (UriParser::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
+                {
+                    return $pageInfo;
+                }
             }
         }
         
         // Try with special pages (tag & category)
-        foreach ($blogKeys as $blogKey)
+        if (($uriTypes & (self::PAGE_URI_CATEGORY | self::PAGE_URI_TAG)) != 0)
         {
-            if (UriParser::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
+            foreach ($blogKeys as $blogKey)
             {
-                return $pageInfo;
-            }
-            if (UriParser::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
-            {
-                return $pageInfo;
+                if (($uriTypes & self::PAGE_URI_TAG) != 0 and
+                    UriParser::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
+                {
+                    return $pageInfo;
+                }
+                if (($uriTypes & self::PAGE_URI_CATEGORY) != 0 and
+                    UriParser::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
+                {
+                    return $pageInfo;
+                }
             }
         }
         
