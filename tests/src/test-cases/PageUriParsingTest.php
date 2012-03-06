@@ -29,8 +29,8 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
     
     public function parseUriDataProvider()
     {
-        $pagesDir = vfsStream::url('root/_content/pages/');
-        $postsDir = vfsStream::url('root/_content/posts/');
+        $pagesDir = vfsStream::url('root/kitchen/_content/pages/');
+        $postsDir = vfsStream::url('root/kitchen/_content/posts/');
         return array(
             array(
                 array(),
@@ -104,22 +104,39 @@ class PageUriParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParseUri($config, $uri, $expectedUriInfo)
     {
-        $structure = array(
-            '_content' => array(
-                'pages' => array(
-                    '_index.html' => '',
-                    'existing-page.html' => ''
-                ),
-                'posts' => array()
-            )
-        );
-        $root = vfsStream::create($structure);
+        $fs = MockFileSystem::create()
+            ->withPostsDir()
+            ->withPage('_index')
+            ->withPage('existing-page');
 
-        $pc = new PieCrust(array('root' => vfsStream::url('root'), 'debug' => true, 'cache' => false));
+        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'debug' => true, 'cache' => false));
         $pc->getConfig()->set($config);
         $pc->getConfig()->setValue('site/root', 'http://whatever/');
         
         $uriInfo = UriParser::parseUri($pc, $uri);
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
+    }
+
+    public function testParseRegularOnlyUri()
+    {
+        $fs = MockFileSystem::create()
+            ->withPage('existing-page');
+
+        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'cache' => false));
+        $uriInfo = UriParser::parseUri($pc, '/existing-page');
+        $this->assertEquals(
+            $this->makeUriInfo('existing-page', $fs->url('kitchen/_content/pages/existing-page.html'), true),
+            $uriInfo
+        );
+    }
+
+    public function testParseRegularOnlyUriThatDoesntExist()
+    {
+        $fs = MockFileSystem::create()
+            ->withPage('existing-page');
+
+        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'cache' => false));
+        $uriInfo = UriParser::parseUri($pc, '/non-existing-page', UriParser::PAGE_URI_REGULAR);
+        $this->assertNull($uriInfo);
     }
 }
