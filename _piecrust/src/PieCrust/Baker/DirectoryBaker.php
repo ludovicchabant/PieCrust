@@ -250,7 +250,7 @@ class DirectoryBaker
             }
             catch(Exception $e)
             {
-                $this->logger->warn($e->getMessage() . " -- Will force-bake {$relative}");
+                $this->logger->log($e->getMessage() . " -- Will force-bake {$relative}");
                 $isUpToDate = false;
             }
 
