@@ -87,7 +87,6 @@ class Chef
         {
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
-                'debug' => in_array('--debug', $userArgv),
                 'cache' => !in_array('--nocache', $userArgv)
             ));
         }
