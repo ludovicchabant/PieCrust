@@ -98,7 +98,7 @@ class PieCrustErrorHandler
         // Get the error page's info.
         try
         {
-            $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri);
+            $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri, UriParser::PAGE_URI_REGULAR);
         }
         catch (Exception $inner)
         {
