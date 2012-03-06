@@ -15,6 +15,8 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Chef's `--debug` option now only changes the verbosity of the
+  command. Before, it also enabled PieCrust's "debug" mode.
 * NEW: PieCrust is now using Twig version 1.6.
 * NEW: Added the `wordcount` Twig function.
 * NEW: Added the ability for PieCrust plugins to expose Twig extensions.
@@ -24,12 +26,17 @@ Fresh changes
 * CHANGE: Looping over the page linker now returns both files and directories.
 * CHANGE: The page linker now exposes the name of directories.
 * CHANGE: Chef server doesn't use the cache for the requested page's contents.
+* CHANGE: Updated to Twig 1.6.
+* CHANGE: Updated to LessPHP 0.3.3.
 * BUG: Fixed a harmless crash in `chef init`.
 * BUG: Fixed crash when baking with caching disabled.
 * BUG: Fixed a bug with page asset URLs being incorrect when baking in some rare
   occasions.
 * BUG: Fixed a bug with posts published on the same day not being correctly
   sorted by time.
+* BUG: Fixed a bug with the linker messing up the pagination for the current
+  page.
+* BUG: Fixed a crash in the baker.
 
 
 Frozen changes
