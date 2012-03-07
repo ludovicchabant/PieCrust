@@ -15,6 +15,12 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+
+Frozen changes
+--------------
+
+### 0.6.0 (2012-03-06)
+
 * BREAKING CHANGE: Chef's `--debug` option now only changes the verbosity of the
   command. Before, it also enabled PieCrust's "debug" mode.
 * NEW: PieCrust is now using Twig version 1.6.
@@ -39,10 +45,6 @@ Fresh changes
 * BUG: Fixed a crash in the baker.
 * BUG: Fixed a bug where the 404 page wasn't used when it should have.
 * BUG: Files with spaces in their name now work in the Chef server.
-
-
-Frozen changes
---------------
 
 ### 0.5.2 (2012-02-17)
 
