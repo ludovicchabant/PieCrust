@@ -37,6 +37,8 @@ Fresh changes
 * BUG: Fixed a bug with the linker messing up the pagination for the current
   page.
 * BUG: Fixed a crash in the baker.
+* BUG: Fixed a bug where the 404 page wasn't used when it should have.
+* BUG: Files with spaces in their name now work in the Chef server.
 
 
 Frozen changes
