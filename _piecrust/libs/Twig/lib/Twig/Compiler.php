@@ -14,7 +14,7 @@
  * Compiles a node to PHP code.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
 class Twig_Compiler implements Twig_CompilerInterface
 {
@@ -56,8 +56,8 @@ class Twig_Compiler implements Twig_CompilerInterface
     /**
      * Compiles a node.
      *
-     * @param Twig_NodeInterface $node   The node to compile
-     * @param integer            $indent The current indentation
+     * @param Twig_NodeInterface $node        The node to compile
+     * @param integer            $indentation The current indentation
      *
      * @return Twig_Compiler The current compiler instance
      */
@@ -74,8 +74,7 @@ class Twig_Compiler implements Twig_CompilerInterface
 
     public function subcompile(Twig_NodeInterface $node, $raw = true)
     {
-        if (false === $raw)
-        {
+        if (false === $raw) {
             $this->addIndentation();
         }
 
@@ -124,13 +123,13 @@ class Twig_Compiler implements Twig_CompilerInterface
     /**
      * Adds a quoted string to the compiled code.
      *
-     * @param  string $string The string
+     * @param  string $value The string
      *
      * @return Twig_Compiler The current compiler instance
      */
     public function string($value)
     {
-        $this->source .= sprintf('"%s"', addcslashes($value, "\t\"\$\\"));
+        $this->source .= sprintf('"%s"', addcslashes($value, "\0\t\"\$\\"));
 
         return $this;
     }
@@ -189,7 +188,7 @@ class Twig_Compiler implements Twig_CompilerInterface
     /**
      * Indents the generated code.
      *
-     * @param integer $indent The number of indentation to add
+     * @param integer $step The number of indentation to add
      *
      * @return Twig_Compiler The current compiler instance
      */
@@ -203,7 +202,7 @@ class Twig_Compiler implements Twig_CompilerInterface
     /**
      * Outdents the generated code.
      *
-     * @param integer $indent The number of indentation to remove
+     * @param integer $step The number of indentation to remove
      *
      * @return Twig_Compiler The current compiler instance
      */

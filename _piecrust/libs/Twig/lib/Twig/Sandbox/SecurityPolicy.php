@@ -13,7 +13,7 @@
  * Represents a security policy which need to be enforced when sandbox mode is enabled.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
 class Twig_Sandbox_SecurityPolicy implements Twig_Sandbox_SecurityPolicyInterface
 {
@@ -27,7 +27,7 @@ class Twig_Sandbox_SecurityPolicy implements Twig_Sandbox_SecurityPolicyInterfac
     {
         $this->allowedTags = $allowedTags;
         $this->allowedFilters = $allowedFilters;
-        $this->allowedMethods = $allowedMethods;
+        $this->setAllowedMethods($allowedMethods);
         $this->allowedProperties = $allowedProperties;
         $this->allowedFunctions = $allowedFunctions;
     }
@@ -44,7 +44,10 @@ class Twig_Sandbox_SecurityPolicy implements Twig_Sandbox_SecurityPolicyInterfac
 
     public function setAllowedMethods(array $methods)
     {
-        $this->allowedMethods = $methods;
+        $this->allowedMethods = array();
+        foreach ($methods as $class => $m) {
+            $this->allowedMethods[$class] = array_map('strtolower', is_array($m) ? $m : array($m));
+        }
     }
 
     public function setAllowedProperties(array $properties)
@@ -85,9 +88,10 @@ class Twig_Sandbox_SecurityPolicy implements Twig_Sandbox_SecurityPolicyInterfac
         }
 
         $allowed = false;
+        $method = strtolower($method);
         foreach ($this->allowedMethods as $class => $methods) {
             if ($obj instanceof $class) {
-                $allowed = in_array($method, is_array($methods) ? $methods : array($methods));
+                $allowed = in_array($method, $methods);
 
                 break;
             }

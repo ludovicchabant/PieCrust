@@ -1,8 +1,11 @@
 <?php
 
-namespace PieCrust;
+namespace PieCrust\Runner;
 
 use \Exception;
+use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\HttpHeaderHelper;
 
@@ -95,7 +98,7 @@ class PieCrustErrorHandler
         // Get the error page's info.
         try
         {
-            $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri);
+            $errorPageUriInfo = UriParser::parseUri($this->pieCrust, $errorPageUri, UriParser::PAGE_URI_REGULAR);
         }
         catch (Exception $inner)
         {
@@ -111,7 +114,8 @@ class PieCrustErrorHandler
             // the "fatal error" page if even this doesn't work.
             try
             {
-                $this->pieCrust->runUnsafe($errorPageUri, $server, null, $headers);
+                $runner = new PieCrustRunner($this->pieCrust);
+                $runner->runUnsafe($errorPageUri, $server, null, $headers);
             }
             catch (Exception $inner)
             {

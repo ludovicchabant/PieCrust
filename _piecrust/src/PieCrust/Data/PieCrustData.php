@@ -51,18 +51,24 @@ class PieCrustData
             $output .= ($this->wasCurrentPageCached ? "baked this morning" : "baked just now");
         }
         
-        $runInfo = $this->pieCrust->getLastRunInfo();
-        if ($runInfo['cache_validity'] != null)
+        // If we have some execution info in the environment, 
+        // add more information.
+        if ($this->pieCrust->getEnvironment()->getLastRunInfo() != null)
         {
-            $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
-            $output .= ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
+            $runInfo = $this->pieCrust->getEnvironment()->getLastRunInfo();
+            if ($runInfo['cache_validity'] != null)
+            {
+                $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
+                $output .= ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
+            }
+            else
+            {
+                $output .= ", with no cache";
+            }
+            $timeSpan = microtime(true) - $runInfo['start_time'];
+            $output .= ", in " . sprintf('%8.1f', $timeSpan * 1000.0) . " ms";
         }
-        else
-        {
-            $output .= ", with no cache";
-        }
-        $timeSpan = microtime(true) - $runInfo['start_time'];
-        $output .= ", in " . sprintf('%8.1f', $timeSpan * 1000.0) . " ms.";
+
         $output .= '</p>' . PHP_EOL;
         $output .= '</div>' . PHP_EOL;
         

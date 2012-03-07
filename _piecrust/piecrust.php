@@ -134,9 +134,11 @@ function piecrust_setup($profile = 'web')
 function piecrust_run($parameters = array(), $uri = null, $profile = 'web')
 {
     piecrust_setup($profile);
-    
+
+    $parameters = PieCrust\Runner\PieCrustRunner::getPieCrustParameters($parameters);
     $pieCrust = new PieCrust\PieCrust($parameters);
-    $pieCrust->run($uri);
+    $runner = new PieCrust\Runner\PieCrustRunner($pieCrust);
+    $runner->run($uri);
 }
 
 /**

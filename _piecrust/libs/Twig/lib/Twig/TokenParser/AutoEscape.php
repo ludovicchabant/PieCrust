@@ -8,6 +8,25 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
+/**
+ * Marks a section of a template to be escaped or not.
+ *
+ * <pre>
+ * {% autoescape true %}
+ *   Everything will be automatically escaped in this block
+ * {% endautoescape %}
+ *
+ * {% autoescape false %}
+ *   Everything will be outputed as is in this block
+ * {% endautoescape %}
+ *
+ * {% autoescape true js %}
+ *   Everything will be automatically escaped in this block
+ *   using the js escaping strategy
+ * {% endautoescape %}
+ * </pre>
+ */
 class Twig_TokenParser_AutoEscape extends Twig_TokenParser
 {
     /**
@@ -49,7 +68,7 @@ class Twig_TokenParser_AutoEscape extends Twig_TokenParser
     /**
      * Gets the tag name associated with this token parser.
      *
-     * @param string The tag name
+     * @return string The tag name
      */
     public function getTag()
     {

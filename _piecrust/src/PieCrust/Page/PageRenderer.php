@@ -8,6 +8,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Data\DataBuilder;
 use PieCrust\Util\Configuration;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -15,6 +16,8 @@ use PieCrust\Util\Configuration;
  */
 class PageRenderer
 {
+    protected $runInfo;
+
     protected $page;
     /**
      * Gets the page this renderer is bound to.
@@ -27,9 +30,10 @@ class PageRenderer
     /**
      * Creates a new instance of PageRenderer.
      */
-    public function __construct(IPage $page)
+    public function __construct(IPage $page, $runInfo = null)
     {
         $this->page = $page;
+        $this->runInfo = $runInfo;
     }
     
     /**
@@ -58,7 +62,7 @@ class PageRenderer
         {
             // Get the template engine and the page data.
             $extension = pathinfo($templateName, PATHINFO_EXTENSION);
-            $templateEngine = $pieCrust->getTemplateEngine($extension);
+            $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $extension);
             
             // Render the page.
             $data = $this->getRenderData();
@@ -94,20 +98,24 @@ class PageRenderer
     
     public function renderStatsFooter()
     {
-        $runInfo = $this->page->getApp()->getLastRunInfo();
+        if ($this->runInfo == null)
+        {
+            echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - Error: can't get stats for this page. -->";
+            return;
+        }
         
         echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - ";
         echo ($this->page->wasCached() ? "baked this morning" : "baked just now");
-        if ($runInfo['cache_validity'] != null)
+        if ($this->runInfo['cache_validity'] != null)
         {
-            $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
+            $wasCacheCleaned = $this->runInfo['cache_validity']['was_cleaned'];
             echo ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
         }
         else
         {
             echo ", with no cache";
         }
-        $timeSpan = microtime(true) - $runInfo['start_time'];
+        $timeSpan = microtime(true) - $this->runInfo['start_time'];
         echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
     }
     

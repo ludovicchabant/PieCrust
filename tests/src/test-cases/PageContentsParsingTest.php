@@ -28,11 +28,6 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         return $data;
     }
     
-    public function formatUriCallback($uri)
-    {
-        return 'http://whatever/?/'.$uri;
-    }
-    
     /**
      * @dataProvider parsePageContentsDataProvider
      */
@@ -46,21 +41,18 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         $root = vfsStream::create($structure);
 
         // Create the page that will load our test file.
-        $pc = $this->getMock('MockPieCrust', array('formatUri'));
+        $pc = new MockPieCrust();
         $pc->setPagesDir(vfsStream::url('root/_content/pages/'));
-        $pc->setTemplatesDirs(array());
         $pc->getConfig()->set(array(
             'site' => array(
-                'root' => 'http://whatever',
+                'root' => 'http://whatever/',
+                'pretty_urls' => false,
                 'default_format' => 'none',
                 'default_template_engine' => 'none'
             )
         ));
         $pc->addTemplateEngine('mustache', 'MustacheTemplateEngine');
         $pc->addTemplateEngine('twig', 'TwigTemplateEngine');
-        $pc->expects($this->any())
-           ->method('formatUri')
-           ->will($this->returnCallback(array($this, 'formatUriCallback')));
         $p = new Page($pc, '/test', $testFilename);
         
         // Get the stuff we are expecting.

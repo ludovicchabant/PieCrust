@@ -14,10 +14,10 @@ use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustCacheInfo;
 use PieCrust\PieCrustException;
-use PieCrust\PieCrustErrorHandler;
 use PieCrust\Baker\DirectoryBaker;
-use PieCrust\IO\FileSystem;
-use PieCrust\Page\PageRepository;
+use PieCrust\Runner\PieCrustErrorHandler;
+use PieCrust\Runner\PieCrustRunner;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -44,11 +44,12 @@ class PieCrustServer
         // Validate the options.
         $this->options = array_merge(
             array(
-                  'port' => 8080,
-                  'mime_types' => array('less' => 'text/css'),
-                  'log_file' => null,
-                  'debug' => false
-                  ),
+                'port' => 8080,
+                'mime_types' => array('less' => 'text/css'),
+                'log_file' => null,
+                'debug' => false,
+                'cache' => true
+            ),
             $options
         );
 
@@ -140,17 +141,14 @@ class PieCrustServer
         $pieCrustException = null;
         try
         {
-            // We need to clear pages between requests, otherwise the user
-            // could have modified some of the posts and we would keep using
-            // the cached versions until the actual posts' pages are requested.
-            PageRepository::clearPages();
-
-            $pieCrust = new PieCrust(array(
+            $params = PieCrustRunner::getPieCrustParameters(
+                array(
                     'root' => $this->rootDir,
-                    'cache' => true
+                    'cache' => $this->options['cache']
                 ),
                 $context->getRequest()->getServerVariables()
             );
+            $pieCrust = new PieCrust($params);
             $pieCrust->getConfig()->setValue('server/is_hosting', true);
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);
@@ -171,12 +169,17 @@ class PieCrustServer
         {
             try
             {
-                $pieCrust->runUnsafe(
-                                     null,
-                                     $context->getRequest()->getServerVariables(),
-                                     null,
-                                     $headers
-                                     );
+                // We set some extra data on the page we're rendering
+                // to force disable the cache.
+                $dummyExtraData = array('main_request_page' => true);
+
+                $runner = new PieCrustRunner($pieCrust);
+                $runner->runUnsafe(
+                    null,
+                    $context->getRequest()->getServerVariables(),
+                    $dummyExtraData,
+                    $headers
+                );
             }
             catch (Exception $e)
             {
@@ -229,11 +232,7 @@ class PieCrustServer
         if ($this->server != null)
             return;
 
-        $app = new PieCrust(array(
-            'root' => $this->rootDir,
-            'cache' => true
-        ));
-        FileSystem::ensureDirectory($this->bakeCacheDir);
+        PathHelper::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
         $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);

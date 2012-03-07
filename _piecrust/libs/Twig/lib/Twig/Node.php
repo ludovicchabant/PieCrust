@@ -14,9 +14,9 @@
  * Represents a node in the AST.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
-class Twig_Node implements Twig_NodeInterface, Countable, IteratorAggregate
+class Twig_Node implements Twig_NodeInterface
 {
     protected $nodes;
     protected $attributes;

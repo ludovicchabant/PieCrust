@@ -4,7 +4,7 @@ namespace PieCrust\Baker;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
-use PieCrust\Util\LinkCollector;
+use PieCrust\Environment\LinkCollector;
 
 
 /**
@@ -104,13 +104,13 @@ class BakeRecord
     /**
      * Adds all collected tag combinations to the known tag combinations.
      */
-    public function collectTagCombinations()
+    public function collectTagCombinations(LinkCollector $collector)
     {
-        if (!LinkCollector::isEnabled())
+        if ($collector == null)
             return;
         
-        $combinations = LinkCollector::instance()->getAllTagCombinations();
-        LinkCollector::instance()->clearAllTagCombinations();
+        $combinations = $collector->getAllTagCombinations();
+        $collector->clearAllTagCombinations();
         
         $knownCombinations = $this->bakeInfo['knownTagCombinations'];
         foreach ($combinations as $key => $combs)

@@ -12,20 +12,20 @@ use PieCrust\PieCrustException;
  */
 class HierarchicalFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $subDir)
+    public function __construct(IPieCrust $pieCrust, $postsSubDir)
     {
-        FileSystem::__construct($pieCrust, $subDir);
+        FileSystem::__construct($pieCrust, $postsSubDir);
     }
     
     public function getPostFiles()
     {
         if (!$this->pieCrust->getPostsDir())
-            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+            return array();
 
         $result = array();
         
         $years = array();
-        $yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir);
+        $yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
         foreach ($yearsIterator as $year)
         {
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
@@ -39,7 +39,7 @@ class HierarchicalFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $months = array();
-            $monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir . $year);
+            $monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir . $year);
             foreach ($monthsIterator as $month)
             {
                 if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
@@ -53,7 +53,7 @@ class HierarchicalFileSystem extends FileSystem
             foreach ($months as $month)
             {
                 $days = array();
-                $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir . $year . '/' . $month);
+                $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir . $year . '/' . $month);
                 foreach ($postsIterator as $post)
                 {
                     $matches = array();
@@ -81,7 +81,7 @@ class HierarchicalFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPathFormat()
+    public function getPostPathFormat()
     {
         return '%year%/%month%/%day%_%slug%.html';
     }

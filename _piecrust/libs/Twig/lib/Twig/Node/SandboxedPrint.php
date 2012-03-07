@@ -18,7 +18,7 @@
  * method is allowed if 'article' is an object.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
 class Twig_Node_SandboxedPrint extends Twig_Node_Print
 {
@@ -36,18 +36,10 @@ class Twig_Node_SandboxedPrint extends Twig_Node_Print
     {
         $compiler
             ->addDebugInfo($this)
-            ->write('if (is_object(')
-            ->raw('$_tmp = ')
-            ->subcompile($this->removeNodeFilter($this->getNode('expr')))
-            ->raw(')) {'."\n")
-            ->indent()
-            ->write('$this->env->getExtension(\'sandbox\')->checkMethodAllowed(')
-            ->raw('$_tmp, \'__toString\');'."\n")
-            ->outdent()
-            ->write('}'."\n")
+            ->write('echo $this->env->getExtension(\'sandbox\')->ensureToStringAllowed(')
+            ->subcompile($this->getNode('expr'))
+            ->raw(");\n")
         ;
-
-        parent::compile($compiler);
     }
 
     /**

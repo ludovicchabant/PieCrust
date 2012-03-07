@@ -9,6 +9,7 @@ use PieCrust\Data\DataBuilder;
 use PieCrust\IO\Cache;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -140,7 +141,7 @@ class PageLoader
                 $appData
             );
             $templateEngineName = $this->page->getConfig()->getValue('template_engine');
-            $templateEngine = $pieCrust->getTemplateEngine($templateEngineName);
+            $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $templateEngineName);
             if (!$templateEngine)
                 throw new PieCrustException("Unknown template engine '".$templateEngineName."'.");
             $contents = array('content' => null, 'content.abstract' => null);
@@ -159,7 +160,7 @@ class PageLoader
                 }
                 
                 $config->appendValue('segments', $key);
-                $renderedAndFormattedContent = $pieCrust->formatText($renderedContent, $config['format']);
+                $renderedAndFormattedContent = PieCrustHelper::formatText($pieCrust, $renderedContent, $config['format']);
                 $contents[$key] = $renderedAndFormattedContent;
                 if ($key == 'content')
                 {

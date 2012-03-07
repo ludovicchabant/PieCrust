@@ -6,6 +6,7 @@ require_once 'vfsStream/vfsStream.php';
 
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
+use PieCrust\Util\PieCrustHelper;
 
 
 class TemplateRenderingTest extends PHPUnit_Framework_TestCase
@@ -51,7 +52,7 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
         $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
         
         $testInfo = pathinfo($testFilename);
-        $engine = $pc->getTemplateEngine($testInfo['extension']);
+        $engine = PieCrustHelper::getTemplateEngine($pc, $testInfo['extension']);
         $this->assertNotNull($engine, "Couldn't find a template engine for extension: ".$testInfo['extension']);
         $this->assertEquals($testInfo['extension'], $engine->getExtension());
         ob_start();

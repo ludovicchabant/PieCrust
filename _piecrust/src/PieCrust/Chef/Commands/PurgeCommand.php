@@ -7,7 +7,7 @@ use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
-use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 
 class PurgeCommand extends ChefCommand
@@ -31,8 +31,7 @@ class PurgeCommand extends ChefCommand
             throw new PieCrustException("The cache directory doesn't exist: {$cacheDir}");
 
         $context->getLog()->info("Purging cache: {$cacheDir}");
-        FileSystem::deleteDirectoryContents($cacheDir);
+        PathHelper::deleteDirectoryContents($cacheDir);
     }
 }
-
 

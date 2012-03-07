@@ -8,9 +8,7 @@ use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
-use PieCrust\IO\FileSystem;
 use PieCrust\Server\PieCrustServer;
-use PieCrust\Util\PathHelper;
 
 
 class ServeCommand extends ChefCommand
@@ -56,18 +54,20 @@ class ServeCommand extends ChefCommand
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $debug = $result->command->options['debug'];
+        $nocache = $result->command->options['nocache'];
 
         // Start serving!
         $server = new PieCrustServer($rootDir,
-             array(
+            array(
                 'port' => $port,
                 'log_file' => $logFile,
-                'debug' => $debug
+                'debug' => $debug,
+                'cache' => !$nocache
             ),
             $context->getLog());
         $server->run(array(
-                           'list_directories' => false,
-                           'run_browser' => $runBrowser
-                           ));
+            'list_directories' => false,
+            'run_browser' => $runBrowser
+        ));
     }
 }

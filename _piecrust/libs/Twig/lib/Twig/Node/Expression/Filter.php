@@ -19,35 +19,17 @@ class Twig_Node_Expression_Filter extends Twig_Node_Expression
     public function compile(Twig_Compiler $compiler)
     {
         $name = $this->getNode('filter')->getAttribute('value');
-        if (false === $filter = $compiler->getEnvironment()->getFilter($name)) {
-            throw new Twig_Error_Syntax(sprintf('The filter "%s" does not exist', $name), $this->getLine());
-        }
 
-        // The default filter is intercepted when the filtered value
-        // is a name (like obj) or an attribute (like obj.attr)
-        // In such a case, it's compiled to {{ obj is defined ? obj|default('bar') : 'bar' }}
-        if ('default' === $name && ($this->getNode('node') instanceof Twig_Node_Expression_Name || $this->getNode('node') instanceof Twig_Node_Expression_GetAttr)) {
-            $compiler->raw('((');
-            if ($this->getNode('node') instanceof Twig_Node_Expression_Name) {
-                $testMap = $compiler->getEnvironment()->getTests();
-                $compiler
-                    ->raw($testMap['defined']->compile().'(')
-                    ->repr($this->getNode('node')->getAttribute('name'))
-                    ->raw(', $context)')
-                ;
-            } elseif ($this->getNode('node') instanceof Twig_Node_Expression_GetAttr) {
-                $this->getNode('node')->setAttribute('is_defined_test', true);
-                $compiler->subcompile($this->getNode('node'));
+        if (false === $filter = $compiler->getEnvironment()->getFilter($name)) {
+            $message = sprintf('The filter "%s" does not exist', $name);
+            if ($alternatives = $compiler->getEnvironment()->computeAlternatives($name, array_keys($compiler->getEnvironment()->getFilters()))) {
+                $message = sprintf('%s. Did you mean "%s"', $message, implode('", "', $alternatives));
             }
 
-            $compiler->raw(') ? (');
-            $this->compileFilter($compiler, $filter);
-            $compiler->raw(') : (');
-            $compiler->subcompile($this->getNode('arguments')->getNode(0));
-            $compiler->raw('))');
-        } else {
-            $this->compileFilter($compiler, $filter);
+            throw new Twig_Error_Syntax($message, $this->getLine());
         }
+
+        $this->compileFilter($compiler, $filter);
     }
 
     protected function compileFilter(Twig_Compiler $compiler, Twig_FilterInterface $filter)
@@ -58,7 +40,14 @@ class Twig_Node_Expression_Filter extends Twig_Node_Expression
             ->raw($filter->needsContext() ? '$context, ' : '')
         ;
 
-        $this->getNode('node')->compile($compiler);
+        foreach ($filter->getArguments() as $argument) {
+            $compiler
+                ->string($argument)
+                ->raw(', ')
+            ;
+        }
+
+        $compiler->subcompile($this->getNode('node'));
 
         foreach ($this->getNode('arguments') as $node) {
             $compiler

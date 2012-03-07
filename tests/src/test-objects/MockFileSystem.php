@@ -26,6 +26,36 @@ class MockFileSystem
         ));
     }
 
+    public function url($path)
+    {
+        return vfsStream::url('root/' . $path);
+    }
+
+    public function siteRootUrl()
+    {
+        return $this->url('kitchen');
+    }
+
+    public function withCacheDir()
+    {
+        mkdir(vfsStream::url('root/kitchen/_cache'));
+        mkdir(vfsStream::url('root/kitchen/_cache/pages_r'));
+        mkdir(vfsStream::url('root/kitchen/_cache/templates_c'));
+        return $this;
+    }
+
+    public function withPagesDir()
+    {
+        mkdir(vfsStream::url('root/kitchen/_content/pages'));
+        return $this;
+    }
+
+    public function withPostsDir()
+    {
+        mkdir(vfsStream::url('root/kitchen/_content/posts'));
+        return $this;
+    }
+
     public function withConfig(array $config)
     {
         $configPath = vfsStream::url('root/kitchen/_content/config.yml');
@@ -33,7 +63,7 @@ class MockFileSystem
         return $this;
     }
 
-    public function withPage($url, $config, $contents)
+    public function withPage($url, $config = array(), $contents = 'A test page.')
     {
         $text  = '---' . PHP_EOL;
         $text .= sfYaml::dump($config) . PHP_EOL;

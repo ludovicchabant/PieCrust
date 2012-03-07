@@ -39,6 +39,7 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         
         $paginator = new Paginator($page);
         $paginator->setPaginationDataSource($this->buildPaginationDataSource($pc, $postCount));
+        $this->assertNotNull($paginator->getPaginationDataSource());
         
         $posts = $paginator->posts();
         $this->assertNotNull($posts);
@@ -81,17 +82,24 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         }
         $expectedIndexes = array();
         if ($postCount > 0)
-            $expectedIndexes = range(5 * ($pageNumber - 1), 5 * ($pageNumber - 1) + $expectedCount - 1);
+        {
+            $allIndexes = array_reverse(range(0, $postCount - 1));
+            $expectedIndexes = array_slice(
+                $allIndexes,
+                5 * ($pageNumber - 1),
+                $expectedCount
+            );
+        }
         $this->assertExpectedPostsData($expectedIndexes, $posts);
     }
     
     public function fluentFilteringDataProvider()
     {
         return array(
-            array(1, 17, null, range(0, 16)),
-            array(1, 17, function ($it) { $it->skip(4); }, range(4, 16)),
-            array(1, 17, function ($it) { $it->limit(3); }, range(0, 2)),
-            array(1, 17, function ($it) { $it->skip(2)->limit(3); }, range(2, 4))
+            array(1, 17, null, array_reverse(range(0, 16))),
+            array(1, 17, function ($it) { $it->skip(4); }, array_reverse(range(0, 12))),
+            array(1, 17, function ($it) { $it->limit(3); }, array_reverse(range(14, 16))),
+            array(1, 17, function ($it) { $it->skip(2)->limit(3); }, array_reverse(range(12, 14)))
         );
     }
     
@@ -127,16 +135,15 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $dummyPage = new MockPage($pc);
             $dummyPage->uri = $name;
             $dummyPage->path = $path;
+            $dummyPage->date = mktime(0, 0, 0, $month, $day, $year);
             $dummyPage->contents = array('content' => ('Test page ' . $i . ' contents.'));
-            $posts[] = array(
-                'year' => $year,
-                'month' => $month,
-                'day' => $day,
-                'name' => $name,
-                'path' => $path,
-                'page' => $dummyPage
-            );
+            $posts[] = $dummyPage;
         }
+
+        // Reverse the array because we want to return it in reverse
+        // chronological order, like a FileSystem implementation would do.
+        $posts = array_reverse($posts);
+        
         return $posts;
     }
     

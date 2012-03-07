@@ -602,6 +602,7 @@ class StupidHttp_WebServer
     protected function getDocumentPath($uri)
     {
         $root = $this->getDocumentRoot();
+        $uri = rawurldecode($uri);
         $secondSlash = strpos($uri, '/', 1);
         if ($secondSlash !== false)
         {

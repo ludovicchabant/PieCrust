@@ -95,6 +95,14 @@ class PluginLoader
         return $this->getPluginsComponents('getCommands');
     }
 
+    /**
+     * Gets all the Twig extensions from the loaded plugins.
+     */
+    public function getTwigExtensions()
+    {
+        return $this->getPluginsComponents('getTwigExtensions');
+    }
+
     protected function ensureLoaded()
     {
         if ($this->plugins != null)

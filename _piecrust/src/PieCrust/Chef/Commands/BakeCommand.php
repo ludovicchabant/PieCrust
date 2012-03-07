@@ -6,12 +6,9 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
-use PieCrust\PieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Chef\ChefContext;
-use PieCrust\IO\FileSystem;
-use PieCrust\Util\PathHelper;
 
 
 class BakeCommand extends ChefCommand

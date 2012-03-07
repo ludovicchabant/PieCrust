@@ -2,7 +2,7 @@
 
 namespace PieCrust;
 
-use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -59,7 +59,7 @@ class PieCrustCacheInfo
         if ($cleanCache && !$isCacheValid)
         {
             // Clean the cache!
-            FileSystem::deleteDirectoryContents($this->pieCrust->getCacheDir(), $this->cacheCleaningSkipPatterns);
+            PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir(), $this->cacheCleaningSkipPatterns);
             file_put_contents($cacheInfoFileName, $cacheInfo);
             $cacheValidity['is_valid'] = true;
             $cacheValidity['was_cleaned'] = true;

@@ -5,6 +5,7 @@ namespace PieCrust\Chef;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustConfiguration;
 use PieCrust\PieCrustException;
+use PieCrust\Environment\CachedEnvironment;
 use PieCrust\Plugins\PluginLoader;
 
 
@@ -101,40 +102,18 @@ class NullPieCrust implements IPieCrust
     {
         return $this->config;
     }
-    
-    public function formatText($text, $format = null)
-    {
-        return $text;
-    }
-    
-    public function formatUri($uri)
-    {
-        return $uri;
-    }
-    
-    public function getTemplateEngine($extension = 'html')
-    {
-        return null;
-    }
-    
-    public function getLastRunInfo()
-    {
-        return null;
-    }
-    
-    public function run($uri = null, $server = null)
-    {
-        return $this->runUnsafe();
-    }
-    
-    public function runUnsafe($uri = null, $server = null, $extraPageData = null, array &$headers = null)
-    {
-        throw new PieCrustException("The NullPieCrust app is non-functional.");
-    }
 
+    protected $environment;
+
+    public function getEnvironment()
+    {
+        return $this->environment;
+    }
+    
     public function __construct()
     {
         $this->config = new PieCrustConfiguration();
         $this->pluginLoader = new PluginLoader($this);
+        $this->environment = new CachedEnvironment($this);
     }
 }

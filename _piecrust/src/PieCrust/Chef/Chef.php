@@ -87,7 +87,7 @@ class Chef
         {
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
-                'debug' => in_array('--debug', $userArgv)
+                'cache' => !in_array('--nocache', $userArgv)
             ));
         }
 
@@ -201,6 +201,13 @@ class Chef
             'description' => "Show debug information.",
             'default'     => false,
             'help_name'   => 'DEBUG',
+            'action'      => 'StoreTrue'
+        ));
+        $parser->addOption('nocache', array(
+            'long_name'   => '--nocache',
+            'description' => "When applicable, disable caching.",
+            'default'     => false,
+            'help_name'   => 'NOCACHE',
             'action'      => 'StoreTrue'
         ));
         $parser->addOption('quiet', array(

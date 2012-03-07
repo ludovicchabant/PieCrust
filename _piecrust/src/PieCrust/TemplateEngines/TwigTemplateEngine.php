@@ -101,6 +101,10 @@ class TwigTemplateEngine implements ITemplateEngine
             $this->twigEnv = new \Twig_Environment($this->twigLoader, $options);
             $this->twigEnv->addExtension(new \PieCrustExtension($this->pieCrust));
             $this->twigEnv->addExtension(new \GeshiExtension());
+            foreach ($this->pieCrust->getPluginLoader()->getTwigExtensions() as $ext)
+            {
+                $this->twigEnv->addExtension($ext);
+            }
         }
     }
 }

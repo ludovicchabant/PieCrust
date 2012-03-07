@@ -8,7 +8,6 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
-use PieCrust\Page\PageRepository;
 use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\UriBuilder;
@@ -49,9 +48,7 @@ class StatsCommand extends ChefCommand
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
-            $fs = FileSystem::create($pieCrust, $blogKey);
-            $postInfos = $fs->getPostFiles();
-            $postCounts[$blogKey] = count($postInfos);
+            $postCounts[$blogKey] = count($pieCrust->getEnvironment()->getPostInfos($blogKey));
         }
 
         $logger->info("Stats for '{$title}':");

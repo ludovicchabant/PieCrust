@@ -11,18 +11,18 @@ use PieCrust\PieCrustException;
  */
 class ShallowFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $subDir)
+    public function __construct(IPieCrust $pieCrust, $postsSubDir)
     {
-        FileSystem::__construct($pieCrust, $subDir);
+        FileSystem::__construct($pieCrust, $postsSubDir);
     }
     
     public function getPostFiles()
     {
         if (!$this->pieCrust->getPostsDir())
-            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+            return array();
 
         $years = array();
-        $yearsIterator = new \DirectoryIterator($this->pieCrust->getPostsDir() . $this->subDir);
+        $yearsIterator = new \DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
         foreach ($yearsIterator as $year)
         {
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
@@ -37,7 +37,7 @@ class ShallowFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $posts = array();
-            $pathPattern = $this->pieCrust->getPostsDir() . $this->subDir . $year . '/' . '*.html';
+            $pathPattern = $this->pieCrust->getPostsDir() . $this->postsSubDir . $year . '/' . '*.html';
             $paths = glob($pathPattern, GLOB_ERR);
             if ($paths === false)
             {
@@ -64,7 +64,7 @@ class ShallowFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPathFormat()
+    public function getPostPathFormat()
     {
         return '%year%/%month%-%day%_%slug%.html';
     }

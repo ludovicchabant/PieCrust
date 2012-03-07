@@ -57,7 +57,7 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(is_file($postFiles[0]['path']));
     }
     
-    public function getPathInfoDataProvider()
+    public function getPostPathInfoDataProvider()
     {
         return array(
             array('flat', null),
@@ -76,9 +76,9 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
     }
     
     /**
-     * @dataProvider getPathInfoDataProvider
+     * @dataProvider getPostPathInfoDataProvider
      */
-    public function testGetPathInfo($fsType, $wildcardComponent)
+    public function testGetPostPathInfo($fsType, $wildcardComponent)
     {
         $pc = new MockPieCrust();
         $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType . '/');
@@ -98,7 +98,7 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
             $groups = array('year' => $years[$i], 'month' => $months[$i], 'day' => $days[$i], 'slug' => $slugs[$i]);
             if ($wildcardComponent != null)
                 unset($groups[$wildcardComponent]);
-            $pathInfo = $fs->getPathInfo($groups);
+            $pathInfo = $fs->getPostPathInfo($groups);
             $this->assertEquals($years[$i], $pathInfo['year']);
             $this->assertEquals($months[$i], $pathInfo['month']);
             $this->assertEquals($days[$i], $pathInfo['day']);

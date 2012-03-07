@@ -6,8 +6,8 @@ use \Exception;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Page\PageRenderer;
-use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -55,16 +55,19 @@ class PageBaker
     public function __construct($bakeDir, array $parameters = array())
     {
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
-        $this->parameters = array_merge(array(
-            'copy_assets' => false
-        ), $parameters);
+        $this->parameters = array_merge(
+            array(
+                'copy_assets' => false
+            ), 
+            $parameters
+        );
     }
     
     /**
      * Bakes the given page. Additional template data can be provided, along with
      * a specific set of posts for the pagination data.
      */
-    public function bake(IPage $page, array $postInfos = null, array $extraData = null)
+    public function bake(IPage $page, array $extraData = null)
     {
         try
         {
@@ -76,7 +79,7 @@ class PageBaker
             $hasMorePages = true;
             while ($hasMorePages)
             {
-                $this->bakeSinglePage($pageRenderer, $postInfos, $extraData);
+                $this->bakeSinglePage($pageRenderer, $extraData);
                 
                 $data = $page->getPageData();
                 if ($data and isset($data['pagination']))
@@ -98,16 +101,17 @@ class PageBaker
         }
     }
     
-    protected function bakeSinglePage(PageRenderer $pageRenderer, array $postInfos = null, array $extraData = null)
+    protected function bakeSinglePage(PageRenderer $pageRenderer, array $extraData = null)
     {
         $page = $pageRenderer->getPage();
         
         // Set the extraData and asset URL remapping before the page's data is computed.        
-        if ($extraData != null) $page->setExtraPageData($extraData);
-        if ($this->parameters['copy_assets'] === true) $page->setAssetUrlBaseRemap("%site_root%%uri%");
+        if ($extraData != null)
+            $page->setExtraPageData($extraData);
+        if ($this->parameters['copy_assets'] === true)
+            $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Render the page.
-        if ($postInfos != null) $page->setPaginationDataSource($postInfos);
         $bakedContents = $pageRenderer->get();
 
         // Get some objects we need.
@@ -149,7 +153,7 @@ class PageBaker
         }
         
         // Copy the page.
-        FileSystem::ensureDirectory(dirname($bakePath));
+        PathHelper::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
         $this->bakedFiles[] = $bakePath;
         
@@ -170,7 +174,7 @@ class PageBaker
             $assetPaths = $assetor->getAssetPathnames();
             if ($assetPaths != null)
             {
-                FileSystem::ensureDirectory($bakeAssetDir);
+                PathHelper::ensureDirectory($bakeAssetDir);
                 foreach ($assetPaths as $assetPath)
                 {
                     $destinationAssetPath = $bakeAssetDir . basename($assetPath);

@@ -13,9 +13,9 @@
  * Represents a node in the AST.
  *
  * @package    twig
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author     Fabien Potencier <fabien@symfony.com>
  */
-interface Twig_NodeInterface
+interface Twig_NodeInterface extends Countable, IteratorAggregate
 {
     /**
      * Compiles the node to PHP.

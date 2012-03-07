@@ -13,7 +13,7 @@
  * Interface implemented by parser classes.
  *
  * @package twig
- * @author  Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author  Fabien Potencier <fabien@symfony.com>
  */
 interface Twig_ParserInterface
 {
@@ -24,5 +24,5 @@ interface Twig_ParserInterface
      *
      * @return Twig_Node_Module A node tree
      */
-    function parse(Twig_TokenStream $code);
+    function parse(Twig_TokenStream $stream);
 }

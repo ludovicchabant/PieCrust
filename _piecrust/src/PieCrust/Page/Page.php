@@ -231,7 +231,7 @@ class Page implements IPage
     {
         $this->assetUrlBaseRemap = $remap;
     }
-
+ 
     protected $paginationDataSource;
     /**
      * Gets the pagination data source.
@@ -248,7 +248,7 @@ class Page implements IPage
     {
         $this->paginationDataSource = $postInfos;
     }
-    
+
     /**
      * Creates a new Page instance.
      */
@@ -310,10 +310,14 @@ class Page implements IPage
             throw new InvalidArgumentException("The given URI is null.");
         
         $uriInfo = UriParser::parseUri($pieCrust, $uri);
-        if ($uriInfo == null or (!$uriInfo['was_path_checked'] and !is_file($uriInfo['path'])))
+        if ($uriInfo == null or
+            (!$uriInfo['was_path_checked'] and !is_file($uriInfo['path']))
+           )
         {
-            if ($uriInfo['type'] == IPage::TYPE_TAG) throw new PieCrustException('The special tag listing page was not found.');
-            if ($uriInfo['type'] == IPage::TYPE_CATEGORY) throw new PieCrustException('The special category listing page was not found.');
+            if ($uriInfo['type'] == IPage::TYPE_TAG)
+                throw new PieCrustException('The special tag listing page was not found.');
+            if ($uriInfo['type'] == IPage::TYPE_CATEGORY)
+                throw new PieCrustException('The special category listing page was not found.');
             throw new PieCrustException('404');
         }
         
@@ -339,7 +343,7 @@ class Page implements IPage
         if (!is_file($path))
             throw new InvalidArgumentException("The given path does not exist: " . $path);
         
-        $relativePath = PathHelper::getRelativePagePath($pieCrust, $path, $pageType);
+        $relativePath = PathHelper::getRelativePath($pieCrust, $path, $pageType);
         $uri = UriBuilder::buildUri($relativePath);
         return new Page(
                 $pieCrust,

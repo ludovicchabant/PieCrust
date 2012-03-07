@@ -11,8 +11,8 @@
     <meta name="template-engine" content="Twig" />
 {% include('blueprint.html') %}
 	{{ google.webfonts('Lobster') }}
-	{{ less.stylesheet(baker, site.root ~ 'css/default') }}
-    {{ less.less_js(baker, site.root) }}
+	{{ less.stylesheet(baker, server, site.root ~ 'css/default') }}
+    {{ less.less_js(baker, server, site.root) }}
 </head>
 <body>
     <div id="container" class="container">

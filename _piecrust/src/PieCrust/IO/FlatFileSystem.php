@@ -12,18 +12,18 @@ use PieCrust\PieCrustException;
  */
 class FlatFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $subDir)
+    public function __construct(IPieCrust $pieCrust, $postsSubDir)
     {
-        FileSystem::__construct($pieCrust, $subDir);
+        FileSystem::__construct($pieCrust, $postsSubDir);
     }
     
     public function getPostFiles()
     {
         if (!$this->pieCrust->getPostsDir())
-            throw new PieCrustException("Can't get the posts files when there's no posts directory in the website.");
+            return array();
 
         $paths = array();
-        $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->subDir);
+        $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
         foreach ($pathsIterator as $p)
         {
             if ($p->getExtension() != 'html')
@@ -51,7 +51,7 @@ class FlatFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPathFormat()
+    public function getPostPathFormat()
     {
         return '%year%-%month%-%day%_%slug%.html';
     }

@@ -8,8 +8,6 @@ use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\Chef\ChefContext;
 use PieCrust\Interop\PieCrustImporter;
-use PieCrust\IO\FileSystem;
-use PieCrust\Util\PathHelper;
 
 
 class ImportCommand extends ChefCommand
