@@ -19,6 +19,15 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.6.1 (2012-03-08)
+
+* NEW: The `chef prepare` command now has a `--blog` option to specify which
+  blog to create a post for.
+* CHANGE: Updated LessPHP to 0.3.3.
+* BUG: Fixed a bug with `chef prepare` where a post would be created in the
+  wrong place for websites with several blogs.
+
+
 ### 0.6.0 (2012-03-06)
 
 * BREAKING CHANGE: Chef's `--debug` option now only changes the verbosity of the
@@ -33,7 +42,7 @@ Frozen changes
 * CHANGE: The page linker now exposes the name of directories.
 * CHANGE: Chef server doesn't use the cache for the requested page's contents.
 * CHANGE: Updated to Twig 1.6.
-* CHANGE: Updated to LessPHP 0.3.3.
+* CHANGE: Updated to LessPHP 0.3.2.
 * BUG: Fixed a harmless crash in `chef init`.
 * BUG: Fixed crash when baking with caching disabled.
 * BUG: Fixed a bug with page asset URLs being incorrect when baking in some rare

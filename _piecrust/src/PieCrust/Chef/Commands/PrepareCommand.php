@@ -33,6 +33,13 @@ class PrepareCommand extends ChefCommand
             'help_name'   => 'SLUG',
             'optional'    => false
         ));
+        $parser->addOption('blog', array(
+            'short_name'  => '-b',
+            'long_name'   => '--blog',
+            'description' => "Create a post for the given blog (default to the first declared blog).",
+            'default'     => null,
+            'help_name'   => 'BLOG'
+        ));
     }
 
     public function run(ChefContext $context)
@@ -85,8 +92,28 @@ class PrepareCommand extends ChefCommand
             $pathFormat
         );
 
+        // Figure out which blog to create this post for (if the website
+        // is hosting several blogs).
+        $blogKey = $result->command->options['blog'];
+        $blogKeys = $app->getConfig()->getValue('site/blogs');
+        if ($blogKey == null)
+        {
+            $blogKey = $blogKeys[0];
+        }
+        else if (!in_array($blogKey, $blogKeys))
+        {
+            throw new PieCrustException("Specified blog '{$blogKey}' is not one of the known blogs in this website: " . implode(', ', $blogKeys));
+        }
+
+        // Get the blog subdir for the post.
+        $blogSubDir = $blogKey . '/';
+        if ($blogKey == PieCrustDefaults::DEFAULT_BLOG_KEY)
+        {
+            $blogSubDir = '';
+        }
+
         // Create the full path.
-        $fullPath = $app->getPostsDir() . $path;
+        $fullPath = $app->getPostsDir() . $blogSubDir . $path;
         $relativePath = PathHelper::getRelativePath($app, $fullPath);
         if (file_exists($fullPath))
             throw new PieCrustException("Post already exists: {$relativePath}");
