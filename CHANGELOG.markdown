@@ -24,6 +24,7 @@ Frozen changes
 * NEW: The `chef prepare` command now has a `--blog` option to specify which
   blog to create a post for.
 * CHANGE: Updated LessPHP to 0.3.3.
+* CHANGE: Changed `wordcount` into a Twig filter.
 * BUG: Fixed a bug with `chef prepare` where a post would be created in the
   wrong place for websites with several blogs.
 
@@ -32,7 +33,6 @@ Frozen changes
 
 * BREAKING CHANGE: Chef's `--debug` option now only changes the verbosity of the
   command. Before, it also enabled PieCrust's "debug" mode.
-* NEW: PieCrust is now using Twig version 1.6.
 * NEW: Added the `wordcount` Twig function.
 * NEW: Added the ability for PieCrust plugins to expose Twig extensions.
 * NEW: Added Twig filters: `markdown`, `textile` and `formatwith`.
