@@ -165,6 +165,18 @@ class Paginator
         return $totalPostCount;
     }
 
+    public function next_post()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->getNextPost();
+    }
+
+    public function prev_post()
+    {
+        $this->ensurePaginationData();
+        return $this->postsIterator->getPreviousPost();
+    }
+
     protected $dataSource;
     /**
      * Gets the list of posts to use for the pagination.

@@ -30,6 +30,8 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     protected $limit;
     
     protected $posts;
+    protected $nextPost;
+    protected $previousPost;
     protected $hasMorePosts;
     protected $totalPostCount;
     
@@ -63,6 +65,18 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     {
         $this->ensureLoaded();
         return $this->hasMorePosts;
+    }
+
+    public function getNextPost()
+    {
+        $this->ensureLoaded();
+        return $this->nextPost;
+    }
+
+    public function getPreviousPost()
+    {
+        $this->ensureLoaded();
+        return $this->previousPost;
     }
     
     // {{{ Fluent-interface filtering members
@@ -280,6 +294,39 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         // We need to sort by the actual date and time of the post.
         usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
 
+        // Find the previous and next posts, if the parent page is in there.
+        $parentPageIndex = -1;
+        foreach ($actualDataSource as $i => $post)
+        {
+            if ($post === $this->parentPage)
+            {
+                $parentPageIndex = $i;
+                break;
+            }
+        }
+        if ($parentPageIndex >= 0)
+        {
+            // Get the previous and next posts.
+            $prevAndNextPost = array(null, null);
+            if ($parentPageIndex > 0)
+                $prevAndNextPost[0] = $actualDataSource[$parentPageIndex - 1];
+            if ($parentPageIndex < $this->totalPostCount - 1)
+                $prevAndNextPost[1] = $actualDataSource[$parentPageIndex + 1];
+
+            // Get their template data.
+            $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
+
+            // Posts are sorted by reverse time, so watch out for what's
+            // "previous" and what's "next"!
+            $this->previousPost = $prevAndNextPostData[1];
+            $this->nextPost = $prevAndNextPostData[0];
+        }
+        else
+        {
+            $this->previousPost = null;
+            $this->nextPost = null;
+        }
+
         // Now honour the skip and limit clauses.
         $upperLimit = count($this->dataSource);
         if ($this->limit > 0)
@@ -298,7 +345,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         }
     }
     
-    protected function getPostsData($posts)
+    protected function getPostsData(array $posts)
     {
         $postsData = array();
         $pieCrust = $this->parentPage->getApp();
@@ -307,8 +354,16 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
 
         foreach ($posts as $post)
         {
+            // This can be null, e.g. when getting the template data for
+            // the next/previous posts.
+            if ($post == null)
+            {
+                $postsData[] = null;
+                continue;
+            }
+
             // Build the pagination data entry for this post.
-            $postData = $post->getConfig();
+            $postData = $post->getConfig()->get();
             $postData['url'] = PieCrustHelper::formatUri($pieCrust, $post->getUri());
             $postData['slug'] = $post->getUri();
             
