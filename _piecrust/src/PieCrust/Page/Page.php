@@ -304,7 +304,7 @@ class Page implements IPage
     /**
      * Creates a new Page instance given a fully qualified URI.
      */
-    public static function createFromUri(IPieCrust $pieCrust, $uri)
+    public static function createFromUri(IPieCrust $pieCrust, $uri, $useRepository = true)
     {
         if ($uri == null)
             throw new InvalidArgumentException("The given URI is null.");
@@ -321,7 +321,22 @@ class Page implements IPage
             throw new PieCrustException('404');
         }
         
-        return new Page(
+        if ($useRepository)
+        {
+            $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+            return $pageRepository->getOrCreatePage(
+                $uriInfo['uri'],
+                $uriInfo['path'],
+                $uriInfo['type'],
+                $uriInfo['blogKey'],
+                $uriInfo['key'],
+                $uriInfo['page'],
+                $uriInfo['date']
+            );
+        }
+        else
+        {
+            return new Page(
                 $pieCrust,
                 $uriInfo['uri'],
                 $uriInfo['path'],
@@ -331,6 +346,7 @@ class Page implements IPage
                 $uriInfo['page'],
                 $uriInfo['date']
             );
+        }
     }
     
     /**
