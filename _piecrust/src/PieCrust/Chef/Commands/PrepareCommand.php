@@ -71,7 +71,7 @@ class PrepareCommand extends ChefCommand
         {
             $postsDir = $app->getRootDir() . PieCrustDefaults::CONTENT_POSTS_DIR;
             $log->info("Creating posts directory: {$postsDir}");
-            mkdir($postsDir, 0644, true);
+            mkdir($postsDir, 0777, true);
             $app->setPostsDir($postsDir);
         }
 
@@ -126,7 +126,7 @@ class PrepareCommand extends ChefCommand
 
         // Write the contents.
         if (!is_dir(dirname($fullPath)))
-            mkdir(dirname($fullPath), 0644, true);
+            mkdir(dirname($fullPath), 0777, true);
         $f = fopen($fullPath, 'w');
         fwrite($f, "---\n");
         fwrite($f, "title: {$title}\n");
@@ -147,7 +147,7 @@ class PrepareCommand extends ChefCommand
         {
             $pagesDir = $app->getRootDir() . PieCrustDefaults::CONTENT_PAGES_DIR;
             $log->info("Creating pages directory: {$pagesDir}");
-            mkdir($pagesDir, 0644, true);
+            mkdir($pagesDir, 0777, true);
             $app->setPagesDir($pagesDir);
         }
 
@@ -167,7 +167,7 @@ class PrepareCommand extends ChefCommand
 
         // Write the contents.
         if (!is_dir(dirname($fullPath)))
-            mkdir(dirname($fullPath), 0644, true);
+            mkdir(dirname($fullPath), 0777, true);
         $f = fopen($fullPath, 'w');
         fwrite($f, "---\n");
         fwrite($f, "title: {$title}\n");
