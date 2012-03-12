@@ -19,6 +19,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.6.2 (2012-03-11)
+
+* BUG: Fixed a bug with `chef prepare` not creating directories with the correct
+  permissions.
+
 ### 0.6.1 (2012-03-08)
 
 * NEW: The `chef prepare` command now has a `--blog` option to specify which
