@@ -15,6 +15,14 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* NEW: Added a `striptag` filter in Twig to strip HTML tags from the start and
+  end of some text.
+* NEW: The `pagination` template data object now also has `next_post` and
+  `prev_post` properties to get the next and previous posts if the current page
+  is a post.
+* BUG: Fixed a rare bug when both the linker and the pagination are accessed
+  together.
+
 
 Frozen changes
 --------------
