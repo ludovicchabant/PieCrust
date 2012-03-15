@@ -165,12 +165,20 @@ class Paginator
         return $totalPostCount;
     }
 
+    /**
+     * Gets the post coming after the current page, 
+     * if it is a post, and it's not the last one.
+     */
     public function next_post()
     {
         $this->ensurePaginationData();
         return $this->postsIterator->getNextPost();
     }
 
+    /**
+     * Gets the post coming before the current page,
+     * if it is a post, and it's not the first one.
+     */
     public function prev_post()
     {
         $this->ensurePaginationData();
