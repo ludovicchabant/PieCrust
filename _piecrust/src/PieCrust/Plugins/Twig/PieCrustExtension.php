@@ -58,7 +58,8 @@ class PieCrustExtension extends Twig_Extension
             'wordcount' => new Twig_Filter_Method($this, 'getWordCount'),
             'formatwith' => new Twig_Filter_Method($this, 'transformGeneric'),
             'markdown' => new Twig_Filter_Method($this, 'transformMarkdown'),
-            'textile' => new Twig_Filter_Method($this, 'transformTextile')
+            'textile' => new Twig_Filter_Method($this, 'transformTextile'),
+            'striptag' => new Twig_Filter_Method($this, 'stripTag')
         );
     }
     
@@ -127,5 +128,18 @@ class PieCrustExtension extends Twig_Extension
     public function transformTextile($value)
     {
         return $this->transformGeneric($value, 'textile');
+    }
+
+    public function stripTag($value, $tag = null)
+    {
+        $tagPattern = '[a-z]+[a-z0-9]*';
+        if ($tag != null)
+            $tagPattern = preg_quote($tag, '/');
+        $pattern = "/^\\<{$tagPattern}\\>(.*)\\<\\/{$tagPattern}\\>$/i";
+
+        $matches = array();
+        if (!preg_match($pattern, $value, $matches))
+            return $value;
+        return $matches[1];
     }
 }
