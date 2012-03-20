@@ -209,21 +209,23 @@ class DataFormatter
 
     protected function formatObjectMethod($data, $method, $params)
     {
-        $name = strtolower($method->getName());
-
         // If this method can be called without arguments, and there's no
         // '@noCall' annotation on it, get the value so we can display it.
         // Otherwise, display only the method's signature.
         $value = null;
         $argCount = $method->getNumberOfRequiredParameters();
-        if ($argCount == 0 && !$params['noCall'])
+        if ($argCount == 0)
         {
-            $value = $method->invoke($data);
+            $name = strtolower($method->getName());
+            if(!$params['noCall'])
+            {
+                $value = $method->invoke($data);
+            }
         }
         else
         {
+            $name = strtolower($method->getName()) . '(';
             $args = $method->getParameters();
-            $name .= '(';
             $firstArg = true;
             foreach ($args as $a)
             {
