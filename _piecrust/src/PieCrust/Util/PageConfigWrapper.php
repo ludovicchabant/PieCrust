@@ -16,7 +16,7 @@ use PieCrust\IPage;
 class PageConfigWrapper implements \ArrayAccess, \Iterator
 {
     protected $page;
-    protected $configArray;
+    protected $values;
 
     public function __construct(IPage $page)
     {
@@ -27,13 +27,13 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     public function offsetExists($offset)
     {
         $this->ensurePageLoaded();
-        return isset($this->configArray[$offset]);
+        return isset($this->values[$offset]);
     }
     
     public function offsetGet($offset) 
     {
         $this->ensurePageLoaded();
-        return $this->configArray[$offset];
+        return $this->values[$offset];
     }
     
     public function offsetSet($offset, $value)
@@ -51,40 +51,49 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     public function rewind()
     {
         $this->ensurePageLoaded();
-        return reset($this->configArray);
+        return reset($this->values);
     }
   
     public function current()
     {
         $this->ensurePageLoaded();
-        return current($this->configArray);
+        return current($this->values);
     }
   
     public function key()
     {
         $this->ensurePageLoaded();
-        return key($this->configArray);
+        return key($this->values);
     }
   
     public function next()
     {
         $this->ensurePageLoaded();
-        return next($this->configArray);
+        return next($this->values);
     }
   
     public function valid()
     {
         $this->ensurePageLoaded();
-        return key($this->configArray) !== null;
+        return key($this->values) !== null;
     }
     // }}}
     
     protected function ensurePageLoaded()
     {
-        if ($this->configArray == null)
+        if ($this->values == null)
         {
-            $this->configArray = $this->page->getConfig()->get();
+            $this->values = $this->page->getConfig()->get();
+
+            // Sub-classes can overload `addCustomValues` to add
+            // more stuff to the values array besides the page's
+            // configuration.
+            $this->addCustomValues();
         }
+    }
+
+    protected function addCustomValues()
+    {
     }
 }
 

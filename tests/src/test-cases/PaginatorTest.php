@@ -114,7 +114,8 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         $page = new MockPage($pc);
         
         $dataSource = $this->buildPaginationDataSource($pc, $postCount);
-        $it = new PaginationIterator($page, $dataSource);
+        $it = new PaginationIterator($pc, 'blog', $dataSource);
+        $it->setCurrentPage($page);
         
         if ($filterFunc)
             $filterFunc($it);

@@ -5,131 +5,119 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Page\PaginationIterator;
 use PieCrust\Util\PageHelper;
 
 
-class PagePropertyData implements \ArrayAccess, \Iterator
+/**
+ * A class that lists pages in a single bucket defined by a
+ * configuration property (typically "pages in category X"
+ * and "pages with tag Y").
+ *
+ * @formatObject
+ * @explicitInclude
+ */
+class PagePropertyData implements \Iterator, \ArrayAccess, \Countable
 {
-    protected $pieCrust;
-    protected $propertyName;
-    protected $blogKey;
+    protected $propertyValue;
+    protected $posts;
+    protected $postCount;
 
-    protected $values;
-
-    public function __construct(IPieCrust $pc, $propertyName)
+    public function __construct(IPieCrust $pieCrust, $blogKey, $propertyValue, array $dataSource)
     {
-        $this->pieCrust = $pc;
-        $this->propertyName = $propertyName;
-
-        $blogKeys = $pc->getConfig()->getValueUnchecked('site/blogs');
-        $this->blogKey = $blogKeys[0];
+        $this->propertyValue = $propertyValue;
+        $this->posts = new PaginationIterator($pieCrust, $blogKey, $dataSource);
+        $this->postCount = count($dataSource); // Backwards compatibility (shoudl use posts.count)
     }
 
-    // {{{ Template Methods
-    public function blog($blogName)
+    public function __toString()
     {
-        // This invalidates any values already cached.
-        $this->values = null;
+        return $this->propertyValue;
+    }
 
-        $blogKeys = $pc->getConfig()->getValueUnchecked('site/blogs');
-        if (!in_array($blogName, $blogKeys))
-            throw new PieCrustException("No blog named '" . $blogName . "' was declared in the configuration file.");
-        $this->blogKey = $blogName;
+    // {{{ Template members
+    /**
+     * @include
+     * @documentation The name of the category or tag. Use this instead of the array key if the name contains special characters.
+     */
+    public function name()
+    {
+        return $this->propertyValue;
+    }
 
-        return $this;
+    /**
+     * @include
+     * @noCall
+     * @documentation The list of posts in this category or tag. Available properties and functions are the same as `pagination.posts`.
+     */
+    public function posts()
+    {
+        return $this->posts;
+    }
+
+    /**
+     * The number of posts, available for backwards compatibility
+     */
+    public function post_count()
+    {
+        return $this->postCount;
     }
     // }}}
 
-    // {{{ ArrayAccess members
-    public function offsetExists($offset)
+    // {{{ Countable members
+    public function count()
     {
-        $this->ensureLoaded();
-        return isset($this->values[$offset]);
-    }
-    
-    public function offsetGet($offset) 
-    {
-        $this->ensureLoaded();
-        return $this->values[$offset];
-    }
-    
-    public function offsetSet($offset, $value)
-    {
-        throw new PieCrustException('The ' . $this->propertyName . ' list is read-only.');
-    }
-    
-    public function offsetUnset($offset)
-    {
-        throw new PieCrustException('The ' . $this->propertyName . ' list is read-only.');
+        return $this->posts->count();
     }
     // }}}
     
     // {{{ Iterator members
-    public function rewind()
-    {
-        $this->ensureLoaded();
-        return reset($this->values);
-    }
-  
     public function current()
     {
-        $this->ensureLoaded();
-        return current($this->values);
+        return $this->posts->current();
     }
-  
+    
     public function key()
     {
-        $this->ensureLoaded();
-        return key($this->values);
+        return $this->posts->key();
     }
-  
+    
     public function next()
     {
-        $this->ensureLoaded();
-        return next($this->values);
+        $this->posts->next();
     }
-  
+    
+    public function rewind()
+    {
+        $this->posts->rewind();
+    }
+    
     public function valid()
     {
-        $this->ensureLoaded();
-        return key($this->values) !== null;
+        return $this->posts->valid();
     }
     // }}}
- 
-    protected function ensureLoaded()
+    
+    // {{{ ArrayAccess members
+    public function offsetExists($offset)
     {
-        if ($this->values != null)
-            return;
-
-        $posts = PageHelper::getPosts($this->pieCrust, $this->blogKey);
-        $this->values = array();
-        foreach ($posts as $post)
-        {
-            $this->addPageValue($post);
-        }
-        ksort($this->values);
+        return $this->posts->offsetExists($offset);
     }
-
-    protected function addPageValue(IPage $page)
+    
+    public function offsetGet($offset)
     {
-        $propertyValues = $page->getConfig()->getValue($this->propertyName);
-        if ($propertyValues)
-        {
-            if (!is_array($propertyValues))
-                $propertyValues = array($propertyValues);
-
-            foreach ($propertyValues as $v)
-            {
-                if (!isset($this->values[$v]))
-                {
-                    $this->values[$v] = array(
-                        'post_count' => 0,
-                        'name' => $v
-                    );
-                }
-                $this->values[$v]['post_count'] += 1;
-            }
-        }
+        return $this->posts->offsetGet($offset);
     }
+    
+    public function offsetSet($offset, $value)
+    {
+        $this->posts->offsetSet($offset, $value);
+    }
+    
+    public function offsetUnset($offset)
+    {
+        $this->posts->offsetUnset($offset);
+    }
+    // }}}
 }
 

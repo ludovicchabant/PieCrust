@@ -2,11 +2,10 @@
 
 namespace PieCrust\Page;
 
-use \Iterator;
-use \Countable;
-use \ArrayAccess;
 use PieCrust\IPage;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Data\PaginationData;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -20,25 +19,29 @@ use PieCrust\Util\PieCrustHelper;
  * @formatObject
  * @explicitInclude
  */
-class PaginationIterator implements Iterator, ArrayAccess, Countable
+class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
 {
+    protected $pieCrust;
     protected $dataSource;
-    protected $parentPage;
+    protected $blogKey;
     
     protected $filter;
     protected $skip;
     protected $limit;
     
     protected $posts;
-    protected $nextPost;
-    protected $previousPost;
     protected $hasMorePosts;
     protected $totalPostCount;
+
+    protected $page;
+    protected $previousPost;
+    protected $nextPost;
     
-    public function __construct(IPage $parentPage, array $dataSource)
+    public function __construct(IPieCrust $pieCrust, $blogKey, array $dataSource)
     {
-        $this->parentPage = $parentPage;
+        $this->pieCrust = $pieCrust;
         $this->dataSource = $dataSource;
+        $this->blogKey = $blogKey;
         
         $this->filter = null;
         $this->skip = 0;
@@ -47,11 +50,21 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         $this->posts = null;
         $this->hasMorePosts = false;
         $this->totalPostCount = 0;
+
+        $this->page = null;
+        $this->previousPost = null;
+        $this->nextPost = null;
+    }
+
+    public function setCurrentPage(IPage $page)
+    {
+        $this->ensureNotLoaded(__FUNCTION__);
+        $this->page = $page;
     }
     
     public function setFilter(PaginationFilter $filter)
     {
-        $this->ensureNotLoaded('setFilter');
+        $this->ensureNotLoaded(__FUNCTION__);
         $this->filter = $filter;
     }
 
@@ -69,24 +82,22 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
 
     public function getNextPost()
     {
-        $this->ensureLoaded();
         return $this->nextPost;
     }
 
     public function getPreviousPost()
     {
-        $this->ensureLoaded();
         return $this->previousPost;
     }
     
-    // {{{ Fluent-interface filtering members
+    // {{{ Fluent-interface template members
     /**
      * @include
      * @noCall
      */
     public function skip($count)
     {
-        $this->ensureNotLoaded('skip');
+        $this->ensureNotLoaded(__FUNCTION__);
         $this->skip = $count;
         return $this;
     }
@@ -97,24 +108,8 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
      */
     public function limit($count)
     {
-        $this->ensureNotLoaded('limit');
+        $this->ensureNotLoaded(__FUNCTION__);
         $this->limit = $count;
-        return $this;
-    }
-    
-    /**
-     * @include
-     * @noCall
-     */
-    public function filter($filterName)
-    {
-        $this->ensureNotLoaded('filter');
-        if (!$this->parentPage->getConfig()->hasValue($filterName))
-            throw new PieCrustException("Couldn't find filter '".$filterName."' in the page's configuration header.");
-        
-        $filterDefinition = $this->parentPage->getConfig()->getValue($filterName);
-        $this->filter = new PaginationFilter();
-        $this->filter->addClauses($filterDefinition);
         return $this;
     }
 
@@ -124,7 +119,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
      */
     public function in_category($category)
     {
-        $this->ensureNotLoaded('in_category');
+        $this->ensureNotLoaded(__FUNCTION__);
 
         $this->filter = new PaginationFilter();
         $this->filter->addClauses(array('is_category' => $category));
@@ -137,7 +132,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
      */
     public function with_tag($tag)
     {
-        $this->ensureNotLoaded('with_tag');
+        $this->ensureNotLoaded(__FUNCTION__);
 
         $this->filter = new PaginationFilter();
         $this->filter->addClauses(array('has_tags' => $tag));
@@ -150,7 +145,7 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
      */
     public function with_tags($tag1, $tag2 /*, $tag3, ... */)
     {
-        $this->ensureNotLoaded('with_tags');
+        $this->ensureNotLoaded(__FUNCTION__);
 
         $tagClauses = array();
         $argCount = func_num_args();
@@ -171,11 +166,25 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
      */
     public function all()
     {
-        $this->ensureNotLoaded('all');
+        $this->ensureNotLoaded(__FUNCTION__);
         $this->filter = null;
         $this->skip = 0;
         $this->limit = -1;
         return $this;
+    }
+    // }}}
+
+    // {{{ Miscellaneous template members
+    /**
+     * @include
+     * @noCall
+     */
+    public function first()
+    {
+        $this->ensureLoaded();
+        if (count($this->posts) == 0)
+            return null;
+        return $this->posts[0];
     }
     // }}}
     
@@ -253,10 +262,21 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     }
     // }}}
     
+    // {{{ Protected members
+    protected function isLoaded()
+    {
+        return ($this->posts != null);
+    }
+
+    protected function reload()
+    {
+        $this->posts = null;
+    }
+
     protected function ensureNotLoaded($func)
     {
         if ($this->posts != null)
-            throw new PieCrustException("Can't call '".$func."' after the pagination posts have been loaded.");
+            throw new PieCrustException("Can't call '{$func}' after the posts have been loaded.");
     }
     
     protected function ensureLoaded()
@@ -264,10 +284,9 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         if ($this->posts != null)
             return;
         
-        $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfig()->getValue('blog');
+        $pieCrust = $this->pieCrust;
+        $blogKey = $this->blogKey;
         $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
-        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
         // If we have any filter, apply it to the pagination data source.
         if ($this->filter != null and $this->filter->hasClauses())
@@ -295,36 +314,34 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
         usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
 
         // Find the previous and next posts, if the parent page is in there.
-        $parentPageIndex = -1;
-        foreach ($actualDataSource as $i => $post)
+        if ($this->page != null)
         {
-            if ($post === $this->parentPage)
+            $pageIndex = -1;
+            foreach ($actualDataSource as $i => $post)
             {
-                $parentPageIndex = $i;
-                break;
+                if ($post === $this->page)
+                {
+                    $pageIndex = $i;
+                    break;
+                }
             }
-        }
-        if ($parentPageIndex >= 0)
-        {
-            // Get the previous and next posts.
-            $prevAndNextPost = array(null, null);
-            if ($parentPageIndex > 0)
-                $prevAndNextPost[0] = $actualDataSource[$parentPageIndex - 1];
-            if ($parentPageIndex < $this->totalPostCount - 1)
-                $prevAndNextPost[1] = $actualDataSource[$parentPageIndex + 1];
+            if ($pageIndex >= 0)
+            {
+                // Get the previous and next posts.
+                $prevAndNextPost = array(null, null);
+                if ($pageIndex > 0)
+                    $prevAndNextPost[0] = $actualDataSource[$pageIndex - 1];
+                if ($pageIndex < $this->totalPostCount - 1)
+                    $prevAndNextPost[1] = $actualDataSource[$pageIndex + 1];
 
-            // Get their template data.
-            $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
+                // Get their template data.
+                $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
 
-            // Posts are sorted by reverse time, so watch out for what's
-            // "previous" and what's "next"!
-            $this->previousPost = $prevAndNextPostData[1];
-            $this->nextPost = $prevAndNextPostData[0];
-        }
-        else
-        {
-            $this->previousPost = null;
-            $this->nextPost = null;
+                // Posts are sorted by reverse time, so watch out for what's
+                // "previous" and what's "next"!
+                $this->previousPost = $prevAndNextPostData[1];
+                $this->nextPost = $prevAndNextPostData[0];
+            }
         }
 
         // Now honour the skip and limit clauses.
@@ -348,10 +365,6 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
     protected function getPostsData(array $posts)
     {
         $postsData = array();
-        $pieCrust = $this->parentPage->getApp();
-        $blogKey = $this->parentPage->getConfig()->getValue('blog');
-        $postsDateFormat = PageHelper::getConfigValue($this->parentPage, 'date_format', $blogKey);
-
         foreach ($posts as $post)
         {
             // This can be null, e.g. when getting the template data for
@@ -362,32 +375,8 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
                 continue;
             }
 
-            // Build the pagination data entry for this post.
-            $postData = $post->getConfig()->get();
-            $postData['url'] = PieCrustHelper::formatUri($pieCrust, $post->getUri());
-            $postData['slug'] = $post->getUri();
-            
-            $timestamp = $post->getDate();
-            if ($post->getConfig()->getValue('time'))
-            {
-                $timestamp = strtotime($post->getConfig()->getValue('time'), $timestamp);
-            }
-            $postData['timestamp'] = $timestamp;
-            $postData['date'] = date($postsDateFormat, $timestamp);
-            
-            $postHasMore = false;
-            $postContents = $post->getContentSegment('content');
-            if ($post->hasContentSegment('content.abstract'))
-            {
-                $postContents = $post->getContentSegment('content.abstract');
-                $postHasMore = true;
-            }
-            $postData['content'] = $postContents;
-            $postData['has_more'] = $postHasMore;
-            
-            $postsData[] = $postData;
+            $postsData[] = new PaginationData($post);
         }
-
         return $postsData;
     }
 
@@ -407,4 +396,5 @@ class PaginationIterator implements Iterator, ArrayAccess, Countable
             return 1;
         return -1;
     }
+    // }}}
 }

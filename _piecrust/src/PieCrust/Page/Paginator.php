@@ -33,6 +33,7 @@ class Paginator
         $this->postsIterator = null;
     }
     
+    // {{{ Template members
     /**
      * Gets the posts for this page.
      *
@@ -184,7 +185,9 @@ class Paginator
         $this->ensurePaginationData();
         return $this->postsIterator->getPreviousPost();
     }
+    // }}}
 
+    // {{{ Pagination manipulation
     protected $dataSource;
     /**
      * Gets the list of posts to use for the pagination.
@@ -238,6 +241,7 @@ class Paginator
     {
         return ($this->next_page() != null);
     }
+    // }}}
     
     protected function ensurePaginationData()
     {
@@ -246,14 +250,16 @@ class Paginator
 
         // Get the post infos.
         $posts = $this->dataSource;
+        $blogKey = $this->page->getConfig()->getValue('blog');
         if ($posts === null)
         {
-            $blogKey = $this->page->getConfig()->getValue('blog');
             $posts = PageHelper::getPosts($this->page->getApp(), $blogKey);
         }
         
         // Create the pagination iterator.
-        $this->postsIterator = new PaginationIterator($this->page, $posts);
+        $this->postsIterator = new PaginationIterator($this->page->getApp(), $blogKey, $posts);
+        // Set our current page.
+        $this->postsIterator->setCurrentPage($this->page);
         // Add the filters for the current page.
         $postsFilter = $this->getPaginationFilter();
         $this->postsIterator->setFilter($postsFilter);
@@ -270,17 +276,24 @@ class Paginator
     protected function getPaginationFilter()
     {
         $filter = new PaginationFilter();
-        
-        // If the current page is a tag/category page, add filtering
-        // for that.
-        $filter->addPageClauses($this->page);
-        
-        // Add custom filtering clauses specified by the user in the
-        // page configuration header.
         $filterInfo = $this->page->getConfig()->getValue('posts_filters');
-        if ($filterInfo != null)
-            $filter->addClauses($filterInfo);
+        if ($filterInfo == 'none' or $filterInfo == 'nil' or $filterInfo == '')
+            $filterInfo = null;
         
+        if (PageHelper::isTag($this->page) or PageHelper::isCategory($this->page))
+        {
+            // If the current page is a tag/category page, add filtering
+            // for that.
+            if ($filterInfo != null)
+                throw new PieCrustException("The `posts_filters` setting cannot be used on a tag or category listing page -- the filter will be automatically set to posts matching the request tag or category.");
+            $filter->addPageClauses($this->page);
+        }
+        else if ($filterInfo != null)
+        {
+            // Add custom filtering clauses specified by the user in the
+            // page configuration header.
+            $filter->addClauses($filterInfo);
+        }
         return $filter;
     }
 }

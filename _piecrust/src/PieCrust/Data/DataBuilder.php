@@ -32,15 +32,13 @@ class DataBuilder
      */
     public static function getSiteData(IPieCrust $pieCrust)
     {
-        $data = Configuration::mergeArrays(
-            $pieCrust->getConfig()->get(),
-            array(
-                'site' => array(
-                    'categories' => new PagePropertyData($pieCrust, 'category'),
-                    'tags' => new PagePropertyData($pieCrust, 'tags')
-                )
-            )
-        );
+        // Get the site configuration.
+        $data = $pieCrust->getConfig()->get();
+        // Combine it with each blog's data.
+        foreach ($pieCrust->getConfig()->getValueUnchecked('site/blogs') as $blogKey)
+        {
+            $data['site'][$blogKey] = new BlogData($pieCrust, $blogKey);
+        }
         return $data;
     }
 
