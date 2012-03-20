@@ -28,8 +28,19 @@ class PageHelper
     public static function getConfigValue(IPage $page, $key, $appSection)
     {
         if ($page->getConfig()->hasValue($key))
-            return $page->getConfig()->getValue($key);
+            return $page->getConfig()->getValueUnchecked($key);
         return $page->getApp()->getConfig()->getValue($appSection.'/'.$key);
+    }
+
+    /**
+     * Gets a configuration value either on the given page, or on its parent
+     * application.
+     */
+    public static function getConfigValueUnchecked(IPage $page, $key, $appSection)
+    {
+        if ($page->getConfig()->hasValue($key))
+            return $page->getConfig()->getValueUnchecked($key);
+        return $page->getApp()->getConfig()->getValueUnchecked($appSection.'/'.$key);
     }
     
     /**

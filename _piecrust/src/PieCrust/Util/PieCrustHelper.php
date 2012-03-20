@@ -63,6 +63,15 @@ class PieCrustHelper
     }
 
     /**
+     * Gets the default blog key.
+     */
+    public static function getDefaultBlogKey(IPieCrust $pieCrust)
+    {
+        $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
+        return $blogKeys[0];
+    }
+
+    /**
      * Gets a formatted page URI.
      */
     public static function formatUri(IPieCrust $pieCrust, $uri)
