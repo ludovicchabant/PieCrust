@@ -15,6 +15,11 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* NEW: The full list of posts is exposed through `site.blog.posts` (if you have
+  multiple blogs, replace `blog` with your blog's name). This list doesn't have
+  any effect on pagination, unlike `pagination.posts`.
+* NEW: Categories and tags are exposed through `site.blog.categories` and
+  `site.blog.tags` (same remark as previously for multiple-blog sites).
 * NEW: Added a `striptag` filter in Twig to strip HTML tags from the start and
   end of some text.
 * NEW: The `pagination` template data object now also has `next_post` and
@@ -22,6 +27,7 @@ Fresh changes
   is a post.
 * BUG: Fixed a rare bug when both the linker and the pagination are accessed
   together.
+* MINOR: Slightly better formatting for the debug window.
 
 
 Frozen changes
