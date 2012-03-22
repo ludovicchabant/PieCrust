@@ -58,13 +58,13 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
 
     public function setCurrentPage(IPage $page)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
         $this->page = $page;
     }
     
     public function setFilter(PaginationFilter $filter)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
         $this->filter = $filter;
     }
 
@@ -97,7 +97,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function skip($count)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
         $this->skip = $count;
         return $this;
     }
@@ -108,7 +108,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function limit($count)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
         $this->limit = $count;
         return $this;
     }
@@ -119,8 +119,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function in_category($category)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
-
+        $this->unload();
         $this->filter = new PaginationFilter();
         $this->filter->addClauses(array('is_category' => $category));
         return $this;
@@ -132,8 +131,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function with_tag($tag)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
-
+        $this->unload();
         $this->filter = new PaginationFilter();
         $this->filter->addClauses(array('has_tags' => $tag));
         return $this;
@@ -145,7 +143,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function with_tags($tag1, $tag2 /*, $tag3, ... */)
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
 
         $tagClauses = array();
         $argCount = func_num_args();
@@ -166,7 +164,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function all()
     {
-        $this->ensureNotLoaded(__FUNCTION__);
+        $this->unload();
         $this->filter = null;
         $this->skip = 0;
         $this->limit = -1;
@@ -221,12 +219,15 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     
     public function rewind()
     {
+        $this->unload();
         $this->ensureLoaded();
         reset($this->posts);
     }
     
     public function valid()
     {
+        if (!$this->isLoaded())
+            return false;
         $this->ensureLoaded();
         return (key($this->posts) !== null);
     }
@@ -268,17 +269,11 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         return ($this->posts != null);
     }
 
-    protected function reload()
+    protected function unload()
     {
         $this->posts = null;
     }
 
-    protected function ensureNotLoaded($func)
-    {
-        if ($this->posts != null)
-            throw new PieCrustException("Can't call '{$func}' after the posts have been loaded.");
-    }
-    
     protected function ensureLoaded()
     {
         if ($this->posts != null)
