@@ -27,7 +27,7 @@ class PagePropertyData implements \Iterator, \ArrayAccess, \Countable
     {
         $this->propertyValue = $propertyValue;
         $this->posts = new PaginationIterator($pieCrust, $blogKey, $dataSource);
-        $this->postCount = count($dataSource); // Backwards compatibility (shoudl use posts.count)
+        $this->postCount = count($dataSource); // Backwards compatibility (should use posts.count)
     }
 
     public function __toString()
