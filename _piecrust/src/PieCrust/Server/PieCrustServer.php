@@ -169,15 +169,11 @@ class PieCrustServer
         {
             try
             {
-                // We set some extra data on the page we're rendering
-                // to force disable the cache.
-                $dummyExtraData = array('main_request_page' => true);
-
                 $runner = new PieCrustRunner($pieCrust);
                 $runner->runUnsafe(
                     null,
                     $context->getRequest()->getServerVariables(),
-                    $dummyExtraData,
+                    null,
                     $headers
                 );
             }
