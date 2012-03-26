@@ -15,15 +15,15 @@ use PieCrust\Util\PageHelper;
  */
 class PagePropertyArrayData implements \Iterator, \ArrayAccess, \Countable
 {
-    protected $pieCrust;
+    protected $page;
     protected $propertyName;
     protected $blogKey;
 
     protected $values;
 
-    public function __construct(IPieCrust $pc, $blogKey, $propertyName)
+    public function __construct(IPage $page, $blogKey, $propertyName)
     {
-        $this->pieCrust = $pc;
+        $this->page = $page;
         $this->blogKey = $blogKey;
         $this->propertyName = $propertyName;
     }
@@ -104,7 +104,7 @@ class PagePropertyArrayData implements \Iterator, \ArrayAccess, \Countable
 
         // Gather all posts sorted by the property we want.
         $dataSources = array();
-        $posts = PageHelper::getPosts($this->pieCrust, $this->blogKey);
+        $posts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
         foreach ($posts as $post)
         {
             $this->addPageValue($post, $dataSources);
@@ -115,7 +115,7 @@ class PagePropertyArrayData implements \Iterator, \ArrayAccess, \Countable
         foreach ($dataSources as $property => $dataSource)
         {
             $this->values[$property] = new PagePropertyData(
-                $this->pieCrust, 
+                $this->page, 
                 $this->blogKey, 
                 $property,
                 $dataSource

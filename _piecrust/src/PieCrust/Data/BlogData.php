@@ -15,7 +15,7 @@ use PieCrust\Util\PageHelper;
  */
 class BlogData
 {
-    protected $pieCrust;
+    protected $page;
     protected $blogKey;
 
     protected $posts;
@@ -25,9 +25,9 @@ class BlogData
     protected $years;
     protected $months;
 
-    public function __construct(IPieCrust $pieCrust, $blogKey)
+    public function __construct(IPage $page, $blogKey)
     {
-        $this->pieCrust = $pieCrust;
+        $this->page = $page;
         $this->blogKey = $blogKey;
     }
 
@@ -86,8 +86,9 @@ class BlogData
         if ($this->posts)
             return;
 
-        $blogPosts = PageHelper::getPosts($this->pieCrust, $this->blogKey);
-        $this->posts = new PaginationIterator($this->pieCrust, $this->blogKey, $blogPosts);
+        $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
+        $this->posts = new PaginationIterator($this->page->getApp(), $this->blogKey, $blogPosts);
+        $this->posts->setCurrentPage($this->page);
     }
 
     protected function ensureCategories()
@@ -95,7 +96,7 @@ class BlogData
         if ($this->categories)
             return;
 
-        $this->categories = new PagePropertyArrayData($this->pieCrust, $this->blogKey, 'category');
+        $this->categories = new PagePropertyArrayData($this->page, $this->blogKey, 'category');
     }
 
     protected function ensureTags()
@@ -103,7 +104,7 @@ class BlogData
         if ($this->tags)
             return;
 
-        $this->tags = new PagePropertyArrayData($this->pieCrust, $this->blogKey, 'tags');
+        $this->tags = new PagePropertyArrayData($this->page, $this->blogKey, 'tags');
     }
 
     protected function ensureYears()
@@ -111,25 +112,41 @@ class BlogData
         if ($this->years)
             return;
 
-        $blogPosts = PageHelper::getPosts($this->pieCrust, $this->blogKey);
-        $this->years = array();
-        $currentYear = null;
-        foreach ($blogPosts as $post)
+        // Get all the blog posts.
+        $posts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
+
+        // Sort them by year.
+        $yearsInfos = array();
+        foreach ($posts as $post)
         {
             $timestamp = $post->getDate();
             $pageYear = date('Y', $timestamp);
-            if ($currentYear == null or $pageYear != $currentYear)
+            if (!isset($yearsInfos[$pageYear]))
             {
-                $this->years[$pageYear] = array(
+                $yearsInfos[$pageYear] = array(
                     'name' => $pageYear,
                     'timestamp' => mktime(0, 0, 0, 1, 1, intval($pageYear)),
-                    'posts' => array()
+                    'data_source' => array()
                 );
-                $currentYear = $pageYear;
             }
-            $this->years[$currentYear]['posts'][] = new PaginationData($post);
+            $yearsInfos[$pageYear]['data_source'][] = $post;
         }
-        ksort($this->years);
+
+        // For each year, create the data class.
+        $this->years = array();
+        foreach ($yearsInfos as $year => $yearInfo)
+        {
+            $this->years[$year] = new PageTimeData(
+                $this->page,
+                $this->blogKey,
+                $yearInfo['name'],
+                $yearInfo['timestamp'],
+                $yearInfo['data_source']
+            );
+        }
+
+        // Sort the years in inverse chronological order.
+        krsort($this->years);
     }
 
     protected function ensureMonths()
@@ -137,7 +154,7 @@ class BlogData
         if ($this->months)
             return;
 
-        $blogPosts = PageHelper::getPosts($this->pieCrust, $this->blogKey);
+        $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
         $this->months = array();
         $currentMonthAndYear = null;
         foreach ($blogPosts as $post)

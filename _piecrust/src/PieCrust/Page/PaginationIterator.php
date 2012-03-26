@@ -82,11 +82,13 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
 
     public function getNextPost()
     {
+        $this->ensureLoaded();
         return $this->nextPost;
     }
 
     public function getPreviousPost()
     {
+        $this->ensureLoaded();
         return $this->previousPost;
     }
     
@@ -110,6 +112,24 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     {
         $this->unload();
         $this->limit = $count;
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
+     */
+    public function filter($filterName)
+    {
+        $this->unload();
+        if ($this->page == null)
+            throw new PieCrustException("Can't use 'filter()' because no parent page was set for the pagination iterator.");
+        if (!$this->page->getConfig()->hasValue($filterName))
+            throw new PieCrustException("Couldn't find filter '{$filterName}' in the page's configuration header.");
+        
+        $filterDefinition = $this->page->getConfig()->getValue($filterName);
+        $this->filter = new PaginationFilter();
+        $this->filter->addClauses($filterDefinition);
         return $this;
     }
 

@@ -93,13 +93,22 @@ class PageLoader
         }
     }
 
+    public function formatContents(array $rawSegments)
+    {
+        try
+        {
+            return $this->formatContentsUnsafe($rawSegments);
+        }
+        catch (Exception $e)
+        {
+            $relativePath = PageHelper::getRelativePath($this->page);
+            throw new PieCrustException("Error formatting page '{$relativePath}': {$e->getMessage()}", 0, $e);
+        }
+    }
+
     protected function loadUnsafe()
     {
-        // Caching must be disabled if we get some extra page data because then this page
-        // is not self-contained anymore.
-        $enableCache = ($this->page->getExtraPageData() == null);
-        
-        if ($enableCache and $this->wasCached())
+        if ($this->wasCached())
         {
             // Get the page from the cache.
             $configText = $this->cache->read($this->page->getUri(), 'json');
@@ -108,7 +117,7 @@ class PageLoader
             if (!$this->page->getConfig()->hasValue('segments'))
                 throw new PieCrustException("Can't get segments list from cache.");
             
-            $contents  = array('content' => null, 'content.abstract' => null);
+            $contents  = array();
             foreach ($config['segments'] as $key)
             {
                 $contents[$key] = $this->cache->read($this->page->getUri(), $key . '.html');
@@ -118,68 +127,25 @@ class PageLoader
         }
         else
         {
-            // Load the page from disk and re-format it.
+            // Load the page from disk.
             $rawContents = file_get_contents($this->page->getPath());
             $parsedContents = Configuration::parseHeader($rawContents);
             
-            // We need to set the configuration on the page right away because
-            // most formatters, template engines, and other elements will need
-            // access to it for rendering the contents.
+            // Set the configuration.
             $config = $this->page->getConfig();
             $config->set($parsedContents['config']);
             
+            // Set the raw content with the unparsed content segments.
             $rawSegmentsOffset = $parsedContents['text_offset'];
-            $rawSegments = $this->parseContentSegments($rawContents, $rawSegmentsOffset);
-            
-            $pieCrust = $this->page->getApp();
-            $pageData = $this->page->getPageData();
-            $siteData = DataBuilder::getSiteData($pieCrust);
-            $appData = DataBuilder::getAppData($pieCrust, $siteData, $pageData, null, false);
-            $data = Configuration::mergeArrays(
-                $pageData,
-                $siteData,
-                $appData
-            );
-            $templateEngineName = $this->page->getConfig()->getValue('template_engine');
-            $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $templateEngineName);
-            if (!$templateEngine)
-                throw new PieCrustException("Unknown template engine '".$templateEngineName."'.");
-            $contents = array('content' => null, 'content.abstract' => null);
-            foreach ($rawSegments as $key => $content)
+            $contents = $this->parseContentSegments($rawContents, $rawSegmentsOffset);
+            // Add the list of known segments to the configuration.
+            foreach ($contents as $key => $segment)
             {
-                ob_start();
-                try
-                {
-                    $templateEngine->renderString($content, $data);
-                    $renderedContent = ob_get_clean();
-                }
-                catch (Exception $e)
-                {
-                    ob_end_clean();
-                    throw $e;
-                }
-                
                 $config->appendValue('segments', $key);
-                $renderedAndFormattedContent = PieCrustHelper::formatText($pieCrust, $renderedContent, $config['format']);
-                $contents[$key] = $renderedAndFormattedContent;
-                if ($key == 'content')
-                {
-                    $matches = array();
-                    if (preg_match('/^<!--\s*(more|(page)?break)\s*-->\s*$/m', $renderedAndFormattedContent, $matches, PREG_OFFSET_CAPTURE))
-                    {
-                        // Add a special content segment for the "intro/abstract" part of the article.
-                        $offset = $matches[0][1];
-                        $abstract = substr($renderedAndFormattedContent, 0, $offset);
-                        $config->appendValue('segments', 'content.abstract');
-                        $contents['content.abstract'] = $abstract;
-                    }
-                }
             }
             
-            // Do not cache the page if 'volatile' data was accessed (e.g. the page displays
-            // the latest posts).
-            $wasVolatileDataAccessed = $data['pagination']->wasPaginationDataAccessed();
-            if ($enableCache and $this->cache != null and !$wasVolatileDataAccessed)
+            // Cache that shit out.
+            if ($this->cache != null)
             {
                 $yamlMarkup = json_encode($config->get());
                 $this->cache->write($this->page->getUri(), 'json', $yamlMarkup);
@@ -229,5 +195,60 @@ class PageLoader
             // No segments, just the content.
             return array('content' => substr($rawContents, $offset));
         }
+    }
+
+    protected function formatContentsUnsafe(array $rawSegments)
+    {
+        $data = DataBuilder::getPageRenderingData($this->page);
+
+        $pieCrust = $this->page->getApp();
+        $templateEngineName = $this->page->getConfig()->getValue('template_engine');
+        $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $templateEngineName);
+        if (!$templateEngine)
+            throw new PieCrustException("Unknown template engine '{$templateEngineName}'.");
+
+        $contents = array();
+        foreach ($rawSegments as $key => $content)
+        {
+            ob_start();
+            try
+            {
+                $templateEngine->renderString($content, $data);
+                $renderedContent = ob_get_clean();
+            }
+            catch (Exception $e)
+            {
+                ob_end_clean();
+                throw $e;
+            }
+
+            $format = $this->page->getConfig()->getValue('format');
+            $renderedAndFormattedContent = PieCrustHelper::formatText(
+                $pieCrust, 
+                $renderedContent, 
+                $format
+            );
+            $contents[$key] = $renderedAndFormattedContent;
+            if ($key == 'content')
+            {
+                $matches = array();
+                if (preg_match(
+                    '/^<!--\s*(more|(page)?break)\s*-->\s*$/m', 
+                    $renderedAndFormattedContent, 
+                    $matches, 
+                    PREG_OFFSET_CAPTURE
+                ))
+                {
+                    // Add a special content segment for the "intro/abstract" part 
+                    // of the article.
+                    $offset = $matches[0][1];
+                    $abstract = substr($renderedAndFormattedContent, 0, $offset);
+                    $this->page->getConfig()->appendValue('segments', 'content.abstract');
+                    $contents['content.abstract'] = $abstract;
+                }
+            }
+        }
+
+        return $contents;
     }
 }

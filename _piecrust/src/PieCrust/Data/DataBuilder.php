@@ -18,6 +18,48 @@ use PieCrust\Util\PieCrustHelper;
 class DataBuilder
 {
     /**
+     * Gets all the template data for rendering a page's contents.
+     */
+    public static function getPageRenderingData(IPage $page)
+    {
+        $pageData = $page->getPageData();
+        $siteData = self::getSiteData($page);
+        $appData = DataBuilder::getAppData($page->getApp(), $siteData, $pageData, null, false);
+
+        $renderData = Configuration::mergeArrays(
+            $pageData,
+            $siteData,
+            $appData
+        );
+        return $renderData;
+    }
+
+    /**
+     * Gets all the template data for rendering a layout.
+     */
+    public static function getTemplateRenderingData(IPage $page)
+    {
+        $pieCrust = $page->getApp();
+        $pageData = $page->getPageData();
+        $pageContentSegments = $page->getContentSegments();
+        $siteData = self::getSiteData($page);
+        $appData = self::getAppData(
+            $pieCrust, 
+            $siteData, 
+            $pageData, 
+            $pageContentSegments, 
+            $page->wasCached()
+        );
+        $renderData = Configuration::mergeArrays(
+            $appData,
+            $siteData,
+            $pageData,
+            $pageContentSegments
+        );
+        return $renderData;
+    }
+
+    /**
      * Gets the application's data for page rendering.
      */
     public static function getAppData(IPieCrust $pieCrust, $siteData = null, $pageData = null, $pageContentSegments = null, $wasPageCached = null)
@@ -30,14 +72,15 @@ class DataBuilder
     /**
      * Gets the site's data for page rendering.
      */
-    public static function getSiteData(IPieCrust $pieCrust)
+    public static function getSiteData(IPage $page)
     {
+        $pieCrust = $page->getApp();
         // Get the site configuration.
         $data = $pieCrust->getConfig()->get();
         // Combine it with each blog's data.
         foreach ($pieCrust->getConfig()->getValueUnchecked('site/blogs') as $blogKey)
         {
-            $data['site'][$blogKey] = new BlogData($pieCrust, $blogKey);
+            $data['site'][$blogKey] = new BlogData($page, $blogKey);
         }
         return $data;
     }
@@ -77,7 +120,11 @@ class DataBuilder
         if ($page->getConfig()->getValue('time'))
             $timestamp = strtotime($page->getConfig()->getValue('time'), $timestamp);
         $data['page']['timestamp'] = $timestamp;
-        $dateFormat = PageHelper::getConfigValue($page, 'date_format', ($page->getBlogKey() != null ? $page->getBlogKey() : 'site'));
+        $dateFormat = PageHelper::getConfigValue(
+            $page, 
+            'date_format', 
+            ($page->getBlogKey() != null ? $page->getBlogKey() : 'site')
+        );
         $data['page']['date'] = date($dateFormat, $timestamp);
         
         switch ($page->getPageType())

@@ -11,21 +11,23 @@ use PieCrust\Util\PageHelper;
 
 /**
  * A class that lists pages in a single bucket defined by a
- * configuration property (typically "pages in category X"
- * and "pages with tag Y").
+ * time interval (typically "posts from year X" or "posts from
+ * month Y").
  *
  * @formatObject
  * @explicitInclude
  */
-class PagePropertyData implements \Iterator, \ArrayAccess, \Countable
+class PageTimeData implements \Iterator, \ArrayAccess, \Countable
 {
-    protected $propertyValue;
+    protected $timeValue;
+    protected $timestamp;
     protected $posts;
     protected $postCount;
 
-    public function __construct(IPage $page, $blogKey, $propertyValue, array $dataSource)
+    public function __construct(IPage $page, $blogKey, $timeValue, $timestamp, array $dataSource)
     {
-        $this->propertyValue = $propertyValue;
+        $this->timeValue = $timeValue;
+        $this->timestamp = $timestamp;
         $this->posts = new PaginationIterator($page->getApp(), $blogKey, $dataSource);
         $this->posts->setCurrentPage($page);
         $this->postCount = count($dataSource); // Backwards compatibility (should use posts.count)
@@ -33,23 +35,23 @@ class PagePropertyData implements \Iterator, \ArrayAccess, \Countable
 
     public function __toString()
     {
-        return $this->propertyValue;
+        return $this->timeValue;
     }
 
     // {{{ Template members
     /**
      * @include
-     * @documentation The name of the category or tag. Use this instead of the array key if the name contains special characters.
+     * @documentation The formatted time.
      */
     public function name()
     {
-        return $this->propertyValue;
+        return $this->timeValue;
     }
 
     /**
      * @include
      * @noCall
-     * @documentation The list of posts in this category or tag. Available properties and functions are the same as `pagination.posts`.
+     * @documentation The list of posts. Available properties and functions are the same as `pagination.posts`.
      */
     public function posts()
     {
