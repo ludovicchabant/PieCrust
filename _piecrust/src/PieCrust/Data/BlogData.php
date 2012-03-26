@@ -25,6 +25,8 @@ class BlogData
     protected $years;
     protected $months;
 
+    protected $userData;
+
     public function __construct(IPage $page, $blogKey)
     {
         $this->page = $page;
@@ -80,7 +82,26 @@ class BlogData
         return $this->months;
     }
     // }}}
-    
+
+    // {{{ User data functions
+    public function mergeUserData(array $userData)
+    {
+        $this->userData = $userData;
+    }
+
+    public function __isset($name)
+    {
+        return $this->userData != null and isset($this->userData[$name]);
+    }
+
+    public function __get($name)
+    {
+        if ($this->userData == null)
+            return null;
+        return $this->userData[$name];
+    }
+    // }}}
+
     protected function ensurePosts()
     {
         if ($this->posts)

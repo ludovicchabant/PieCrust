@@ -80,7 +80,12 @@ class DataBuilder
         // Combine it with each blog's data.
         foreach ($pieCrust->getConfig()->getValueUnchecked('site/blogs') as $blogKey)
         {
-            $data['site'][$blogKey] = new BlogData($page, $blogKey);
+            $blogData = new BlogData($page, $blogKey);
+            if (isset($data[$blogKey]))
+            {
+                $blogData->mergeUserData($data[$blogKey]);
+            }
+            $data[$blogKey] = $blogData;
         }
         return $data;
     }
