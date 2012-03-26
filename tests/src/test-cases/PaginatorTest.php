@@ -121,6 +121,62 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $filterFunc($it);
         $this->assertExpectedPostsData($expectedIndexes, $it);
     }
+
+    public function previousAndNextPostsDataProvider()
+    {
+        return array(
+            array(1, 0),
+            array(2, 0),
+            array(2, 1),
+            array(3, 1),
+            array(12, 0),
+            array(12, 11),
+            array(12, 3),
+            array(12, 4),
+            array(12, 5),
+            array(12, 6)
+        );
+    }
+
+    /**
+     * @dataProvider previousAndNextPostsDataProvider
+     */
+    public function testPreviousAndNextPosts($postCount, $currentPostIndex)
+    {
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/posts_per_page', 20);
+        $pc->getConfig()->setValue('blog/date_format', 'F j, Y');
+
+        $posts = $this->buildPaginationDataSource($pc, $postCount);
+        // The pagination data source is ordered in reverse
+        // chronological order. Let's reverse it to be able 
+        // to index next/current/previous posts easily.
+        // (the Paginator will reorder them internally)
+        $posts = array_reverse($posts);
+        $page = $posts[$currentPostIndex];
+        
+        $paginator = new Paginator($page);
+        $paginator->setPaginationDataSource($posts);
+
+        $nextPost = $paginator->next_post();
+        $prevPost = $paginator->prev_post();
+        if ($currentPostIndex > 0)
+        {
+            $this->assertEquals($posts[$currentPostIndex - 1]->getUri(), $prevPost['slug']);
+        }
+        else
+        {
+            $this->assertNull($prevPost);
+        }
+        if ($currentPostIndex < ($postCount - 1))
+        {
+            $this->assertEquals($posts[$currentPostIndex + 1]->getUri(), $nextPost['slug']);
+        }
+        else
+        {
+            $this->assertNull($nextPost);
+        }
+    }
     
     protected function buildPaginationDataSource(IPieCrust $pc, $postCount)
     {
