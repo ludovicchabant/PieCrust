@@ -17,6 +17,7 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
 {
     protected $page;
     protected $values;
+    protected $lazyValues;
 
     public function __construct(IPage $page)
     {
@@ -26,13 +27,15 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     // {{{ ArrayAccess members
     public function offsetExists($offset)
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
+        $this->ensureLazyLoaded($offset);
         return isset($this->values[$offset]);
     }
     
     public function offsetGet($offset) 
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
+        $this->ensureLazyLoaded($offset);
         return $this->values[$offset];
     }
     
@@ -50,36 +53,37 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     // {{{ Iterator members
     public function rewind()
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
+        $this->ensureAllLazyLoaded();
         return reset($this->values);
     }
   
     public function current()
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
         return current($this->values);
     }
   
     public function key()
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
         return key($this->values);
     }
   
     public function next()
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
         return next($this->values);
     }
   
     public function valid()
     {
-        $this->ensurePageLoaded();
+        $this->ensureLoaded();
         return key($this->values) !== null;
     }
     // }}}
     
-    protected function ensurePageLoaded()
+    protected function ensureLoaded()
     {
         if ($this->values == null)
         {
@@ -94,6 +98,31 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
 
     protected function addCustomValues()
     {
+    }
+
+    protected function ensureAllLazyLoaded()
+    {
+        foreach (array_keys($this->lazyValues) as $name)
+        {
+            $this->ensureLazyLoaded($name, false);
+        }
+        $this->lazyValues = null;
+    }
+
+    protected function ensureLazyLoaded($name, $consume = true)
+    {
+        if ($this->lazyValues and isset($this->lazyValues[$name]))
+        {
+            $loader = $this->lazyValues[$name];
+            $this->$loader();
+
+            if ($consume)
+            {
+                unset($this->lazyValues[$name]);
+                if (count($this->lazyValues) == 0)
+                    $this->lazyValues = null;
+            }
+        }
     }
 }
 
