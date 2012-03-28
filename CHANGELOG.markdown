@@ -15,16 +15,20 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* NEW: The full list of posts is exposed through `site.blog.posts` (if you have
+* NEW: The full list of posts is exposed through `blog.posts` (if you have
   multiple blogs, replace `blog` with your blog's name). This list doesn't have
   any effect on pagination, unlike `pagination.posts`.
-* NEW: Categories and tags are exposed through `site.blog.categories` and
-  `site.blog.tags` (same remark as previously for multiple-blog sites).
+* NEW: Categories and tags are exposed through `blog.categories` and `blog.tags`
+  (same remark as previously for multiple-blog sites).
 * NEW: Added a `striptag` filter in Twig to strip HTML tags from the start and
   end of some text.
 * NEW: The `pagination` template data object now also has `next_post` and
   `prev_post` properties to get the next and previous posts if the current page
   is a post.
+* CHANGED: Pages are now cached differently: the parsed configuration and
+  content segments are cached, but not the rendered/formatted content segments.
+  Those will be re-rendered on demand so that even the most advanced Twig
+  use-cases work.
 * BUG: Fixed a rare bug when both the linker and the pagination are accessed
   together.
 * MINOR: Slightly better formatting for the debug window.
