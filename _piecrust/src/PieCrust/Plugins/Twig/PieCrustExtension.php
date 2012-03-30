@@ -4,6 +4,7 @@ require_once 'PieCrustFormatterTokenParser.php';
 
 use PieCrust\IPieCrust;
 use PieCrust\Environment\LinkCollector;
+use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
@@ -47,7 +48,8 @@ class PieCrustExtension extends Twig_Extension
             'pcurl'    => new Twig_Function_Method($this, 'getUrl'),
             'pcposturl' => new Twig_Function_Method($this, 'getPostUrl'),
             'pctagurl' => new Twig_Function_Method($this, 'getTagUrl'),
-            'pccaturl' => new Twig_Function_Method($this, 'getCategoryUrl')
+            'pccaturl' => new Twig_Function_Method($this, 'getCategoryUrl'),
+            'textfrom' => new Twig_Function_Method($this, 'getTextFrom')
         );
     }
     
@@ -95,6 +97,14 @@ class PieCrustExtension extends Twig_Extension
     {
         $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildCategoryUri($format, $value));
+    }
+
+    public function getTextFrom($path)
+    {
+        $path = PathHelper::getAbsolutePath($path, $this->pieCrust->getRootDir());
+        if (!is_file($path))
+            throw new PieCrustException("Invalid path for 'text_from': {$path}");
+        return file_get_contents($path);
     }
 
     public function transformGeneric($value, $formatterName = null)
