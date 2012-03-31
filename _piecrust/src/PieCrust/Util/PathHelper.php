@@ -45,10 +45,17 @@ class PathHelper
             $rootPath[strlen($rootPath) - 1] != '\\')
             $rootPath .= DIRECTORY_SEPARATOR;
 
-        if ($path[0] != '/' && $path[0] != '\\' && $path[0] != '~' && (strlen($path) < 2 || $path[1] != ':'))
-            $path = $rootPath . $path;
         if ($path[0] == '~')
-            $path = $_SERVER['HOME'] . substr($path, 1);
+        {
+            $userDir = getenv('HOME'); // On MacOS/Linux
+            if (!$userDir)
+                $userDir = getenv('USERPROFILE'); // On Windows
+            $path = $userDir . substr($path, 1);
+        }
+        if ($path[0] != '/' && $path[0] != '\\' && (strlen($path) < 2 || $path[1] != ':'))
+        {
+            $path = $rootPath . $path;
+        }
 
         $path = str_replace('\\', '/', $path);
         $parts = explode('/', $path);
@@ -100,6 +107,24 @@ class PathHelper
         $relativePath = substr($path, strlen($basePath));
         if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
         return $relativePath;
+    }
+    
+    /**
+     * Translate glob patterns to regex patterns.
+     */
+    public static function globToRegex($pattern)
+    {
+        if (substr($pattern, 0, 1) == "/" and
+            substr($pattern, -1) == "/")
+        {
+            // Already a regex.
+            return $pattern;
+        }
+        
+        $pattern = preg_quote($pattern, '/');
+        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
+        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
+        return '/'.$pattern.'/';
     }
     
     /**

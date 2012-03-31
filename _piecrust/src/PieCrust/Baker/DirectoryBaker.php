@@ -310,21 +310,6 @@ class DirectoryBaker
             }
         }
     }
-    
-    public static function globToRegex($pattern)
-    {
-        if (substr($pattern, 0, 1) == "/" and
-            substr($pattern, -1) == "/")
-        {
-            // Already a regex.
-            return $pattern;
-        }
-        
-        $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
-        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
-        return '/'.$pattern.'/';
-    }
 
     public static function validatePatterns($patterns, array $defaultPatterns = array())
     {
@@ -335,7 +320,7 @@ class DirectoryBaker
         // Convert glob patterns to regex patterns.
         for ($i = 0; $i < count($patterns); ++$i)
         {
-            $patterns[$i] = self::globToRegex($patterns[$i]);
+            $patterns[$i] = PathHelper::globToRegex($patterns[$i]);
         }
         // Add the default patterns.
         foreach ($defaultPatterns as $p)
