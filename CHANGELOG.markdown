@@ -27,6 +27,8 @@ Fresh changes
   is a post.
 * NEW: Added the `textfrom(path)` Twig function to include text from an
   arbitrary file from outside the website.
+* NEW: Added the `chef pages` command to list all pages and posts in the website
+  with optional filtering features.
 * CHANGED: Pages are now cached differently: the parsed configuration and
   content segments are cached, but not the rendered/formatted content segments.
   Those will be re-rendered on demand so that even the most advanced Twig
