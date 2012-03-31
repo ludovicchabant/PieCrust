@@ -154,8 +154,8 @@ class FindCommand extends ChefCommand
                     $finalPath = $relativePath;
                     if ($fullPath)
                         $finalPath = $path->getPathname();
-                    $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
-                    $logger->info($path);
+                    $finalPath = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $finalPath);
+                    $logger->info($finalPath);
                 }
             }
         }
