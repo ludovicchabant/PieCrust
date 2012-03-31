@@ -62,7 +62,8 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Chef\Commands\TagsCommand(),
             new \PieCrust\Chef\Commands\UploadCommand(),
             new \PieCrust\Chef\Commands\PurgeCommand(),
-            new \PieCrust\Chef\Commands\PrepareCommand()
+            new \PieCrust\Chef\Commands\PrepareCommand(),
+            new \PieCrust\Chef\Commands\PagesCommand()
         );
     }
 }
