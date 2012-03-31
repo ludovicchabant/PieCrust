@@ -141,7 +141,7 @@ class PathHelper
                 return $path;
             }
         }
-        throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplateDirs()));
+        throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
     }
 
     /**
