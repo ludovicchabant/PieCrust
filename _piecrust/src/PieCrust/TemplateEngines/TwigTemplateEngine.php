@@ -84,19 +84,30 @@ class TwigTemplateEngine implements ITemplateEngine
             $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') === true);
             
             $dirs = $this->pieCrust->getTemplatesDirs();
-            $this->twigLoader = new \ExtendedFilesystem($dirs, $isHosted); // If we're in a long running process (hosted), the templates
-                                                                           // will be defined in memory and when the file changes, Twig
-                                                                           // won't see it needs to recompile it if the template class
-                                                                           // name is the same, so we add the time-stamp in the cache key.
+            // If we're in a long running process (hosted), the templates
+            // will be defined in memory and when the file changes, Twig
+            // won't see it needs to recompile it if the template class
+            // name is the same, so we add the time-stamp in the cache key.
+            // We tell the file-system to do this by passing `true` as the
+            // second constructor parameter.
+            $this->twigLoader = new \ExtendedFilesystem($dirs, $isHosted); 
             
             $options = array('cache' => false);
             if ($this->pieCrust->isCachingEnabled())
             {
                 $options['cache'] = $this->pieCrust->getCacheDir() . 'templates_c';
             }
-            if ($isHosted or ($this->pieCrust->getConfig()->getValue('twig/auto_reload') !== false and !$isBaking))
+            if ($isHosted or 
+                (
+                    $this->pieCrust->getConfig()->getValue('twig/auto_reload') !== false and 
+                    !$isBaking
+                ))
             {
                 $options['auto_reload'] = true;
+            }
+            if ($this->pieCrust->getConfig()->getValue('twig/auto_escape') === false)
+            {
+                $options['autoescape'] = false;
             }
             $this->twigEnv = new \Twig_Environment($this->twigLoader, $options);
             $this->twigEnv->addExtension(new \PieCrustExtension($this->pieCrust));
