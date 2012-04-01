@@ -6,6 +6,7 @@ use \Exception;
 use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
 use PieCrust\Interop\PieCrustImporter;
 
@@ -20,17 +21,14 @@ class ImportCommand extends ChefCommand
     public function setupParser(Console_CommandLine $importParser)
     {
         $importParser->description = 'Imports content from another CMS into PieCrust.';
-        $importParser->addOption('format', array(
-            'short_name'  => '-f',
-            'long_name'   => '--format',
+        $importParser->addArgument('format', array(
             'description' => "The format of the source data to import.",
-            'help_name'   => 'FORMAT'
+            'help_name'   => 'FORMAT',
+            'optional'    => false
         ));
-        $importParser->addOption('source', array(
-            'short_name'  => '-s',
-            'long_name'   => '--source',
+        $importParser->addArgument('source', array(
             'description' => 'The path or resource string for the source data, depending on the `format`.',
-            'help_name'   => 'SOURCE'
+            'optional'    => false
         ));
 
         $helpParser = $importParser->parent->commands['help'];
@@ -48,7 +46,6 @@ If format is `wordpress`:
    A suffix of the form `/prefix` can also be specified if the tables in the 
    database don't have the default `wp_` prefix.
 
-
 EOT;
     }
     
@@ -57,12 +54,12 @@ EOT;
         $result = $context->getResult();
 
         // Validate arguments.
-        $format = $result->command->options['format'];
+        $format = $result->command->args['format'];
         if (empty($format))
         {
             throw new PieCrustException("No format was specified.");
         }
-        $source = $result->command->options['source'];
+        $source = $result->command->args['source'];
         if (empty($source))
         {
             throw new PieCrustException("No source was specified.");
