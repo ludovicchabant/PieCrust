@@ -310,9 +310,9 @@ class Page implements IPage
            )
         {
             if ($uriInfo['type'] == IPage::TYPE_TAG)
-                throw new PieCrustException('The special tag listing page was not found.');
+                throw new PieCrustException("Tried to show posts with tag '{$uriInfo['key']}' but the special tag listing page was not found.");
             if ($uriInfo['type'] == IPage::TYPE_CATEGORY)
-                throw new PieCrustException('The special category listing page was not found.');
+                throw new PieCrustException("Tried to show the posts in category '{$uriInfo['key']}' but the special category listing page was not found.");
             throw new PieCrustException('404');
         }
         
