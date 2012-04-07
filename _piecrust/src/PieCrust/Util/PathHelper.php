@@ -213,13 +213,13 @@ class PathHelper
     {
         if (!is_dir($dir))
         {
-            if (!mkdir($dir, 0777, true))
+            if (!mkdir($dir, 0755, true))
                 throw new PieCrustException("Can't create directory: {$dir}");
             return true;
         }
         else if ($writable && !is_writable($dir))
         {
-            if (!chmod($dir, 0777))
+            if (!chmod($dir, 0755))
                 throw new PieCrustException("Can't make directory '{$dir}' writable.");
         }
         return false;
