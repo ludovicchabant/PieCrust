@@ -2,6 +2,8 @@
 
 namespace PieCrust\Interop\Importers;
 
+use PieCrust\IPieCrust;
+
 
 /**
  * Interface to classes that import content from other CMS/engines.
@@ -20,22 +22,7 @@ interface IImporter
     public function getDescription();
     
     /**
-     * Opens the file/database/whatever.
+     * Imports a website.
      */
-    public function open($connection);
-    
-    /**
-     * Imports the pages into the given directory.
-     */
-    public function importPages($pagesDir);
-    
-    /**
-     * Imports posts into the given directory using the given format.
-     */
-    public function importPosts($postsDir, $mode);
-    
-    /**
-     * Closes any open resources.
-     */
-    public function close();
+    public function import(IPieCrust $pieCrust, $connection, $logger);
 }

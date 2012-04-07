@@ -43,7 +43,8 @@ class BuiltinPlugin extends PieCrustPlugin
     public function getImporters()
     {
         return array(
-            new \PieCrust\Interop\Importers\WordpressImporter()
+            new \PieCrust\Interop\Importers\WordpressImporter(),
+            new \PieCrust\Interop\Importers\JekyllImporter()
         );
     }
 

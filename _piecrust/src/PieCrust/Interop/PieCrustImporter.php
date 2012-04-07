@@ -50,21 +50,12 @@ class PieCrustImporter
         {
             if ($importer->getName() == $format)
             {
-                $this->doImport($importer, $source);
+                $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
+                $importer->import($this->pieCrust, $source, $this->logger);
                 return;
             }
         }
         
         throw new PieCrustException("Importer format '{$format} ' is unknown.");
-    }
-    
-    protected function doImport(IImporter $importer, $source)
-    {
-        $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
-
-        $importer->open($source);
-        $importer->importPages($this->pieCrust->getPagesDir());
-        $importer->importPosts($this->pieCrust->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
-        $importer->close();
     }
 }

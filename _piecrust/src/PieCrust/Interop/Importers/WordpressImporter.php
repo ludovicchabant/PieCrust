@@ -12,8 +12,15 @@ use PieCrust\PieCrustException;
  * importing from an XML file (exported from Wordpress' dashboard) or
  * directly from the MySQL database.
  */
-class WordpressImporter implements IImporter
+class WordpressImporter extends ImporterBase
 {
+    protected static $wordpress_description = <<<EOD
+Imports pages and posts from a Wordpress blog. 
+The source must be a path to an XML file exported from the Wordpress dashboard, or a connection string to the MySQL database the blog is running on. That connection string must be of the form: 
+    username:password@server/database_name
+A suffix of the form `/prefix` can also be specified if the tables in the database don't have the default `wp_` prefix.
+EOD;
+
     protected $type;
     protected $db;
     protected $authors;
@@ -22,25 +29,10 @@ class WordpressImporter implements IImporter
 
     public function __construct()
     {
+        parent::__construct('wordpress', self::$wordpress_description);
     }
     
-    public function getName()
-    {
-        return "wordpress";
-    }
-
-    public function getDescription()
-    {
-        return "Imports pages and posts from a Wordpress blog. " . 
-            "The source must be a path to an XML file exported from the Wordpress dashboard, " .
-            "or a connection string to the MySQL database the blog is running on. " .
-            "That connection string must be of the form: " . PHP_EOL .
-            "username:password@server/database_name" . PHP_EOL .
-            "A suffix of the form `/prefix` can also be specified if the tables " . PHP_EOL .
-            "in the database don't have the default `wp_` prefix.";
-    }
-    
-    public function open($connection)
+    protected function open($connection)
     {
         $matches = array();
         if (preg_match('/^([\w\d\-\._]+)\:([^@]+)@([\w\d\-\._]+)\/([\w\d\-\._]+)(\/[\w\d_]+)?$/', $connection, $matches))
@@ -61,7 +53,7 @@ class WordpressImporter implements IImporter
         }
     }
 
-    public function close()
+    protected function close()
     {
         if ($this->type == 'mysql')
         {
@@ -70,7 +62,7 @@ class WordpressImporter implements IImporter
         }
     }
     
-    public function importPages($pagesDir)
+    protected function importPages($pagesDir)
     {
         switch ($this->type)
         {
@@ -82,8 +74,12 @@ class WordpressImporter implements IImporter
             break;
         }
     }
+
+    protected function importTemplates($templatesDirs)
+    {
+    }
     
-    public function importPosts($postsDir, $mode)
+    protected function importPosts($postsDir, $mode)
     {
         switch ($this->type)
         {
@@ -94,6 +90,10 @@ class WordpressImporter implements IImporter
             $this->importPostsFromMySql($postsDir, $mode);
             break;
         }
+    }
+
+    protected function importStatic($rootDir)
+    {
     }
 
     // SQL Import {{{
@@ -285,73 +285,6 @@ class WordpressImporter implements IImporter
 
     // }}}
     
-    protected function createPage($pagesDir, $name, $timestamp, $metadata, $content)
-    {
-        // Get a clean name.
-        $name = $this->getCleanSlug($name);
-
-        // Come up with the filename.
-        $filename = $pagesDir . $name . '.html';
-
-        // Build the config data that goes in the header.
-        $configData = $metadata;
-        $configData['date'] = date('Y-m-d', $timestamp);
-        $configData['time'] = date('H:i:s', $timestamp);
-
-        // Write it!
-        $this->writePageFile($configData, $content, $filename);
-    }
-
-    protected function createPost($postsDir, $mode, $name, $timestamp, $metadata, $content)
-    {
-        // Get a clean name.
-        $name = $this->getCleanSlug($name);
-
-        // Come up with the filename.
-        if ($mode == 'hierarchy')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR 
-                . date('m', $timestamp) . DIRECTORY_SEPARATOR
-                . date('d', $timestamp) . '_' . $name . '.html';
-        }
-        else if ($mode == 'shallow')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR
-                . date('m-d', $timestamp) . '_' . $name . '.html';
-        }
-        else
-        {
-            $filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $name . '.html';
-        }
-
-        // Build the config data that goes in the header.
-        $configData = $metadata;
-        if (!isset($configData['time']))
-            $configData['time'] = date('H:i:s', $timestamp);
-
-        // Write it!
-        $this->writePageFile($configData, $content, $filename);
-    }
-
-    protected function writePageFile($configData, $content, $filename)
-    {
-        // Get the YAML string for the config data.
-        $yaml = new \sfYamlDumper();
-        $header = $yaml->dump($configData, 3);
-
-        // Write the post's contents.
-        echo " > " . pathinfo($filename, PATHINFO_FILENAME) . "\n";
-        if (!is_dir(dirname($filename)))
-            mkdir(dirname($filename), 0777, true);
-        $f = fopen($filename, 'w');
-        fwrite($f, "---\n");
-        fwrite($f, $header);
-        fwrite($f, "---\n");
-        fwrite($f, $content);
-        fclose($f);
-
-    }
-
     protected function getCleanSlug($name)
     {
         // Clean up the name for URL and file-system use:
