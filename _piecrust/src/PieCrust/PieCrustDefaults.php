@@ -47,4 +47,9 @@ class PieCrustDefaults
     const DEFAULT_TEMPLATE_ENGINE = 'twig';
     const DEFAULT_POSTS_FS = 'flat';
     const DEFAULT_DATE_FORMAT = 'F j, Y';
+
+    /**
+     * Default values for commands and non-CMS stuff.
+     */
+    const DEFAULT_PLUGIN_SOURCE = 'http://bitbucket.org/ludovicchabant/';
 }
