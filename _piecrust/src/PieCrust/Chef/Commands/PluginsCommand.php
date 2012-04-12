@@ -8,7 +8,10 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
+use PieCrust\Repositories\BitBucketRepository;
+use PieCrust\Repositories\PluginInstallContext;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 class PluginsCommand extends ChefCommand
@@ -87,11 +90,8 @@ class PluginsCommand extends ChefCommand
         $result = $context->getResult();
 
         $sources = $this->getSources($app);
-        $plugins = $this->getPluginMetadata(
-            $sources, 
-            $result->command->command->args['query'], 
-            false
-        );
+        $query = $result->command->command->args['query'];
+        $plugins = $this->getPluginMetadata($app, $sources, $query, false);
         foreach ($plugins as $plugin)
         {
             $logger->info("{$plugin['name']} : {$plugin['description']}");
@@ -106,16 +106,17 @@ class PluginsCommand extends ChefCommand
 
         $sources = $this->getSources($app);
         $pluginName = $result->command->command->args['name'];
-        $plugins = $this->getPluginMetadata($sources, $pluginName, true);
-        if (count($plugins) == 0)
-            throw new PieCrustException("Can't find plugin: {$pluginName}");
+        $plugins = $this->getPluginMetadata($app, $sources, $pluginName, true);
+        if (count($plugins) != 1)
+            throw new PieCrustException("Can't find a single plugin named: {$pluginName}");
 
         $plugin = $plugins[0];
-        $log->info("Installing '{$plugin['name']}' from: {$plugin['source']}");
+        $log->debug("Installing '{$plugin['name']}' from: {$plugin['source']}");
         $className = $plugin['repository_class'];
         $repository = new $className;
-        $context = new \PieCrust\Plugins\Repositories\PluginInstallContext($app, $log);
+        $context = new PluginInstallContext($app, $log);
         $repository->installPlugin($plugin, $context);
+        $log->info("Plugin {$plugin['name']} is now installed.");
     }
 
     protected function getSources(IPieCrust $pieCrust)
@@ -127,41 +128,40 @@ class PluginsCommand extends ChefCommand
         return $sources;
     }
 
-    protected function getPluginMetadata($sources, $pattern, $exact)
+    protected function getPluginMetadata(IPieCrust $app, $sources, $pattern, $exact)
     {
         $metadata = array();
-        $repositories = array(
-            new \PieCrust\Plugins\Repositories\BitBucketRepository()
-        );
-        if ($exact)
-        {
-            $pattern = strtolower($pattern);
-        }
-        else
-        {
-            $pattern = PathHelper::globToRegex($pattern) . 'i';
-        }
         foreach ($sources as $source)
         {
-            $repository = null;
-            foreach ($repositories as $repo)
-            {
-                if ($repo->supportsSource($source))
-                {
-                    $repository = $repo;
-                    break;
-                }
-            }
-            if (!$repository)
-                throw new PieCrustException("Can't find a repository handler for source: {$source}");
+            $repository = PieCrustHelper::getRepository($app, $source);
+            $repostioryClass = get_class($repository);
 
             $plugins = $repository->getPlugins($source);
             foreach ($plugins as $plugin)
             {
-                $pluginName = $plugin['name'];
-                if (($exact and strtolower($pluginName) == $pattern) or
-                    (!$exact and preg_match($pattern, $pluginName)))
+                // Make sure we have the required properties.
+                if (!isset($plugin['name']))
+                    $plugin['name'] = 'UNNAMED PLUGIN';
+                if (!isset($plugin['description']))
+                    $plugin['description'] = 'NO DESCRIPTION AVAILABLE.';
+                $plugin['repository_class'] = $repostioryClass;
+
+                // Find if the plugin matches the query.
+                $matches = false;
+                if ($exact)
                 {
+                    $matches = strcasecmp($plugin['name'], $pattern) == 0;
+                }
+                else
+                {
+                    $matchesName = (stristr($plugin['name'], $pattern) != false);
+                    $matchesDescription = (stristr($plugin['description'], $pattern) != false);
+                    $matches = ($matchesName or $matchesDescription);
+                }
+
+                if ($matches)
+                {
+                    // Get the plugin, and exit if we only want one.
                     $metadata[] = $plugin;
                     if ($exact)
                         break;

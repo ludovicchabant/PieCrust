@@ -1,13 +1,13 @@
 <?php
 
-namespace PieCrust\Plugins\Repositories;
+namespace PieCrust\Repositories;
 
 
 /**
  * An interface for an online repository of
  * PieCrust plugins.
  */
-interface IPluginRepository
+interface IRepository
 {
     /**
      * Returns whether this repository can read

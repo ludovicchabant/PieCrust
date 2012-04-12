@@ -67,5 +67,12 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Chef\Commands\FindCommand()
         );
     }
+
+    public function getRepositories()
+    {
+        return array(
+            new \PieCrust\Repositories\BitBucketRepository()
+        );
+    }
 }
 

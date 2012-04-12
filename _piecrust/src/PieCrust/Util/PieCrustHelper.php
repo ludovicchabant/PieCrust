@@ -63,6 +63,24 @@ class PieCrustHelper
     }
 
     /**
+     * Gets the repository handler associated with the given source.
+     */
+    public static function getRepository(IPieCrust $pieCrust, $source, $throwIfNotFound = true)
+    {
+        $repositories = $pieCrust->getPluginLoader()->getRepositories();
+        foreach ($repositories as $repo)
+        {
+            if ($repo->supportsSource($source))
+            {
+                return $repo;
+            }
+        }
+        if ($throwIfNotFound)
+            throw new PieCrustException("Can't find a repository handler for source: {$source}");
+        return null;
+    }
+
+    /**
      * Gets the default blog key.
      */
     public static function getDefaultBlogKey(IPieCrust $pieCrust)

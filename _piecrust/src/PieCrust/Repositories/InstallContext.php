@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Plugins\Repositories;
+namespace PieCrust\Repositories;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
@@ -8,10 +8,10 @@ use PieCrust\PieCrustException;
 
 
 /**
- * The context object for installing/uninstalling
+ * The base context object for installing/uninstalling
  * plugins.
  */
-class PluginInstallContext
+class InstallContext
 {
     protected $pieCrust;
     /**
@@ -35,16 +35,6 @@ class PluginInstallContext
     {
         $this->pieCrust = $pieCrust;
         $this->log = $log;
-    }
-
-    public function getLocalPluginDir($pluginName, $autoCreate = true)
-    {
-        $dir = $this->pieCrust->getRootDir() . PieCrustDefaults::CONTENT_PLUGINS_DIR . $pluginName;
-        if (!is_dir($dir) && $autoCreate)
-        {
-            mkdir($dir, 0755, true);
-        }
-        return $dir;
     }
 }
 

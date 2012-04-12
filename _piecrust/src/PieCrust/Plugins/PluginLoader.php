@@ -103,6 +103,14 @@ class PluginLoader
         return $this->getPluginsComponents('getTwigExtensions');
     }
 
+    /**
+     * Gets all the repository types from the loaded plugins.
+     */
+    public function getRepositories()
+    {
+        return $this->getPluginsComponents('getRepositories');
+    }
+
     protected function ensureLoaded()
     {
         if ($this->plugins != null)
