@@ -25,16 +25,26 @@ Fresh changes
 * NEW: The `pagination` template data object now also has `next_post` and
   `prev_post` properties to get the next and previous posts if the current page
   is a post.
+* NEW: The `chef plugins` command can now install plugins from the internet.
 * NEW: Added the `textfrom(path)` Twig function to include text from an
   arbitrary file from outside the website.
 * NEW: Added the `chef find` command to find all pages, posts and templates in
   the website with optional filtering features.
+* NEW: Added the `twig/auto_escape` configuration setting to disable Twig's
+  auto-escaping of HTML content.
+* NEW: Added a Jekyll importer.
+* CHANGED: The cache is now invalidated if anything changes in the website's
+  configuration file.
+* CHANGED: The `chef import` command's options are now mandatory arguments.
 * CHANGED: Pages are now cached differently: the parsed configuration and
   content segments are cached, but not the rendered/formatted content segments.
   Those will be re-rendered on demand so that even the most advanced Twig
   use-cases work.
+* CHANGED: PieCrust now creates directories with `0755` as the permission set.
 * BUG: Fixed a rare bug when both the linker and the pagination are accessed
   together.
+* BUG: Updated to a new version of Stupid_Http to fix a bug with serving static
+  files requested with a query parameter.
 * MINOR: Slightly better formatting for the debug window.
 
 
