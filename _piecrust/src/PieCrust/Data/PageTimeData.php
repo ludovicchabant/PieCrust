@@ -50,6 +50,15 @@ class PageTimeData implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * @include
+     * @documentation The timestamp.
+     */
+    public function timestamp()
+    {
+        return $this->timestamp;
+    }
+
+    /**
+     * @include
      * @noCall
      * @documentation The list of posts. Available properties and functions are the same as `pagination.posts`.
      */

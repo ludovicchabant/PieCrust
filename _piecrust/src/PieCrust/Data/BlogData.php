@@ -12,6 +12,8 @@ use PieCrust\Util\PageHelper;
 /**
  * The template data for a blog, listing all posts in
  * the blog along with posts by categories and tags.
+ *
+ * @explicitInclude
  */
 class BlogData
 {
@@ -36,7 +38,8 @@ class BlogData
     // {{{ Template functions
     /**
      * @noCall
-     * @documentation The list of posts for this blog. This has the same properties as `pagination.posts`.
+     * @include
+     * @documentation The list of all posts for this blog. See `pagination.posts`.
      */
     public function posts()
     {
@@ -46,7 +49,8 @@ class BlogData
 
     /**
      * @noCall
-     * @documentation The list of categories for this blog. Each category has a `name` and a list of `posts` with the same properties as `pagination.posts`.
+     * @include
+     * @documentation The list of categories for this blog. Each category has a `name` and a list of `posts` (see `pagination.posts`).
      */
     public function categories()
     {
@@ -56,7 +60,8 @@ class BlogData
 
     /**
      * @noCall
-     * @documentation The list of tags for this blog. Each tag has a `name` and a list of `posts` with the same properties as `pagination.posts`.
+     * @include
+     * @documentation The list of tags for this blog. Each tag has a `name` and a list of `posts` (see `pagination.posts`).
      */
     public function tags()
     {
@@ -65,7 +70,9 @@ class BlogData
     }
 
     /**
-     * The list of years with published posts in the blog.
+     * @noCall
+     * @include
+     * @documentation The list of years with published posts in the blog. Each has a `name`, `timestamp` and list of `posts`.
      */
     public function years()
     {
@@ -74,7 +81,9 @@ class BlogData
     }
 
     /**
-     * The list of months with published posts in the blog.
+     * @noCall
+     * @include
+     * @documentation The list of months with published posts in the blog. Each has a `name`, `timestamp` and list of `posts`.
      */
     public function months()
     {

@@ -18,6 +18,7 @@ use PieCrust\Util\PieCrustHelper;
  *
  * @formatObject
  * @explicitInclude
+ * @documentation The list of posts.
  */
 class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
 {
@@ -96,6 +97,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Skip `n` posts.
      */
     public function skip($count)
     {
@@ -107,6 +109,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Only return `n` posts.
      */
     public function limit($count)
     {
@@ -118,6 +121,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Apply a named filter from the page's config (similar to `posts_filter`).
      */
     public function filter($filterName)
     {
@@ -136,6 +140,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Only return posts in given category.
      */
     public function in_category($category)
     {
@@ -148,6 +153,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Only return posts with given tag.
      */
     public function with_tag($tag)
     {
@@ -160,6 +166,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Only return posts with given tags.
      */
     public function with_tags($tag1, $tag2 /*, $tag3, ... */)
     {
@@ -181,6 +188,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Return all posts.
      */
     public function all()
     {
@@ -196,6 +204,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Return the first matching post.
      */
     public function first()
     {
@@ -210,6 +219,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     /**
      * @include
      * @noCall
+     * @documentation Return the number of matching posts.
      */
     public function count()
     {

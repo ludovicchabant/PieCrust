@@ -36,9 +36,6 @@ class Paginator
     // {{{ Template members
     /**
      * Gets the posts for this page.
-     *
-     * This method is meant to be called from the layouts via the template engine.
-     *
      */
     public function posts()
     {
