@@ -10,14 +10,16 @@ class MockProcessor implements IProcessor
     public $name;
     public $priority;
     public $extensions;
+    public $callback;
 
-    public function __construct($name, $extensions, $priority = IFormatter::PRIORITY_DEFAULT)
+    public function __construct($name, $extensions, $callback = null, $priority = IProcessor::PRIORITY_DEFAULT)
     {
         $this->name = $name;
         $this->priority = $priority;
+        $this->callback = $callback;
 
         if (!is_array($extensions))
-            $formats = array($extensions);
+            $extensions = array($extensions => $extensions);
         $this->extensions = $extensions;
     }
 
@@ -37,7 +39,7 @@ class MockProcessor implements IProcessor
 
     public function supportsExtension($extension)
     {
-        return in_array($extension, $this->extensions);
+        return isset($this->extensions[$extension]);
     }
     
     public function isDelegatingDependencyCheck()
@@ -52,11 +54,28 @@ class MockProcessor implements IProcessor
 
     public function getOutputFilenames($filename)
     {
-        return $filename;
+        $inputExtension = pathinfo($filename, PATHINFO_EXTENSION);
+        if (!isset($this->extensions[$inputExtension]))
+            throw new \Exception("Extension '{$inputExtension}' wasn't mapped to any output extension.");
+
+        $outputExtension = $this->extensions[$inputExtension];
+        $outputFilename = pathinfo($filename, PATHINFO_FILENAME) . '.' . $outputExtension;
+
+        return $outputFilename;
     }
 
     public function process($inputPath, $outputDir)
     {
+        $contents = file_get_contents($inputPath);
+        if ($this->callback)
+        {
+            $callback = $this->callback;
+            $contents = $callback($contents);
+        }
+
+        $outputFilename = $this->getOutputFilenames($inputPath);
+        $outputPath = $outputDir . $outputFilename;
+        file_put_contents($outputPath, $contents);
     }
 }
 
