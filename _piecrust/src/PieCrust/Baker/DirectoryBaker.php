@@ -425,6 +425,8 @@ class DirectoryBaker
 
         // Filter processors to use.
         $processorsToFilter = $this->parameters['processors'];
+        if (!is_array($processorsToFilter))
+            $processorsToFilter = explode(' ', $processorsToFilter);
         if ($processorsToFilter != '*')
         {
             $all = in_array('*', $processorsToFilter);
