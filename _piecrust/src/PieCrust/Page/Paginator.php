@@ -82,8 +82,12 @@ class Paginator
      */
     public function next_page_number()
     {
+        if (PageHelper::isPost($this->page) or
+            $this->page->getConfig()->getValue('single_page'))
+            return null;
+
         $this->ensurePaginationData();
-        if ($this->postsIterator->hasMorePosts() and !($this->page->getConfig()->getValue('single_page')))
+        if ($this->postsIterator->hasMorePosts())
         {
             return $this->page->getPageNumber() + 1;
         }
@@ -153,7 +157,8 @@ class Paginator
      */
     public function total_page_count()
     {
-        if ($this->page->getConfig()->getValue('single_page'))
+        if (PageHelper::isPost($this->page) or
+            $this->page->getConfig()->getValue('single_page'))
             return 1;
 
         $totalPostCount = $this->total_post_count(); 
