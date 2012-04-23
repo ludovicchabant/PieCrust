@@ -2,9 +2,12 @@
 
 namespace PieCrust\Environment;
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
+use PieCrust\Util\PageHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -56,6 +59,26 @@ class CachedEnvironment extends Environment
     {
         $this->ensurePostInfosCached($blogKey);
         return $this->postInfos[$blogKey];
+    }
+
+    protected $pages;
+    /**
+     * Gets the pages.
+     */
+    public function getPages()
+    {
+        $this->ensurePagesCached();
+        return $this->pages;
+    }
+
+    protected $posts;
+    /**
+     * Gets the posts.
+     */
+    public function getPosts($blogKey)
+    {
+        $this->ensurePostsCached($blogKey);
+        return $this->posts[$blogKey];
     }
 
     protected $lastRunInfo;
@@ -113,6 +136,56 @@ class CachedEnvironment extends Environment
             $fs = FileSystem::create($this->pieCrust, $blogKey);
             $postInfos = $fs->getPostFiles();
             $this->postInfos[$blogKey] = $postInfos;
+        }
+    }
+
+    protected function ensurePagesCached()
+    {
+        if ($this->pages == null)
+        {
+            $pageRepository = $this->getPageRepository();
+            $pageInfos = $this->getPageInfos();
+
+            $this->pages = array();
+            foreach ($pageInfos as $pageInfo)
+            {
+                $page = $pageRepository->getOrCreatePage(
+                    UriBuilder::buildUri($pageInfo['relative_path']),
+                    $pageInfo['path']
+                );
+
+                $this->pages[] = $page;
+            }
+        }
+    }
+
+    protected function ensurePostsCached($blogKey)
+    {
+        if ($this->posts == null)
+        {
+            $this->posts = array();
+        }
+        if (!isset($this->posts[$blogKey]))
+        {
+            $pageRepository = $this->getPageRepository();
+            $postInfos = $this->getPostInfos($blogKey);
+            $postUrlFormat = $this->pieCrust->getConfig()->getValue($blogKey.'/post_url');
+
+            $posts = array();
+            foreach ($postInfos as $postInfo)
+            {
+                $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
+                $page = $pageRepository->getOrCreatePage(
+                    $uri,
+                    $postInfo['path'],
+                    IPage::TYPE_POST,
+                    $blogKey
+                );
+                $page->setDate(PageHelper::getPostDate($postInfo));
+
+                $posts[] = $page;
+            }
+            $this->posts[$blogKey] = $posts;
         }
     }
 }

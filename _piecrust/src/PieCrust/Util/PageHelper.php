@@ -101,21 +101,7 @@ class PageHelper
      */
     public static function getPages(IPieCrust $pieCrust)
     {
-        $pages = array();
-        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-        $pageInfos = $pieCrust->getEnvironment()->getPageInfos();
-
-        foreach ($pageInfos as $pageInfo)
-        {
-            $page = $pageRepository->getOrCreatePage(
-                UriBuilder::buildUri($pageInfo['relative_path']),
-                $pageInfo['path']
-            );
-
-            $pages[] = $page;
-        }
-
-        return $pages;
+        return $pieCrust->getEnvironment()->getPages();
     }
 
     /**
@@ -136,26 +122,7 @@ class PageHelper
      */
     public static function getPosts(IPieCrust $pieCrust, $blogKey)
     {
-        $posts = array();
-        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-        $postInfos = $pieCrust->getEnvironment()->getPostInfos($blogKey);
-        $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
-
-        foreach ($postInfos as $postInfo)
-        {
-            $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
-            $page = $pageRepository->getOrCreatePage(
-                $uri,
-                $postInfo['path'],
-                IPage::TYPE_POST,
-                $blogKey
-            );
-            $page->setDate(self::getPostDate($postInfo));
-
-            $posts[] = $page;
-        }
-
-        return $posts;
+        return $pieCrust->getEnvironment()->getPosts($blogKey);
     }
 
     /**
