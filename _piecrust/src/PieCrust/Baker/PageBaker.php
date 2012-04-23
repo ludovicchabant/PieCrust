@@ -85,12 +85,14 @@ class PageBaker
                 if ($data and isset($data['pagination']))
                 {
                     $paginator = $data['pagination'];
-                    $hasMorePages = ($paginator->wasPaginationDataAccessed() and $paginator->hasMorePages());
+                    $hasMorePages = ($paginator->wasPaginationDataAccessed() and 
+                                     $paginator->hasMorePages());
                     if ($hasMorePages)
                     {
                         $page->setPageNumber($page->getPageNumber() + 1);
-                        // setPageNumber() resets the page's data, so when we enter bakeSinglePage again
-                        // in the next loop, we have to re-set the extraData and all other stuff.
+                        // setPageNumber() resets the page's data, so when we 
+                        // enter bakeSinglePage again in the next loop, we have 
+                        // to re-set the extraData and all other stuff.
                     }
                 }
             }
