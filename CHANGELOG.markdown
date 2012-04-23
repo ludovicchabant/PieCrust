@@ -33,6 +33,8 @@ Fresh changes
 * NEW: Added the `twig/auto_escape` configuration setting to disable Twig's
   auto-escaping of HTML content.
 * NEW: Added a Jekyll importer.
+* NEW: File processors can now be chained (e.g.: process a Sass stylesheet into
+  CSS and then through the YUI compressor).
 * CHANGED: The cache is now invalidated if anything changes in the website's
   configuration file.
 * CHANGED: The `chef import` command's options are now mandatory arguments.
@@ -41,10 +43,15 @@ Fresh changes
   Those will be re-rendered on demand so that even the most advanced Twig
   use-cases work.
 * CHANGED: PieCrust now creates directories with `0755` as the permission set.
+* CHANGED: The `bakeinfo.json` file is now saved in the cache directory instead
+  of the bake destination directory.
+* CHANGED: Updated the Markdown and Less PHP libraries to their latest version.
+* IMPROVED: The chef server will now start faster in most cases.
 * BUG: Fixed a rare bug when both the linker and the pagination are accessed
   together.
 * BUG: Updated to a new version of Stupid_Http to fix a bug with serving static
   files requested with a query parameter.
+* BUG: Fixed a bug when specifying excluded file processors.
 * MINOR: Slightly better formatting for the debug window.
 
 
