@@ -42,7 +42,7 @@ EOD;
             $server = $matches[3];
             $dbName = $matches[4];
             $tablePrefix = 'wp_';
-            if ($matches[5])
+            if (isset($matches[5]))
                 $tablePrefix = ltrim($matches[5], '/');
 
             $this->openMySql($username, $password, $server, $dbName, $tablePrefix);
