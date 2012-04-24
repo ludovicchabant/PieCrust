@@ -30,7 +30,10 @@ class JekyllImporter extends ImporterBase
 
     public function __construct()
     {
-        parent::__construct('jekyll', "Imports pages and posts from a Jekyll blog.");
+        parent::__construct(
+            'jekyll', 
+            "Imports pages and posts from a Jekyll blog.",
+            "The source must be a path to the root of a Jekyll website.");
 
         $this->pageExtensions = array('htm', 'html', 'textile', 'markdown');
     }

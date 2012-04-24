@@ -27,7 +27,7 @@ class ImportCommand extends ChefCommand
             'optional'    => true
         ));
         $importParser->addArgument('source', array(
-            'description' => 'The path or resource string for the source data, depending on the `format`.',
+            'description' => 'The path or resource string for the source data, depending on the `format`. For more information on formats and sources, type `chef help about-import`.',
             'help_name'   => 'SOURCE',
             'optional'    => true
         ));
@@ -45,25 +45,10 @@ class ImportCommand extends ChefCommand
         ));
 
         $helpParser = $importParser->parent->commands['help'];
-        $helpParser->helpTopics['about-import'] = <<<EOT
-The `import` command lets you import content from another CMS into PieCrust.
-
-If format is `wordpress`:
-
- - The source must be a path to an XML file exported from the Wordpress dashboard,
-   or a connection string to the MySQL database the blog is running on. That 
-   connection string must be of the form:
-
-     username:password@server/database_name
-
-   A suffix of the form `/prefix` can also be specified if the tables in the 
-   database don't have the default `wp_` prefix.
-
-If the format is `jekyll`:
-
- - The source must be a path to the root of a Jekyll website.
-
-EOT;
+        $helpParser->helpTopics['about-import'] = array(
+            '\PieCrust\Chef\Commands\ImportCommand',
+            'aboutImportHelpTopic'
+        );
     }
     
     public function run(ChefContext $context)
@@ -82,5 +67,26 @@ EOT;
         // Start importing!
         $importer = new PieCrustImporter($context->getApp(), $context->getLog());
         $importer->import($format, $source);
+    }
+
+    public static function aboutImportHelpTopic(ChefContext $context)
+    {
+        $importers = $context->getApp()->getPluginLoader()->getImporters();
+
+        echo "The `import` command lets you import content from another CMS into PieCrust.\n";
+        echo "\n";
+        echo "Available formats:\n";
+        echo "\n";
+
+        foreach ($importers as $importer)
+        {
+            echo "`{$importer->getName()}`: " .
+                wordwrap($importer->getDescription(), 70, "\n  ") .
+                "\n";
+            echo "\n";
+            echo "  - " . 
+                wordwrap($importer->getHelpTopic(), 70, "\n    ") .
+                "\n\n";
+        }
     }
 }

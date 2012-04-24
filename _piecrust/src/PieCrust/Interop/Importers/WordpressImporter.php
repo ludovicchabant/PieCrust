@@ -14,10 +14,11 @@ use PieCrust\PieCrustException;
  */
 class WordpressImporter extends ImporterBase
 {
-    protected static $wordpress_description = <<<EOD
-Imports pages and posts from a Wordpress blog. 
+    protected static $wordpress_helpTopic = <<<EOD
 The source must be a path to an XML file exported from the Wordpress dashboard, or a connection string to the MySQL database the blog is running on. That connection string must be of the form: 
+
     username:password@server/database_name
+
 A suffix of the form `/prefix` can also be specified if the tables in the database don't have the default `wp_` prefix.
 EOD;
 
@@ -29,7 +30,9 @@ EOD;
 
     public function __construct()
     {
-        parent::__construct('wordpress', self::$wordpress_description);
+        parent::__construct('wordpress', 
+            "Imports pages and posts contents from a Wordpress blog.",
+            self::$wordpress_helpTopic);
     }
     
     protected function open($connection)

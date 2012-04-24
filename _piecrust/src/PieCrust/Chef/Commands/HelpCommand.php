@@ -59,7 +59,11 @@ class HelpCommand extends ChefCommand
         // Look for a help topic.
         if (isset($this->parser->helpTopics[$topic]))
         {
-            echo $this->parser->helpTopics[$topic];
+            $helpTopic = $this->parser->helpTopics[$topic];
+            if (is_callable($helpTopic))
+                call_user_func($helpTopic, $context);
+            else
+                echo $helpTopic;
             exit(0);
         }
 

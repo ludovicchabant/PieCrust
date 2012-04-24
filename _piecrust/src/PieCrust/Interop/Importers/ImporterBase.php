@@ -14,6 +14,7 @@ abstract class ImporterBase implements IImporter
 {
     protected $name;
     protected $description;
+    protected $helpTopic;
 
     protected $logger;
     protected $pieCrust;
@@ -22,10 +23,11 @@ abstract class ImporterBase implements IImporter
     /**
      * Builds a new instance of ImporterBase.
      */
-    protected function __construct($name, $description)
+    protected function __construct($name, $description, $helpTopic)
     {
         $this->name = $name;
         $this->description = $description;
+        $this->helpTopic = $helpTopic;
     }
 
     /**
@@ -44,6 +46,14 @@ abstract class ImporterBase implements IImporter
         return $this->description;
     }
     
+    /**
+     * Gets the help topic for this importer.
+     */
+    public function getHelpTopic()
+    {
+        return $this->helpTopic;
+    }
+
     /**
      * Imports the website.
      */

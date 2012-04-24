@@ -20,6 +20,11 @@ interface IImporter
      * Gets the description of this importer.
      */
     public function getDescription();
+
+    /**
+     * Gets the help topic for this importer.
+     */
+    public function getHelpTopic();
     
     /**
      * Imports a website.
