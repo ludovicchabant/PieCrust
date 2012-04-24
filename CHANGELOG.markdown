@@ -19,6 +19,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.6.3 (2012-04-24)
+
+* BUG: Fixed a bug in the Wordpress importer when using the default SQL table
+  prefix.
+
 ### 0.6.2 (2012-03-11)
 
 * BUG: Fixed a bug with `chef prepare` not creating directories with the correct
