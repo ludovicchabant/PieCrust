@@ -24,11 +24,24 @@ class ImportCommand extends ChefCommand
         $importParser->addArgument('format', array(
             'description' => "The format of the source data to import.",
             'help_name'   => 'FORMAT',
-            'optional'    => false
+            'optional'    => true
         ));
         $importParser->addArgument('source', array(
             'description' => 'The path or resource string for the source data, depending on the `format`.',
-            'optional'    => false
+            'help_name'   => 'SOURCE',
+            'optional'    => true
+        ));
+        $importParser->addOption('legacy_format', array(
+            'description' => "Old way to specify the format. Don't use.",
+            'short_name'  => '-f',
+            'long_name'   => '--format',
+            'help_name'   => 'FORMAT'
+        ));
+        $importParser->addOption('legacy_source', array(
+            'description' => "Old way to specify the source. Don't use.",
+            'short_name'  => '-s',
+            'long_name'   => '--source',
+            'help_name'   => 'SOURCE'
         ));
 
         $helpParser = $importParser->parent->commands['help'];
@@ -46,6 +59,10 @@ If format is `wordpress`:
    A suffix of the form `/prefix` can also be specified if the tables in the 
    database don't have the default `wp_` prefix.
 
+If the format is `jekyll`:
+
+ - The source must be a path to the root of a Jekyll website.
+
 EOT;
     }
     
@@ -55,14 +72,11 @@ EOT;
 
         // Validate arguments.
         $format = $result->command->args['format'];
-        if (empty($format))
-        {
-            throw new PieCrustException("No format was specified.");
-        }
         $source = $result->command->args['source'];
-        if (empty($source))
+        if (!$format or !$source)
         {
-            throw new PieCrustException("No source was specified.");
+            // Warning for the old syntax.
+            throw new PieCrustException("The syntax for this command has changed: specify the format and the source as arguments. See `chef import -h` for help.");
         }
         
         // Start importing!
