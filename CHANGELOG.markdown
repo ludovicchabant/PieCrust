@@ -30,6 +30,8 @@ Fresh changes
   arbitrary file from outside the website.
 * NEW: Added the `chef find` command to find all pages, posts and templates in
   the website with optional filtering features.
+* NEW: Added the `chef showconfig` command to print parts or all of the website
+  configuration settings.
 * NEW: Added the `twig/auto_escape` configuration setting to disable Twig's
   auto-escaping of HTML content.
 * NEW: Added a Jekyll importer.
