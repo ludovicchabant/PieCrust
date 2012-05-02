@@ -19,6 +19,7 @@ abstract class ImporterBase implements IImporter
     protected $logger;
     protected $pieCrust;
     protected $connection;
+    protected $options;
 
     /**
      * Builds a new instance of ImporterBase.
@@ -28,6 +29,7 @@ abstract class ImporterBase implements IImporter
         $this->name = $name;
         $this->description = $description;
         $this->helpTopic = $helpTopic;
+        $this->options = array();
     }
 
     /**
@@ -55,9 +57,16 @@ abstract class ImporterBase implements IImporter
     }
 
     /**
+     * Sets up any custom options for the importer.
+     */
+    public function setupParser(\Console_CommandLine $parser)
+    {
+    }
+
+    /**
      * Imports the website.
      */
-    public function import(IPieCrust $pieCrust, $connection, $logger)
+    public function import(IPieCrust $pieCrust, $connection, $logger, $options = array())
     {
         if ($logger == null)
             throw new PieCrustException("No logger was given for this importer.");
@@ -65,6 +74,7 @@ abstract class ImporterBase implements IImporter
 
         $this->pieCrust = $pieCrust;
         $this->connection = $connection;
+        $this->options = $options;
 
         $didClose = false;
         $this->open($connection);

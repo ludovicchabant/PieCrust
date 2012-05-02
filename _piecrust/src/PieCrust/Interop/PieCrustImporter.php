@@ -43,7 +43,7 @@ class PieCrustImporter
     /**
      * Imports content at the given source, using the given importer format.
      */
-    public function import($format, $source)
+    public function import($format, $source, $options)
     {
         // Find the importer that matches the given name and run the import.
         foreach ($this->getImporters() as $importer)
@@ -51,7 +51,7 @@ class PieCrustImporter
             if ($importer->getName() == $format)
             {
                 $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
-                $importer->import($this->pieCrust, $source, $this->logger);
+                $importer->import($this->pieCrust, $source, $this->logger, $options);
                 return;
             }
         }

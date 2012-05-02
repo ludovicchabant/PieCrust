@@ -18,7 +18,7 @@ class TagsCommand extends ChefCommand
         return 'tags';
     }
     
-    public function setupParser(Console_CommandLine $parser)
+    public function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust)
     {
         $parser->description = "Gets the list of tags used in the website.";
         $parser->addOption('order_by_name', array(

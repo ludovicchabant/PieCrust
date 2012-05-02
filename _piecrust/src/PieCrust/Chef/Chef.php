@@ -104,7 +104,7 @@ class Chef
         foreach ($sortedCommands as $command)
         {
             $commandParser = $parser->addCommand($command->getName());
-            $command->setupParser($commandParser);
+            $command->setupParser($commandParser, $pieCrust);
             $this->addCommonOptionsAndArguments($commandParser);
         }
 

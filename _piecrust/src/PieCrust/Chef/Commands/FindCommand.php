@@ -20,7 +20,7 @@ class FindCommand extends ChefCommand
         return 'find';
     }
     
-    public function setupParser(Console_CommandLine $parser)
+    public function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust)
     {
         $parser->description = "Find all pages, posts and templates in the website, with optional filtering features.";
         $parser->addArgument('pattern', array(

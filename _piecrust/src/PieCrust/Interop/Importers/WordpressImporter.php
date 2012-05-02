@@ -19,7 +19,7 @@ The source must be a path to an XML file exported from the Wordpress dashboard, 
 
     username:password@server/database_name
 
-A suffix of the form `/prefix` can also be specified if the tables in the database don't have the default `wp_` prefix.
+If the tables in the database don't have the default `wp_` prefix, you can specify the prefix to use with the `--wptableprefix` option to the `import` command.
 EOD;
 
     protected $type;
@@ -34,6 +34,17 @@ EOD;
             "Imports pages and posts contents from a Wordpress blog.",
             self::$wordpress_helpTopic);
     }
+
+    public function setupParser(\Console_CommandLine $parser)
+    {
+        parent::setupParser($parser);
+
+        $parser->addOption('wp_table_prefix', array(
+            'long_name'   => '--wptableprefix',
+            'description' => "For the WordPress importer: specify the SQL table prefix.",
+            'help_name'   => 'PREFIX'
+        ));
+    }
     
     protected function open($connection)
     {
@@ -44,9 +55,17 @@ EOD;
             $password = $matches[2];
             $server = $matches[3];
             $dbName = $matches[4];
+
             $tablePrefix = 'wp_';
+            if (isset($this->options['wp_table_prefix']))
+                $tablePrefix = $this->options['wp_table_prefix'];
+
             if (isset($matches[5]))
+            {
+                if (isset($this->options['wp_table_prefix']))
+                    throw new PieCrustException("You can't specify both a table prefix in the connection string and with the command line option.");
                 $tablePrefix = ltrim($matches[5], '/');
+            }
 
             $this->openMySql($username, $password, $server, $dbName, $tablePrefix);
          }

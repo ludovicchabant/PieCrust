@@ -21,7 +21,7 @@ class PluginsCommand extends ChefCommand
         return 'plugins';
     }
     
-    public function setupParser(Console_CommandLine $parser)
+    public function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust)
     {
         $parser->description = "Gets the list of plugins currently loaded, or install new ones.";
 

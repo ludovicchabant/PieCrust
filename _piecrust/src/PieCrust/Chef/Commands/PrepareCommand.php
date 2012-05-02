@@ -20,7 +20,7 @@ class PrepareCommand extends ChefCommand
         return 'prepare';
     }
 
-    public function setupParser(Console_CommandLine $parser)
+    public function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust)
     {
         $parser->description = "Helps with the creation of pages and posts.";
         $parser->addArgument('type', array(

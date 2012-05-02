@@ -3,6 +3,7 @@
 namespace PieCrust\Chef\Commands;
 
 use \Console_CommandLine;
+use PieCrust\IPieCrust;
 use PieCrust\Chef\ChefContext;
 
 
@@ -13,7 +14,7 @@ class ShowConfigCommand extends ChefCommand
         return 'showconfig';
     }
     
-    public function setupParser(Console_CommandLine $parser)
+    public function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust)
     {
         $parser->description = "Prints part of, or the entirety of, the website's configuration.";
         $parser->addArgument('path', array(
