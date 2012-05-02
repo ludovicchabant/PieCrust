@@ -16,7 +16,7 @@ class RootCommand extends ChefCommand
         return 'root';
     }
     
-    public function setupParser(Console_CommandLine $rootParser)
+    public function setupParser(Console_CommandLine $rootParser, IPieCrust $pieCrust)
     {
         $rootParser->description = "Gets the root directory of the current website.";
     }

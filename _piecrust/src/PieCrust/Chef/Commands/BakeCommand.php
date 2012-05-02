@@ -18,7 +18,7 @@ class BakeCommand extends ChefCommand
         return 'bake';
     }
     
-    public function setupParser(Console_CommandLine $bakerParser)
+    public function setupParser(Console_CommandLine $bakerParser, IPieCrust $pieCrust)
     {
         $bakerParser->description = 'Bakes your PieCrust website into a bunch of static HTML files.';
         $bakerParser->addOption('config_variant', array(

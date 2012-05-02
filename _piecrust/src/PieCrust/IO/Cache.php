@@ -14,7 +14,7 @@ class Cache
     protected $baseDir;
     protected $commentTags;
     
-    public function __construct($baseDir)
+    public function __construct($baseDir, $writeCommentTags = false)
     {
         if (!is_dir($baseDir))
         {
@@ -22,11 +22,19 @@ class Cache
         }
         
         $this->baseDir = rtrim($baseDir, '/\\') . '/';
-        $this->commentTags = array(
-                'html' => array('<!-- ', ' -->'),
-                'yml' => array('# ', ''),
-                'json' => null
-            );
+
+        if ($writeCommentTags)
+        {
+            $this->commentTags = array(
+                    'html' => array('<!-- ', ' -->'),
+                    'yml' => array('# ', ''),
+                    'json' => null
+                );
+        }
+        else
+        {
+            $this->commentTags = null;
+        }
     }
     
     public function isValid($uri, $extension, $time)
@@ -59,12 +67,17 @@ class Cache
             mkdir(dirname($cachePath), 0777, true);
         }
         
-        $commentTags = $this->commentTags[$extension];
-        if ($commentTags != null)
-            $header = $commentTags[0] . 'PieCrust ' . PieCrustDefaults::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
-        else
-            $header = '';
-        file_put_contents($cachePath, ($header . $contents));
+        if ($this->commentTags)
+        {
+            $commentTags = $this->commentTags[$extension];
+            if ($commentTags != null)
+                $header = $commentTags[0] . 'PieCrust ' . PieCrustDefaults::VERSION . ' - cached ' . date('Y-m-d H:i:s:u') . $commentTags[1] . "\n";
+            else
+                $header = '';
+            $contents = $header . $contents;
+        }
+
+        file_put_contents($cachePath, $contents);
     }
     
     protected function getCachePath($uri, $extension)

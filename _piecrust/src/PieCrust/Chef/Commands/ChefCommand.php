@@ -31,7 +31,7 @@ abstract class ChefCommand
     /**
      * Creates the command's sub-parser.
      */
-    public abstract function setupParser(Console_CommandLine $parser);
+    public abstract function setupParser(Console_CommandLine $parser, IPieCrust $pieCrust);
     
     /**
      * Runs the command.

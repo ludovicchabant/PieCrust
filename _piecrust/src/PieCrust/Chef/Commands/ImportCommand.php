@@ -18,7 +18,7 @@ class ImportCommand extends ChefCommand
         return 'import';
     }
     
-    public function setupParser(Console_CommandLine $importParser)
+    public function setupParser(Console_CommandLine $importParser, IPieCrust $pieCrust)
     {
         $importParser->description = 'Imports content from another CMS into PieCrust.';
         $importParser->addArgument('format', array(
@@ -44,11 +44,13 @@ class ImportCommand extends ChefCommand
             'help_name'   => 'SOURCE'
         ));
 
+        foreach ($pieCrust->getPluginLoader()->getImporters() as $importer)
+        {
+            $importer->setupParser($importParser);
+        }
+
         $helpParser = $importParser->parent->commands['help'];
-        $helpParser->helpTopics['about-import'] = array(
-            '\PieCrust\Chef\Commands\ImportCommand',
-            'aboutImportHelpTopic'
-        );
+        $helpParser->helpTopics['about-import'] = self::aboutImportHelpTopic($pieCrust);
     }
     
     public function run(ChefContext $context)
@@ -66,27 +68,43 @@ class ImportCommand extends ChefCommand
         
         // Start importing!
         $importer = new PieCrustImporter($context->getApp(), $context->getLog());
-        $importer->import($format, $source);
+        $importer->import($format, $source, $result->command->options);
     }
 
-    public static function aboutImportHelpTopic(ChefContext $context)
+    public static function aboutImportHelpTopic(IPieCrust $pieCrust)
     {
-        $importers = $context->getApp()->getPluginLoader()->getImporters();
+        $importers = $pieCrust->getPluginLoader()->getImporters();
 
-        echo "The `import` command lets you import content from another CMS into PieCrust.\n";
-        echo "\n";
-        echo "Available formats:\n";
-        echo "\n";
+        $output = '';
+        $output .= "The `import` command lets you import content from another CMS into PieCrust.\n";
+        $output .= "\n";
+        $output .= "Available formats:\n";
+        $output .= "\n";
 
         foreach ($importers as $importer)
         {
-            echo "`{$importer->getName()}`: " .
+            $output .= "`{$importer->getName()}`: " .
                 wordwrap($importer->getDescription(), 70, "\n  ") .
-                "\n";
-            echo "\n";
-            echo "  - " . 
-                wordwrap($importer->getHelpTopic(), 70, "\n    ") .
                 "\n\n";
+
+            $firstLine = true;
+            foreach (explode("\n", $importer->getHelpTopic()) as $line)
+            {
+                if ($firstLine)
+                {
+                    $output .= "  - ";
+                    $firstLine = false;
+                }
+                else
+                {
+                    $output .= "    ";
+                }
+
+                $output .= wordwrap($line, 70, "\n    ") . "\n";
+            }
+            $output .= "\n\n";
         }
+
+        return $output;
     }
 }

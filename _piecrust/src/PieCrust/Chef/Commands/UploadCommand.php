@@ -31,7 +31,7 @@ class UploadCommand extends ChefCommand
         return 'upload';
     }
     
-    public function setupParser(Console_CommandLine $uploadParser)
+    public function setupParser(Console_CommandLine $uploadParser, IPieCrust $pieCrust)
     {
         $uploadParser->description = 'Uploads your PieCrust website to an given FTP server.';
         $uploadParser->addOption('remote_root', array(

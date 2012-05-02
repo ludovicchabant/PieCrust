@@ -17,7 +17,7 @@ class PurgeCommand extends ChefCommand
         return 'purge';
     }
     
-    public function setupParser(Console_CommandLine $rootParser)
+    public function setupParser(Console_CommandLine $rootParser, IPieCrust $pieCrust)
     {
         $rootParser->description = "Purges the website's cache directory.";
     }

@@ -23,7 +23,7 @@ class HelpCommand extends ChefCommand
         return false;
     }
     
-    public function setupParser(Console_CommandLine $helpParser)
+    public function setupParser(Console_CommandLine $helpParser, IPieCrust $pieCrust)
     {
         $helpParser->description = "Gets help on chef.";
         $helpParser->addArgument('topic', array(

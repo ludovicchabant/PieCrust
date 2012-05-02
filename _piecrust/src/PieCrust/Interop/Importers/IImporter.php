@@ -2,6 +2,7 @@
 
 namespace PieCrust\Interop\Importers;
 
+use \Console_CommandLine;
 use PieCrust\IPieCrust;
 
 
@@ -25,9 +26,14 @@ interface IImporter
      * Gets the help topic for this importer.
      */
     public function getHelpTopic();
+
+    /**
+     * Sets up any custom options for the importer.
+     */
+    public function setupParser(Console_CommandLine $parser);
     
     /**
      * Imports a website.
      */
-    public function import(IPieCrust $pieCrust, $connection, $logger);
+    public function import(IPieCrust $pieCrust, $connection, $logger, $options = null);
 }
