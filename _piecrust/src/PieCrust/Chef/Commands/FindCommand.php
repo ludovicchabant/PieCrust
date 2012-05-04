@@ -3,12 +3,12 @@
 namespace PieCrust\Chef\Commands;
 
 use \Console_CommandLine;
-use \Console_CommandLine_Result;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
+use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 
@@ -65,6 +65,18 @@ class FindCommand extends ChefCommand
             'default'     => false,
             'action'      => 'StoreTrue'
         ));
+        $parser->addOption('exact', array(
+            'long_name'   => '--exact',
+            'description' => "Treat the command argument as an exact path to a file, as opposed to a pattern to match.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
+        $parser->addOption('page_components', array(
+            'long_name'   => '--components',
+            'description' => "Return the page components, instead of the path, separated by a pipe ('|').",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
     }
 
     public function run(ChefContext $context)
@@ -74,6 +86,7 @@ class FindCommand extends ChefCommand
         $result = $context->getResult();
 
         // Get some options.
+        $exact = $result->command->options['exact'];
         $fullPath = $result->command->options['full_path'];
         // If no type filters are given, return all types.
         $returnAllTypes = (
@@ -81,11 +94,20 @@ class FindCommand extends ChefCommand
             $result->command->options['posts'] == false and
             $result->command->options['templates'] == false
         );
-        // Get the regex pattern.
+        // Validate the argument.
         $pattern = $result->command->args['pattern'];
-        if ($pattern)
+        if ($exact)
         {
-            $pattern = PathHelper::globToRegex($pattern);
+            // Check we have a path to match, and get its absolute value.
+            if (!$pattern)
+                throw new PieCrustException("You need to specify a path when using the `--exact` option.");
+            $pattern = PathHelper::getAbsolutePath($pattern);
+        }
+        else
+        {
+            // If a pattern was given, get the Regex'd version.
+            if ($pattern)
+                $pattern = PathHelper::globToRegex($pattern);
         }
 
         // Get the pages and posts.
@@ -106,6 +128,19 @@ class FindCommand extends ChefCommand
             }
         }
 
+        // Get some other stuff.
+        $returnComponents = $result->command->options['page_components'];
+
+        // Get a regex for the posts file-naming convention.
+        $fs = FileSystem::create($pieCrust);
+        $pathComponentsRegex = preg_quote($fs->getPostPathFormat(), '/');
+        $pathComponentsRegex = str_replace(
+            array('%year%', '%month%', '%day%', '%slug%'),
+            array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)'),
+            $pathComponentsRegex
+        );
+        $pathComponentsRegex = '/' . $pathComponentsRegex . '/';
+
         // Print the matching pages.
         foreach ($pages as $page)
         {
@@ -117,17 +152,59 @@ class FindCommand extends ChefCommand
                     continue;
             }
 
-            if ($pattern)
+            if ($exact)
             {
+                // Match the path exactly, or pass.
+                if (str_replace('\\', '/', $pattern) != str_replace('\\', '/', $page->getPath()))
+                    continue;
+            }
+            else if ($pattern)
+            {
+                // Match the regex, or pass.
                 if (!preg_match($pattern, $page->getUri()))
                     continue;
             }
 
-            $path = $page->getPath();
+            $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $page->getPath());
             if (!$fullPath)
                 $path = PathHelper::getRelativePath($pieCrust, $path);
-            $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
-            $logger->info($path);
+
+            if ($returnComponents)
+            {
+                $components = array(
+                    'path' => $path,
+                    'type' => 'page',
+                    'uri' => $page->getUri(),
+                    'slug' => $page->getUri()
+                );
+
+                if (PageHelper::isPost($page))
+                {
+                    $matches = array();
+                    if (preg_match(
+                        $pathComponentsRegex, 
+                        str_replace('\\', '/', $path), 
+                        $matches) !== 1)
+                        throw new PieCrustException("Can't extract path components from path: {$path}");
+                    
+                    $components['type'] = 'post';
+                    $components['year'] = $matches[1];
+                    $components['month'] = $matches[2];
+                    $components['day'] = $matches[3];
+                    $components['slug'] = $matches[4];
+                }
+
+                $str = '';
+                foreach ($components as $k => $v)
+                {
+                    $str .= $k . ': ' . $v . PHP_EOL;
+                }
+                $logger->info($str);
+            }
+            else
+            {
+                $logger->info($path);
+            }
         }
 
         // Get the template files and print them.
@@ -145,17 +222,36 @@ class FindCommand extends ChefCommand
                         continue;
 
                     $relativePath = PathHelper::getRelativePath($pieCrust, $path->getPathname());
-                    if ($pattern)
+
+                    if ($exact)
                     {
+                        // Match the path exactly, or pass.
+                        if (str_replace('\\', '/', $pattern) != str_replace('\\', '/', $path->getPathname()))
+                            continue;
+                    }
+                    else if ($pattern)
+                    {
+                        // Match the regex, or pass.
                         if (!preg_match($pattern, $relativePath))
                             continue;
                     }
 
+                    // Get the path to print.
                     $finalPath = $relativePath;
                     if ($fullPath)
                         $finalPath = $path->getPathname();
                     $finalPath = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $finalPath);
-                    $logger->info($finalPath);
+
+                    // Print the information!
+                    if ($returnComponents)
+                    {
+                        $logger->info("path: {$finalPath}");
+                        $logger->info("type: template");
+                    }
+                    else
+                    {
+                        $logger->info($finalPath);
+                    }
                 }
             }
         }
