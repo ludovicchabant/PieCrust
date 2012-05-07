@@ -22,15 +22,31 @@ class JoomlaImporter extends ImporterBase{
     protected $db;
     protected $authors;
     protected $tablePrefix;
-    protected static $joomla_description = "Imports articles from Joomla 1.5 (MySQL)"; //TODO: complete joomla desc
+    protected $sectionID; //Joomla articles' section ID
+    protected static $joomla_helpTopic = "Imports articles from Joomla 1.5 (MySQL)"; //TODO: complete joomla desc
 
     public function __construct()
     {
-        parent::__construct('joomla', self::$joomla_description);
+        parent::__construct('joomla', 
+            'Imports articles from Joomla 1.5',
+            self::$joomla_helpTopic);
     }
 
-    protected function open($connection)
-    {
+    public function setupParser(\Console_CommandLine $parser){
+        parent::setupParser($parser);
+        $parser->addOption('j_table_prefix', array(
+            'long_name'     => '--jtblprefix',
+            'description'   => 'For Joomla importer: specify SQL table prefix (default: jos_)',
+            'help_name'     => 'PREFIX'
+        ));
+        $parser->addOption('j_section_id', array(
+            'long_name'     => '--jsecid',
+            'description'   => 'For Joomla importer: sepecify articles\' section ID (default: 1)',
+            'help_name'     => 'SECTION'
+        ));
+    }
+
+    protected function open($connection){
         $matches=array();
         if(preg_match('/^([\w\d\-\._]+)\:([^@]+)@([\w\d\-\._]+)\/([\w\d\-\._]+)(\/[\w\d_]+)?$/', $connection, $matches)){
             var_dump($connection);
@@ -40,26 +56,40 @@ class JoomlaImporter extends ImporterBase{
             $server=$matches[3];
             $dbName=$matches[4];
             $tablePrefix='jos_';
-            if($matches[5])
-                $tablePrefix=ltrim($matches[5],'/');
-            $this->openMysql($username,$password,$server,$dbName,$tablePrefix);
+            $sectionID=1;
+
+            //check table prefix
+            //TODO: input validation
+            if(isset($this->options['j_table_prefix']))
+                $tablePrefix=$this->options['j_table_prefix'];
+
+            //backward compatibility
+            if(isset($matches[5])){
+                if(isset($this->options['j_table_prefix']))
+                    throw new PieCrustException('You cannot specify  both a table prefix in the connection string and with the option');
+                $tablePrefix=ltrim($matches[5], '/');
+            }
+
+            //check section id
+            //TODO: input validation
+            if(isset($this->options['j_section_id']))
+                $sectionID=intval($this->options['j_section_id']);
+
+            $this->openMysql($username,$password,$server,$dbName,$tablePrefix,$sectionID);
         } else {
             throw new PieCrustException( "MySQL connection string is not in the valid format.");
         }
        
     }
     
-    protected function importPages($pagesDir)
-    {
-       
+    protected function importPages($pagesDir){
     }
 
     protected function importTemplates($templatesDirs){
     }
 
     protected function importPosts($postsDir,$mode){
-        //TODO passing the Joomla session ID later need to get from command line
-        $posts = $this->getPostsFromMysql(2); //UPDATE Joomla Section ID here *******
+        $posts = $this->getPostsFromMysql();
         foreach ($posts as $post){
             $this->createPost(
                 $postsDir,
@@ -77,25 +107,25 @@ class JoomlaImporter extends ImporterBase{
 
     protected function close()
     {
-        mysql_close($this-db);
+        mysql_close($this->db);
         unset($this->db);
     }
 
-    protected function openMysql($username,$password,$server,$dbName,$tablePrefix){
+    protected function openMysql($username,$password,$server,$dbName,$tablePrefix,$sectionID){
         $this->db=mysql_connect($server,$username,$password);
         if(!$this->db) throw new PieCrustException("Cannot connection to '$server'.");
         echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'".PHP_EOL;
         if(!mysql_select_db($dbName,$this->db)) throw new PieCrustException("Cannot select database '$dbName' on '$server'");
         $this->tablePrefix=$tablePrefix;
+        $this->sectionID=$sectionID;
         //Use UTF-8
         mysql_set_charset('utf8', $this->db);
     }
 
-    //param: section Joomla section ID
-    protected function getPostsFromMysql($section){
+    protected function getPostsFromMysql(){
         $result = array();
 
-        $query=mysql_query("SELECT `title`, `alias`, CONCAT(`introtext`,`fulltext`) as content, `created`, `id` FROM {$this->tablePrefix}content WHERE state = '1' AND sectionid = '{$section}' ORDER BY `created` ASC", $this->db);
+        $query=mysql_query("SELECT `title`, `alias`, CONCAT(`introtext`,`fulltext`) as content, `created`, `id` FROM {$this->tablePrefix}content WHERE state = '1' AND sectionid = '{$this->sectionID}' ORDER BY `created` ASC", $this->db);
         if(!$query) throw PieCrustException("Error querying posts from database: ". mysql_error());
 
         while($row = mysql_fetch_assoc($query)){
@@ -116,8 +146,11 @@ class JoomlaImporter extends ImporterBase{
         return $result;
     }
 
-    //Not needed for joomla
     protected function getCleanSlug($name){
+        //Replace '%xx' with '-'
+        $name = preg_replace("/%[0-9a-f]{2}/", "-", $name);
+        //Replace more than 2 '-' with one
+        $name = preg_replace("/\-{2,}/", "-", $name);
         return $name;
     }
 
