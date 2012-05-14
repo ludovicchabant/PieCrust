@@ -41,7 +41,7 @@ EOD;
 
         $parser->addOption('wp_table_prefix', array(
             'long_name'   => '--wptableprefix',
-            'description' => "For the WordPress importer: specify the SQL table prefix.",
+            'description' => "For the WordPress importer: specify the SQL table prefix (default: wp_).",
             'help_name'   => 'PREFIX'
         ));
     }
@@ -122,12 +122,13 @@ EOD;
     
     protected function openMySql($username, $password, $server, $dbName, $tablePrefix)
     {
-        echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'." . PHP_EOL;
-
         // Connect to the server and database.
         $this->db = mysql_connect($server, $username, $password);
-        if (!$this->db) throw new PieCrustException("Can't connect to '$server'.");
-        if (!mysql_select_db($dbName)) throw new PieCrustException("Can't select database '$dbName' on '$server'.");
+        if (!$this->db)
+            throw new PieCrustException("Can't connect to '$server'.");
+        echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'." . PHP_EOL;
+        if (!mysql_select_db($dbName))
+            throw new PieCrustException("Can't select database '$dbName' on '$server'.");
         $this->type = 'mysql';
         $this->tablePrefix = $tablePrefix;
 
@@ -137,7 +138,8 @@ EOD;
         // Gather the authors' names.
         $this->authors = array();
         $query = mysql_query("SELECT display_name FROM {$this->tablePrefix}users");
-        if (!$query) throw new PieCrustException("Error querying authors from the database: " . mysql_error());
+        if (!$query)
+            throw new PieCrustException("Error querying authors from the database: " . mysql_error());
         while ($row = mysql_fetch_assoc($query))
         {
             $this->authors[] = $row['display_name'];
@@ -180,7 +182,8 @@ EOD;
         $result = array();
 
         $query = mysql_query("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_name, guid FROM {$this->tablePrefix}posts WHERE post_status = 'publish' AND post_type = '{$postType}'");
-        if (!$query) throw new PieCrustException("Error querying posts from the database: " . mysql_error());
+        if (!$query)
+            throw new PieCrustException("Error querying posts from the database: " . mysql_error());
 
         while ($row = mysql_fetch_assoc($query))
         {
