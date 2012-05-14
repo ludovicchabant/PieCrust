@@ -60,6 +60,10 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.6.4 (2012-05-14)
+
+* BUG: Fixed a `chef` bug when running with PHP 5.4+.
+
 ### 0.6.3 (2012-04-24)
 
 * BUG: Fixed a bug in the Wordpress importer when using the default SQL table
