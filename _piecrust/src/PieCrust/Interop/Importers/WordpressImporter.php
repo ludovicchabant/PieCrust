@@ -12,8 +12,16 @@ use PieCrust\PieCrustException;
  * importing from an XML file (exported from Wordpress' dashboard) or
  * directly from the MySQL database.
  */
-class WordpressImporter implements IImporter
+class WordpressImporter extends ImporterBase
 {
+    protected static $wordpress_helpTopic = <<<EOD
+The source must be a path to an XML file exported from the Wordpress dashboard, or a connection string to the MySQL database the blog is running on. That connection string must be of the form: 
+
+    username:password@server/database_name
+
+If the tables in the database don't have the default `wp_` prefix, you can specify the prefix to use with the `--wptableprefix` option to the `import` command.
+EOD;
+
     protected $type;
     protected $db;
     protected $authors;
@@ -22,25 +30,23 @@ class WordpressImporter implements IImporter
 
     public function __construct()
     {
-    }
-    
-    public function getName()
-    {
-        return "wordpress";
+        parent::__construct('wordpress', 
+            "Imports pages and posts contents from a Wordpress blog.",
+            self::$wordpress_helpTopic);
     }
 
-    public function getDescription()
+    public function setupParser(\Console_CommandLine $parser)
     {
-        return "Imports pages and posts from a Wordpress blog. " . 
-            "The source must be a path to an XML file exported from the Wordpress dashboard, " .
-            "or a connection string to the MySQL database the blog is running on. " .
-            "That connection string must be of the form: " . PHP_EOL .
-            "username:password@server/database_name" . PHP_EOL .
-            "A suffix of the form `/prefix` can also be specified if the tables " . PHP_EOL .
-            "in the database don't have the default `wp_` prefix.";
+        parent::setupParser($parser);
+
+        $parser->addOption('wp_table_prefix', array(
+            'long_name'   => '--wptableprefix',
+            'description' => "For the WordPress importer: specify the SQL table prefix (default: wp_).",
+            'help_name'   => 'PREFIX'
+        ));
     }
     
-    public function open($connection)
+    protected function open($connection)
     {
         $matches = array();
         if (preg_match('/^([\w\d\-\._]+)\:([^@]+)@([\w\d\-\._]+)\/([\w\d\-\._]+)(\/[\w\d_]+)?$/', $connection, $matches))
@@ -49,9 +55,17 @@ class WordpressImporter implements IImporter
             $password = $matches[2];
             $server = $matches[3];
             $dbName = $matches[4];
+
             $tablePrefix = 'wp_';
+            if (isset($this->options['wp_table_prefix']))
+                $tablePrefix = $this->options['wp_table_prefix'];
+
             if (isset($matches[5]))
+            {
+                if (isset($this->options['wp_table_prefix']))
+                    throw new PieCrustException("You can't specify both a table prefix in the connection string and with the command line option.");
                 $tablePrefix = ltrim($matches[5], '/');
+            }
 
             $this->openMySql($username, $password, $server, $dbName, $tablePrefix);
          }
@@ -61,7 +75,7 @@ class WordpressImporter implements IImporter
         }
     }
 
-    public function close()
+    protected function close()
     {
         if ($this->type == 'mysql')
         {
@@ -70,7 +84,7 @@ class WordpressImporter implements IImporter
         }
     }
     
-    public function importPages($pagesDir)
+    protected function importPages($pagesDir)
     {
         switch ($this->type)
         {
@@ -82,8 +96,12 @@ class WordpressImporter implements IImporter
             break;
         }
     }
+
+    protected function importTemplates($templatesDirs)
+    {
+    }
     
-    public function importPosts($postsDir, $mode)
+    protected function importPosts($postsDir, $mode)
     {
         switch ($this->type)
         {
@@ -96,16 +114,21 @@ class WordpressImporter implements IImporter
         }
     }
 
+    protected function importStatic($rootDir)
+    {
+    }
+
     // SQL Import {{{
     
     protected function openMySql($username, $password, $server, $dbName, $tablePrefix)
     {
-        echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'." . PHP_EOL;
-
         // Connect to the server and database.
         $this->db = mysql_connect($server, $username, $password);
-        if (!$this->db) throw new PieCrustException("Can't connect to '$server'.");
-        if (!mysql_select_db($dbName)) throw new PieCrustException("Can't select database '$dbName' on '$server'.");
+        if (!$this->db)
+            throw new PieCrustException("Can't connect to '$server'.");
+        echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'." . PHP_EOL;
+        if (!mysql_select_db($dbName))
+            throw new PieCrustException("Can't select database '$dbName' on '$server'.");
         $this->type = 'mysql';
         $this->tablePrefix = $tablePrefix;
 
@@ -115,7 +138,8 @@ class WordpressImporter implements IImporter
         // Gather the authors' names.
         $this->authors = array();
         $query = mysql_query("SELECT display_name FROM {$this->tablePrefix}users");
-        if (!$query) throw new PieCrustException("Error querying authors from the database: " . mysql_error());
+        if (!$query)
+            throw new PieCrustException("Error querying authors from the database: " . mysql_error());
         while ($row = mysql_fetch_assoc($query))
         {
             $this->authors[] = $row['display_name'];
@@ -158,7 +182,8 @@ class WordpressImporter implements IImporter
         $result = array();
 
         $query = mysql_query("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_name, guid FROM {$this->tablePrefix}posts WHERE post_status = 'publish' AND post_type = '{$postType}'");
-        if (!$query) throw new PieCrustException("Error querying posts from the database: " . mysql_error());
+        if (!$query)
+            throw new PieCrustException("Error querying posts from the database: " . mysql_error());
 
         while ($row = mysql_fetch_assoc($query))
         {
@@ -285,73 +310,6 @@ class WordpressImporter implements IImporter
 
     // }}}
     
-    protected function createPage($pagesDir, $name, $timestamp, $metadata, $content)
-    {
-        // Get a clean name.
-        $name = $this->getCleanSlug($name);
-
-        // Come up with the filename.
-        $filename = $pagesDir . $name . '.html';
-
-        // Build the config data that goes in the header.
-        $configData = $metadata;
-        $configData['date'] = date('Y-m-d', $timestamp);
-        $configData['time'] = date('H:i:s', $timestamp);
-
-        // Write it!
-        $this->writePageFile($configData, $content, $filename);
-    }
-
-    protected function createPost($postsDir, $mode, $name, $timestamp, $metadata, $content)
-    {
-        // Get a clean name.
-        $name = $this->getCleanSlug($name);
-
-        // Come up with the filename.
-        if ($mode == 'hierarchy')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR 
-                . date('m', $timestamp) . DIRECTORY_SEPARATOR
-                . date('d', $timestamp) . '_' . $name . '.html';
-        }
-        else if ($mode == 'shallow')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR
-                . date('m-d', $timestamp) . '_' . $name . '.html';
-        }
-        else
-        {
-            $filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $name . '.html';
-        }
-
-        // Build the config data that goes in the header.
-        $configData = $metadata;
-        if (!isset($configData['time']))
-            $configData['time'] = date('H:i:s', $timestamp);
-
-        // Write it!
-        $this->writePageFile($configData, $content, $filename);
-    }
-
-    protected function writePageFile($configData, $content, $filename)
-    {
-        // Get the YAML string for the config data.
-        $yaml = new \sfYamlDumper();
-        $header = $yaml->dump($configData, 3);
-
-        // Write the post's contents.
-        echo " > " . pathinfo($filename, PATHINFO_FILENAME) . "\n";
-        if (!is_dir(dirname($filename)))
-            mkdir(dirname($filename), 0777, true);
-        $f = fopen($filename, 'w');
-        fwrite($f, "---\n");
-        fwrite($f, $header);
-        fwrite($f, "---\n");
-        fwrite($f, $content);
-        fclose($f);
-
-    }
-
     protected function getCleanSlug($name)
     {
         // Clean up the name for URL and file-system use:

@@ -11,7 +11,7 @@ class PieCrustBakerTest extends PHPUnit_Framework_TestCase
     public function testBakePageWithTagList()
     {
         $templateContents = <<<EOD
-{% for t in site.tags %}
+{% for t in blog.tags %}
 {{ t.name }}, {{ t.post_count }}
 {% endfor %}
 {{ content|raw }}

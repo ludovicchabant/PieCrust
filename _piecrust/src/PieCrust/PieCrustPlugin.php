@@ -62,6 +62,14 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the repository types in this plugin.
+     */
+    public function getRepositories()
+    {
+        return array();
+    }
+
+    /**
      * Runs custom initialization code.
      */
     public function initialize(IPieCrust $pieCrust)

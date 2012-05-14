@@ -28,7 +28,11 @@ class BakeRecordTest extends PHPUnit_Framework_TestCase
     {
         $record = new BakeRecord(
             array('blog'),
-            array('time' => time(), 'version' => PieCrustDefaults::VERSION));
+            array(
+                'time' => time(), 
+                'version' => PieCrustDefaults::VERSION,
+                'record_version' => BakeRecord::VERSION
+            ));
         $this->assertFalse($record->shouldDoFullBake());
     }
     

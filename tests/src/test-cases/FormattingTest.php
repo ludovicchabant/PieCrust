@@ -49,27 +49,14 @@ class FormattingTest extends PHPUnit_Framework_TestCase
 
     private function getApp($supportedFormats)
     {
-        $stub = $this->getMockBuilder('PieCrust\PieCrust')
-                     ->disableOriginalConstructor()
-                     ->setMethods(array('ensureConfig', 'getConfig', 'getPluginLoader'))
-                     ->getMock();
-        
-        $config = new Configuration(array(
+        $app = new MockPieCrust();
+        $app->getConfig()->set(array(
             'site' => array(
                 'default_format' => 'doesnt_exist'
-            )
-        ));
-        $stub->expects($this->any())
-             ->method('getConfig')
-             ->will($this->returnValue($config));
-        
-        $loader = new MockPluginLoader();
+            )));
+        $loader = $app->getPluginLoader();
         $loader->formatters[] = new MockFormatter($supportedFormats);
-        $stub->expects($this->any())
-             ->method('getPluginLoader')
-             ->will($this->returnValue($loader));
-
-        return $stub;
+        return $app;
     }
 }
  

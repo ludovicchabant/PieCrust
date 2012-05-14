@@ -28,7 +28,7 @@ class InitCommand extends ChefCommand
         return false;
     }
     
-    public function setupParser(Console_CommandLine $initParser)
+    public function setupParser(Console_CommandLine $initParser, IPieCrust $pieCrust)
     {
         $initParser->description = "Creates a new empty PieCrust website.";
         $initParser->addArgument('destination', array(

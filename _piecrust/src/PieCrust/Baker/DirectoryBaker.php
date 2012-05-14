@@ -19,12 +19,13 @@ class DirectoryBaker
     protected $pieCrust;
     protected $logger;
     protected $rootDirLength;
+    protected $tmpDir;
     protected $bakeDir;
     protected $parameters;
 
     protected $bakedFiles;
     /**
-     * Gets the files baked last time.
+     * Gets the files' metadata for the last bake.
      */
     public function getBakedFiles()
     {
@@ -37,32 +38,7 @@ class DirectoryBaker
     */
     public function getProcessors()
     {
-        if ($this->processors === null)
-        {
-            // Load the plugin processors.
-            $this->processors = $this->pieCrust->getPluginLoader()->getProcessors();
-
-            // Filter processors to use.
-            $processorsToFilter = $this->parameters['processors'];
-            if ($processorsToFilter != '*')
-            {
-                $all = in_array('*', $processorsToFilter);
-                $filter = function ($p) use ($processorsToFilter, $all)
-                    {
-                        if ($all)
-                            return !in_array('-'.$p->getName(), $processorsToFilter);
-                        else
-                            return in_array($p->getName(), $processorsToFilter);
-                    };
-                $this->processors = array_filter($this->processors, $filter);
-            }
-
-            // Initialize the processors we have left.
-            foreach ($this->processors as $proc)
-            {
-                $proc->initialize($this->pieCrust);
-            }
-        }
+        $this->ensureProcessors();
         return $this->processors;
     }
     
@@ -72,14 +48,17 @@ class DirectoryBaker
     public function __construct(IPieCrust $pieCrust, $bakeDir, array $parameters = array(), $logger = null)
     {
         $this->pieCrust = $pieCrust;
+        $this->tmpDir = $this->pieCrust->isCachingEnabled() ? 
+            $this->pieCrust->getCacheDir() . 'bake_tmp/' :
+            rtrim(sys_get_temp_dir(), '/\\') . '/piecrust/bake_tmp/';
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
             array(
-                  'smart' => true,
-                  'skip_patterns' => array(),
-                  'force_patterns' => array(),
-                  'processors' => array('copy')
-                  ),
+                'smart' => true,
+                'skip_patterns' => array(),
+                'force_patterns' => array(),
+                'processors' => array('copy')
+            ),
             $parameters
         );
         if ($logger == null)
@@ -187,59 +166,120 @@ class DirectoryBaker
         // Figure out the root-relative path.
         $relative = substr($path, $this->rootDirLength);
 
-        // Find a processor for the given file.
-        $fileProcessor = null;
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-        foreach ($this->getProcessors() as $proc)
+        // Get the processing tree for that file.
+        $builder = new ProcessingTreeBuilder(
+            $this->pieCrust->getRootDir(),
+            $this->tmpDir,
+            $this->bakeDir,
+            $this->getProcessors());
+        $treeRoot = $builder->build($relative);
+
+        // Add an entry in the baked files' metadata.
+        $bakeDir = $this->bakeDir;
+        $treeLeaves = $treeRoot->getLeaves();
+        $this->bakedFiles[$path] = array(
+            'relative_input' => $relative,
+            'relative_outputs' => array_map(
+                function ($n) {
+                    return $n->getPath();
+                },
+                $treeLeaves
+            ),
+            'outputs' => array_map(
+                function ($n) use ($bakeDir) {
+                    return $bakeDir . $n->getPath();
+                },
+                $treeLeaves
+            ),
+            'was_baked' => false
+        );
+
+        // See if we should force bake the file.
+        $forceBake = !$this->parameters['smart'];
+        if (!$forceBake)
         {
-            if ($proc->supportsExtension($extension))
+            foreach ($this->parameters['force_patterns'] as $p)
             {
-                $fileProcessor = $proc;
-                break;
+                if (preg_match($p, $relative))
+                {
+                    $forceBake = true;
+                    break;
+                }
             }
         }
-        if ($fileProcessor == null)
+        if ($forceBake)
         {
-            $this->logger->warning("No processor for {$relative}");
-            return;
+            $treeRoot->setState(ProcessingTreeNode::STATE_DIRTY, true);
         }
 
-        // Get the destination directories.
-        $relativeDir = dirname($relative);
-        $relativeDestinationDir = $relativeDir == '.' ? '' : ($relativeDir . '/');
-        $destinationDir = $this->bakeDir . ($relativeDir == '.' ? '' : ($relativeDir . '/'));
-
-        // Get the output files.
-        $filename = pathinfo($path, PATHINFO_BASENAME);
-        $outputFilenames = $fileProcessor->getOutputFilenames($filename);
-        if (!is_array($outputFilenames))
-            $outputFilenames = array($outputFilenames);
-
-        // Figure out if we need to actually process this file.
-        $isUpToDate = true;
-
-        // Should the file be force-baked?
-        foreach ($this->parameters['force_patterns'] as $p)
+        $start = microtime(true);
+        if ($this->bakeSubTree($treeRoot))
         {
-            if (preg_match($p, $relative))
+            $this->bakedFiles[$path]['was_baked'] = true;
+            $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
+        }
+    }
+
+    protected function bakeSubTree($root)
+    {
+        // Give some breathing room in verbose mode.
+        $this->logger->debug('');
+
+        $didBake = false;
+        $walkStack = array($root);
+        while (count($walkStack) > 0)
+        {
+            $curNode = array_pop($walkStack);
+
+            // Make sure we have a processor.
+            $processor = $curNode->getProcessor();
+            if (!$processor)
             {
-                $isUpToDate = false;
-                break;
+                $this->logger->err("Can't find processor for: {$curNode->getPath()}");
+                continue;
+            }
+
+            // Make sure we have a valid clean/dirty state.
+            if ($curNode->getState() == ProcessingTreeNode::STATE_UNKNOWN)
+                $this->computeNodeDirtyness($curNode);
+
+            // If the node is dirty, re-process it.
+            if ($curNode->getState() == ProcessingTreeNode::STATE_DIRTY)
+            {
+                $didBakeThisNode = $this->processNode($curNode);
+                $didBake |= $didBakeThisNode;
+
+                // If we really re-processed it, push its output
+                // nodes on the stack (unless they're leaves in the tree,
+                // which means they don't themselves have anything to
+                // produce).
+                if ($didBakeThisNode)
+                {
+                    foreach ($curNode->getOutputs() as $out)
+                    {
+                        if (!$out->isLeaf())
+                            array_push($walkStack, $out);
+                    }
+                }
             }
         }
-
-        // Is the output file up to date with its input and dependencies?
-        if ($isUpToDate && 
-            $this->parameters['smart'] && 
-            $fileProcessor->isDelegatingDependencyCheck())
+        return $didBake;
+    }
+    
+    protected function computeNodeDirtyness($node)
+    {
+        $processor = $node->getProcessor();
+        if ($processor->isDelegatingDependencyCheck())
         {
             // Get the paths and last modification times for the input file and
             // all its dependencies, if any.
+            $nodeRootDir = $this->getNodeRootDir($node);
+            $path = $nodeRootDir . $node->getPath();
             $pathMTime = filemtime($path);
             $inputTimes = array($path => $pathMTime);
             try
             {
-                $dependencies = $fileProcessor->getDependencies($path);
+                $dependencies = $processor->getDependencies($path);
                 if ($dependencies)
                 {
                     foreach ($dependencies as $dep)
@@ -250,80 +290,161 @@ class DirectoryBaker
             }
             catch(Exception $e)
             {
-                $this->logger->log($e->getMessage() . " -- Will force-bake {$relative}");
-                $isUpToDate = false;
+                $this->logger->warning($e->getMessage() . 
+                    " -- Will force-bake {$node->getPath()}");
+                $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
+                return;
             }
 
-            if ($isUpToDate)
+            // Get the paths and last modification times for the output files.
+            $outputTimes = array();
+            foreach ($node->getOutputs() as $out)
             {
-                // Get the paths and last modification times for the output files.
-                $outputTimes = array();
-                foreach ($outputFilenames as $out)
-                {
-                    $fullOut = $destinationDir . $out;
-                    $outputTimes[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
-                }
+                $outputRootDir = $this->getNodeRootDir($out);
+                $fullOut = $outputRootDir . $out->getPath();
+                $outputTimes[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
+            }
 
-                // Compare those times to see if the output file is up to date.
-                foreach ($inputTimes as $iFn => $iTime)
+            // Compare those times to see if the output file is up to date.
+            foreach ($inputTimes as $iFn => $iTime)
+            {
+                foreach ($outputTimes as $oFn => $oTime)
                 {
-                    foreach ($outputTimes as $oFn => $oTime)
+                    if (!$oTime || $iTime >= $oTime)
                     {
-                        if (!$oTime || $iTime >= $oTime)
-                        {
-                            $isUpToDate = false;
-                            break;
-                        }
+                        $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
+
+                        if (!$oTime)
+                            $message = "Output file '{$oFn}' doesn't exist. Re-processing sub-tree.";
+                        else
+                            $message = "Input file is newer than '{$oFn}'. Re-processing sub-tree.";
+                        $this->printProcessingTreeNode($node, $message);
+                        break;
                     }
                 }
             }
         }
         else
         {
-            $isUpToDate = false;
+            // The processor wants to handle dependencies himself.
+            // We'll have to start rebaking from there.
+            // However, we don't set the state recursively -- instead,
+            // child nodes of this one will re-evaluate their dirtyness
+            // after this one has run, in case the processor figures
+            // it's clean after all.
+            $node->setState(ProcessingTreeNode::STATE_DIRTY, false);
+            $this->printProcessingTreeNode($node, "Handles dependencies itself, set locally to 'dirty'.");
         }
+    }
 
-        if (!$isUpToDate)
+    protected function processNode($node)
+    {
+        // Get the input path.
+        $nodeRootDir = $this->getNodeRootDir($node);
+        $path = $nodeRootDir . $node->getPath();
+
+        // Get the output directory.
+        // (all outputs of a node go to the same directory, so we
+        //  can just get the directory of the first output node).
+        $nodeOutputs = $node->getOutputs();
+        $outputRootDir = $this->getNodeRootDir($nodeOutputs[0]);
+        $outputChildDir = dirname($node->getPath());
+        if ($outputChildDir == '.')
+            $outputChildDir = '';
+        $outputDir = $outputRootDir . $outputChildDir;
+        if ($outputChildDir != '')
+            $outputDir .= '/';
+        $relativeOutputDir = PathHelper::getRelativePath($this->pieCrust, $outputDir);
+        PathHelper::ensureDirectory($outputDir, true);
+
+        $this->printProcessingTreeNode($node, "Processing into '{$relativeOutputDir}'.");
+
+        // If we need to, re-process the node!
+        $didBake = false;
+        try
         {
-            try
+            $start = microtime(true);
+            $processor = $node->getProcessor();
+            if ($processor->process($path, $outputDir) !== false)
             {
-                $start = microtime(true);
-                if ($fileProcessor->process($path, $destinationDir) !== false)
-                {
-                    $this->bakedFiles[$path] = array(
-                        'relativeInput' => $relative,
-                        'relativeOutputs' => array_map(
-                            function ($p) use ($relativeDestinationDir) { return $relativeDestinationDir . $p; },
-                            $outputFilenames
-                        ),
-                        'outputs' => array_map(
-                            function ($p) use ($destinationDir) { return $destinationDir . $p; },
-                            $outputFilenames
-                        )
-                    );
-                    $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
-                }
+                $indent = str_repeat('  ', $node->getLevel() + 1);
+                $message = $node->getPath() . ' ' .
+                    '[' . $processor->getName() . '] -> ' .
+                    PathHelper::getRelativePath($this->pieCrust, $outputDir);
+                $this->logger->debug($indent . PieCrustBaker::formatTimed($start, $message));
+                $this->logger->debug('');
+
+                $didBake = true;
             }
-            catch (Exception $e)
+        }
+        catch (Exception $e)
+        {
+            throw new PieCrustException("Error processing '{$node->getPath()}': {$e->getMessage()}", 0, $e);
+        }
+        return $didBake;
+    }
+
+    protected function printProcessingTreeNode($node, $message = null, $recursive = false)
+    {
+        $indent = str_repeat('  ', $node->getLevel() + 1);
+        $processor = $node->getProcessor() ? $node->getProcessor()->getName() : 'n/a';
+        $path = PathHelper::getRelativePath(
+            $this->pieCrust, 
+            $this->getNodeRootDir($node) . $node->getPath());
+        if (!$message)
+            $message = '';
+
+        $this->logger->debug("{$indent}{$path} [{$processor}] {$message}");
+
+        if ($recursive)
+        {
+            foreach ($node->getOutputs() as $out)
             {
-                throw new PieCrustException("Error processing '" . $relative . "': " . $e->getMessage(), 0, $e);
+                $this->printProcessingTreeNode($out, true);
             }
         }
     }
-    
-    public static function globToRegex($pattern)
+
+    protected function getNodeRootDir($node)
     {
-        if (substr($pattern, 0, 1) == "/" and
-            substr($pattern, -1) == "/")
+        $dir = $this->tmpDir . $node->getLevel() . '/';
+        if ($node->getLevel() == 0)
+            $dir = $this->pieCrust->getRootDir();
+        else if ($node->isLeaf())
+            $dir = $this->bakeDir;
+        return $dir;
+    }
+
+    protected function ensureProcessors()
+    {
+        if ($this->processors !== null)
+            return;
+
+        // Load the plugin processors.
+        $this->processors = $this->pieCrust->getPluginLoader()->getProcessors();
+
+        // Filter processors to use.
+        $processorsToFilter = $this->parameters['processors'];
+        if (!is_array($processorsToFilter))
+            $processorsToFilter = explode(' ', $processorsToFilter);
+        if ($processorsToFilter != '*')
         {
-            // Already a regex.
-            return $pattern;
+            $all = in_array('*', $processorsToFilter);
+            $filter = function ($p) use ($processorsToFilter, $all)
+                {
+                    if ($all)
+                        return !in_array('-'.$p->getName(), $processorsToFilter);
+                    else
+                        return in_array($p->getName(), $processorsToFilter);
+                };
+            $this->processors = array_filter($this->processors, $filter);
         }
-        
-        $pattern = preg_quote($pattern, '/');
-        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
-        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
-        return '/'.$pattern.'/';
+
+        // Initialize the processors we have left.
+        foreach ($this->processors as $proc)
+        {
+            $proc->initialize($this->pieCrust);
+        }
     }
 
     public static function validatePatterns($patterns, array $defaultPatterns = array())
@@ -335,7 +456,7 @@ class DirectoryBaker
         // Convert glob patterns to regex patterns.
         for ($i = 0; $i < count($patterns); ++$i)
         {
-            $patterns[$i] = self::globToRegex($patterns[$i]);
+            $patterns[$i] = PathHelper::globToRegex($patterns[$i]);
         }
         // Add the default patterns.
         foreach ($defaultPatterns as $p)

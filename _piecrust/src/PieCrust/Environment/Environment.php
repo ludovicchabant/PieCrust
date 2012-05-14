@@ -34,6 +34,16 @@ abstract class Environment
      */
     public abstract function getPostInfos($blogKey);
 
+    /**
+     * Gets the pages.
+     */
+    public abstract function getPages();
+
+    /**
+     * Gets the posts.
+     */
+    public abstract function getPosts($blogKey);
+
     protected $lastRunInfo;
     /**
      * Gets the info about the last executed request.

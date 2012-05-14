@@ -121,7 +121,6 @@ class PieCrustBaker
                 'clean_cache' => false,
                 'info_only' => false,
                 'config_variant' => null,
-                'show_banner' => true,
                 'copy_assets' => true,
                 'processors' => '*',
                 'skip_patterns' => array(),
@@ -200,16 +199,16 @@ class PieCrustBaker
             $this->pieCrust->getConfig()->setValue('site/root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
         }
         
-        if ($this->parameters['show_banner'] or $this->parameters['info_only'])
-        {
-            $this->logger->debug("PieCrust Baker v." . PieCrustDefaults::VERSION);
-            $this->logger->debug("  baking  :  " . $this->pieCrust->getRootDir());
-            $this->logger->debug("  into    :  " . $this->getBakeDir());
-            $this->logger->debug("  for url :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root'));
-            
-            if ($this->parameters['info_only'])
-                return;
-        }
+        // Display the banner.
+        $bannerLevel = PEAR_LOG_DEBUG;
+        if ($this->parameters['info_only'])
+            $bannerLevel = PEAR_LOG_NOTICE;
+        $this->logger->log("PieCrust Baker v." . PieCrustDefaults::VERSION, $bannerLevel);
+        $this->logger->log("  website :  " . $this->pieCrust->getRootDir(), $bannerLevel);
+        $this->logger->log("  output  :  " . $this->getBakeDir(), $bannerLevel);
+        $this->logger->log("  url     :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root'), $bannerLevel);
+        if ($this->parameters['info_only'])
+            return;
         
         // Setup the PieCrust environment.
         if ($this->parameters['copy_assets'])
@@ -218,7 +217,9 @@ class PieCrustBaker
         
         // Create the bake record.
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
-        $bakeInfoPath = $this->getBakeDir() . self::BAKE_INFO_FILE;
+        $bakeInfoPath = false;
+        if ($this->pieCrust->isCachingEnabled())
+            $bakeInfoPath = $this->pieCrust->getCacheDir() . self::BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
         
         // Get the cache validity information.
@@ -249,16 +250,14 @@ class PieCrustBaker
         $dirBaker->bake();
         
         // Save the bake record and clean up.
-        $this->bakeRecord->saveBakeInfo($bakeInfoPath);
+        if ($bakeInfoPath)
+            $this->bakeRecord->saveBakeInfo($bakeInfoPath);
         $this->bakeRecord = null;
         
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
         
-        if ($this->parameters['show_banner'])
-        {
-            $this->logger->info('-------------------------');
-            $this->logger->notice(self::formatTimed($overallStart, 'done baking'));
-        }
+        $this->logger->info('-------------------------');
+        $this->logger->notice(self::formatTimed($overallStart, 'done baking'));
     }
 
     protected function cleanCacheIfNeeded(array $cacheValidity)

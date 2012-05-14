@@ -16,7 +16,8 @@ use PieCrust\IPage;
 class PageConfigWrapper implements \ArrayAccess, \Iterator
 {
     protected $page;
-    protected $configArray;
+    protected $values;
+    protected $lazyValues;
 
     public function __construct(IPage $page)
     {
@@ -26,14 +27,16 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     // {{{ ArrayAccess members
     public function offsetExists($offset)
     {
-        $this->ensurePageLoaded();
-        return isset($this->configArray[$offset]);
+        $this->ensureLoaded();
+        $this->ensureLazyLoaded($offset);
+        return isset($this->values[$offset]);
     }
     
     public function offsetGet($offset) 
     {
-        $this->ensurePageLoaded();
-        return $this->configArray[$offset];
+        $this->ensureLoaded();
+        $this->ensureLazyLoaded($offset);
+        return $this->values[$offset];
     }
     
     public function offsetSet($offset, $value)
@@ -50,40 +53,75 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
     // {{{ Iterator members
     public function rewind()
     {
-        $this->ensurePageLoaded();
-        return reset($this->configArray);
+        $this->ensureLoaded();
+        $this->ensureAllLazyLoaded();
+        return reset($this->values);
     }
   
     public function current()
     {
-        $this->ensurePageLoaded();
-        return current($this->configArray);
+        $this->ensureLoaded();
+        return current($this->values);
     }
   
     public function key()
     {
-        $this->ensurePageLoaded();
-        return key($this->configArray);
+        $this->ensureLoaded();
+        return key($this->values);
     }
   
     public function next()
     {
-        $this->ensurePageLoaded();
-        return next($this->configArray);
+        $this->ensureLoaded();
+        return next($this->values);
     }
   
     public function valid()
     {
-        $this->ensurePageLoaded();
-        return key($this->configArray) !== null;
+        $this->ensureLoaded();
+        return key($this->values) !== null;
     }
     // }}}
     
-    protected function ensurePageLoaded()
+    protected function ensureLoaded()
     {
-        if ($this->configArray == null)
+        if ($this->values == null)
         {
-            $this->configArray = $this->page->getConfig()->get();
+            $this->values = $this->page->getConfig()->get();
+
+            // Sub-classes can overload `addCustomValues` to add
+            // more stuff to the values array besides the page's
+            // configuration.
+            $this->addCustomValues();
+        }
+    }
+
+    protected function addCustomValues()
+    {
+    }
+
+    protected function ensureAllLazyLoaded()
+    {
+        foreach (array_keys($this->lazyValues) as $name)
+        {
+            $this->ensureLazyLoaded($name, false);
+        }
+        $this->lazyValues = null;
+    }
+
+    protected function ensureLazyLoaded($name, $consume = true)
+    {
+        if ($this->lazyValues and isset($this->lazyValues[$name]))
+        {
+            $loader = $this->lazyValues[$name];
+            $this->$loader();
+
+            if ($consume)
+            {
+                unset($this->lazyValues[$name]);
+                if (count($this->lazyValues) == 0)
+                    $this->lazyValues = null;
+            }
         }
     }
 }

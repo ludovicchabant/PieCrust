@@ -56,5 +56,43 @@ class PathHelperTest extends PHPUnit_Framework_TestCase
         $webRoot = PathHelper::getAppRootDir($cwd);
         $this->assertNull($webRoot);
     }
+
+    public function globToRegexDataProvider()
+    {
+        return array(
+            array('blah', '/blah/'),
+            array('/blah/', '/blah/'),
+            array('/^blah.*\\.css/', '/^blah.*\\.css/'),
+            array('blah.*', '/blah\\.[^\\/\\\\]*/'),
+            array('blah?.css', '/blah[^\\/\\\\]\\.css/')
+        );
+    }
+
+    /**
+     * @dataProvider globToRegexDataProvider
+     */
+    public function testGlobToRegex($in, $expectedOut)
+    {
+        $out = PathHelper::globToRegex($in);
+        $this->assertEquals($expectedOut, $out);
+    }
+
+    public function testGlobToRegexExample()
+    {
+        $pattern = PathHelper::globToRegex('blah*.css');
+        $this->assertTrue(preg_match($pattern, 'dir/blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah2.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blahblah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah.blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah.blah.css/something') == 1);
+        $this->assertFalse(preg_match($pattern, 'blah/something.css') == 1);
+
+        $pattern = PathHelper::globToRegex('blah?.css');
+        $this->assertFalse(preg_match($pattern, 'dir/blah.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blah1.css') == 1);
+        $this->assertTrue(preg_match($pattern, 'dir/blahh.css') == 1);
+        $this->assertFalse(preg_match($pattern, 'dir/blah/yo.css') == 1);
+    }
+
 }
 

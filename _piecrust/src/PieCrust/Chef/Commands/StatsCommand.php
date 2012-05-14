@@ -20,7 +20,7 @@ class StatsCommand extends ChefCommand
         return 'stats';
     }
     
-    public function setupParser(Console_CommandLine $statsParser)
+    public function setupParser(Console_CommandLine $statsParser, IPieCrust $pieCrust)
     {
         $statsParser->description = "Gets some information about the current website.";
     }

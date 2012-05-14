@@ -613,6 +613,11 @@ class StupidHttp_WebServer
                 $uri = substr($uri, $secondSlash);
             }
         }
+        $questionMark = strpos($uri, '?');
+        if ($questionMark !== false)
+        {
+            $uri = substr($uri, 0, $questionMark);
+        }
         if ($root === false) return false;
         return $root . str_replace('/', DIRECTORY_SEPARATOR, $uri);
     }

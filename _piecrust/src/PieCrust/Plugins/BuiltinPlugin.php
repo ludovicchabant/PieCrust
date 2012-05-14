@@ -43,7 +43,9 @@ class BuiltinPlugin extends PieCrustPlugin
     public function getImporters()
     {
         return array(
-            new \PieCrust\Interop\Importers\WordpressImporter()
+            new \PieCrust\Interop\Importers\WordpressImporter(),
+            new \PieCrust\Interop\Importers\JekyllImporter(),
+            new \PieCrust\Interop\Importers\JoomlaImporter()
         );
     }
 
@@ -62,7 +64,16 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Chef\Commands\TagsCommand(),
             new \PieCrust\Chef\Commands\UploadCommand(),
             new \PieCrust\Chef\Commands\PurgeCommand(),
-            new \PieCrust\Chef\Commands\PrepareCommand()
+            new \PieCrust\Chef\Commands\PrepareCommand(),
+            new \PieCrust\Chef\Commands\FindCommand(),
+            new \PieCrust\Chef\Commands\ShowConfigCommand()
+        );
+    }
+
+    public function getRepositories()
+    {
+        return array(
+            new \PieCrust\Repositories\BitBucketRepository()
         );
     }
 }

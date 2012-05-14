@@ -65,7 +65,7 @@ class PageRenderer
             $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $extension);
             
             // Render the page.
-            $data = $this->getRenderData();
+            $data = DataBuilder::getTemplateRenderingData($this->page);
             $templateEngine->renderFile($templateName, $data);
         }
         else
@@ -117,22 +117,6 @@ class PageRenderer
         }
         $timeSpan = microtime(true) - $this->runInfo['start_time'];
         echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
-    }
-    
-    protected function getRenderData()
-    {
-        $pieCrust = $this->page->getApp();
-        $pageData = $this->page->getPageData();
-        $pageContentSegments = $this->page->getContentSegments();
-        $siteData = DataBuilder::getSiteData($pieCrust);
-        $appData = DataBuilder::getAppData($pieCrust, $siteData, $pageData, $pageContentSegments, $this->page->wasCached());
-        $renderData = Configuration::mergeArrays(
-            $this->page->getContentSegments(),
-            $pageData,
-            $siteData,
-            $appData
-        );
-        return $renderData;
     }
     
     public static function getHeaders($contentType, $server = null)

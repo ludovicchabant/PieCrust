@@ -63,12 +63,12 @@ class PageRepository
         return $this->pages[$uri];
     }
     
-    public function getOrCreatePage($uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1)
+    public function getOrCreatePage($uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
     {
         $page = $this->getPage($uri);
         if ($page == null)
         {
-            $page = new Page($this->pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber);
+            $page = new Page($this->pieCrust, $uri, $path, $pageType, $blogKey, $pageKey, $pageNumber, $date);
             if ($this->assetUrlBaseRemap != null)
                 $page->setAssetUrlBaseRemap($this->assetUrlBaseRemap);
             $this->addPage($page);

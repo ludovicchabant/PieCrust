@@ -61,13 +61,19 @@ class PieCrustServer
         }
         $this->logger = $logger;
 
-        // Create a temp app to get the bake cache directory.
-        $pieCrust = new PieCrust(array(
+        // Get the server cache directory.
+        if ($this->options['cache'])
+        {
+            $pieCrust = new PieCrust(array(
                 'root' => $this->rootDir,
                 'cache' => true
-            )
-        );
-        $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
+            ));
+            $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
+        }
+        else
+        {
+            $this->bakeCacheDir = rtrim(sys_get_temp_dir(), '/\\') . 'piecrust/server_cache';
+        }
 
         $this->server = null;
     }
@@ -108,17 +114,14 @@ class PieCrustServer
             // Make sure this file is up-to-date.
             $this->prebake(
                 $request->getServerVariables(),
-                $this->bakeCacheFiles[$documentPath],
-                true
+                $this->bakeCacheFiles[$documentPath]
             );
         }
         else
         {
             // Perhaps a new file? Re-bake and update our index.
             $bakedFiles = $this->prebake(
-                $request->getServerVariables(),
-                null,
-                true
+                $request->getServerVariables()
             );
             foreach ($bakedFiles as $f => $info)
             {
@@ -169,15 +172,11 @@ class PieCrustServer
         {
             try
             {
-                // We set some extra data on the page we're rendering
-                // to force disable the cache.
-                $dummyExtraData = array('main_request_page' => true);
-
                 $runner = new PieCrustRunner($pieCrust);
                 $runner->runUnsafe(
                     null,
                     $context->getRequest()->getServerVariables(),
-                    $dummyExtraData,
+                    null,
                     $headers
                 );
             }
@@ -266,11 +265,12 @@ class PieCrustServer
         $this->server->setPreprocess(function($req) use ($self) { $self->_preprocessRequest($req); });
     }
 
-    protected function prebake($server = null, $path = null, $smart = false)
+    protected function prebake($server = null, $path = null)
     {
-        $pieCrust = new PieCrust(array(
+        $pieCrust = new PieCrust(
+            array(
                 'root' => $this->rootDir,
-                'cache' => true
+                'cache' => $this->options['cache']
             ),
             $server
         );
@@ -290,7 +290,7 @@ class PieCrustServer
         $dirBaker = new DirectoryBaker($pieCrust,
             $this->bakeCacheDir,
             array(
-                'smart' => $smart,
+                'smart' => $parameters['smart'],
                 'skip_patterns' => $parameters['skip_patterns'],
                 'force_patterns' => $parameters['force_patterns'],
                 'processors' => $parameters['processors']

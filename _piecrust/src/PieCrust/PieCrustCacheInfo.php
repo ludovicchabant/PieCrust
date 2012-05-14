@@ -31,36 +31,30 @@ class PieCrustCacheInfo
     {
         // Things that could make the cache invalid:
         // - changing the version of PieCrust
-        // - changing the pretty_urls setting
-        // - being in/out of bake mode
-        // - changing the base URL
-        $prettyUrls = ($this->pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') ? "true" : "false");
-        $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') ? "true" : "false");
-        $cacheInfo = "version=". PieCrustDefaults::VERSION .
-                     "&site_root=" . $this->pieCrust->getConfig()->getValueUnchecked('site/root') .
-                     "&debug_mode=" . $this->pieCrust->isDebuggingEnabled() .
-                     "&pretty_urls=" . $prettyUrls .
-                     "&is_baking=" . $isBaking;
-        $cacheInfo = hash('sha1', $cacheInfo);
+        // - changing the configuration
+        $hashArray = $this->pieCrust->getConfig()->get();
+        $hashArray['_version'] = PieCrustDefaults::VERSION;
+        $hashString = json_encode($hashArray);
+        $hash = hash('sha1', $hashString);
         
         $isCacheValid = false;
         $cacheInfoFileName = $this->pieCrust->getCacheDir() . PieCrustDefaults::CACHE_INFO_FILENAME;
         if (file_exists($cacheInfoFileName))
         {
-            $previousCacheInfo = file_get_contents($cacheInfoFileName);
-            $isCacheValid = ($previousCacheInfo == $cacheInfo);
+            $previousHash = file_get_contents($cacheInfoFileName);
+            $isCacheValid = ($previousHash == $hash);
         }
         $cacheValidity = array(
             'is_valid' => $isCacheValid,
             'path' => $cacheInfoFileName,
-            'hash' => $cacheInfo,
+            'hash' => $hash,
             'was_cleaned' => false
         );
         if ($cleanCache && !$isCacheValid)
         {
             // Clean the cache!
             PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir(), $this->cacheCleaningSkipPatterns);
-            file_put_contents($cacheInfoFileName, $cacheInfo);
+            file_put_contents($cacheInfoFileName, $hash);
             $cacheValidity['is_valid'] = true;
             $cacheValidity['was_cleaned'] = true;
         }

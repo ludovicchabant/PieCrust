@@ -13,6 +13,8 @@ use PieCrust\Environment\LinkCollector;
  */
 class BakeRecord
 {
+    const VERSION = 1;
+
     protected $bakeInfo;
     
     protected $shouldDoFullBake;
@@ -225,6 +227,7 @@ class BakeRecord
     public function saveBakeInfo($bakeInfoPath)
     {
         $this->bakeInfo['version'] = PieCrustDefaults::VERSION;
+        $this->bakeInfo['record_version'] = self::VERSION;
         $this->bakeInfo['time'] = time();
         $jsonMarkup = json_encode($this->bakeInfo);
         file_put_contents($bakeInfoPath, $jsonMarkup);
@@ -234,6 +237,7 @@ class BakeRecord
     {
         $bakeInfo = array(
             'version' => false,
+            'record_version' => 0,
             'time' => false,
             'pagesUsingPosts' => array(),
             'knownTagCombinations' => array()
@@ -252,7 +256,8 @@ class BakeRecord
         $this->bakeInfo = $bakeInfo;
         $this->shouldDoFullBake = (
             !$bakeInfo['time'] or
-            $bakeInfo['version'] != PieCrustDefaults::VERSION
+            $bakeInfo['version'] != PieCrustDefaults::VERSION or
+            $bakeInfo['record_version'] != self::VERSION
         );
     }
 }

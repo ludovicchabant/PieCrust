@@ -43,28 +43,19 @@ class PieCrustImporter
     /**
      * Imports content at the given source, using the given importer format.
      */
-    public function import($format, $source)
+    public function import($format, $source, $options)
     {
         // Find the importer that matches the given name and run the import.
         foreach ($this->getImporters() as $importer)
         {
             if ($importer->getName() == $format)
             {
-                $this->doImport($importer, $source);
+                $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
+                $importer->import($this->pieCrust, $source, $this->logger, $options);
                 return;
             }
         }
         
         throw new PieCrustException("Importer format '{$format} ' is unknown.");
-    }
-    
-    protected function doImport(IImporter $importer, $source)
-    {
-        $this->logger->info("Importing '{$source}' using '{$importer->getName()}'");
-
-        $importer->open($source);
-        $importer->importPages($this->pieCrust->getPagesDir());
-        $importer->importPosts($this->pieCrust->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
-        $importer->close();
     }
 }

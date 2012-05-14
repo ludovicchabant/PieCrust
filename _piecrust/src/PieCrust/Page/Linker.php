@@ -16,6 +16,10 @@ use PieCrust\Util\UriBuilder;
 
 /**
  * A class that exposes the list of pages in a folder to another page.
+ *
+ * @formatObject
+ * @explicitInclude
+ * @documentation The list of pages in the same directory as the current one. See the documentation for more information.
  */
 class Linker implements \ArrayAccess, \Iterator, \Countable
 {
@@ -45,7 +49,6 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     // {{{ Template Data Members
     /**
      * Gets the name of the current directory.
-     * @include
      */
     public function name()
     {
@@ -54,7 +57,6 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     
     /**
      * Gets whether this maps to a directory. Always returns true.
-     * @include
      */
     public function is_dir()
     {
@@ -63,7 +65,6 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
 
     /**
      * Gets whether this maps to the current page. Always returns false.
-     * @include
      */
     public function is_self()
     {

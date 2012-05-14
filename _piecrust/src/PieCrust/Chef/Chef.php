@@ -105,7 +105,7 @@ class Chef
         foreach ($sortedCommands as $command)
         {
             $commandParser = $parser->addCommand($command->getName());
-            $command->setupParser($commandParser);
+            $command->setupParser($commandParser, $pieCrust);
             $this->addCommonOptionsAndArguments($commandParser);
         }
 
@@ -135,12 +135,6 @@ class Chef
             return 1;
         }
         $log = Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
-        if ($debugMode)
-            $log->setMask(PEAR_LOG_ALL);
-        else if ($quietMode)
-            $log->setMask(Log::MAX(PEAR_LOG_NOTICE));
-        else
-            $log->setMask(Log::MAX(PEAR_LOG_INFO));
 
         // Run the command.
         foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
@@ -155,7 +149,11 @@ class Chef
                         throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
                     }
 
-                    $context = new ChefContext($pieCrust, $result, $log, $debugMode);
+                    $context = new ChefContext($pieCrust, $result, $log);
+                    $context->setVerbosity($debugMode ? 
+                        'debug' : 
+                        ($quietMode ? 'quiet' : 'default')
+                    );
                     $command->run($context);
                     return;
                 }

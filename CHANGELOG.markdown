@@ -19,6 +19,50 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.7.0 (2012-05-14)
+
+* NEW: The full list of posts is exposed through `blog.posts` (if you have
+  multiple blogs, replace `blog` with your blog's name). This list doesn't have
+  any effect on pagination, unlike `pagination.posts`.
+* NEW: Categories and tags are exposed through `blog.categories` and `blog.tags`
+  (same remark as previously for multiple-blog sites).
+* NEW: Added a `striptag` filter in Twig to strip HTML tags from the start and
+  end of some text.
+* NEW: The `pagination` template data object now also has `next_post` and
+  `prev_post` properties to get the next and previous posts if the current page
+  is a post.
+* NEW: The `chef plugins` command can now install plugins from the internet.
+* NEW: Added the `textfrom(path)` Twig function to include text from an
+  arbitrary file from outside the website.
+* NEW: Added the `chef find` command to find all pages, posts and templates in
+  the website with optional filtering features.
+* NEW: Added the `chef showconfig` command to print parts or all of the website
+  configuration settings.
+* NEW: Added the `twig/auto_escape` configuration setting to disable Twig's
+  auto-escaping of HTML content.
+* NEW: Added a Jekyll importer.
+* NEW: Added a Joomla importer.
+* NEW: File processors can now be chained (e.g.: process a Sass stylesheet into
+  CSS and then through the YUI compressor).
+* CHANGED: The cache is now invalidated if anything changes in the website's
+  configuration file.
+* CHANGED: The `chef import` command's options are now mandatory arguments.
+* CHANGED: Pages are now cached differently: the parsed configuration and
+  content segments are cached, but not the rendered/formatted content segments.
+  Those will be re-rendered on demand so that even the most advanced Twig
+  use-cases work.
+* CHANGED: PieCrust now creates directories with `0755` as the permission set.
+* CHANGED: The `bakeinfo.json` file is now saved in the cache directory instead
+  of the bake destination directory.
+* CHANGED: Updated the Markdown and Less PHP libraries to their latest version.
+* IMPROVED: The chef server will now start faster in most cases.
+* BUG: Fixed a rare bug when both the linker and the pagination are accessed
+  together.
+* BUG: Updated to a new version of `Stupid_Http` to fix a bug with serving static
+  files requested with a query parameter.
+* BUG: Fixed a bug when specifying excluded file processors.
+* MINOR: Slightly better formatting for the debug window.
+
 ### 0.6.4 (2012-05-14)
 
 * BUG: Fixed a `chef` bug when running with PHP 5.4+.

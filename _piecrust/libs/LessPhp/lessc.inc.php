@@ -1,12 +1,12 @@
 <?php
 
 /**
- * lessphp v0.3.3
+ * lessphp v0.3.4-2
  * http://leafo.net/lessphp
  *
  * LESS css compiler, adapted from http://lesscss.org
  *
- * Copyright 2011, Leaf Corcoran <leafot@gmail.com>
+ * Copyright 2012, Leaf Corcoran <leafot@gmail.com>
  * Licensed under MIT or GPLv3, see LICENSE
  */
 
@@ -33,7 +33,7 @@
  *
  */
 class lessc {
-	public static $VERSION = "v0.3.3";
+	public static $VERSION = "v0.3.4-2";
 	protected $buffer;
 	protected $count;
 	protected $line;
@@ -248,12 +248,13 @@ class lessc {
 		}
 
 		// opening parametric mixin
-		if ($this->tag($tag, true) && $this->argumentDef($args) &&
+		if ($this->tag($tag, true) && $this->argumentDef($args, $is_vararg) &&
 			($this->guards($guards) || true) &&
 			$this->literal('{'))
 		{
 			$block = $this->pushBlock($this->fixTags(array($tag)));
 			$block->args = $args;
+			$block->is_vararg = $is_vararg;
 			if (!empty($guards)) $block->guards = $guards;
 			return true;
 		} else {
@@ -280,7 +281,7 @@ class lessc {
 
 			$hidden = true;
 			if (!isset($block->args)) foreach ($block->tags as $tag) {
-				if ($tag{0} != $this->mPrefix) {
+				if (!is_string($tag) || $tag{0} != $this->mPrefix) {
 					$hidden = false;
 					break;
 				}
@@ -289,7 +290,9 @@ class lessc {
 			if (!$hidden) $this->append(array('block', $block), $s);
 
 			foreach ($block->tags as $tag) {
-				$this->env->children[$tag][] = $block;
+				if (is_string($tag)) {
+					$this->env->children[$tag][] = $block;
+				}
 			}
 
 			return true;
@@ -520,7 +523,7 @@ class lessc {
 
 		// unquote string
 		if ($this->literal("~") && $this->string($value, $d)) {
-			$value = array("keyword", $value);
+			$value = array("escape", $value);
 			return true;
 		} else {
 			$this->seek($s);
@@ -721,19 +724,34 @@ class lessc {
 
 	// consume an argument definition list surrounded by ()
 	// each argument is a variable name with optional value
-	function argumentDef(&$args, $delim = ',') {
+	// or at the end a ... or a variable named followed by ...
+	function argumentDef(&$args, &$is_vararg, $delim = ',') {
 		$s = $this->seek();
 		if (!$this->literal('(')) return false;
 
 		$values = array();
+
+		$is_vararg = false;
 		while (true) {
+			if ($this->literal("...")) {
+				$is_vararg = true;
+				break;
+			}
+
 			if ($this->variable($vname)) {
 				$arg = array("arg", $vname);
+				$ss = $this->seek();
 				if ($this->assign() && $this->expressionList($value)) {
 					$arg[] = $value;
-					// let the : slide if there is no value
+				} else {
+					$this->seek($ss);
+					if ($this->literal("...")) {
+						$arg[0] = "rest";
+						$is_vararg = true;
+					}
 				}
 				$values[] = $arg;
+				if ($is_vararg) break;
 				continue;
 			}
 
@@ -799,12 +817,27 @@ class lessc {
 		return false;
 	}
 
+	function tagExpression(&$value) {
+		$s = $this->seek();
+		if ($this->literal("(") && $this->expression($exp) && $this->literal(")")) {
+			$value = array('exp', $exp);
+			return true;
+		}
+
+		$this->seek($s);
+		return false;
+	}
+
 	// a single tag
 	function tag(&$tag, $simple = false) {
 		if ($simple)
 			$chars = '^,:;{}\][>\(\) "\'';
 		else
 			$chars = '^,;{}["\'';
+
+		if (!$simple && $this->tagExpression($tag)) {
+			return true;
+		}
 
 		$tag = '';
 		while ($this->tagBracket($first)) $tag .= $first;
@@ -1043,7 +1076,22 @@ class lessc {
 			$tags = array();
 		} else {
 			$special_block = false;
-			$tags = $this->multiplyTags($parent_tags, $block->tags);
+
+			// evaluate expression tags
+			$tags = null;
+			if (is_array($block->tags)) {
+				$tags = array();
+				foreach ($block->tags as $tag) {
+					if (is_array($tag)) {
+						list(, $value) = $tag;
+						$tags[] = $this->compileValue($this->reduce($value));
+					} else {
+						$tags[] = $tag;
+					}
+				}
+			}
+
+			$tags = $this->multiplyTags($parent_tags, $tags);
 		}
 
 		$env = $this->pushEnv();
@@ -1175,20 +1223,13 @@ class lessc {
 			}
 		}
 
-		// blocks with no required arguments are mixed into everything
-		if (empty($block->args)) return true;
+		$numCalling = count($callingArgs);
 
-		// has args but all have default values
-		$pseudoEmpty = true;
-		foreach ($block->args as $arg) {
-			if (!isset($arg[2])) {
-				$pseudoEmpty = false;
-				break;
-			}
+		if (empty($block->args)) {
+			return $block->is_vararg || $numCalling == 0;
 		}
 
-		if ($pseudoEmpty) return true;
-
+		$i = -1; // no args
 		// try to match by arity or by argument literal
 		foreach ($block->args as $i => $arg) {
 			switch ($arg[0]) {
@@ -1203,10 +1244,19 @@ class lessc {
 					return false;
 				}
 				break;
+			case "rest":
+				$i--; // rest can be empty
+				break 2;
 			}
 		}
 
-		return $i >= count($callingArgs) - 1;
+		if ($block->is_vararg) {
+			return true; // not having enough is handled above
+		} else {
+			$numMatched = $i + 1;
+			// greater than becuase default values always match
+			return $numMatched >= $numCalling;
+		}
 	}
 
 	function patternMatchAll($blocks, $callingArgs) {
@@ -1267,6 +1317,13 @@ class lessc {
 			$i++;
 		}
 
+		// check for a rest
+		$last = end($args);
+		if ($last[0] == "rest") {
+			$rest = array_slice($values, count($args) - 1);
+			$this->set($last[1], $this->reduce(array("list", " ", $rest)));
+		}
+
 		$this->env->arguments = $assigned_values;
 	}
 
@@ -1325,7 +1382,7 @@ class lessc {
 				}
 
 				$old_parent = $mixin->parent;
-				$mixin->parent = $block;
+				if ($mixin != $block) $mixin->parent = $block;
 
 				foreach ($mixin->props as $sub_prop) {
 					$this->compileProp($sub_prop, $mixin, $tags, $_lines, $_blocks);
@@ -1379,6 +1436,7 @@ class lessc {
 		case 'number':
 			// [1] - the number 
 			return $value[1];
+		case 'escape':
 		case 'string':
 			// [1] - contents of string (includes quotes)
 			
@@ -1472,13 +1530,18 @@ class lessc {
 	}
 
 	function lib_rgbahex($color) {
-		if ($color[0] != 'color')
+		$color = $this->coerceColor($color);
+		if (is_null($color))
 			$this->throwError("color expected for rgbahex");
 
 		return sprintf("#%02x%02x%02x%02x",
 			isset($color[4]) ? $color[4]*255 : 0,
 			$color[1],$color[2], $color[3]);
 	}
+	
+	function lib_argb($color){
+            return $this->lib_rgbahex($color);
+        }
 
 	// utility func to unquote a string
 	function lib_e($arg) {
@@ -1529,6 +1592,10 @@ class lessc {
 
 	function lib_floor($arg) {
 		return array($arg[0], floor($arg[1]));
+	}
+	
+	function lib_ceil($arg) {
+		return array($arg[0], ceil($arg[1]));
 	}
 
 	function lib_round($arg) {
@@ -1679,7 +1746,7 @@ class lessc {
 		);
 
 		if ($first_a != 1.0 || $second_a != 1.0) {
-			$new[] = $first_a * $p + $second_a * ($p - 1);
+			$new[] = $first_a * $weight + $second_a * ($weight - 1);
 		}
 
 		return $this->fixColor($new);
@@ -2075,6 +2142,7 @@ class lessc {
 		$b->parent = $this->env;
 
 		$b->id = self::$nextBlockId++;
+		$b->is_vararg = false;
 		$b->tags = $tags;
 		$b->props = array();
 		$b->children = array();

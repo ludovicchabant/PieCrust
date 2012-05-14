@@ -147,6 +147,7 @@ class Page implements IPage
         return $this->config;
     }
     
+    protected $didFormatContents;
     protected $contents;
     /**
      * Gets the page's formatted content.
@@ -181,14 +182,6 @@ class Page implements IPage
      */
     public function getPageData()
     {
-        // Generating the page data will require the page config so
-        // make sure this is available.
-        // Also, if the page was not loaded at all, loading it from disk
-        // in `ensureConfigLoaded` will also create the page data.
-        // Man, this thing is a mess, but I can't find a cleaner way to
-        // do this.
-        $this->ensureConfigLoaded();
-
         if ($this->pageData == null)
         {
             $this->pageData = DataBuilder::getPageData($this);
@@ -255,6 +248,7 @@ class Page implements IPage
     public function __construct(IPieCrust $pieCrust, $uri, $path, $pageType = IPage::TYPE_REGULAR, $blogKey = null, $pageKey = null, $pageNumber = 1, $date = null)
     {
         $this->pieCrust = $pieCrust;
+
         $this->uri = $uri;
         $this->path = $path;
         $this->type = $pageType;
@@ -263,6 +257,10 @@ class Page implements IPage
         $this->pageNumber = $pageNumber;
         $this->date = $date;
         $this->pageData = null;
+
+        $this->config = null;
+        $this->contents = null;
+        $this->didFormatContents = false;
     }
     
     /**
@@ -272,7 +270,14 @@ class Page implements IPage
     {
         if ($this->config == null)
         {
-            $this->load();
+            // Set the configuration to an empty array so that the PageLoader
+            // can call 'set()' on it and assign the actual configuration.
+            $this->config = new PageConfiguration($this, array(), false);
+
+            $loader = new PageLoader($this);
+            $this->contents = $loader->load();
+            $this->wasCached = $loader->wasCached();
+            $this->didFormatContents = false;
         }
     }
     
@@ -281,30 +286,20 @@ class Page implements IPage
      */
     protected function ensureContentsLoaded()
     {
-        if ($this->contents == null)
+        if (!$this->didFormatContents)
         {
-            $this->load();
+            $this->ensureConfigLoaded();
+
+            $loader = new PageLoader($this);
+            $this->contents = $loader->formatContents($this->contents);
+            $this->didFormatContents = true;
         }
-    }
-    
-    /**
-     * Loads the page from disk.
-     */
-    protected function load()
-    {
-        // Set the configuration to an empty array so that the PageLoader
-        // can call 'set()' on it and assign the actual configuration.
-        $this->config = new PageConfiguration($this, array(), false);
-        
-        $loader = new PageLoader($this);
-        $this->contents = $loader->load();
-        $this->wasCached = $loader->wasCached();
     }
     
     /**
      * Creates a new Page instance given a fully qualified URI.
      */
-    public static function createFromUri(IPieCrust $pieCrust, $uri)
+    public static function createFromUri(IPieCrust $pieCrust, $uri, $useRepository = true)
     {
         if ($uri == null)
             throw new InvalidArgumentException("The given URI is null.");
@@ -315,13 +310,28 @@ class Page implements IPage
            )
         {
             if ($uriInfo['type'] == IPage::TYPE_TAG)
-                throw new PieCrustException('The special tag listing page was not found.');
+                throw new PieCrustException("Tried to show posts with tag '{$uriInfo['key']}' but the special tag listing page was not found.");
             if ($uriInfo['type'] == IPage::TYPE_CATEGORY)
-                throw new PieCrustException('The special category listing page was not found.');
+                throw new PieCrustException("Tried to show the posts in category '{$uriInfo['key']}' but the special category listing page was not found.");
             throw new PieCrustException('404');
         }
         
-        return new Page(
+        if ($useRepository)
+        {
+            $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+            return $pageRepository->getOrCreatePage(
+                $uriInfo['uri'],
+                $uriInfo['path'],
+                $uriInfo['type'],
+                $uriInfo['blogKey'],
+                $uriInfo['key'],
+                $uriInfo['page'],
+                $uriInfo['date']
+            );
+        }
+        else
+        {
+            return new Page(
                 $pieCrust,
                 $uriInfo['uri'],
                 $uriInfo['path'],
@@ -331,6 +341,7 @@ class Page implements IPage
                 $uriInfo['page'],
                 $uriInfo['date']
             );
+        }
     }
     
     /**

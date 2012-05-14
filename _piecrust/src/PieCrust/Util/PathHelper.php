@@ -45,10 +45,17 @@ class PathHelper
             $rootPath[strlen($rootPath) - 1] != '\\')
             $rootPath .= DIRECTORY_SEPARATOR;
 
-        if ($path[0] != '/' && $path[0] != '\\' && $path[0] != '~' && (strlen($path) < 2 || $path[1] != ':'))
-            $path = $rootPath . $path;
         if ($path[0] == '~')
-            $path = $_SERVER['HOME'] . substr($path, 1);
+        {
+            $userDir = getenv('HOME'); // On MacOS/Linux
+            if (!$userDir)
+                $userDir = getenv('USERPROFILE'); // On Windows
+            $path = $userDir . substr($path, 1);
+        }
+        if ($path[0] != '/' && $path[0] != '\\' && (strlen($path) < 2 || $path[1] != ':'))
+        {
+            $path = $rootPath . $path;
+        }
 
         $path = str_replace('\\', '/', $path);
         $parts = explode('/', $path);
@@ -103,6 +110,24 @@ class PathHelper
     }
     
     /**
+     * Translate glob patterns to regex patterns.
+     */
+    public static function globToRegex($pattern)
+    {
+        if (substr($pattern, 0, 1) == "/" and
+            substr($pattern, -1) == "/")
+        {
+            // Already a regex.
+            return $pattern;
+        }
+        
+        $pattern = preg_quote($pattern, '/');
+        $pattern = str_replace('\\*', '[^\\/\\\\]*', $pattern);
+        $pattern = str_replace('\\?', '[^\\/\\\\]', $pattern);
+        return '/'.$pattern.'/';
+    }
+    
+    /**
      * Finds a named template in an app's template paths.
      */
     public static function getTemplatePath(IPieCrust $pieCrust, $templateName)
@@ -116,7 +141,7 @@ class PathHelper
                 return $path;
             }
         }
-        throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplateDirs()));
+        throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
     }
 
     /**
@@ -188,13 +213,13 @@ class PathHelper
     {
         if (!is_dir($dir))
         {
-            if (!mkdir($dir, 0777, true))
+            if (!mkdir($dir, 0755, true))
                 throw new PieCrustException("Can't create directory: {$dir}");
             return true;
         }
         else if ($writable && !is_writable($dir))
         {
-            if (!chmod($dir, 0777))
+            if (!chmod($dir, 0755))
                 throw new PieCrustException("Can't make directory '{$dir}' writable.");
         }
         return false;

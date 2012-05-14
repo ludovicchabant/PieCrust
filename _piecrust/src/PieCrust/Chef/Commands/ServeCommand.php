@@ -18,7 +18,7 @@ class ServeCommand extends ChefCommand
         return 'serve';
     }
     
-    public function setupParser(Console_CommandLine $serverParser)
+    public function setupParser(Console_CommandLine $serverParser, IPieCrust $pieCrust)
     {
         $serverParser->description = 'Serves your PieCrust website using a tiny development web server.';
         $serverParser->addOption('run_browser', array(
