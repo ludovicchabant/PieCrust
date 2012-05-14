@@ -47,7 +47,8 @@ class Chef
         // Get the arguments.
         if ($userArgc == null || $userArgv == null)
         {
-            $userArgv = Console_Getopt::readPHPArgv();
+            $getopt = new Console_Getopt();
+            $userArgv = $getopt->readPHPArgv();
             // `readPHPArgv` returns a `PEAR_Error` (or something like it) if
             // it can't figure out the CLI arguments.
             if (!is_array($userArgv))
