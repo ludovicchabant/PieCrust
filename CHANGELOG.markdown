@@ -15,6 +15,12 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+
+Frozen changes
+--------------
+
+### 0.7.0 (2012-05-14)
+
 * NEW: The full list of posts is exposed through `blog.posts` (if you have
   multiple blogs, replace `blog` with your blog's name). This list doesn't have
   any effect on pagination, unlike `pagination.posts`.
@@ -52,14 +58,10 @@ Fresh changes
 * IMPROVED: The chef server will now start faster in most cases.
 * BUG: Fixed a rare bug when both the linker and the pagination are accessed
   together.
-* BUG: Updated to a new version of Stupid_Http to fix a bug with serving static
+* BUG: Updated to a new version of `Stupid_Http` to fix a bug with serving static
   files requested with a query parameter.
 * BUG: Fixed a bug when specifying excluded file processors.
 * MINOR: Slightly better formatting for the debug window.
-
-
-Frozen changes
---------------
 
 ### 0.6.4 (2012-05-14)
 
