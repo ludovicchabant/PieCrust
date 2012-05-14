@@ -35,6 +35,7 @@ Fresh changes
 * NEW: Added the `twig/auto_escape` configuration setting to disable Twig's
   auto-escaping of HTML content.
 * NEW: Added a Jekyll importer.
+* NEW: Added a Joomla importer.
 * NEW: File processors can now be chained (e.g.: process a Sass stylesheet into
   CSS and then through the YUI compressor).
 * CHANGED: The cache is now invalidated if anything changes in the website's
