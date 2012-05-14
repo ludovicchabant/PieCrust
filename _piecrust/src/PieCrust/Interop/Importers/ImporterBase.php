@@ -114,6 +114,11 @@ abstract class ImporterBase implements IImporter
     {
     }
 
+    protected function getCleanSlug($name)
+    {
+        return $name;
+    }
+
     // }}}
 
     // Utility functions {{{
