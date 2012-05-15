@@ -85,17 +85,25 @@ EOD;
             array('layout' => 'none', 'format' => 'none'),
             $indexContents);
         $fs->withPost(
-            'z-first-post', 1, 1, 2012,
+            'before-post', 2, 1, 2012,
+            array('layout' => 'none', 'format' => 'none'),
+            'Before...');
+        $fs->withPost(
+            'z-first-post', 4, 1, 2012,
             array('layout' => 'none', 'format' => 'none', 'time' => '08:50'),
             'First post.');
         $fs->withPost(
-            'a-second-post', 1, 1, 2012,
+            'a-second-post', 4, 1, 2012,
             array('layout' => 'none', 'format' => 'none', 'time' => '12:30'),
             'Second post.');
         $fs->withPost(
-            'b-third-post', 1, 1, 2012,
+            'b-third-post', 4, 1, 2012,
             array('layout' => 'none', 'format' => 'none', 'time' => '17:05:32'),
             'Third post.');
+        $fs->withPost(
+            'after-post', 12, 1, 2012,
+            array('layout' => 'none', 'format' => 'none'),
+            'After...');
 
         $app = new PieCrust(array('cache' => false, 'root' => vfsStream::url('root/kitchen')));
 
@@ -104,7 +112,7 @@ EOD;
 
         $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo/index.html'));
         $this->assertEquals(
-            "Third post.\nSecond post.\nFirst post.\n",
+            "After...\nThird post.\nSecond post.\nFirst post.\nBefore...\n",
             file_get_contents(vfsStream::url('root/kitchen/_counter/foo/index.html'))
         );
     }
