@@ -29,32 +29,52 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $this->assertNotNull($fs);
         $postFiles = $fs->getPostFiles();
         $this->assertNotNull($postFiles);
-        $this->assertEquals(4, count($postFiles));
+        $this->assertEquals(6, count($postFiles));
         
         // FileSystem implementations return posts in reverse-chronological order.
-        $this->assertEquals('2009', $postFiles[3]['year']);
-        $this->assertEquals('05', $postFiles[3]['month']);
-        $this->assertEquals('16', $postFiles[3]['day']);
-        $this->assertEquals('first-post', $postFiles[3]['name']);
-        $this->assertTrue(is_file($postFiles[3]['path']));
+        $postFile = $postFiles[5];
+        $this->assertEquals('2009', $postFile['year']);
+        $this->assertEquals('05', $postFile['month']);
+        $this->assertEquals('16', $postFile['day']);
+        $this->assertEquals('first-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
         
-        $this->assertEquals('2010', $postFiles[2]['year']);
-        $this->assertEquals('01', $postFiles[2]['month']);
-        $this->assertEquals('08', $postFiles[2]['day']);
-        $this->assertEquals('second-post', $postFiles[2]['name']);
-        $this->assertTrue(is_file($postFiles[2]['path']));
+        $postFile = $postFiles[4];
+        $this->assertEquals('2010', $postFile['year']);
+        $this->assertEquals('01', $postFile['month']);
+        $this->assertEquals('08', $postFile['day']);
+        $this->assertEquals('second-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
         
-        $this->assertEquals('2010', $postFiles[1]['year']);
-        $this->assertEquals('11', $postFiles[1]['month']);
-        $this->assertEquals('02', $postFiles[1]['day']);
-        $this->assertEquals('third-post', $postFiles[1]['name']);
-        $this->assertTrue(is_file($postFiles[1]['path']));
+        $postFile = $postFiles[3];
+        $this->assertEquals('2010', $postFile['year']);
+        $this->assertEquals('11', $postFile['month']);
+        $this->assertEquals('02', $postFile['day']);
+        $this->assertEquals('third-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
         
-        $this->assertEquals('2011', $postFiles[0]['year']);
-        $this->assertEquals('09', $postFiles[0]['month']);
-        $this->assertEquals('23', $postFiles[0]['day']);
-        $this->assertEquals('fourth-post', $postFiles[0]['name']);
-        $this->assertTrue(is_file($postFiles[0]['path']));
+        $postFile = $postFiles[2];
+        $this->assertEquals('2011', $postFile['year']);
+        $this->assertEquals('09', $postFile['month']);
+        $this->assertEquals('23', $postFile['day']);
+        $this->assertEquals('fourth-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
+        
+        // FileSystems don't load the post so they don't know about
+        // the time... here, they will return the 6th post before the 5th.
+        $postFile = $postFiles[1];
+        $this->assertEquals('2011', $postFile['year']);
+        $this->assertEquals('09', $postFile['month']);
+        $this->assertEquals('24', $postFile['day']);
+        $this->assertEquals('a-sixth-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
+        
+        $postFile = $postFiles[0];
+        $this->assertEquals('2011', $postFile['year']);
+        $this->assertEquals('09', $postFile['month']);
+        $this->assertEquals('24', $postFile['day']);
+        $this->assertEquals('b-fifth-post', $postFile['name']);
+        $this->assertTrue(is_file($postFile['path']));
     }
     
     public function getPostPathInfoDataProvider()
@@ -87,13 +107,13 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $fs = FileSystem::create($pc);
         $postFiles = $fs->getPostFiles();
         $this->assertNotNull($postFiles);
-        $this->assertEquals(4, count($postFiles));
+        $this->assertEquals(6, count($postFiles));
         
-        $years = array('2009', '2010', '2010', '2011');
-        $months = array('05', '01', '11', '09');
-        $days = array('16', '08', '02', '23');
-        $slugs = array('first-post', 'second-post', 'third-post', 'fourth-post');
-        for ($i = 0; $i < 4; ++$i)
+        $years = array('2009', '2010', '2010', '2011', '2011', '2011');
+        $months = array('05', '01', '11', '09', '09', '09');
+        $days = array('16', '08', '02', '23', '24', '24');
+        $slugs = array('first-post', 'second-post', 'third-post', 'fourth-post', 'a-sixth-post', 'b-fifth-post');
+        for ($i = 0; $i < 6; ++$i)
         {
             $groups = array('year' => $years[$i], 'month' => $months[$i], 'day' => $days[$i], 'slug' => $slugs[$i]);
             if ($wildcardComponent != null)
@@ -103,7 +123,7 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($months[$i], $pathInfo['month']);
             $this->assertEquals($days[$i], $pathInfo['day']);
             $this->assertEquals($slugs[$i], $pathInfo['slug']);
-            $this->assertEquals(str_replace('\\', '/', $postFiles[3 - $i]['path']), str_replace('\\', '/', $pathInfo['path']));
+            $this->assertEquals(str_replace('\\', '/', $postFiles[5 - $i]['path']), str_replace('\\', '/', $pathInfo['path']));
         }
     }
 }

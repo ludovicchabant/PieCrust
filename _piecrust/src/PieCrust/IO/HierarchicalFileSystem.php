@@ -56,23 +56,30 @@ class HierarchicalFileSystem extends FileSystem
                 $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir . $year . '/' . $month);
                 foreach ($postsIterator as $post)
                 {
+                    if ($post->isDot() or $post->isDir())
+                        continue;
+
                     $matches = array();
                     if (preg_match('/^(\d{2})_(.*)\.html$/', $post->getFilename(), $matches) == false)
                         continue;
                     
                     $thisDay = $matches[1];
-                    $days[$thisDay] = array('name' => $matches[2], 'path' => $post->getPathname());
+                    $days[] = array(
+                        'day' => $thisDay, 
+                        'name' => $matches[2], 
+                        'path' => $post->getPathname()
+                    );
                 }
                 krsort($days);
                 
-                foreach ($days as $day => $info)
+                foreach ($days as $day)
                 {
                     $result[] = array(
                         'year' => $year,
                         'month' => $month,
-                        'day' => $day,
-                        'name' => $info['name'],
-                        'path' => $info['path']
+                        'day' => $day['day'],
+                        'name' => $day['name'],
+                        'path' => $day['path']
                     );
                 }
             }

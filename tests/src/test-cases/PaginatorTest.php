@@ -183,9 +183,9 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         $posts = array();
         for ($i = 0; $i < $postCount; ++$i)
         {
-            $year = 2006 + ($i / 6);
-            $month = ($i % 12);
-            $day = (($i * 3) % 28);
+            $year = 2006 + ($i / 6); // bump the year up every 6 posts.
+            $month = ($i % 12);      // each post a different month.
+            $day = (($i * 3) % 28);  // each post on some day between 0 and 27.
             $name = ('test-post-number-' . $i . '-name');
             $path = ('test-post-number-' . $i . '-path.html');
             

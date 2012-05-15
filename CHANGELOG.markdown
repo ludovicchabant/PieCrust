@@ -19,6 +19,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.7.1 (2012-05-15)
+
+* BUG: Fixed a bug with the `hierarchy` file-system when several posts are
+  created on the same day.
+
 ### 0.7.0 (2012-05-14)
 
 * NEW: The full list of posts is exposed through `blog.posts` (if you have
