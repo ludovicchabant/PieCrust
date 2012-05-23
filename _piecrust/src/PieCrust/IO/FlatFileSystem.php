@@ -26,7 +26,8 @@ class FlatFileSystem extends FileSystem
         $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
         foreach ($pathsIterator as $p)
         {
-            if ($p->getExtension() != 'html')
+            $extension = pathinfo($p->getFilename(), PATHINFO_EXTENSION);
+            if ($extension != 'html')
                 continue;
             $paths[] = $p->getPathname();
         }
