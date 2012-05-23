@@ -19,6 +19,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.7.2 (2012-05-23)
+
+* MINOR: Removed a call to a PHP 5.3.6-only method to prevent raising the
+  minimum required version to run PieCrust.
+
 ### 0.7.1 (2012-05-15)
 
 * BUG: Fixed a bug with the `hierarchy` file-system when several posts are
