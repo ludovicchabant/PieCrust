@@ -18,8 +18,6 @@ function piecrust_show_system_message($message, $details = null)
  */
 function piecrust_error_handler($errno, $errstr, $errfile = null, $errline = 0, $errcontext = null)
 {
-    echo("ERROR!! [$errno] ".$errstr."\n");
-    echo debug_print_backtrace (DEBUG_BACKTRACE_IGNORE_ARGS);
     if (error_reporting() & $errno)
         throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
     return;
