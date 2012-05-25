@@ -7,6 +7,9 @@
         "mikey179/vfsStream": "v1.0.0-beta5"
     },
     "autoload": {
+        "psr-0": {
+            "Benchmark_": "libs/pear"
+        },
         "classmap": [
             "src/test-objects/MockFileSystem.php",
             "src/test-objects/MockFormatter.php",

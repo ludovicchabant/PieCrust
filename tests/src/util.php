@@ -1,12 +1,14 @@
 <?php
 
-use PieCrust\IO\FileSystem;
+use PieCrust\Util\PathHelper;
 
 /**
  * Useful paths.
  */
 define('PIECRUST_UNITTESTS_TEST_DATA_DIR', __DIR__ . '/test-data/');
-
+define('PIECRUST_BENCHMARKS_ROOT_DIR', __DIR__ . '/test-websites/benchmarks/');
+define('PIECRUST_BENCHMARKS_CACHE_DIR', dirname(__DIR__) . '/tmp/cache');
+ 
 
 /**
  * Useful functions.
@@ -51,8 +53,8 @@ function ensure_cache($cacheDir, $ensureClean = true)
         
     if ($ensureClean and is_dir($cacheDir))
     {
-        FileSystem::deleteDirectoryContents($cacheDir);
+        PathHelper::deleteDirectoryContents($cacheDir);
     }
-    FileSystem::ensureDirectory($cacheDir);
+    PathHelper::ensureDirectory($cacheDir);
 }
 

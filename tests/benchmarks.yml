@@ -1,0 +1,28 @@
+-
+  name: 'App Init (cache miss)'
+  profiling:
+    times: 100
+    median: 0.158
+    average: 0.21835
+    max: 6.104
+-
+  name: 'App Init (cache hit)'
+  profiling:
+    times: 100
+    median: 0.087
+    average: 0.08746
+    max: 0.104
+-
+  name: 'Page Rendering (cache miss)'
+  profiling:
+    times: 100
+    median: 0.231
+    average: 0.69697
+    max: 43.624
+-
+  name: 'Page Rendering (cache hit)'
+  profiling:
+    times: 100
+    median: 0.093
+    average: 0.13304
+    max: 3.921
