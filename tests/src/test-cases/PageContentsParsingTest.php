@@ -1,9 +1,7 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-
+use org\bovigo\vfs\vfsStream;
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
@@ -38,7 +36,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
                 'pages' => array()
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         // Create the page that will load our test file.
         $pc = new MockPieCrust();
@@ -56,8 +54,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         $p = new Page($pc, '/test', $testFilename);
         
         // Get the stuff we are expecting.
-        $yamlParser = new sfYamlParser();
-        $expectedResults = $yamlParser->parse(file_get_contents($expectedResultsFilename));
+        $expectedResults = Yaml::parse(file_get_contents($expectedResultsFilename));
         $expectedConfig = PageConfiguration::getValidatedConfig($p, $expectedResults['config']);
         foreach ($expectedResults as $key => $content) // Add the segment names.
         {

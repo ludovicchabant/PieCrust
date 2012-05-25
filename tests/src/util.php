@@ -2,7 +2,15 @@
 
 use PieCrust\IO\FileSystem;
 
+/**
+ * Useful paths.
+ */
+define('PIECRUST_UNITTESTS_TEST_DATA_DIR', __DIR__ . '/test-data/');
 
+
+/**
+ * Useful functions.
+ */
 function average($values)
 {
     if (!is_array($values))

@@ -15,6 +15,12 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* CHANGES: The folder structure has been changed to make it look more like an
+  application project. For users, this means the `chef` executable has been
+  moved to the `/bin` folder (although, for backwards compatibility, a copy is
+  still available in `/_piecrust/chef`, but it prints a warning message and will
+  be removed after version 0.9).
+
 
 Frozen changes
 --------------

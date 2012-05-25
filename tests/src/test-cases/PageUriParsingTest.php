@@ -1,9 +1,6 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-
+use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;

@@ -12,13 +12,14 @@ Quickstart
 
 If you want to quickly give it a spin:
 
-    _piecrust/chef serve --root website
+    cd website
+    ../bin/chef serve
 
 It should start your default browser and show you the sample website. You can
 then edit files and see what changes.
 
-When you're happy, run `_piecrust/chef bake --root website` to generate the
-final static website, which you'll find in `website/_counter`.
+When you're happy, run `../bin/chef bake` to generate the final static website,
+which you'll find in `website/_counter`.
 
 
 Branches
@@ -26,7 +27,7 @@ Branches
 
 There are 2 branches:
 
-* `default` (in `mercurial`) or `master` (in `git): that's the development
+* `default` (in `mercurial`) or `master` (in `git`): that's the development
   branch.  Everything in there is the very latest stuff, which means it may be
   broken, it may have backwards incompatible changes, and probably has secret
   undocumented features.

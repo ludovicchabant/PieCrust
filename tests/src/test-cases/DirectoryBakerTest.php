@@ -1,10 +1,7 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-require_once 'vfsStream/visitor/vfsStreamStructureVisitor.php';
-
+use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\DirectoryBaker;
@@ -21,7 +18,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             'kitchen' => array(),
             'counter' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen/');
@@ -59,7 +56,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             'counter' => array(),
             'cache' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen/');
@@ -117,7 +114,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
                 '_cache' => array()
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen/');
@@ -180,7 +177,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             '_counter' => array(),
             '_cache' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
         
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/kitchen/');
@@ -224,7 +221,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             '_counter' => array(),
             '_cache' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/');
@@ -303,7 +300,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             '_counter' => array(),
             '_cache' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/');
@@ -339,7 +336,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             '_cache' => array(),
             '_counter' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         $pc = new MockPieCrust();
         $pc->rootDir = vfsStream::url('root/');
@@ -382,7 +379,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             '_cache' => array(),
             '_counter' => array()
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         // Order by priority by hand...
         $processors = array();

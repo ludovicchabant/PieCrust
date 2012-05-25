@@ -1,7 +1,6 @@
 <?php
 
-require_once 'unittest_setup.php';
-
+use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\Baker\PageBaker;
 use PieCrust\Baker\Processors\IProcessor;

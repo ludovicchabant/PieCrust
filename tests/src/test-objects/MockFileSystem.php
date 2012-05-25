@@ -1,9 +1,8 @@
 <?php
 
-require_once 'sfYaml/lib/sfYaml.php';
+use org\bovigo\vfs\vfsStream;
+use Symfony\Component\Yaml\Yaml;
 
-require_once 'vfsStream/vfsStream.php';
-require_once 'vfsStream/visitor/vfsStreamStructureVisitor.php';
 
 class MockFileSystem
 {
@@ -16,6 +15,7 @@ class MockFileSystem
 
     public function __construct()
     {
+        vfsStream::setup();
         vfsStream::create(array(
             'kitchen' => array(
                 '_content' => array(
@@ -59,14 +59,14 @@ class MockFileSystem
     public function withConfig(array $config)
     {
         $configPath = vfsStream::url('root/kitchen/_content/config.yml');
-        file_put_contents($configPath, sfYaml::dump($config));
+        file_put_contents($configPath, Yaml::dump($config));
         return $this;
     }
 
     public function withPage($url, $config = array(), $contents = 'A test page.')
     {
         $text  = '---' . PHP_EOL;
-        $text .= sfYaml::dump($config) . PHP_EOL;
+        $text .= Yaml::dump($config) . PHP_EOL;
         $text .= '---' . PHP_EOL;
         $text .= $contents;
 
@@ -76,7 +76,7 @@ class MockFileSystem
     public function withPost($slug, $day, $month, $year, $config, $contents)
     {
         $text  = '---' . PHP_EOL;
-        $text .= sfYaml::dump($config) . PHP_EOL;
+        $text .= Yaml::dump($config) . PHP_EOL;
         $text .= '---' . PHP_EOL;
         $text .= $contents;
 

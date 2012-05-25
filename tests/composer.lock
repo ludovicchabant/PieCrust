@@ -1,0 +1,17 @@
+{
+    "hash": "943ff49cc4ee6b0346bb14684b48c1b0",
+    "packages": [
+        {
+            "package": "mikey179/vfsStream",
+            "version": "v1.0.0-beta5"
+        }
+    ],
+    "packages-dev": null,
+    "aliases": [
+
+    ],
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "mikey179/vfsstream": 10
+    }
+}

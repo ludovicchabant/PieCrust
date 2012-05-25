@@ -1,7 +1,5 @@
 <?php
 
-require_once 'unittest_setup.php';
-
 use PieCrust\IPieCrust;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
