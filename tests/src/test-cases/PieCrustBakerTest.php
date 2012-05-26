@@ -109,10 +109,10 @@ EOD;
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo/index.html'));
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo.html'));
         $this->assertEquals(
             "After...\nThird post.\nSecond post.\nFirst post.\nBefore...\n",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/foo/index.html'))
+            file_get_contents(vfsStream::url('root/kitchen/_counter/foo.html'))
         );
     }
 
@@ -147,10 +147,10 @@ EOD;
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo/index.html'));
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo.html'));
         $this->assertEquals(
             "Second post.\nFirst post.\n",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/foo/index.html'))
+            file_get_contents(vfsStream::url('root/kitchen/_counter/foo.html'))
         );
     }
 }

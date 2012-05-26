@@ -110,7 +110,7 @@ class PageBaker
         // Set the extraData and asset URL remapping before the page's data is computed.        
         if ($extraData != null)
             $page->setExtraPageData($extraData);
-        if ($this->parameters['copy_assets'] === true)
+        if ($this->parameters['copy_assets'])
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Render the page.
@@ -122,36 +122,29 @@ class PageBaker
         $paginator = $data['pagination'];
         
         // Figure out the output HTML path.
-        $useDirectory = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
+        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
         $contentType = $page->getConfig()->getValue('content_type');
-        if ($contentType != 'html')
+        $isSubPage = ($page->getPageNumber() > 1);
+        $bakePath = $this->bakeDir;
+        if ($prettyUrls)
         {
-            // If this is not an HTML file, don't use a directory as the output
-            // (since this would bake it to an 'index.html' file).
-            $useDirectory = false;
-        }
-        
-        if ($paginator->wasPaginationDataAccessed() and !$page->getConfig()->getValue('single_page'))
-        {
-            // If pagination data was accessed, there may be sub-pages for this page,
-            // so we need the 'directory' naming scheme to store them (unless this
-            // page is forced to a single page).
-            $useDirectory = true;
-        }
-        
-        // Figure out the output file/directory for the page.
-        if ($useDirectory)
-        {
-            $bakePath = ($this->bakeDir . 
-                         $page->getUri() . 
-                         (($page->getUri() == '') ? '' : '/') . 
-                         (($page->getPageNumber() == 1) ? '' : ($page->getPageNumber() . '/')) .
-                         self::BAKE_INDEX_DOCUMENT);
+            // Output will be one of:
+            // - `uri/name/index.html` (if not a sub-page).
+            // - `uri/name/<n>/index.html` (if a sub-page, where <n> is the page number).
+            $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
+            if ($isSubPage)
+                $bakePath .= $page->getPageNumber() . '/';
+            $bakePath .= self::BAKE_INDEX_DOCUMENT;
         }
         else
         {
-            $extension = $this->getBakedExtension($contentType);
-            $bakePath = $this->bakeDir . (($page->getUri() == '') ? 'index' : $page->getUri()) . '.' . $extension;
+            // Output will be one of:
+            // - `uri/name.html` (if not a sub-page).
+            // - `uri/name/<n>.html` (if a sub-page, where <n> is the page number).
+            $bakePath .= (($page->getUri() == '') ? 'index' : $page->getUri());
+            if ($isSubPage)
+                $bakePath .= '/' . $page->getPageNumber();
+            $bakePath .= $this->getBakedExtension($contentType);
         }
         
         // Copy the page.
@@ -160,9 +153,9 @@ class PageBaker
         $this->bakedFiles[] = $bakePath;
         
         // Copy any used assets for the first sub-page.
-        if ($page->getPageNumber() == 1 and $this->parameters['copy_assets'] === true)
+        if (!$isSubPage and $this->parameters['copy_assets'])
         {
-            if ($useDirectory)
+            if ($prettyUrls)
             {
                 $bakeAssetDir = dirname($bakePath) . '/';
             }
@@ -194,9 +187,9 @@ class PageBaker
         switch ($contentType)
         {
             case 'text':
-                return 'txt';
+                return '.txt';
             default:
-                return $contentType;
+                return '.' . $contentType;
         }
     }
 }

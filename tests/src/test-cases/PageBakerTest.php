@@ -9,16 +9,40 @@ use PieCrust\Page\Page;
 
 class PageBakerTest extends PHPUnit_Framework_TestCase
 {
-    public function testPageBake()
+    public function pageBakeDataProvider()
     {
+        return array(
+            array(false, null, 'blah.html'),
+            array(true, null, 'blah/index.html'),
+            array(false, array('pretty_urls' => true), 'blah/index.html'),
+            array(true, array('pretty_urls' => false), 'blah.html'),
+            array(false, array('content_type' => 'foo'), 'blah.foo'),
+            array(true, array('content_type' => 'foo'), 'blah/index.html'),
+            array(false, array('pretty_urls' => true, 'content_type' => 'foo'), 'blah/index.html'),
+            array(true, array('pretty_urls' => false, 'content_type' => 'foo'), 'blah.foo')
+        );
+    }
+
+    /**
+     * @dataProvider pageBakeDataProvider
+     */
+    public function testPageBake($prettyUrls, $extraPageConfig, $expectedName)
+    {
+        $pageConfig = array(
+            'layout' => 'none', 
+            'format' => 'none'
+        );
+        if ($extraPageConfig)
+            $pageConfig = array_merge($pageConfig, $extraPageConfig);
+
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
-                    'pretty_urls' => false
+                    'pretty_urls' => $prettyUrls
                 )))
             ->withPage(
                 'blah',
-                array('layout' => 'none', 'format' => 'none'),
+                $pageConfig,
                 'Some contents.'
             );
 
@@ -30,17 +54,34 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
-        $this->assertEquals(array(vfsStream::url('root/counter/blah.html')), $baker->getBakedFiles());
-        $this->assertFileExists(vfsStream::url('root/counter/blah.html'));
-        $this->assertEquals("Some contents.", file_get_contents(vfsStream::url('root/counter/blah.html')));
+        $this->assertEquals(
+            array(vfsStream::url('root/counter/' . $expectedName)), 
+            $baker->getBakedFiles()
+        );
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
+        $this->assertEquals(
+            "Some contents.", 
+            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
+        );
     }
 
-    public function testSinglePageBake()
+    public function singlePageBakeDataProvider()
+    {
+        return array(
+            array(false, 'blah.html'),
+            array(true, 'blah/index.html')
+        );
+    }
+
+    /**
+     * @dataProvider singlePageBakeDataProvider
+     */
+    public function testSinglePageBake($prettyUrls, $expectedName)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
-                    'pretty_urls' => false,
+                    'pretty_urls' => $prettyUrls,
                     'posts_fs' => 'flat',
                     'posts_per_page' => 5
                 )))
@@ -70,18 +111,33 @@ EOD
         $this->assertTrue($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
         $this->assertEquals(
-            array(vfsStream::url('root/counter/blah/index.html')), 
-            $baker->getBakedFiles());
-        $this->assertFileExists(vfsStream::url('root/counter/blah/index.html'));
-        $this->assertEquals("FOUR\nTHREE\nTWO\nONE\n", file_get_contents(vfsStream::url('root/counter/blah/index.html')));
+            array(vfsStream::url('root/counter/' . $expectedName)), 
+            $baker->getBakedFiles()
+        );
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
+        $this->assertEquals(
+            "FOUR\nTHREE\nTWO\nONE\n", 
+            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
+        );
     }
 
-    public function testMultiplePageBake()
+    public function multiplePageBakeDataProvider()
+    {
+        return array(
+            array(false, 'blah.html', 'blah/2.html'),
+            array(true, 'blah/index.html', 'blah/2/index.html')
+        );
+    }
+
+    /**
+     * @dataProvider multiplePageBakeDataProvider
+     */
+    public function testMultiplePageBake($prettyUrls, $expectedName1, $expectedName2)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
-                    'pretty_urls' => false,
+                    'pretty_urls' => $prettyUrls,
                     'posts_fs' => 'flat',
                     'posts_per_page' => 5
                 )))
@@ -115,22 +171,40 @@ EOD
         $this->assertEquals(2, $baker->getPageCount());
         $this->assertEquals(
             array(
-                vfsStream::url('root/counter/blah/index.html'),
-                vfsStream::url('root/counter/blah/2/index.html')
+                vfsStream::url('root/counter/' . $expectedName1),
+                vfsStream::url('root/counter/' . $expectedName2)
             ), 
-            $baker->getBakedFiles());
-        $this->assertFileExists(vfsStream::url('root/counter/blah/index.html'));
-        $this->assertFileExists(vfsStream::url('root/counter/blah/2/index.html'));
-        $this->assertEquals("SEVEN\nSIX\nFIVE\nFOUR\nTHREE\n", file_get_contents(vfsStream::url('root/counter/blah/index.html')));
-        $this->assertEquals("TWO\nONE\n", file_get_contents(vfsStream::url('root/counter/blah/2/index.html')));
+            $baker->getBakedFiles()
+        );
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName1));
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName2));
+        $this->assertEquals(
+            "SEVEN\nSIX\nFIVE\nFOUR\nTHREE\n", 
+            file_get_contents(vfsStream::url('root/counter/' . $expectedName1))
+        );
+        $this->assertEquals(
+            "TWO\nONE\n", 
+            file_get_contents(vfsStream::url('root/counter/' . $expectedName2))
+        );
     }
 
-    public function testPageWithAsset()
+    public function pageWithAssetDataProvider()
+    {
+        return array(
+            array(false, 'blah.html'),
+            array(true, 'blah/index.html')
+        );
+    }
+
+    /**
+     * @dataProvider pageWithAssetDataProvider
+     */
+    public function testPageWithAsset($prettyUrls, $expectedName)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
-                    'pretty_urls' => false
+                    'pretty_urls' => $prettyUrls
                 )))
             ->withPage(
                 'blah',
@@ -147,11 +221,14 @@ EOD
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
-        $this->assertEquals(array(vfsStream::url('root/counter/blah.html')), $baker->getBakedFiles());
-        $this->assertFileExists(vfsStream::url('root/counter/blah.html'));
+        $this->assertEquals(
+            array(vfsStream::url('root/counter/' . $expectedName)), 
+            $baker->getBakedFiles()
+        );
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
         $this->assertEquals(
             "Some contents:\n/blah/foo.txt",
-            file_get_contents(vfsStream::url('root/counter/blah.html'))
+            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
         );
         $this->assertFileExists(vfsStream::url('root/counter/blah/foo.txt'));
         $this->assertEquals(
