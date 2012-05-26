@@ -15,8 +15,7 @@ class MockFileSystem
 
     public function __construct()
     {
-        vfsStream::setup();
-        vfsStream::create(array(
+        vfsStream::setup('root', null, array(
             'kitchen' => array(
                 '_content' => array(
                     'config.yml' => 'site:\n  title: Mock Website'
