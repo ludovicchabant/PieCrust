@@ -310,7 +310,10 @@ class PieCrust implements IPieCrust
         if ($this->config == null)
         {
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
-            $this->config = new PieCrustConfiguration($this->rootDir . PieCrustDefaults::CONFIG_PATH, $configCache);
+            $this->config = new PieCrustConfiguration(
+                $this->rootDir . PieCrustDefaults::CONFIG_PATH, 
+                $configCache
+            );
         }
     }
 }
