@@ -192,12 +192,6 @@ class PieCrustBaker
     {
         $overallStart = microtime(true);
         
-        // Set the root for file-url mode, if specified.
-        if ($this->pieCrust->getConfig()->getValue('baker/file_urls'))
-        {
-            $this->pieCrust->getConfig()->setValue('site/root', str_replace(DIRECTORY_SEPARATOR, '/', $this->getBakeDir()));
-        }
-        
         // Display the banner.
         $bannerLevel = PEAR_LOG_DEBUG;
         if ($this->parameters['info_only'])

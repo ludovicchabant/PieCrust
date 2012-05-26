@@ -59,10 +59,17 @@ class BakeCommand extends ChefCommand
         ));
         $bakerParser->addOption('file_urls', array(
             'long_name'   => '--fileurls',
-            'description' => "Uses local file paths for URLs (for previewing website locally).",
+            'description' => "Deprecated. Same as `--portable`.",
             'default'     => false,
             'action'      => 'StoreTrue',
             'help_name'   => 'FILE_URLS'
+        ));
+        $bakerParser->addOption('portable_urls', array(
+            'long_name'   => '--portable',
+            'description' => "Uses relative paths for all URLs (for previewing website locally).",
+            'default'     => false,
+            'action'      => 'StoreTrue',
+            'help_name'   => 'PORTABLE'
         ));
         $bakerParser->addOption('info_only', array(
             'long_name'   => '--info',
@@ -79,6 +86,13 @@ class BakeCommand extends ChefCommand
         $result = $context->getResult();
 
         $outputDir = $result->command->options['output'];
+
+        // Warn about deprecated stuff.
+        if ($result->command->options['file_urls'])
+        {
+            $context->getLog()->info("The `--fileurls` option has been deprecated. Please use `--portable` instead.");
+            $result->command->options['portable_urls'] = true;
+        }
 
         // Set-up the app and the baker.
         $bakerParameters = array(
@@ -100,9 +114,12 @@ class BakeCommand extends ChefCommand
         {
             $pieCrust->getConfig()->setValue('site/root', $result->command->options['root_url']);
         }
-        if ($result->command->options['file_urls'])
+        if ($result->command->options['portable_urls'])
         {
-            $pieCrust->getConfig()->setValue('baker/file_urls', true);
+            $pieCrust->getConfig()->setValue('baker/portable_urls', true);
+            // Also disable pretty URLs because it doesn't make much sense
+            // when there's no web server handling default documents.
+            $pieCrust->getConfig()->setValue('site/pretty_urls', false);
         }
 
         // Start baking!

@@ -113,16 +113,9 @@ class PageBaker
         if ($this->parameters['copy_assets'])
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
-        // Render the page.
-        $bakedContents = $pageRenderer->get();
-
-        // Get some objects we need.
-        $data = $page->getPageData();
-        $assetor = $data['asset'];
-        $paginator = $data['pagination'];
-        
         // Figure out the output HTML path.
         $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
+        $portableUrls = $page->getApp()->getConfig()->getValue('baker/portable_urls');
         $contentType = $page->getConfig()->getValue('content_type');
         $isSubPage = ($page->getPageNumber() > 1);
         $bakePath = $this->bakeDir;
@@ -146,6 +139,47 @@ class PageBaker
                 $bakePath .= '/' . $page->getPageNumber();
             $bakePath .= $this->getBakedExtension($contentType);
         }
+
+        // If we're using portable URLs, change the site root to a relative
+        // path from the page's directory.
+        $savedSiteRoot = null;
+        if ($portableUrls)
+        {
+            $siteRoot = '';
+            $curDir = dirname($bakePath);
+            while (strlen($curDir) > strlen($this->bakeDir))
+            {
+                $siteRoot .= '../';
+                $curDir = dirname($curDir);
+            }
+            if ($siteRoot == '')
+                $siteRoot = './';
+
+            $savedSiteRoot = $page->getApp()->getConfig()->getValueUnchecked('site/root');
+            $page->getApp()->getConfig()->setValue('site/root', $siteRoot);
+
+            // We need to force-reevaluate the URI decorators because they cache
+            // the site root in them.
+            // TODO: figure a way to make the configuration do it itself, maybe as 
+            // part of the validation hooks.
+            $page->getApp()->getEnvironment()->getUriDecorators(true);
+
+            // We also need to unload all loaded pages because their rendered
+            // contents will probably be invalid now that the site root changed.
+            $repo = $page->getApp()->getEnvironment()->getPageRepository();
+            foreach ($repo->getPages() as $p)
+            {
+                $p->unload();
+            }
+        }
+        
+        // Render the page.
+        $bakedContents = $pageRenderer->get();
+
+        // Get some objects we need.
+        $data = $page->getPageData();
+        $assetor = $data['asset'];
+        $paginator = $data['pagination'];
         
         // Copy the page.
         PathHelper::ensureDirectory(dirname($bakePath));
@@ -179,7 +213,12 @@ class PageBaker
             }
         }
         
+        // Remember a few things.
         $this->paginationDataAccessed = ($this->paginationDataAccessed or $paginator->wasPaginationDataAccessed());
+
+        // Cleanup.
+        if ($savedSiteRoot)
+            $page->getApp()->getConfig()->setValue('site/root', $savedSiteRoot);
     }
     
     protected function getBakedExtension($contentType)

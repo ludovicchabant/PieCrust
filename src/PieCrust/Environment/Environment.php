@@ -66,9 +66,9 @@ abstract class Environment
     /**
      * Gets the URI decorators for the current application.
      */
-    public function getUriDecorators()
+    public function getUriDecorators($reevaluate = false)
     {
-        if ($this->uriPrefix == null or $this->uriSuffix == null)
+        if ($this->uriPrefix == null or $this->uriSuffix == null or $reevaluate)
         {
             $pieCrust = $this->pieCrust;
             $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
