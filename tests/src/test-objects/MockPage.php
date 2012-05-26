@@ -149,6 +149,10 @@ class MockPage implements IPage
         $this->paginationDataSource = $postInfos;
     }
 
+    public function unload()
+    {
+    }
+
     public function __construct(IPieCrust $pieCrust)
     {
         if (!$pieCrust)

@@ -72,9 +72,7 @@ class Page implements IPage
         if ($pageNumber != $this->pageNumber)
         {
             $this->pageNumber = $pageNumber;
-            $this->config = null;
-            $this->contents = null;
-            $this->pageData = null;
+            $this->unload();
         }
     }
     
@@ -240,6 +238,16 @@ class Page implements IPage
     public function setPaginationDataSource($postInfos)
     {
         $this->paginationDataSource = $postInfos;
+    }
+
+    /**
+     * Unloads the page.
+     */
+    public function unload()
+    {
+        $this->config = null;
+        $this->contents = null;
+        $this->pageData = null;
     }
 
     /**

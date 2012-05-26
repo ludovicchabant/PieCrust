@@ -41,7 +41,7 @@ interface IPage
     public function getPageNumber();
     
     /**
-     * Sets the page number.
+     * Sets the page number. This also unloads the page.
      */
     public function setPageNumber($pageNumber);
     
@@ -124,4 +124,9 @@ interface IPage
      * Sets the pagination data source.
      */
     public function setPaginationDataSource($postInfos);
+
+    /**
+     * Unloads the page.
+     */
+    public function unload();
 }
