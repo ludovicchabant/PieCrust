@@ -221,9 +221,6 @@ class DirectoryBaker
 
     protected function bakeSubTree($root)
     {
-        // Give some breathing room in verbose mode.
-        $this->logger->debug('');
-
         $didBake = false;
         $walkStack = array($root);
         while (count($walkStack) > 0)
@@ -356,8 +353,6 @@ class DirectoryBaker
         $relativeOutputDir = PathHelper::getRelativePath($this->pieCrust, $outputDir);
         PathHelper::ensureDirectory($outputDir, true);
 
-        $this->printProcessingTreeNode($node, "Processing into '{$relativeOutputDir}'.");
-
         // If we need to, re-process the node!
         $didBake = false;
         try
@@ -366,14 +361,14 @@ class DirectoryBaker
             $processor = $node->getProcessor();
             if ($processor->process($path, $outputDir) !== false)
             {
-                $indent = str_repeat('  ', $node->getLevel() + 1);
-                $message = $node->getPath() . ' ' .
-                    '[' . $processor->getName() . '] -> ' .
-                    PathHelper::getRelativePath($this->pieCrust, $outputDir);
-                $this->logger->debug($indent . PieCrustBaker::formatTimed($start, $message));
-                $this->logger->debug('');
-
+                $end = microtime(true);
+                $processTime = sprintf('%8.1f ms', ($end - $start)*1000.0);
+                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [{$processTime}].");
                 $didBake = true;
+            }
+            else
+            {
+                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean].");
             }
         }
         catch (Exception $e)
