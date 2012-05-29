@@ -48,7 +48,7 @@ class ShowConfigCommand extends ChefCommand
             }
             else
             {
-                $logger->info($configToShow . PHP_EOL);
+                $logger->info($configToShow);
             }
         }
     }
