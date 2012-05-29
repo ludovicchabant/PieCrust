@@ -1,0 +1,21 @@
+{
+    "name": "bolt80/stupidhttp",
+    "type": "library",
+    "description": "A stupid and simple development HTTP server.",
+    "keywords": [ "http", "server", "net", "web" ],
+    "homepage": "http://bolt80.com/stupidhttp",
+    "authors": [
+        {
+            "name": "Ludovic Chabant",
+            "homepage": "http://ludovic.chabant.com"
+        }
+    ],
+    "require": {
+        "php": ">= 5.3.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "StupidHttp_": "lib"
+        }
+    }
+}

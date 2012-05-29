@@ -7,15 +7,17 @@
 class StupidHttp_ConsoleLog extends StupidHttp_Log
 {
     protected $level;
+    protected $prefixAllMessages;
     protected $isBuffering;
     protected $buffer;
     
     /**
      * Creates a new instance of StupidHttp_ConsoleLog.
      */
-    public function __construct($level = StupidHttp_Log::TYPE_INFO)
+    public function __construct($level = StupidHttp_Log::TYPE_INFO, $prefixAllMessages = false)
     {
         $this->level = $level;
+        $this->prefixAllMessages = $prefixAllMessages;
         $this->isBuffering = false;
         $this->buffer = '';
     }
@@ -27,7 +29,12 @@ class StupidHttp_ConsoleLog extends StupidHttp_Log
     {
         if ($type <= $this->level)
         {
-            $formattedMessage = '[' . StupidHttp_Log::messageTypeToString($type) . '] ' . $message . PHP_EOL;
+            $prefix = '';
+            if ($this->prefixAllMessages or $type != StupidHttp_Log::TYPE_INFO)
+            {
+                $prefix = '[' . StupidHttp_Log::messageTypeToString($type) . '] ';
+            }
+            $formattedMessage = $prefix . $message . PHP_EOL;
             if ($this->isBuffering)
             {
                 $this->buffer .= $formattedMessage;

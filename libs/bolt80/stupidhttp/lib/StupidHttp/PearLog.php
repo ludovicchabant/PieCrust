@@ -1,7 +1,5 @@
 <?php
 
-require_once 'Log.php';
-
 
 /**
  * A StupidHttp_Log class that wraps a PEAR logger.
@@ -17,6 +15,9 @@ class StupidHttp_PearLog extends StupidHttp_Log
         return new StupidHttp_PearLog($logger);
     }
 
+    protected $isBuffering;
+    protected $bufferedMessages;
+
     protected $log;
     /**
      * Creates a new instance of StupidHttp_PearLog wrapped around the given PEAR logger.
@@ -24,6 +25,8 @@ class StupidHttp_PearLog extends StupidHttp_Log
     public function __construct(Log $log)
     {
         $this->log = $log;
+        $this->isBuffering = false;
+        $this->bufferedMessages = array();
     }
     
     /**
@@ -50,7 +53,32 @@ class StupidHttp_PearLog extends StupidHttp_Log
             $pearType = PEAR_LOG_DEBUG;
             break;
         }
-        $this->log->log($message, $pearType);
+        if ($this->isBuffering)
+        {
+            $this->bufferedMessages[] = array(
+                'message' => $message,
+                'type' => $pearType
+            );
+        }
+        else
+        {
+            $this->log->log($message, $pearType);
+        }
+    }
+
+    public function _startBuffering()
+    {
+        $this->isBuffering = true;
+    }
+
+    public function _endBuffering()
+    {
+        foreach ($this->bufferedMessages as $m)
+        {
+            $this->log->log($m['message'], $m['type']);
+        }
+        $this->bufferedMessages = array();
+        $this->isBuffering = false;
     }
 }
 

@@ -86,6 +86,9 @@ class StupidHttp_WebResponse
      */
     public function __construct($status = 200, array $headers = array(), $body = null)
     {
+        if (!is_int($status))
+            throw new StupidHttp_WebException('The given HTTP return code was not an integer: ' . $code, 500);
+
         $this->status = $status;
         $this->headers = $headers;
         $this->body = $body;

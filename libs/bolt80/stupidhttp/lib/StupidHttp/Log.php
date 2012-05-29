@@ -25,7 +25,7 @@ class StupidHttp_Log
     /**
      * Logs a critical message.
      */
-    public function logCritical($message)
+    public function critical($message)
     {
         $this->log($message, self::TYPE_CRITICAL);
     }
@@ -33,7 +33,7 @@ class StupidHttp_Log
     /**
      * Logs an error message.
      */
-    public function logError($message)
+    public function error($message)
     {
         $this->log($message, self::TYPE_ERROR);
     }
@@ -41,7 +41,7 @@ class StupidHttp_Log
     /**
      * Logs a warning message.
      */
-    public function logWarning($message)
+    public function warning($message)
     {
         $this->log($message, self::TYPE_WARNING);
     }
@@ -49,7 +49,7 @@ class StupidHttp_Log
     /**
      * Logs an informational message.
      */
-    public function logInfo($message)
+    public function info($message)
     {
         $this->log($message, self::TYPE_INFO);
     }
@@ -57,7 +57,7 @@ class StupidHttp_Log
     /**
      * Logs a debug message.
      */
-    public function logDebug($message)
+    public function debug($message)
     {
         $this->log($message, self::TYPE_DEBUG);
     }

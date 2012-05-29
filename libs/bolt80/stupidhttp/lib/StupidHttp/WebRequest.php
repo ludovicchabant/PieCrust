@@ -6,11 +6,13 @@
  */
 class StupidHttp_WebRequest
 {
-    protected $server;
+    protected $serverInfo;
     protected $method;
     protected $uri;
+    protected $parsedUri;
     protected $version;
     protected $headers;
+    protected $body;
     
     /**
      * Gets the HTTP method for the request (GET, POST, etc.).
@@ -26,6 +28,30 @@ class StupidHttp_WebRequest
     public function getUri()
     {
         return $this->uri;
+    }
+
+    /**
+     * Gets the path part of the URI.
+     */
+    public function getUriPath()
+    {
+        return $this->parsedUri['path'];
+    }
+
+    /**
+     * Gets the query part of the URI.
+     */
+    public function getUriQuery()
+    {
+        return $this->parsedUri['query'];
+    }
+
+    /**
+     * Gets the fragment part of the URI.
+     */
+    public function getUriFragment()
+    {
+        return $this->parsedUri['fragment'];
     }
     
     /**
@@ -45,6 +71,29 @@ class StupidHttp_WebRequest
     public function getHeaders()
     {
         return $this->headers;
+    }
+
+    /**
+     * Gets the request's body (e.g. with a POST request).
+     */
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    /**
+     * Gets the request's body after decoding.
+     */
+    public function getFormData()
+    {
+        if ($this->getMethod() != 'POST')
+            return null;
+        if (!$this->body)
+            return null;
+
+        $vars = array();
+        parse_str($this->body, $vars);
+        return $vars;
     }
     
     /**
@@ -85,37 +134,44 @@ class StupidHttp_WebRequest
     /**
      * Creates a new instance of StupidHttp_WebRequest.
      */
-    public function __construct(StupidHttp_WebServer $server, $rawLines)
+    public function __construct(array $serverInfo, array $rawLines, $rawBody = null)
     {
-        if (count($rawLines) < 1) throw new StupidHttp_WebException('The raw request must contain at least one line.', 0, '400 Bad Request');
+        if (count($rawLines) < 1)
+        {
+            throw new StupidHttp_WebException('The raw request must contain at least one line.', 0, '400 Bad Request');
+        }
         
+        // Parse the request line.
         $matches = array();
         if (!preg_match('/([A-Z]+)\s+([^\s]+)\s+(HTTP\/1\.\d)/', $rawLines[0], $matches))
         {
-            throw new StupidHttp_WebException('Unexpected request header format.', 0, '400 Bad Request');
+            throw new StupidHttp_WebException('Unexpected request header format: ' . $rawLines[0], 0, '400 Bad Request');
         }
         $this->method = $matches[1];
-        $this->uri = ($matches[2] == '/' ? '/' : rtrim($matches[2], '/'));
+        $this->uri = $matches[2];
+        $this->parsedUri = parse_url($this->uri);
         $this->version = $matches[3];
         
+        // Parse the header lines.
         $this->headers = array();
-        for ($i = 1; $i < count($rawLines); ++$i)
+        $rawLinesCount = count($rawLines);
+        for ($i = 1; $i < $rawLinesCount; ++$i)
         {
             $header = explode(':', $rawLines[$i]);
             $this->headers[trim($header[0])] = trim($header[1]);
         }
         
-        $this->server = $server;
+        // Get the rest.
+        $this->body = $rawBody;
+        $this->serverInfo = $serverInfo;
     }
     
     protected function buildServerVariables()
     {
         $uri = parse_url($this->getUri());
-        $server = array();
+        $server = $this->serverInfo;
         
         $server['REQUEST_METHOD'] = $this->getMethod();
-        $server['SERVER_NAME'] = $this->server->getAddress();
-        $server['SERVER_PORT'] = $this->server->getPort();
         $server['SERVER_PROTOCOL'] = 'HTTP/1.1';
         $server['QUERY_STRING'] = isset($uri['query']) ? $uri['query'] : null;
         $server['REQUEST_URI'] = $this->getUri();

@@ -103,7 +103,7 @@ class PieCrustServer
      */
     public function _preprocessRequest(\StupidHttp_WebRequest $request)
     {
-        $documentPath = $this->bakeCacheDir . $request->getUri();
+        $documentPath = $this->bakeCacheDir . $request->getUriPath();
         if (is_file($documentPath) && isset($this->bakeCacheFiles[$documentPath]))
         {
             // Make sure this file is up-to-date.
@@ -214,10 +214,10 @@ class PieCrustServer
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
-        $context->getLog()->logDebug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        $context->getLog()->debug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
         if ($pieCrustException != null)
         {
-            $context->getLog()->logError("    PieCrust error: " . $pieCrustException->getMessage());
+            $context->getLog()->error("    PieCrust error: " . $pieCrustException->getMessage());
         }
     }
 
@@ -230,17 +230,17 @@ class PieCrustServer
 
         // Set-up the stupid web server.
         $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);
-        if ($this->logger != null && !($this->logger instanceof \Log_null))
+        if ($this->options['log_file'])
         {
-            $this->server->addLog(new StupidHttp_PearLog($this->logger));
+            $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));
+        }
+        elseif ($this->logger != null && !($this->logger instanceof \Log_null))
+        {
+            $this->server->setLog(new StupidHttp_PearLog($this->logger));
         }
         else
         {
-            $this->server->addLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
-        }
-        if ($this->options['log_file'])
-        {
-            $this->server->addLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));
+            $this->server->setLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
         }
         
         foreach ($this->options['mime_types'] as $ext => $mime)
@@ -257,7 +257,7 @@ class PieCrustServer
                             {
                                 $self->_runPieCrustRequest($context);
                             });
-        $this->server->setPreprocess(function($req) use ($self) { $self->_preprocessRequest($req); });
+        $this->server->setPreprocessor(function($req) use ($self) { $self->_preprocessRequest($req); });
     }
 
     protected function prebake($server = null, $path = null)
