@@ -36,7 +36,7 @@ class PrepareCommand extends ChefCommand
         $parser->addOption('blog', array(
             'short_name'  => '-b',
             'long_name'   => '--blog',
-            'description' => "Create a post for the given blog (default to the first declared blog).",
+            'description' => "Create a post for the given blog (defaults to the first declared blog).",
             'default'     => null,
             'help_name'   => 'BLOG'
         ));
