@@ -50,7 +50,6 @@ class PluginsCommand extends ChefCommand
 
     public function run(ChefContext $context)
     {
-        $logger = $context->getLog();
         $result = $context->getResult();
 
         $action = 'list';
@@ -68,7 +67,7 @@ class PluginsCommand extends ChefCommand
     protected function listPlugins(ChefContext $context)
     {
         $app = $context->getApp();
-        $logger = $context->getLog();
+        $log = $context->getLog();
 
         $pluginLoader = $app->getPluginLoader();
         foreach ($pluginLoader->getPlugins() as $plugin)
@@ -79,22 +78,22 @@ class PluginsCommand extends ChefCommand
                 $ref = new \ReflectionClass($plugin);
                 $msg .= str_repeat(" ", max(0, 15 - strlen($msg))) . " [" . $ref->getfileName() . "]";
             }
-            $logger->info($msg);
+            $log->info($msg);
         }
     }
 
     protected function findPlugins(ChefContext $context)
     {
         $app = $context->getApp();
-        $logger = $context->getLog();
+        $log = $context->getLog();
         $result = $context->getResult();
 
-        $sources = $this->getSources($app);
+        $sources = $this->getSources($app, $log);
         $query = $result->command->command->args['query'];
-        $plugins = $this->getPluginMetadata($app, $sources, $query, false);
+        $plugins = $this->getPluginMetadata($app, $sources, $query, false, $log);
         foreach ($plugins as $plugin)
         {
-            $logger->info("{$plugin['name']} : {$plugin['description']}");
+            $log->info("{$plugin['name']} : {$plugin['description']}");
         }
     }
 
@@ -104,9 +103,9 @@ class PluginsCommand extends ChefCommand
         $log = $context->getLog();
         $result = $context->getResult();
 
-        $sources = $this->getSources($app);
+        $sources = $this->getSources($app, $log);
         $pluginName = $result->command->command->args['name'];
-        $plugins = $this->getPluginMetadata($app, $sources, $pluginName, true);
+        $plugins = $this->getPluginMetadata($app, $sources, $pluginName, true, $log);
         if (count($plugins) != 1)
             throw new PieCrustException("Can't find a single plugin named: {$pluginName}");
 
@@ -119,23 +118,32 @@ class PluginsCommand extends ChefCommand
         $log->info("Plugin {$plugin['name']} is now installed.");
     }
 
-    protected function getSources(IPieCrust $pieCrust)
+    protected function getSources(IPieCrust $pieCrust, $log)
     {
         $sources = $pieCrust->getConfig()->getValue('site/plugins_sources');
-        if (!$sources)
-            $sources = array();
-        $sources[] = PieCrustDefaults::DEFAULT_PLUGIN_SOURCE;
+        if ($log)
+        {
+            $log->debug("Got site plugin sources: ");
+            foreach ($sources as $s)
+            {
+                $log->debug(" - " . $s);
+            }
+        }
         return $sources;
     }
 
-    protected function getPluginMetadata(IPieCrust $app, $sources, $pattern, $exact)
+    protected function getPluginMetadata(IPieCrust $app, $sources, $pattern, $exact, $log)
     {
         $metadata = array();
         foreach ($sources as $source)
         {
             $repository = PieCrustHelper::getRepository($app, $source);
-            $repostioryClass = get_class($repository);
+            $repositoryClass = get_class($repository);
 
+            if ($log)
+            {
+                $log->debug("Loading plugins metadata from: " . $source);
+            }
             $plugins = $repository->getPlugins($source);
             foreach ($plugins as $plugin)
             {
@@ -144,15 +152,15 @@ class PluginsCommand extends ChefCommand
                     $plugin['name'] = 'UNNAMED PLUGIN';
                 if (!isset($plugin['description']))
                     $plugin['description'] = 'NO DESCRIPTION AVAILABLE.';
-                $plugin['repository_class'] = $repostioryClass;
+                $plugin['repository_class'] = $repositoryClass;
 
                 // Find if the plugin matches the query.
-                $matches = false;
+                $matches = true;
                 if ($exact)
                 {
                     $matches = strcasecmp($plugin['name'], $pattern) == 0;
                 }
-                else
+                elseif ($pattern)
                 {
                     $matchesName = (stristr($plugin['name'], $pattern) != false);
                     $matchesDescription = (stristr($plugin['description'], $pattern) != false);

@@ -108,6 +108,7 @@ class PieCrustConfiguration extends Configuration
      */
     public static function getValidatedConfig($config)
     {
+        // Validate defaults.
         if (!$config)
         {
             $config = array();
@@ -116,21 +117,23 @@ class PieCrustConfiguration extends Configuration
         {
             $config['site'] = array();
         }
-        $config['site'] = array_merge(array(
-                        'title' => 'Untitled PieCrust Website',
-                        'root' => null,
-                        'default_format' => PieCrustDefaults::DEFAULT_FORMAT,
-                        'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
-                        'enable_gzip' => false,
-                        'pretty_urls' => false,
-                        'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
-                        'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
-                        'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
-                        'cache_time' => 28800,
-                        'display_errors' => false
-                    ),
-                    $config['site']);
-        
+        $config['site'] = array_merge(
+            array(
+                'title' => 'Untitled PieCrust Website',
+                'root' => null,
+                'default_format' => PieCrustDefaults::DEFAULT_FORMAT,
+                'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
+                'enable_gzip' => false,
+                'pretty_urls' => false,
+                'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
+                'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
+                'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
+                'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
+                'cache_time' => 28800,
+                'display_errors' => false
+            ),
+            $config['site']);
+
         // Validate the site root URL, and remember if it was specified in the
         // source config.yml, because we won't be able to tell the difference from
         // the completely validated cache version.
@@ -144,10 +147,19 @@ class PieCrustConfiguration extends Configuration
             $config['site']['root'] = rtrim($config['site']['root'], '/') . '/';
             $config['site']['is_auto_root'] = false;
         }
+
+        // Validate the plugins sources.
+        if (!in_array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE, $config['site']['plugins_sources']))
+        {
+            $config['site']['plugins_sources'][] = PieCrustDefaults::DEFAULT_PLUGIN_SOURCE;
+        }
         
         // Validate multi-blogs settings.
-        if (in_array(PieCrustDefaults::DEFAULT_BLOG_KEY, $config['site']['blogs']) and count($config['site']['blogs']) > 1)
+        if (in_array(PieCrustDefaults::DEFAULT_BLOG_KEY, $config['site']['blogs']) and 
+            count($config['site']['blogs']) > 1)
+        {
             throw new PieCrustException("'".PieCrustDefaults::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
+        }
         // Add default values for the blogs configurations, or use values
         // defined at the site level for easy site-wide configuration of multiple blogs
         // and backwards compatibility.
