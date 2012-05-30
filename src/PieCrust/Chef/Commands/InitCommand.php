@@ -141,7 +141,7 @@ class InitCommand extends ChefCommand
     
     protected function createSystemFile($fileName, $rootDir, $destination)
     {
-        $source = __DIR__ . '/../../../../resources/webinit/' . $fileName;
+        $source = __DIR__ . '/../../../../res/webinit/' . $fileName;
         $contents = file_get_contents($source);
         $this->log->debug("Writing '{$destination}'");
         file_put_contents($rootDir . $destination, $contents);
