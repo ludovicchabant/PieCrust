@@ -5,17 +5,26 @@
   <meta name="author" content="{{ site.author }}">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ site.title }}{% if page.title %} &mdash; {{ page.title }}{% endif %}</title>
+  <link rel="stylesheet" type="text/css" href="{{ site.root }}css/simple.css" />
+  <link rel="stylesheet" href="http://basehold.it/31/ff0000">
 </head>
 <body>
   <div id="container">
     <header>
-        <h1>{{ site.title }}</h1>
+        {% block header %}
+        <p class="site-title"><a href="{{ site.root }}">{{ site.title }}</a></p>
+        {% endblock %}
     </header>
-    <div id="main" role="main">
+    <section id="main" role="main">
+        {% block main %}
+        {% if page.title %}<h1 class="post-title">{{ page.title }}</h1>{% endif %}
         {{ content|raw }}
-    </div>
+        {% endblock %}
+    </section>
     <footer>
-        {{ piecrust.branding|raw }}
+        {% block footer %}
+        {% endblock %}
+        <p>{{ piecrust.branding|raw }}</p>
     </footer>
   </div>
 </body>

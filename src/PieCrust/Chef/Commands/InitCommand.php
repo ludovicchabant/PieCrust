@@ -88,8 +88,10 @@ class InitCommand extends ChefCommand
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_PAGES_DIR);
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_POSTS_DIR);
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_TEMPLATES_DIR);
+        $this->createDirectory($rootDir, 'css');
         
-        // Create the basic files.
+        // Create the basic files:
+        // - config.yml
         $this->createYamlFile($rootDir, PieCrustDefaults::CONFIG_PATH, array(
             'site' => array(
                 'title' => 'My New Website',
@@ -101,9 +103,39 @@ class InitCommand extends ChefCommand
                 'enable' => true
             )
         ));
-        $this->createSystemFile('default_template.html', $rootDir, PieCrustDefaults::CONTENT_TEMPLATES_DIR . PieCrustDefaults::DEFAULT_PAGE_TEMPLATE_NAME . '.html');
-        $this->createSystemFile('default_index.html', $rootDir, PieCrustDefaults::CONTENT_PAGES_DIR . PieCrustDefaults::INDEX_PAGE_NAME . '.html');
+        // - templates/default.html
+        $this->createSystemFile(
+            'default_template.html', 
+            $rootDir, 
+            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'default.html'
+        );
+        // - templates/main.html
+        $this->createSystemFile(
+            'default_index_template.html',
+            $rootDir,
+            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'main.html'
+        );
+        // - templates/post.html
+        $this->createSystemFile(
+            'default_post_template.html',
+            $rootDir,
+            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'post.html'
+        );
+        // - pages/_index.html
+        $this->createSystemFile(
+            'default_index.html', 
+            $rootDir,
+            PieCrustDefaults::CONTENT_PAGES_DIR . '_index.html'
+        );
 
+        // Create assets.
+        $this->createSystemFile(
+            'simple.css',
+            $rootDir,
+            'css/simple.css'
+        );
+        
+        // Create web-server files, if needed.
         if ($options['apache'])
         {
             $this->createSystemFile('htaccess', $rootDir, '.htaccess');
