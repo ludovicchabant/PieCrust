@@ -70,7 +70,7 @@ class JekyllImporter extends ImporterBase
             '  - ',
             $markup
         );
-        $config = \Yaml::load($markup);
+        $config = Yaml::load($markup);
 
         if (!isset($config['site']))
             $config['site'] = array();
@@ -126,7 +126,7 @@ class JekyllImporter extends ImporterBase
         // wouldn't see the updated config.
         sleep(1);
 
-        $contents = \sfYaml::dump($config, 3);
+        $contents = Yaml::dump($config, 3);
         file_put_contents($configPath, $contents);
     }
 
@@ -496,7 +496,7 @@ class JekyllImporter extends ImporterBase
         if (!$isTemplate and count($config) > 0)
         {
             $convertedContents .= "---\n";
-            $convertedContents .= \sfYaml::dump($config, 3);
+            $convertedContents .= Yaml::dump($config, 3);
             $convertedContents .= "---\n";
         }
         $convertedContents .= $text;
