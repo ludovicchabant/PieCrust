@@ -15,5 +15,4 @@ RewriteRule ^.*$ - [NC,L]
 RewriteRule ^.*$ index.php [NC,L]
 
 # Various other configuration stuff.
-SetEnv TZ Canada/Vancouver
 AddType text/css .less
