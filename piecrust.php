@@ -103,6 +103,7 @@ function piecrust_setup($profile = 'web')
             break;
         }
     case 'chef':
+    default:
         {
             set_error_handler('piecrust_error_handler');
             register_shutdown_function('chef_shutdown_function');
