@@ -62,22 +62,64 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
     }
 
     /**
-     * Waits for a new client connection, and returns the connection resource.
+     * Waits for incoming connections.
      */
-    public function connect($options)
+    public function connect(array $connections, $options)
     {
-        if (($msgsock = @socket_accept($this->sock)) === false)
+        $dummy = array();
+        $connections[] = $this->sock;
+        $ready = @socket_select(
+            $connections,
+            $dummy,
+            $dummy,
+            $options['poll_interval']
+        );
+        if ($ready === false)
         {
-            throw new StupidHttp_WebException("Failed accepting connection: " . socket_strerror(socket_last_error($this->sock)));
+            throw new StupidHttp_NetworkException("Failed to monitor incoming connections.");
         }
-        
-        $timeout = array('sec' => $options['timeout'], 'usec' => 0);
-        if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
+        if ($ready == 0)
         {
-            throw new StupidHttp_WebException("Failed setting timeout value: " . socket_strerror(socket_last_error($msgsock)));
+            return null;
         }
 
-        return $msgsock;
+        // Check for a new connection.
+        $i = array_search($this->sock, $connections);
+        if ($i !== false)
+        {
+            // Remove our socket from the connections and replace it
+            // with the file-descriptor for the new client.
+            unset($connections[$i]);
+
+            if (($msgsock = @socket_accept($this->sock)) === false)
+            {
+                throw new StupidHttp_WebException(
+                    "Failed accepting connection: " .
+                    socket_strerror(socket_last_error($this->sock))
+                );
+            }
+
+            if (@socket_set_option($msgsock, SOL_SOCKET, SO_REUSEADDR, 1) === false)
+            {
+                throw new StupidHttp_WebException(
+                    "Failed setting address re-use option: " .
+                    socket_strerror(socket_last_error($msgsock))
+                );
+            }
+
+            $timeout = array('sec' => $options['timeout'], 'usec' => 0);
+            if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
+            {
+                throw new StupidHttp_WebException(
+                    "Failed setting timeout value: " .
+                    socket_strerror(socket_last_error($msgsock))
+                );
+            }
+
+            $connections[] = $msgsock;
+        }
+
+        return $connections;
     }
 
     /**
@@ -139,6 +181,8 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
 
             $data .= $buf;
         }
+        if (strlen($data) == 0)
+            return false;
         return $data;
     }
 
@@ -216,14 +260,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
     {
         if (false === ($buf = @socket_read($connection, $this->sockReceiveBufferSize)))
         {
-            if (socket_last_error($connection) === SOCKET_ETIMEDOUT)
-            {
-                throw new StupidHttp_TimedOutException();
-            }
-            else
-            {
-                throw new StupidHttp_NetworkException(socket_strerror(socket_last_error($connection)));
-            }
+            throw new StupidHttp_NetworkException(socket_strerror(socket_last_error($connection)));
         }
         return $buf;
     }

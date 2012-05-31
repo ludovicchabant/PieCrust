@@ -9,7 +9,7 @@ class StupidHttp_Driver
     const REQUEST_LOG_FORMAT = "[%date%] %client_ip% --> %method% %path% --> %status% %status_name% [%time%ms]";
 
     protected $options;
-    protected $connection;
+    protected $connections;
 
     // Driver Properties {{{
     protected $server;
@@ -137,7 +137,7 @@ class StupidHttp_Driver
     public function run($options)
     {
         $this->options = $options;
-        $this->connection = false;
+        $this->connections = array();
         $this->handler->setLog($this->log);
         do
         {
@@ -145,38 +145,76 @@ class StupidHttp_Driver
         }
         while (true);
     }
+
+    public function runLimited($options, $loopCount = 1)
+    {
+        $this->options = $options;
+        $this->connections = array();
+        $this->handler->setLog($this->log);
+        while ($loopCount > 0)
+        {
+            $this->runOnce();
+            --$loopCount;
+        }
+    }
     // }}}
 
     // Secondary Methods {{{
     /**
      * Runs one request.
      */
-    public function runOnce()
+    protected function runOnce()
     {
-        // Establish a new connection if needed.
-        if ($this->connection === false)
+        // Check for active or new connections.
+        try
         {
-            $this->log->debug('Establishing connection...');
-            $this->connection = $this->handler->connect($this->options);
+            $ready = $this->handler->connect($this->connections, $this->options);
+            if ($ready == null)
+                return;
+        }
+        catch (Exception $e)
+        {
+            $this->log->error($e->getMessage());
+            return;
         }
 
-        // Receive a new request.
-        $requestInfo = $this->readRequest($this->connection);
-        if (!$requestInfo['error'])
+        // Add new connections to our list.
+        foreach ($ready as $c)
         {
-            $response = $this->processRequest($requestInfo);
-            $this->sendResponse($response, $requestInfo);
+            if (!in_array($c, $this->connections))
+                $this->connections[] = $c;
         }
+        $this->log->debug(count($ready) . "/" . count($this->connections) . " active connections.");
 
-        // Logging...
-        $this->logRequest($requestInfo);
-            
-        // Close the connection if it's OK to do so, or if the request was invalid.
-        if ($requestInfo['close_socket'] or $requestInfo['error'])
+        // Read from each active connection.
+        foreach ($ready as $c)
         {
-            $this->log->debug("Closing connection.");
-            $this->handler->disconnect($this->connection);
-            $this->connection = false;
+            try
+            {
+                // Receive a new request.
+                $requestInfo = $this->readRequest($c);
+                if (!$requestInfo['error'])
+                {
+                    $response = $this->processRequest($requestInfo);
+                    $this->sendResponse($response, $requestInfo);
+                }
+
+                // Logging...
+                $this->logRequest($requestInfo);
+
+                // Close the connection if it's OK to do so, or if the request was invalid.
+                if ($requestInfo['close_socket'] or $requestInfo['error'])
+                {
+                    $this->log->debug("Closing connection.");
+                    $this->handler->disconnect($c);
+                    $i = array_search($c, $this->connections);
+                    unset($this->connections[$i]);
+                }
+            }
+            catch (Exception $e)
+            {
+                $this->log->error($e->getMessage());
+            }
         }
     }
 
@@ -186,6 +224,7 @@ class StupidHttp_Driver
         $rawBody = false;
         $error = false;
         $profiling = array();
+        $closeSocket = false;
         try
         {
             // Start profiling.
@@ -193,36 +232,32 @@ class StupidHttp_Driver
 
             // Read the request header.
             $rawRequestStr = $this->handler->readUntil($connection, "\r\n\r\n");
-            $rawRequest = explode("\r\n", $rawRequestStr);
+            if ($rawRequestStr !== false)
+            {
+                $rawRequest = explode("\r\n", $rawRequestStr);
 
-            // Figure out if there's a body.
-            $contentLength = -1;
-            foreach ($rawRequest as $line)
-            {
-                $m = array();
-                if (preg_match('/^Content\-Length\:\s*(\d+)\s*$/', $line, $m))
+                // Figure out if there's a body.
+                $contentLength = -1;
+                foreach ($rawRequest as $line)
                 {
-                    $contentLength = (int)$m[1];
+                    $m = array();
+                    if (preg_match('/^Content\-Length\:\s*(\d+)\s*$/', $line, $m))
+                    {
+                        $contentLength = (int)$m[1];
+                    }
                 }
-            }
-            if ($contentLength > 0)
-            {
-                // Read the body chunk.
-                $rawBody = $this->handler->read($connection, $contentLength);
-            }
-        }
-        catch (StupidHttp_TimedOutException $e)
-        {
-            // Kept-alive connection probably timed out. Just close it.
-            if ($rawRequest === false)
-            {
-                $this->log->debug("Timed out... ending conversation.");
+                if ($contentLength > 0)
+                {
+                    // Read the body chunk.
+                    $rawBody = $this->handler->read($connection, $contentLength);
+                }
             }
             else
             {
-                $this->log->error("Timed out while receiving request.");
+                // The client closed the connection.
+                $closeSocket = true;
+                $error = true; // This is to bypass all processing.
             }
-            $error = true;
         }
         catch (StupidHttp_NetworkException $e)
         {
@@ -242,7 +277,8 @@ class StupidHttp_Driver
             'body' => $rawBody,
             'request' => null,
             'response' => null,
-            'close_socket' => true
+            'socket' => $connection,
+            'close_socket' => $closeSocket
         );
     }
 
@@ -337,7 +373,7 @@ class StupidHttp_Driver
         {
             $responseInfo = array();
             $responseStr = $this->buildRawResponse($response, $responseInfo);
-            $transmitted = $this->handler->write($this->connection, $responseStr);
+            $transmitted = $this->handler->write($requestInfo['socket'], $responseStr);
             $responseInfo['transmitted'] = $transmitted;
             $this->checkTransmittedResponse($response, $responseInfo);
         }
@@ -362,7 +398,7 @@ class StupidHttp_Driver
         $statusName = StupidHttp_WebServer::getHttpStatusHeader($response->getStatus());
 
         $responseStr = "HTTP/1.1 " . $statusName . PHP_EOL;
-        $responseStr .= "Server: PieCrust Chef Server".PHP_EOL;
+        $responseStr .= "Server: StupidHttp".PHP_EOL;
         $responseStr .= "Date: " . date("D, d M Y H:i:s T") . PHP_EOL;
         foreach ($response->getFormattedHeaders() as $header)
         {
@@ -419,7 +455,7 @@ class StupidHttp_Driver
         $response = $requestInfo['response'];
         if ($request and $response)
         {
-            $clientInfo = $this->handler->getClientInfo($this->connection);
+            $clientInfo = $this->handler->getClientInfo($requestInfo['socket']);
             $statusName = StupidHttp_WebServer::getHttpStatusHeader($response->getStatus());
             $replacements = array(
                 '%date%' => date(self::REQUEST_DATE_FORMAT),

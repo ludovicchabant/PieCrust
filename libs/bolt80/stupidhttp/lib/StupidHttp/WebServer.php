@@ -105,8 +105,11 @@ class StupidHttp_WebServer
      */
     public function __destruct()
     {
-        $this->getLog()->info("Shutting server down...");
-        $this->driver->unregister();
+        if ($this->driver != null)
+        {
+            $this->getLog()->info("Shutting server down...");
+            $this->driver->unregister();
+        }
     }
     // }}}
     
@@ -175,6 +178,7 @@ class StupidHttp_WebServer
                 'run_browser' => false,
                 'keep_alive' => false,
                 'timeout' => 4,
+                'poll_interval' => 1,
                 'show_banner' => true,
                 'name' => null
             ),

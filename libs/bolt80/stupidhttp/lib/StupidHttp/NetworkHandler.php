@@ -69,7 +69,7 @@ class StupidHttp_NetworkHandler
      *
      * The returned resource should be unique to the client connection.
      */
-    public function connect($options)
+    public function connect(array $connections, $options)
     {
         return -1;
     }

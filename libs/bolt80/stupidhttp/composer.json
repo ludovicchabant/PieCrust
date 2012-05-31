@@ -1,6 +1,7 @@
 {
     "name": "bolt80/stupidhttp",
     "type": "library",
+    "license": "Apache-2.0",
     "description": "A stupid and simple development HTTP server.",
     "keywords": [ "http", "server", "net", "web" ],
     "homepage": "http://bolt80.com/stupidhttp",
