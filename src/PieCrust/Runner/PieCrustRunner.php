@@ -101,7 +101,13 @@ class PieCrustRunner
         $output = $pageRenderer->get();
         
         // Set or return the HTML headers.
-        HttpHeaderHelper::setOrAddHeaders(PageRenderer::getHeaders($page->getConfig()->getValue('content_type'), $server), $headers);
+        HttpHeaderHelper::setOrAddHeaders(
+            PageRenderer::getHeaders(
+                $page->getConfig()->getValue('content_type'), 
+                $server
+            ), 
+            $headers
+        );
         
         // Handle caching.
         if (!$this->pieCrust->isDebuggingEnabled())
