@@ -74,7 +74,7 @@ abstract class Environment
             $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
             $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
             $uriPrefix = $pieCrust->getConfig()->getValueUnchecked('site/root') . (($isPretty or $isBaking) ? '' : '?/');
-            $uriSuffix = ($isBaking and !$isPretty) ? '.html' : '';
+            $uriSuffix = '%extension%';
 
             // Preserve the debug flag if needed.
             if ($pieCrust->isDebuggingEnabled() && !$isBaking)

@@ -111,16 +111,14 @@ class UriParser
         }
 
         $matches = array();
-        $uriWithoutExtension = $uri;
+        $relativePath = $uri . '.html';
         if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
         {
-            // There's an extension specified. Strip it
-            // (the extension is probably because the page has a `content_type` different than HTML, which means
-            //  it would be baked into a static file with that extension).
-            $uriWithoutExtension = substr($uri, 0, strlen($uri) - strlen($matches[0]));
+            // There's an extension specified, so no need to append `.html`.
+            $relativePath = $uri;
         }
         
-        $path = $pagesDir . $uriWithoutExtension . '.html';
+        $path = $pagesDir . $relativePath;
         if (is_file($path))
         {
             $pageInfo['path'] = $path;

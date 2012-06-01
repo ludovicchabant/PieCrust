@@ -5,6 +5,7 @@ namespace PieCrust\Page;
 use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 
 
@@ -73,15 +74,11 @@ class Assetor implements \ArrayAccess, \Iterator
         $this->assetsDir = $pathParts['dirname'] . '/' . $pathParts['filename'] . self::ASSET_DIR_SUFFIX;
         if (is_dir($this->assetsDir))
         {
-            if ($page->getAssetUrlBaseRemap() != null)
-            {
-                $this->urlBase = self::buildUrlBase($page);
-            }
-            else
-            {
-                $relativePath = str_replace('\\', '/', PathHelper::getRelativePath($page->getApp(), $page->getPath(), true));
-                $this->urlBase = $page->getApp()->getConfig()->getValueUnchecked('site/root') . $relativePath . self::ASSET_DIR_SUFFIX;
-            }
+            $urlBaseRemap = $page->getAssetUrlBaseRemap();
+            if ($urlBaseRemap == null)
+                $urlBaseRemap = '%site_root%%path%' . self::ASSET_DIR_SUFFIX;
+
+            $this->urlBase = self::buildUrlBase($page, $urlBaseRemap);
         }
         else
         {
@@ -165,13 +162,39 @@ class Assetor implements \ArrayAccess, \Iterator
         }
     }
     
-    protected static function buildUrlBase(IPage $page)
+    protected static function buildUrlBase(IPage $page, $assetUrlBaseRemap)
     {
-        $replacements = array(
-            '%site_root%' => $page->getApp()->getConfig()->getValueUnchecked('site/root'),
-            '%path' => PathHelper::getRelativePath($page->getApp(), $page->getPath(), true),
-            '%uri%' => $page->getUri()
+        $siteRoot = $page->getApp()->getConfig()->getValueUnchecked('site/root');
+        $relativePath = str_replace(
+            '\\', 
+            '/', 
+            PathHelper::getRelativePath($page->getApp(), $page->getPath(), true)
         );
-        return str_replace(array_keys($replacements), array_values($replacements), $page->getAssetUrlBaseRemap());
+        $uri = $page->getUri();
+        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
+        if (!$prettyUrls)
+        {
+            // Remove the extension from the URI (if any), because without 'pretty URLs',
+            // we want to copy assets to a directory named after the page's filename
+            // (without the extension). See `PageBaker` for more information.
+            $uriInfo = pathinfo($uri);
+            $uri = $uriInfo['dirname'];
+            if ($uri == '.')
+                $uri = '';
+            else
+                $uri .= '/';
+            $uri .= $uriInfo['filename'];
+        }
+
+        $replacements = array(
+            '%site_root%' => $siteRoot,
+            '%path%' => $relativePath,
+            '%uri%' => $uri
+        );
+        return str_replace(
+            array_keys($replacements), 
+            array_values($replacements),
+            $assetUrlBaseRemap
+        );
     }
 }

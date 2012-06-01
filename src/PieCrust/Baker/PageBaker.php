@@ -107,18 +107,19 @@ class PageBaker
     {
         $page = $pageRenderer->getPage();
         
-        // Set the extraData and asset URL remapping before the page's data is computed.        
+        // Set the extra template data before the page's data is computed.        
         if ($extraData != null)
             $page->setExtraPageData($extraData);
+
+        // This is usually done in the PieCrustBaker, but we'll do it here too
+        // because the `PageBaker` could be used on its own.
         if ($this->parameters['copy_assets'])
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
         
         // Figure out the output HTML path.
-        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
-        $portableUrls = $page->getApp()->getConfig()->getValue('baker/portable_urls');
-        $contentType = $page->getConfig()->getValue('content_type');
-        $isSubPage = ($page->getPageNumber() > 1);
         $bakePath = $this->bakeDir;
+        $isSubPage = ($page->getPageNumber() > 1);
+        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
         if ($prettyUrls)
         {
             // Output will be one of:
@@ -134,15 +135,23 @@ class PageBaker
             // Output will be one of:
             // - `uri/name.html` (if not a sub-page).
             // - `uri/name/<n>.html` (if a sub-page, where <n> is the page number).
-            $bakePath .= (($page->getUri() == '') ? 'index' : $page->getUri());
+            // If the page has an extension different than `.html`, use that instead.
+            $name = $page->getUri();
+            $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
+            if ($extension)
+                $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
+            $bakePath .= (($page->getUri() == '') ? 'index' : $name);
             if ($isSubPage)
                 $bakePath .= '/' . $page->getPageNumber();
-            $bakePath .= $this->getBakedExtension($contentType);
+            if (!$extension)
+                $extension = 'html';
+            $bakePath .= '.' . $extension;
         }
 
         // If we're using portable URLs, change the site root to a relative
         // path from the page's directory.
         $savedSiteRoot = null;
+        $portableUrls = $page->getApp()->getConfig()->getValue('baker/portable_urls');
         if ($portableUrls)
         {
             $siteRoot = '';
@@ -219,16 +228,5 @@ class PageBaker
         // Cleanup.
         if ($savedSiteRoot)
             $page->getApp()->getConfig()->setValue('site/root', $savedSiteRoot);
-    }
-    
-    protected function getBakedExtension($contentType)
-    {
-        switch ($contentType)
-        {
-            case 'text':
-                return '.txt';
-            default:
-                return '.' . $contentType;
-        }
     }
 }

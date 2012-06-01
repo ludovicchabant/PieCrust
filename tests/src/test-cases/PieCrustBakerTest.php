@@ -42,7 +42,6 @@ EOD;
             'cache' => false, 
             'root' => vfsStream::url('root/kitchen'))
         );
-
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
@@ -170,7 +169,13 @@ EOD;
             array(false, 'one/foo', '../', '../something/blah.html'),
             array(false, 'one/two/foo', '../../', '../../something/blah.html'),
             array(false, 'something/foo', '../', '../something/blah.html'),
-            array(false, 'something/sub/foo', '../../', '../../something/blah.html')
+            array(false, 'something/sub/foo', '../../', '../../something/blah.html'),
+
+            array(true, 'foo', '../', '../something/blah'),
+            array(true, 'one/foo', '../../', '../../something/blah'),
+            array(true, 'one/two/foo', '../../../', '../../../something/blah'),
+            array(true, 'something/foo', '../../', '../../something/blah'),
+            array(true, 'something/sub/foo', '../../../', '../../../something/blah')
         );
     }
 
@@ -211,20 +216,97 @@ EOD;
             $app->getConfig()->getValue('site/root')
         );
 
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/something/blah.html'));
+        $blahPath = 'blah.html';
+        if ($prettyUrls)
+            $blahPath = 'blah/index.html';
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/something/' . $blahPath));
         $this->assertEquals(
             "BLAH",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/something/blah.html'))
+            file_get_contents(vfsStream::url('root/kitchen/_counter/something/' . $blahPath))
         );
 
         $expectedContents = <<<EOD
 Root: {$expectedSiteRoot}
 Blah: {$expectedBlah}
 EOD;
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $url . '.html'));
+        $urlPath = $url . '.html';
+        if ($prettyUrls)
+            $urlPath = $url . '/index.html';
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $urlPath));
         $this->assertEquals(
             $expectedContents,
-            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $url . '.html'))
+            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $urlPath))
+        );
+    }
+
+    public function urlFormatsDataProvider()
+    {
+        return array(
+            array(
+                false,
+                <<<'EOD'
+Normal: /normal.html
+Normal in folder: /somewhere/normal.html
+Ext: /foo.ext
+Ext in folder: /somewhere/foo.ext
+EOD
+            ),
+            array(
+                true,
+                <<<'EOD'
+Normal: /normal
+Normal in folder: /somewhere/normal
+Ext: /foo.ext
+Ext in folder: /somewhere/foo.ext
+EOD
+            )
+        );
+    }
+
+    /**
+     * @dataProvider urlFormatsDataProvider
+     */
+    public function testUrlFormats($prettyUrls, $expectedContents)
+    {
+        $fs = MockFileSystem::create();
+        $fs->withPage(
+            'test_page',
+            array('layout' => 'none', 'format' => 'none'),
+            <<<'EOD'
+Normal: {{pcurl('normal')}}
+Normal in folder: {{pcurl('somewhere/normal')}}
+Ext: {{pcurl('foo.ext')}}
+Ext in folder: {{pcurl('somewhere/foo.ext')}}
+EOD
+        );
+        $fs->withPage(
+            'other_page.foo',
+            array('layout' => 'none', 'format' => 'none'),
+            "THIS IS FOO!"
+        );
+
+        $app = new PieCrust(array(
+            'cache' => false, 
+            'root' => vfsStream::url('root/kitchen'))
+        );
+        $app->getConfig()->setValue('site/pretty_urls', $prettyUrls);
+        $baker = new PieCrustBaker($app);
+        $baker->bake();
+
+        $otherPagePath = 'other_page.foo';
+        if ($prettyUrls)
+            $otherPagePath = 'other_page.foo/index.html';
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $otherPagePath));
+        $this->assertEquals(
+            "THIS IS FOO!",
+            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $otherPagePath))
+        );
+
+        $fileName = $prettyUrls ? 'test_page/index.html' : 'test_page.html';
+        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $fileName));
+        $this->assertEquals(
+            $expectedContents,
+            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $fileName))
         );
     }
 }

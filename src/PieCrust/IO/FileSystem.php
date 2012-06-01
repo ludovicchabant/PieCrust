@@ -56,8 +56,7 @@ abstract class FileSystem
             $relativePath = PathHelper::getRelativePagePath($this->pieCrust, $pagePath, IPage::TYPE_REGULAR);
             $relativePathInfo = pathinfo($relativePath);
             if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
-                $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME or
-                $relativePathInfo['extension'] != 'html')
+                $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME)
             {
                 continue;
             }

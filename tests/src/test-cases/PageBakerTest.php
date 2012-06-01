@@ -12,21 +12,22 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
     public function pageBakeDataProvider()
     {
         return array(
-            array(false, null, 'blah.html'),
-            array(true, null, 'blah/index.html'),
-            array(false, array('pretty_urls' => true), 'blah/index.html'),
-            array(true, array('pretty_urls' => false), 'blah.html'),
-            array(false, array('content_type' => 'foo'), 'blah.foo'),
-            array(true, array('content_type' => 'foo'), 'blah/index.html'),
-            array(false, array('pretty_urls' => true, 'content_type' => 'foo'), 'blah/index.html'),
-            array(true, array('pretty_urls' => false, 'content_type' => 'foo'), 'blah.foo')
+            array(false, 'blah', null, 'blah.html'),
+            array(false, 'blah', array('pretty_urls' => true), 'blah/index.html'),
+            array(false, 'blah.foo', null, 'blah.foo'),
+            array(false, 'blah.foo', array('pretty_urls' => true), 'blah.foo/index.html'),
+
+            array(true, 'blah', null, 'blah/index.html'),
+            array(true, 'blah', array('pretty_urls' => false), 'blah.html'),
+            array(true, 'blah.foo', null, 'blah.foo/index.html'),
+            array(true, 'blah.foo', array('pretty_urls' => false), 'blah.foo'),
         );
     }
 
     /**
      * @dataProvider pageBakeDataProvider
      */
-    public function testPageBake($prettyUrls, $extraPageConfig, $expectedName)
+    public function testPageBake($prettyUrls, $name, $extraPageConfig, $expectedName)
     {
         $pageConfig = array(
             'layout' => 'none', 
@@ -41,13 +42,13 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
                     'pretty_urls' => $prettyUrls
                 )))
             ->withPage(
-                'blah',
+                $name,
                 $pageConfig,
                 'Some contents.'
             );
 
         $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
-        $page = Page::createFromUri($app, '/blah');
+        $page = Page::createFromUri($app, '/' . $name);
         
         $baker = new PageBaker(vfsStream::url('root/counter'));
         $baker->bake($page);
@@ -68,15 +69,18 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
     public function singlePageBakeDataProvider()
     {
         return array(
-            array(false, 'blah.html'),
-            array(true, 'blah/index.html')
+            array(false, 'blah', 'blah.html'),
+            array(false, 'blah.foo', 'blah.foo'),
+
+            array(true, 'blah', 'blah/index.html'),
+            array(true, 'blah.foo', 'blah.foo/index.html')
         );
     }
 
     /**
      * @dataProvider singlePageBakeDataProvider
      */
-    public function testSinglePageBake($prettyUrls, $expectedName)
+    public function testSinglePageBake($prettyUrls, $name, $expectedName)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
@@ -86,7 +90,7 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
                     'posts_per_page' => 5
                 )))
             ->withPage(
-                'blah',
+                $name,
                 array('layout' => 'none', 'format' => 'none'),
                 <<<EOD
 {% for post in pagination.posts %}
@@ -103,7 +107,7 @@ EOD
             'root' => vfsStream::url('root/kitchen'),
             'cache' => false
         ));
-        $page = Page::createFromUri($app, '/blah');
+        $page = Page::createFromUri($app, '/' . $name);
         
         $baker = new PageBaker(vfsStream::url('root/counter'));
         $baker->bake($page);
@@ -124,15 +128,18 @@ EOD
     public function multiplePageBakeDataProvider()
     {
         return array(
-            array(false, 'blah.html', 'blah/2.html'),
-            array(true, 'blah/index.html', 'blah/2/index.html')
+            array(false, 'blah', 'blah.html', 'blah/2.html'),
+            array(false, 'blah.foo', 'blah.foo', 'blah/2.foo'),
+
+            array(true, 'blah', 'blah/index.html', 'blah/2/index.html'),
+            array(true, 'blah.foo', 'blah.foo/index.html', 'blah.foo/2/index.html')
         );
     }
 
     /**
      * @dataProvider multiplePageBakeDataProvider
      */
-    public function testMultiplePageBake($prettyUrls, $expectedName1, $expectedName2)
+    public function testMultiplePageBake($prettyUrls, $name, $expectedName1, $expectedName2)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
@@ -142,7 +149,7 @@ EOD
                     'posts_per_page' => 5
                 )))
             ->withPage(
-                'blah',
+                $name,
                 array('layout' => 'none', 'format' => 'none'),
                 <<<EOD
 {% for post in pagination.posts %}
@@ -162,7 +169,7 @@ EOD
             'root' => vfsStream::url('root/kitchen'),
             'cache' => false
         ));
-        $page = Page::createFromUri($app, '/blah');
+        $page = Page::createFromUri($app, '/' . $name);
         
         $baker = new PageBaker(vfsStream::url('root/counter'));
         $baker->bake($page);
@@ -191,30 +198,38 @@ EOD
     public function pageWithAssetDataProvider()
     {
         return array(
-            array(false, 'blah.html'),
-            array(true, 'blah/index.html')
+            array('/', false, 'blah', 'blah.html', '/blah/foo.txt'),
+            array('/', false, 'blah.bar', 'blah.bar', '/blah/foo.txt'),
+            array('/root', false, 'blah', 'blah.html', '/root/blah/foo.txt'),
+            array('/root', false, 'blah.bar', 'blah.bar', '/root/blah/foo.txt'),
+
+            array('/', true, 'blah', 'blah/index.html', '/blah/foo.txt'),
+            array('/', true, 'blah.bar', 'blah.bar/index.html', '/blah.bar/foo.txt'),
+            array('/root', true, 'blah', 'blah/index.html', '/root/blah/foo.txt'),
+            array('/root', true, 'blah.bar', 'blah.bar/index.html', '/root/blah.bar/foo.txt')
         );
     }
 
     /**
      * @dataProvider pageWithAssetDataProvider
      */
-    public function testPageWithAsset($prettyUrls, $expectedName)
+    public function testPageWithAsset($siteRoot, $prettyUrls, $name, $expectedName, $expectedAsset)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array(
                 'site' => array(
+                    'root' => $siteRoot,
                     'pretty_urls' => $prettyUrls
                 )))
             ->withPage(
-                'blah',
+                $name,
                 array('layout' => 'none', 'format' => 'none'),
                 "Some contents:\n{{ asset.foo }}"
             )
             ->withAsset('_content/pages/blah-assets/foo.txt', 'FOO!');
 
         $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
-        $page = Page::createFromUri($app, '/blah');
+        $page = Page::createFromUri($app, '/' . $name);
         
         $baker = new PageBaker(vfsStream::url('root/counter'), array('copy_assets' => true));
         $baker->bake($page);
@@ -227,13 +242,14 @@ EOD
         );
         $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
         $this->assertEquals(
-            "Some contents:\n/blah/foo.txt",
+            "Some contents:\n" . $expectedAsset,
             file_get_contents(vfsStream::url('root/counter/' . $expectedName))
         );
-        $this->assertFileExists(vfsStream::url('root/counter/blah/foo.txt'));
+        $expectedAssetPath = substr($expectedAsset, strlen($siteRoot));
+        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedAssetPath));
         $this->assertEquals(
             'FOO!',
-            file_get_contents(vfsStream::url('root/counter/blah/foo.txt'))
+            file_get_contents(vfsStream::url('root/counter/' . $expectedAssetPath))
         );
     }
 }

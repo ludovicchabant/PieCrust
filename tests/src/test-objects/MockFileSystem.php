@@ -69,7 +69,11 @@ class MockFileSystem
         $text .= '---' . PHP_EOL;
         $text .= $contents;
 
-        return $this->withAsset("_content/pages/{$url}.html", $text);
+        // Don't add an extension if there's one already.
+        $fileName = $url . '.html';
+        if (preg_match('/\\.[a-zA-Z0-9]+$/', $url))
+            $fileName = $url;
+        return $this->withAsset("_content/pages/{$fileName}", $text);
     }
 
     public function withPost($slug, $day, $month, $year, $config, $contents)

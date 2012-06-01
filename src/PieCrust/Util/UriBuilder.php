@@ -13,16 +13,17 @@ class UriBuilder
     /**
      * Gets the URI of a page given a relative path.
      */
-    public static function buildUri($relativePath, $stripExtension = true, $stripIndex = true)
+    public static function buildUri($relativePath, $stripExtension = '.html', $stripIndex = true)
     {
         $uri = $relativePath;
         if ($stripExtension)
         {
-            $uri = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);    // strip the extension
+            $stripExtension = preg_quote($stripExtension, '/');
+            $uri = preg_replace('/' . $stripExtension . '$/', '', $relativePath);
         }
         if ($stripIndex)
         {
-            $uri = str_replace('_index', '', $uri); // strip special name
+            $uri = preg_replace('/^_index/', '', $uri); // strip special name
         }
         return $uri;
     }
@@ -78,7 +79,7 @@ class UriBuilder
      */
     public static function buildTagUriPattern($tagUrlFormat)
     {
-        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-_]+(\/[\w\-_]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-\.]+(\/[\w\-\.]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
     
     /**
@@ -94,6 +95,6 @@ class UriBuilder
      */
     public static function buildCategoryUriPattern($categoryUrlFormat)
     {
-        return '/^' . str_replace('%category%', '(?P<cat>[\w\-]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%category%', '(?P<cat>[\w\-\.]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
     }
 }
