@@ -108,22 +108,6 @@
                     "classmap": [ "classTextile.php" ]
                 }
             }
-        },
-        {
-            "type": "package",
-            "package": {
-                "name": "bolt80/stupidhttp",
-                "version": "1.0",
-                "dist": {
-                    "url": "https://bitbucket.org/ludovicchabant/stupidhttp/get/default.zip",
-                    "type": "zip"
-                },
-                "autoload": {
-                    "psr-0": {
-                        "StupidHttp_": "lib"
-                    }
-                }
-            }
         }
     ],
     "require": {
@@ -137,8 +121,7 @@
         "markdown/markdown-extra": "1.0",
         "smartypants/smartypants": "1.0",
         "smartypants/smartypants-typographer": "1.0",
-        "textile/textile": "2.*",
-        "bolt80/stupidhttp": "1.0"
+        "textile/textile": "2.*"
     },
     "autoload": {
         "psr-0": {

@@ -27,22 +27,22 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
     {
         if (($this->sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false)
         {
-            throw new StupidHttp_WebException("Can't create socket: " . socket_strerror(socket_last_error()));
+            throw new StupidHttp_NetworkException("Can't create socket: " . socket_strerror(socket_last_error()));
         }
         
         if (@socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1) === false)
         {
-            throw new StupidHttp_WebException("Can't set options on the socket: " . socket_strerror(socket_last_error()));
+            throw new StupidHttp_NetworkException("Can't set options on the socket: " . socket_strerror(socket_last_error()));
         }
         
         if (@socket_bind($this->sock, $this->address, $this->port) === false)
         {
-            throw new StupidHttp_WebException("Can't bind socket to {$this->address}:{$this->port}: " . socket_strerror(socket_last_error($this->sock)));
+            throw new StupidHttp_NetworkException("Can't bind socket to {$this->address}:{$this->port}: " . socket_strerror(socket_last_error($this->sock)));
         }
         
         if (@socket_listen($this->sock) === false)
         {
-            throw new StupidHttp_WebException("Failed listening to socket on {$this->address}:{$this->port}: " . socket_strerror(socket_last_error($this->sock)));
+            throw new StupidHttp_NetworkException("Failed listening to socket on {$this->address}:{$this->port}: " . socket_strerror(socket_last_error($this->sock)));
         }
 
         $this->sockSendBufferSize = @socket_get_option($this->sock, SOL_SOCKET, SO_SNDBUF);
@@ -93,7 +93,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
 
             if (($msgsock = @socket_accept($this->sock)) === false)
             {
-                throw new StupidHttp_WebException(
+                throw new StupidHttp_NetworkException(
                     "Failed accepting connection: " .
                     socket_strerror(socket_last_error($this->sock))
                 );
@@ -101,7 +101,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
 
             if (@socket_set_option($msgsock, SOL_SOCKET, SO_REUSEADDR, 1) === false)
             {
-                throw new StupidHttp_WebException(
+                throw new StupidHttp_NetworkException(
                     "Failed setting address re-use option: " .
                     socket_strerror(socket_last_error($msgsock))
                 );
@@ -110,7 +110,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
             $timeout = array('sec' => $options['timeout'], 'usec' => 0);
             if (@socket_set_option($msgsock, SOL_SOCKET, SO_RCVTIMEO, $timeout) === false)
             {
-                throw new StupidHttp_WebException(
+                throw new StupidHttp_NetworkException(
                     "Failed setting timeout value: " .
                     socket_strerror(socket_last_error($msgsock))
                 );
@@ -244,7 +244,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
             $transmittedThisTime = @socket_write($connection, $data, $socketWriteLength);
             if (false === $transmittedThisTime)
             {
-                throw new StupidHttp_WebException("Couldn't write response to socket: " . socket_strerror(socket_last_error($connection)));
+                throw new StupidHttp_NetworkException("Couldn't write response to socket: " . socket_strerror(socket_last_error($connection)));
             }
             $transmitted += $transmittedThisTime;
             $data = substr($data, $transmittedThisTime);

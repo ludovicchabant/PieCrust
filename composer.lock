@@ -2,10 +2,6 @@
     "hash": "4d76c45e22e72e9fe0912c053e95331f",
     "packages": [
         {
-            "package": "bolt80/stupidhttp",
-            "version": "1.0"
-        },
-        {
             "package": "geshi/geshi",
             "version": "1.0.8.10"
         },
