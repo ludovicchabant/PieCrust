@@ -28,6 +28,7 @@ class PieCrustServer
 
     protected $bakeCacheDir;
     protected $bakeCacheFiles;
+    protected $bakeError;
     
     /**
      * Creates a new chef server.
@@ -79,20 +80,10 @@ class PieCrustServer
      */
     public function run(array $options = array())
     {
-        // Create the web server.
+        // Initialize the web server and other stuff.
         $this->ensureWebServer();
-
-        // Re-bake all the non `_content` stuff, and build a reverse-index 
-        // of what file creates each output file.
-        $bakedFiles = $this->prebake();
+        $this->bakeError = null;
         $this->bakeCacheFiles = array();
-        foreach ($bakedFiles as $f => $info)
-        {
-            foreach ($info['outputs'] as $out)
-            {
-                $this->bakeCacheFiles[$out] = $f;
-            }
-        }
 
         // Run!
         $this->server->run($options);
@@ -103,28 +94,36 @@ class PieCrustServer
      */
     public function _preprocessRequest(\StupidHttp_WebRequest $request)
     {
-        $documentPath = $this->bakeCacheDir . $request->getUriPath();
-        if (is_file($documentPath) && isset($this->bakeCacheFiles[$documentPath]))
+        try
         {
-            // Make sure this file is up-to-date.
-            $this->prebake(
-                $request->getServerVariables(),
-                $this->bakeCacheFiles[$documentPath]
-            );
-        }
-        else
-        {
-            // Perhaps a new file? Re-bake and update our index.
-            $bakedFiles = $this->prebake(
-                $request->getServerVariables()
-            );
-            foreach ($bakedFiles as $f => $info)
+            $documentPath = $this->bakeCacheDir . $request->getUriPath();
+            if (is_file($documentPath) && isset($this->bakeCacheFiles[$documentPath]))
             {
-                foreach ($info['outputs'] as $out)
+                // Make sure this file is up-to-date.
+                $this->prebake(
+                    $request->getServerVariables(),
+                    $this->bakeCacheFiles[$documentPath]
+                );
+            }
+            else
+            {
+                // Perhaps a new file? Re-bake and update our index.
+                $bakedFiles = $this->prebake(
+                    $request->getServerVariables()
+                );
+                foreach ($bakedFiles as $f => $info)
                 {
-                    $this->bakeCacheFiles[$out] = $f;
+                    foreach ($info['outputs'] as $out)
+                    {
+                        $this->bakeCacheFiles[$out] = $f;
+                    }
                 }
             }
+        }
+        catch (Exception $e)
+        {
+            $this->logger->err($e->getMessage());
+            $this->bakeError = $e;
         }
     }
     
@@ -161,7 +160,16 @@ class PieCrustServer
             // Error while setting up PieCrust.
             $pieCrustException = $e;
         }
+
+        // If there was no error setting up the application, see if there was
+        // an error in the last pre-bake.
+        if ($pieCrustException == null)
+        {
+            $pieCrustException = $this->bakeError;
+            $this->bakeError = null;
+        }
         
+        // If there was no error so far, run the current request.
         $headers = array();
         if ($pieCrustException == null)
         {
@@ -182,6 +190,7 @@ class PieCrustServer
             }
         }
         
+        // Set the return HTTP status code.
         $code = 500;
         if (isset($headers[0]))
         {
@@ -197,14 +206,15 @@ class PieCrustServer
                             ($pieCrustException->getMessage() == '404') ? 404 : 500
                         );
         }
-        
         $context->getResponse()->setStatus($code);
         
+        // Set the headers.
         foreach ($headers as $h => $v)
         {
             $context->getResponse()->setHeader($h, $v);
         }
         
+        // Show an error message, if needed.
         if ($pieCrustException)
         {
             $headers = array();
@@ -214,10 +224,10 @@ class PieCrustServer
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
-        $context->getLog()->debug("Ran PieCrust request (" . $timeSpan * 1000 . "ms)");
+        $context->getLog()->debug("Ran PieCrust request in " . $timeSpan * 1000 . "ms.");
         if ($pieCrustException != null)
         {
-            $context->getLog()->error("    PieCrust error: " . $pieCrustException->getMessage());
+            $context->getLog()->error($pieCrustException->getMessage());
         }
     }
 
