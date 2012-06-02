@@ -20,6 +20,7 @@ class PageBaker
      */
     const BAKE_INDEX_DOCUMENT = 'index.html';
     
+    protected $logger;
     protected $bakeDir;
     protected $parameters;
     
@@ -52,7 +53,7 @@ class PageBaker
     /**
      * Creates a new instance of PageBaker.
      */
-    public function __construct($bakeDir, array $parameters = array())
+    public function __construct($bakeDir, array $parameters = array(), $logger = null)
     {
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
@@ -61,6 +62,12 @@ class PageBaker
             ), 
             $parameters
         );
+
+        if ($logger == null)
+        {
+            $logger = \Log::singleton('null', '', '');
+        }
+        $this->logger = $logger;
     }
     
     /**
@@ -115,7 +122,7 @@ class PageBaker
         // because the `PageBaker` could be used on its own.
         if ($this->parameters['copy_assets'])
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
-        
+
         // Figure out the output HTML path.
         $bakePath = $this->bakeDir;
         $isSubPage = ($page->getPageNumber() > 1);
@@ -135,7 +142,10 @@ class PageBaker
             // Output will be one of:
             // - `uri/name.html` (if not a sub-page).
             // - `uri/name/<n>.html` (if a sub-page, where <n> is the page number).
-            // If the page has an extension different than `.html`, use that instead.
+            // If the page has an extension different than `.html`, use that instead, like so:
+            // - `uri/name.ext`
+            // - `uri/name/<n>.ext`
+            // (So in all examples, `name` refers to the name without the extension)
             $name = $page->getUri();
             $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
             if ($extension)
@@ -146,6 +156,19 @@ class PageBaker
             if (!$extension)
                 $extension = 'html';
             $bakePath .= '.' . $extension;
+        }
+
+        // Backward compatibility warning and file-copy.
+        // [TODO] Remove in a couple of versions.
+        $copyToOldPath = false;
+        $contentType = $page->getConfig()->getValue('content_type');
+        $nativeExtension = pathinfo($page->getPath(), PATHINFO_EXTENSION);
+        if ($contentType != 'html' && $nativeExtension == 'html')
+        {
+            $copyToOldPath = $this->bakeDir . $page->getUri();
+            if ($isSubPage)
+                $copyToOldPath .= $page->getPageNumber() . '/';
+            $copyToOldPath .= '.' . $contentType;
         }
 
         // If we're using portable URLs, change the site root to a relative
@@ -194,6 +217,17 @@ class PageBaker
         PathHelper::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
         $this->bakedFiles[] = $bakePath;
+
+        // [TODO] See previous TODO.
+        if ($copyToOldPath)
+        {
+            $this->logger->warning("Page '{$page->getUri()}' has 'content_type' specified but is an HTML file.");
+            $this->logger->warning("Changing a baked file's extension using 'content_type' is deprecated and will be removed in a future version.");
+            $this->logger->warning("For backwards compatibility, the page will also be baked to: " . substr($copyToOldPath, strlen($this->bakeDir)));
+            $this->logger->warning("To fix the problem, change the source file's extension to the desired output extension.");
+            $this->logger->warning("Otherwise, just ignore these messages.");
+            file_put_contents($copyToOldPath, $bakedContents);
+        }
         
         // Copy any used assets for the first sub-page.
         if (!$isSubPage and $this->parameters['copy_assets'])

@@ -338,7 +338,7 @@ class PieCrustBaker
         }
         
         $start = microtime(true);
-        $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+        $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters(), $this->logger);
         $baker->bake($page);
         if ($baker->wasPaginationDataAccessed())
         {
