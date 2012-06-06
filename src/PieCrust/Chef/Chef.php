@@ -80,7 +80,7 @@ class Chef
         {
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
-                'cache' => !in_array('--nocache', $userArgv)
+                'cache' => !in_array('--no-cache', $userArgv)
             ));
         }
 
@@ -127,6 +127,13 @@ class Chef
             return 1;
         }
         $log = \Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
+
+        // Handle deprecated stuff.
+        if ($result->command->options['no_cache_old'])
+        {
+            $log->warning("The `--nocache` option has been renamed `--no-cache`.");
+            $result->command->options['no_cache'] = true;
+        }
 
         // Run the command.
         foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
@@ -194,8 +201,8 @@ class Chef
             'help_name'   => 'DEBUG',
             'action'      => 'StoreTrue'
         ));
-        $parser->addOption('nocache', array(
-            'long_name'   => '--nocache',
+        $parser->addOption('no_cache', array(
+            'long_name'   => '--no-cache',
             'description' => "When applicable, disable caching.",
             'default'     => false,
             'help_name'   => 'NOCACHE',
@@ -206,6 +213,15 @@ class Chef
             'description' => "Print only important information.",
             'default'     => false,
             'help_name'   => 'QUIET',
+            'action'      => 'StoreTrue'
+        ));
+
+        // Deprecated stuff.
+        $parser->addOption('no_cache_old', array(
+            'long_name'   => '--nocache',
+            'description' => "Deprecated. Use `--no-cache`.",
+            'default'     => false,
+            'help_name'   => 'NOCACHE',
             'action'      => 'StoreTrue'
         ));
     }

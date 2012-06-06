@@ -43,27 +43,6 @@ class BakeCommand extends ChefCommand
             'action'      => 'StoreTrue',
             'help_name'   => 'FORCE'
         ));
-        $bakerParser->addOption('root_url', array(
-            'short_name'  => '-r',
-            'long_name'   => '--rooturl',
-            'description' => "Overrides the 'site/root' configuration setting (root URL of the site).",
-            'default'     => null,
-            'help_name'   => 'URL_BASE'
-        ));
-        $bakerParser->addOption('pretty_urls', array(
-            'long_name'   => '--prettyurls',
-            'description' => "Overrides the 'site/pretty_urls' configuration setting (URL format for links).",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'PRETTY_URLS'
-        ));
-        $bakerParser->addOption('file_urls', array(
-            'long_name'   => '--fileurls',
-            'description' => "Deprecated. Same as `--portable`.",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'FILE_URLS'
-        ));
         $bakerParser->addOption('portable_urls', array(
             'long_name'   => '--portable',
             'description' => "Uses relative paths for all URLs (for previewing website locally).",
@@ -78,6 +57,25 @@ class BakeCommand extends ChefCommand
             'action'      => 'StoreTrue',
             'help_name'   => 'INFO_ONLY'
         ));
+
+        // Deprecated stuff.
+        $bakerParser->addOption('root_url_old', array(
+            'long_name'   => '--rooturl',
+            'description' => "Deprecated. You can use a config variant instead."
+        ));
+        $bakerParser->addOption('pretty_urls_old', array(
+            'long_name'   => '--prettyurls',
+            'description' => "Deprecated. You can use a config variant instead.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
+        $bakerParser->addOption('file_urls', array(
+            'long_name'   => '--fileurls',
+            'description' => "Deprecated. Same as `--portable`.",
+            'default'     => false,
+            'action'      => 'StoreTrue',
+            'help_name'   => 'FILE_URLS'
+        ));
     }
 
     public function run(ChefContext $context)
@@ -90,8 +88,18 @@ class BakeCommand extends ChefCommand
         // Warn about deprecated stuff.
         if ($result->command->options['file_urls'])
         {
-            $context->getLog()->info("The `--fileurls` option has been deprecated. Please use `--portable` instead.");
+            $context->getLog()->warning("The `--fileurls` option has been deprecated. Please use `--portable` instead.");
             $result->command->options['portable_urls'] = true;
+        }
+        if ($result->command->options['pretty_urls_old'])
+        { 
+            $context->getLog()->err("The `--prettyurls` option has been deprecated. Please use a config variant instead.");
+            return;
+        }
+        if ($result->command->options['root_url_old'])
+        { 
+            $context->getLog()->err("The `--rooturl` option has been deprecated. Please use a config variant instead.");
+            return;
         }
 
         // Set-up the app and the baker.
@@ -105,14 +113,6 @@ class BakeCommand extends ChefCommand
         if ($outputDir)
         {
             $baker->setBakeDir($outputDir);
-        }
-        if ($result->command->options['pretty_urls'])
-        {
-            $pieCrust->getConfig()->setValue('site/pretty_urls', true);
-        }
-        if ($result->command->options['root_url'])
-        {
-            $pieCrust->getConfig()->setValue('site/root', $result->command->options['root_url']);
         }
         if ($result->command->options['portable_urls'])
         {

@@ -33,10 +33,10 @@ class UploadCommand extends ChefCommand
     
     public function setupParser(Console_CommandLine $uploadParser, IPieCrust $pieCrust)
     {
-        $uploadParser->description = 'Uploads your PieCrust website to an given FTP server.';
+        $uploadParser->description = 'Uploads your PieCrust website to a given FTP server.';
         $uploadParser->addOption('remote_root', array(
             'short_name'  => '-r',
-            'long_name'   => '--remote_root',
+            'long_name'   => '--remote-root',
             'description' => "The root directory on the remote server.",
             'help_name'   => 'REMOTE_ROOT'
         ));
@@ -49,7 +49,7 @@ class UploadCommand extends ChefCommand
         ));
         $uploadParser->addOption('sync_mode', array(
             'short_name'  => '-s',
-            'long_name'   => '--sync_mode',
+            'long_name'   => '--sync-mode',
             'default'     => 'none',
             'description' => "The sync mode for the FTP transfer (none [default], time, time_and_size)",
             'help_name'   => 'SYNC_MODE'

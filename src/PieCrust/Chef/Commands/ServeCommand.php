@@ -23,7 +23,7 @@ class ServeCommand extends ChefCommand
         $serverParser->description = 'Serves your PieCrust website using a tiny development web server.';
         $serverParser->addOption('run_browser', array(
             'short_name'  => '-n',
-            'long_name'   => '--nobrowser',
+            'long_name'   => '--no-browser',
             'description' => "Disables auto-running the default web browser when the server starts.",
             'default'     => true,
             'action'      => 'StoreFalse',
@@ -43,18 +43,33 @@ class ServeCommand extends ChefCommand
             'default'     => null,
             'help_name'   => 'LOG_FILE'
         ));
+
+        // Deprecated stuff.
+        $serverParser->addOption('run_browser_old', array(
+            'long_name'   => '--nobrowser',
+            'description' => "Deprecated. Same as `--no-browser`.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
     }
 
     public function run(ChefContext $context)
     {
         $result = $context->getResult();
 
+        // Warn about deprecated stuff.
+        if ($result->command->options['run_browser_old'])
+        {
+            $context->getLog()->warning("The `--nobrowser` option has been renamed to `--no-browser`.");
+            $result->command->options['run_browser'] = false;
+        }
+
         $rootDir = $context->getApp()->getRootDir();
         $port = intval($result->command->options['port']);
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $debug = $result->command->options['debug'];
-        $nocache = $result->command->options['nocache'];
+        $nocache = $result->command->options['no_cache'];
 
         // Start serving!
         $server = new PieCrustServer($rootDir,

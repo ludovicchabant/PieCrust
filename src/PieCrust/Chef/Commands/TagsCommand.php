@@ -23,14 +23,14 @@ class TagsCommand extends ChefCommand
         $parser->description = "Gets the list of tags used in the website.";
         $parser->addOption('order_by_name', array(
             'short_name'  => '-n',
-            'long_name'   => '--orderbyname',
+            'long_name'   => '--order-name',
             'description' => "Orders the results by name.",
             'default'     => false,
             'action'      => 'StoreTrue'
         ));
         $parser->addOption('order_by_count', array(
             'short_name'  => '-c',
-            'long_name'   => '--orderbycount',
+            'long_name'   => '--order-count',
             'description' => "Orders the results by number of posts.",
             'default'     => false,
             'action'      => 'StoreTrue'
@@ -53,6 +53,20 @@ class TagsCommand extends ChefCommand
             'optional'    => true,
             'multiple'    => true
         ));
+
+        // Deprecated stuff.
+        $parser->addOption('order_by_name_old', array(
+            'long_name'   => '--orderbyname',
+            'description' => "Deprecated. Same as `--order-name`.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
+        $parser->addOption('order_by_count_old', array(
+            'long_name'   => '--orderbycount',
+            'description' => "Deprecated. Same as `--order-count`.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
+        ));
     }
 
     public function run(ChefContext $context)
@@ -61,13 +75,33 @@ class TagsCommand extends ChefCommand
         $pieCrust = $context->getApp();
         $result = $context->getResult();
 
+        // Warn about deprecated stuff.
+        if ($result->command->options['order_by_name_old'])
+        {
+            $context->getLog()->warning("The `--orderbyname` option has been renamed to `--order-name`.");
+            $result->command->options['order_by_name'] = true;
+        }
+        if ($result->command->options['order_by_count_old'])
+        {
+            $context->getLog()->warning("The `--orderbycount` option has been renamed to `--order-count`.");
+            $result->command->options['order_by_count'] = true;
+        }
+
+        // Validate options.
         if ($result->command->options['order_by_name'] &&
             $result->command->options['order_by_count'])
-            throw new PieCrustException("Can't specify both '--orderbyname' and '--orderbycount'.");
+            throw new PieCrustException("Can't specify both '--order-name' and '--order-count'.");
 
         $blogKeys = $pieCrust->getConfig()->getValue('site/blogs');
         if ($result->command->args['blog'])
+        {
+            foreach ($result->command->args['blog'] as $blogKey)
+            {
+                if (!in_array($blogKey, $blogKeys))
+                    throw new PieCrustException("No such blog in the website : {$blogKey}");
+            }
             $blogKeys = $result->command->args['blog'];
+        }
 
         $tags = array();
         foreach ($blogKeys as $blogKey)
