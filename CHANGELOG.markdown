@@ -15,11 +15,36 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* CHANGES: The folder structure has been changed to make it look more like an
+* BREAKING CHANGE: The filenames created by the baker are now more consistent.
+  When `pretty_urls` are disabled, pages that create pagination have the same
+  kind of URL as the ones that don't (_i.e._ `foo/bar.html`). Sub-pages are
+  baked into `foo/bar/n.html` (where `n` is the page number).
+* BREAKING CHANGE: Added support for extensions other than `.html` for source
+  files -- and that extension is carried to the output file when baking. This
+  means that `content_type` is back to being used only for setting HTML headers,
+  as it should be. For now, the old behaviour is also supported, with a warning
+  message.
+* BREAKING CHANGE: Chef syntax changed to use hyphenated long option names
+  everywhere (it was not 100% consistent until now). A warning message is
+  printed when using the old syntax.
+* BREAKING CHANGE: Some options from `chef bake` were removed because they are
+  useless now that PieCrust supports config variants.
+* NEW: PieCrust is now compilable into a `.phar` file.
+* NEW: When using `chef serve`, an error triggered by a file processor will be
+  rendered as an error page.
+* CHANGE: The folder structure has been changed to make it look more like an
   application project. For users, this means the `chef` executable has been
   moved to the `/bin` folder (although, for backwards compatibility, a copy is
   still available in `/_piecrust/chef`, but it prints a warning message and will
   be removed after version 0.9).
+* CHANGE: The `--fileurls` option from `chef bake` is deprecated and replaced by
+  the `--portable` option. This creates a "portable" website where all URLs are
+  specified relatively to the root (with `../../`-type paths).
+* CHANGE: A new version of StupidHttp is used for `chef serve`.
+* CHANGE: `chef plugins find` now lists all plugins from known repositories when
+  no search pattern is given.
+* CHANGE: The default website, created by `chef init`, is now better.
+* BUG: Fixed a typo in the help text of `chef prepare`.
 
 
 Frozen changes
