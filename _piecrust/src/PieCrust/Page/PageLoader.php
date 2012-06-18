@@ -223,7 +223,6 @@ class PageLoader
             throw new PieCrustException("Unknown template engine '{$templateEngineName}'.");
 
         $contents = array();
-        #die('<pre>'.print_r($rawSegments,true));
         foreach ($rawSegments as $key => $pieces)
         {
             $contents[$key] = '';
