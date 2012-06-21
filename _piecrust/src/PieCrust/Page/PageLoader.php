@@ -165,7 +165,9 @@ class PageLoader
     {
         $end = strlen($rawContents);
         $matches = array();
-        $matchCount = preg_match_all('/^---(\w+)(?:\:(\w+))?---\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE, $offset);
+        $matchCount = preg_match_all('/^(?:---\s*(\w+)(?:\:(\w+))?\s*---|<--\s*(\w+)\s*-->)\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE, $offset);
+        $segmentName = 'content';
+        $segmentFormat = null;
         if ($matchCount > 0)
         {
             $contents = array();
@@ -173,10 +175,10 @@ class PageLoader
             if ($matches[0][0][1] > $offset)
             {
                 // There's some default content at the beginning.
-                $contents['content'] = array(
+                $contents[$segmentName] = array(
                     array(
                         'content'=>substr($rawContents, $offset, $matches[0][0][1] - $offset),
-                        'format'=>null
+                        'format'=>$segmentFormat
                     )
                 );
             }
@@ -188,8 +190,12 @@ class PageLoader
                 // the current is the last capture).
                 $matchStart = $matches[0][$i][1] + strlen($matches[0][$i][0]);
                 $matchEnd = ($i < $matchCount - 1) ? $matches[0][$i+1][1] : $end;
-                $segmentName = $matches[1][$i][0];
-                $segmentFormat = empty($matches[2][$i]) ? null : $matches[2][$i][0];
+                if(!empty($matches[1][$i][0])){
+                    $segmentName = $matches[1][$i][0];
+                    $segmentFormat = empty($matches[2][$i]) ? null : $matches[2][$i][0];
+                } elseif(!empty($matches[3][$i][0])) {
+                    $segmentFormat = $matches[3][$i][0];
+                }
                 $segmentContent = substr($rawContents, $matchStart, $matchEnd - $matchStart);
                 if(empty($contents[$segmentName])) $contents[$segmentName] = array();
                 $contents[$segmentName][] = array(
@@ -197,7 +203,6 @@ class PageLoader
                     'format'=>$segmentFormat
                 );
             }
-            
             return $contents;
         }
         else
