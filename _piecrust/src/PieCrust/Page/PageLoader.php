@@ -120,7 +120,7 @@ class PageLoader
             $contents  = array();
             foreach ($config['segments'] as $key)
             {
-                $contents[$key] = $this->cache->read($this->page->getUri(), $key . '.html');
+                $contents[$key] = json_decode($this->cache->read($this->page->getUri(), $key . '.json'),true);
             }
             
             return $contents;
@@ -153,7 +153,7 @@ class PageLoader
                 $keys = $config['segments'];
                 foreach ($keys as $key)
                 {
-                    $this->cache->write($this->page->getUri() . '.' . $key, 'html', $contents[$key]);
+                    $this->cache->write($this->page->getUri() . '.' . $key, 'json', json_encode($contents[$key]));
                 }
             }
             
@@ -165,7 +165,9 @@ class PageLoader
     {
         $end = strlen($rawContents);
         $matches = array();
-        $matchCount = preg_match_all('/^---(\w+)---\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE, $offset);
+        $matchCount = preg_match_all('/^(?:---\s*(\w+)(?:\:(\w+))?\s*---|<--\s*(\w+)\s*-->)\s*\n/m', $rawContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE, $offset);
+        $segmentName = 'content';
+        $segmentFormat = null;
         if ($matchCount > 0)
         {
             $contents = array();
@@ -173,7 +175,12 @@ class PageLoader
             if ($matches[0][0][1] > $offset)
             {
                 // There's some default content at the beginning.
-                $contents['content'] = substr($rawContents, $offset, $matches[0][0][1] - $offset);
+                $contents[$segmentName] = array(
+                    array(
+                        'content'=>substr($rawContents, $offset, $matches[0][0][1] - $offset),
+                        'format'=>$segmentFormat
+                    )
+                );
             }
             
             for ($i = 0; $i < $matchCount; ++$i)
@@ -183,17 +190,30 @@ class PageLoader
                 // the current is the last capture).
                 $matchStart = $matches[0][$i][1] + strlen($matches[0][$i][0]);
                 $matchEnd = ($i < $matchCount - 1) ? $matches[0][$i+1][1] : $end;
-                $segmentName = $matches[1][$i][0];
+                if(!empty($matches[1][$i][0])){
+                    $segmentName = $matches[1][$i][0];
+                    $segmentFormat = empty($matches[2][$i]) ? null : $matches[2][$i][0];
+                } elseif(!empty($matches[3][$i][0])) {
+                    $segmentFormat = $matches[3][$i][0];
+                }
                 $segmentContent = substr($rawContents, $matchStart, $matchEnd - $matchStart);
-                $contents[$segmentName] = $segmentContent;
+                if(empty($contents[$segmentName])) $contents[$segmentName] = array();
+                $contents[$segmentName][] = array(
+                    'content'=>$segmentContent,
+                    'format'=>$segmentFormat
+                );
             }
-            
             return $contents;
         }
         else
         {
             // No segments, just the content.
-            return array('content' => substr($rawContents, $offset));
+            return array('content' => array(
+                array(
+                    'content'=>substr($rawContents, $offset),
+                    'format'=>null
+                )
+            ));
         }
     }
 
@@ -208,44 +228,50 @@ class PageLoader
             throw new PieCrustException("Unknown template engine '{$templateEngineName}'.");
 
         $contents = array();
-        foreach ($rawSegments as $key => $content)
+        foreach ($rawSegments as $key => $pieces)
         {
-            ob_start();
-            try
+            $contents[$key] = '';
+            foreach ($pieces as $piece)
             {
-                $templateEngine->renderString($content, $data);
-                $renderedContent = ob_get_clean();
-            }
-            catch (Exception $e)
-            {
-                ob_end_clean();
-                throw $e;
-            }
-
-            $format = $this->page->getConfig()->getValue('format');
-            $renderedAndFormattedContent = PieCrustHelper::formatText(
-                $pieCrust, 
-                $renderedContent, 
-                $format
-            );
-            $contents[$key] = $renderedAndFormattedContent;
-            if ($key == 'content')
-            {
-                $matches = array();
-                if (preg_match(
-                    '/^<!--\s*(more|(page)?break)\s*-->\s*$/m', 
-                    $renderedAndFormattedContent, 
-                    $matches, 
-                    PREG_OFFSET_CAPTURE
-                ))
+                $content = $piece['content'];
+                $format = $piece['format'];
+                ob_start();
+                try
                 {
-                    // Add a special content segment for the "intro/abstract" part 
-                    // of the article.
-                    $offset = $matches[0][1];
-                    $abstract = substr($renderedAndFormattedContent, 0, $offset);
-                    $this->page->getConfig()->appendValue('segments', 'content.abstract');
-                    $contents['content.abstract'] = $abstract;
+                    $templateEngine->renderString($content, $data);
+                    $renderedContent = ob_get_clean();
                 }
+                catch (Exception $e)
+                {
+                    ob_end_clean();
+                    throw $e;
+                }
+
+                if(!$format) $format = $this->page->getConfig()->getValue('format');
+                $renderedAndFormattedContent = PieCrustHelper::formatText(
+                    $pieCrust, 
+                    $renderedContent, 
+                    $format
+                );
+                $contents[$key] .= $renderedAndFormattedContent;
+            }
+        }
+        if (!empty($contents['content']))
+        {
+            $matches = array();
+            if (preg_match(
+                '/^<!--\s*(more|(page)?break)\s*-->\s*$/m', 
+                $contents['content'], 
+                $matches, 
+                PREG_OFFSET_CAPTURE
+            ))
+            {
+                // Add a special content segment for the "intro/abstract" part 
+                // of the article.
+                $offset = $matches[0][1];
+                $abstract = substr($contents['content'], 0, $offset);
+                $this->page->getConfig()->appendValue('segments', 'content.abstract');
+                $contents['content.abstract'] = $abstract;
             }
         }
 
