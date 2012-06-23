@@ -331,7 +331,7 @@ class Page implements IPage
         }
         else
         {
-            return new Page(
+            return new static(
                 $pieCrust,
                 $uriInfo['uri'],
                 $uriInfo['path'],
@@ -356,7 +356,7 @@ class Page implements IPage
         
         $relativePath = PathHelper::getRelativePath($pieCrust, $path, $pageType);
         $uri = UriBuilder::buildUri($relativePath);
-        return new Page(
+        return new static(
                 $pieCrust,
                 $uri,
                 $path,
