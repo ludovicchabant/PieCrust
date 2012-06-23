@@ -76,6 +76,14 @@ class MockFileSystem
         return $this->withAsset("_content/pages/{$fileName}", $text);
     }
 
+    public function withPageAsset($pageUrl, $assetName, $assetContents = 'A test asset.')
+    {
+        $dir = $pageUrl . '-assets';
+        if (preg_match('/\\.[a-zA-Z0-9]+$/', $pageUrl))
+            $dir = pathinfo($pageUrl, PATHINFO_FILENAME) . '-assets';
+        return $this->withAsset("_content/pages/{$dir}/$assetName", $assetContents);
+    }
+
     public function withPost($slug, $day, $month, $year, $config, $contents)
     {
         $text  = '---' . PHP_EOL;

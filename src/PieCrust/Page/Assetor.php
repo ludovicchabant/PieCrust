@@ -41,7 +41,8 @@ class Assetor implements \ArrayAccess, \Iterator
      */
     public function setUrlBase($urlBase)
     {
-        if ($this->assetsCache != null) throw new PieCrustException("The base URL can only be set before the assets are loaded.");
+        if ($this->assetsCache != null)
+            throw new PieCrustException("The base URL can only be set before the assets are loaded.");
         $this->urlBase = rtrim($urlBase, '/');
     }
     
@@ -91,7 +92,13 @@ class Assetor implements \ArrayAccess, \Iterator
     public function offsetExists($offset)
     {
         $this->ensureAssetsCache();
-        return isset($this->assetsCache[$offset]);
+        if (!isset($this->assetsCache[$offset]))
+            throw new PieCrustException(
+                "Asset '{$offset}' doesn't exist. " .
+                "If you're trying to access a file with invalid characters (such as a dash), " .
+                "you may have to use an alternate templating syntax. " .
+                "For example, with Twig: {{ asset['some-file'] }}");
+        return true;
     }
     
     public function offsetGet($offset) 
@@ -156,6 +163,8 @@ class Assetor implements \ArrayAccess, \Iterator
                 {
                     $filename = $p->getFilename();
                     $key = preg_replace('/\.[a-zA-Z0-9]+$/', '', $filename);
+                    if (isset($this->assetsCache[$key]))
+                        throw new PieCrustException("Directory '{$this->assetsDir}' contains several assets with filename '{$key}'.");
                     $this->assetsCache[$key] = $this->urlBase . '/' . $filename;
                 }
             }
