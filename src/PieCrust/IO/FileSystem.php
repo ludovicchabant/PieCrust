@@ -46,20 +46,29 @@ abstract class FileSystem
         $pages = array();
         $directory = new \RecursiveDirectoryIterator($pagesDir);
         $iterator = new \RecursiveIteratorIterator($directory);
+        $skipNames = array(
+            'Thumbs.db',
+            PieCrustDefaults::CATEGORY_PAGE_NAME,
+            PieCrustDefaults::TAG_PAGE_NAME
+        );
 
         foreach ($iterator as $path)
         {
-            if ($iterator->isDot())
+            // Skip dot files, Thumbs.db, and special pages.
+            if (substr($path->getFilename(), 0, 1) === '.')
+                continue;
+            if (in_array($path->getFilename(), $skipNames))
                 continue;
 
             $pagePath = $path->getPathname();
-            $relativePath = PathHelper::getRelativePagePath($this->pieCrust, $pagePath, IPage::TYPE_REGULAR);
-            $relativePathInfo = pathinfo($relativePath);
-            if ($relativePathInfo['filename'] == PieCrustDefaults::CATEGORY_PAGE_NAME or
-                $relativePathInfo['filename'] == PieCrustDefaults::TAG_PAGE_NAME)
-            {
+            $relativePath = PathHelper::getRelativePagePath(
+                $this->pieCrust, 
+                $pagePath, 
+                IPage::TYPE_REGULAR
+            );
+            // Skip files in page asset folders.
+            if (preg_match('#\-assets[/\\\\]#', $relativePath))
                 continue;
-            }
 
             $pages[] = array(
                 'path' => $pagePath, 

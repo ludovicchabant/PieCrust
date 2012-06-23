@@ -124,4 +124,61 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
             $this->assertEquals(str_replace('\\', '/', $postFiles[5 - $i]['path']), str_replace('\\', '/', $pathInfo['path']));
         }
     }
+
+    public function testGetPageFiles()
+    {
+        $fs = MockFileSystem::create()
+            ->withPage('test1')
+            ->withPage('testxml.xml')
+            ->withPage('foo/test2')
+            ->withPage('foo/testtxt.txt')
+            ->withPage('foo/bar/test3')
+            ->withPage('foo/test-stuff')
+            ->withPage('bar/blah')
+            ->withPageAsset('bar/blah', 'something.txt')
+            ->withAsset('_content/pages/.DS_Store', 'fake')
+            ->withAsset('_content/pages/.svn/blah', 'fake')
+            ->withAsset('_content/pages/Thumbs.db', 'fake')
+            ->withAsset('_content/pages/foo/.DS_Store', 'fake')
+            ->withAsset('_content/pages/foo/Thumbs.db', 'fake')
+            ->withAsset('_content/pages/foo/.svn/blah', 'fake');
+
+        $pc = new MockPieCrust();
+        $pc->setPagesDir($fs->url('kitchen/_content/pages'));
+        $pc->getConfig()->setValue('site/posts_fs', 'flat');
+        
+        $pcFs = FileSystem::create($pc);
+        $pageFiles = $pcFs->getPageFiles();
+
+        $expected = array(
+            array(
+                'path' => $fs->url('kitchen/_content/pages/test1.html'),
+                'relative_path' => '_content/pages/test1.html'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/testxml.xml'),
+                'relative_path' => '_content/pages/testxml.xml'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/foo/test2.html'),
+                'relative_path' => '_content/pages/foo/test2.html'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/foo/testtxt.txt'),
+                'relative_path' => '_content/pages/foo/testtxt.txt'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/foo/bar/test3.html'),
+                'relative_path' => '_content/pages/foo/bar/test3.html'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/foo/test-stuff.html'),
+                'relative_path' => '_content/pages/foo/test-stuff.html'
+            ),
+            array(
+                'path' => $fs->url('kitchen/_content/pages/bar/blah.html'),
+                'relative_path' => '_content/pages/bar/blah.html'
+            )
+        );
+    }
 }
