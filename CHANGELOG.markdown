@@ -32,6 +32,10 @@ Fresh changes
 * NEW: PieCrust is now compilable into a `.phar` file.
 * NEW: When using `chef serve`, an error triggered by a file processor will be
   rendered as an error page.
+* NEW: One can change the current format in the middle of a page's content
+  segment with the `<--formatter_name-->` syntax.
+* NEW: Content segments can be written with a custom formatter by appending
+  `:formatter_name` to the segment name (_e.g_: `---segment:format---`).
 * CHANGE: The folder structure has been changed to make it look more like an
   application project. For users, this means the `chef` executable has been
   moved to the `/bin` folder (although, for backwards compatibility, a copy is
@@ -44,6 +48,7 @@ Fresh changes
 * CHANGE: `chef plugins find` now lists all plugins from known repositories when
   no search pattern is given.
 * CHANGE: The default website, created by `chef init`, is now better.
+* CHANGE: An error message is displayed when a missing page asset is accessed.
 * BUG: Fixed a typo in the help text of `chef prepare`.
 
 
