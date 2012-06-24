@@ -170,9 +170,9 @@ class Page implements IPage
     /**
      * Gets all the page's formatted content segments.
      */
-    public function getContentSegments()
+    public function getContentSegments($ensureFormatted = true)
     {
-        $this->ensureContentsLoaded();
+        if($ensureFormatted) $this->ensureContentsLoaded();
         return $this->contents;
     }
     
