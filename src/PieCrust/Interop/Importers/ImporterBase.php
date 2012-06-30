@@ -2,6 +2,7 @@
 
 namespace PieCrust\Interop\Importers;
 
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
@@ -174,11 +175,10 @@ abstract class ImporterBase implements IImporter
     protected function writePageFile($configData, $content, $filename)
     {
         // Get the YAML string for the config data.
-        $yaml = new \sfYamlDumper();
-        $header = $yaml->dump($configData, 3);
+        $header = Yaml::dump($configData, 3);
 
         // Write the post's contents.
-        echo " > " . pathinfo($filename, PATHINFO_FILENAME) . "\n";
+        $this->logger->info(" > " . pathinfo($filename, PATHINFO_FILENAME));
         if (!is_dir(dirname($filename)))
             mkdir(dirname($filename), 0777, true);
         $f = fopen($filename, 'w');

@@ -124,7 +124,7 @@ EOD;
         $this->db = mysql_connect($server, $username, $password);
         if (!$this->db)
             throw new PieCrustException("Can't connect to '$server'.");
-        echo "Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'." . PHP_EOL;
+        $this->logger->info("Connected to server '$server' as '$username'. Will use table prefix '$tablePrefix'.");
         if (!mysql_select_db($dbName))
             throw new PieCrustException("Can't select database '$dbName' on '$server'.");
         $this->type = 'mysql';
@@ -216,13 +216,16 @@ EOD;
 
     protected function openXml($connection)
     {
-        echo "Loading: " . $connection . PHP_EOL;
+        $this->logger->info("Loading: " . $connection);
 
         // Load the XML file.
         $this->db = simplexml_load_file($connection);
         $this->type = 'xml';
 
         // Gather the authors' names.
+        // (note that some versions of Wordpress' XML export don't
+        //  declare authors like this, and instead just specify the
+        //  full name each time in the posts)
         $this->authors = array();
         foreach ($this->db->xpath('/rss/channel/wp:author') as $author)
         {
@@ -285,7 +288,11 @@ EOD;
             $metadata['id'] = intval($wpChildren->post_id);
 
             $dcChildren = $item->children('dc', true);
-            $metadata['author'] = $this->authors[strval($dcChildren->creator)];
+            $authorKey = strval($dcChildren->creator);
+            if (isset($this->authors[$authorKey]))
+                $metadata['author'] = $this->authors[$authorKey];
+            else
+                $metadata['author'] = $authorKey;
             
             $tags = $item->xpath('category[@domain=\'post_tag\'][@nicename]');
             $metadata['tags'] = array_map(function($n) { return strval($n['nicename']); }, $tags);

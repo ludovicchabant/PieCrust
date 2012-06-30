@@ -292,7 +292,7 @@ class JekyllImporter extends ImporterBase
         $beginning = file_get_contents($absolute, false, null, 0, 3);
         if ($beginning === false)
         {
-            echo "Can't read: {$absolute}";
+            $this->logger->err("Can't read: {$absolute}");
             continue;
         }
         if ($beginning === '---')
