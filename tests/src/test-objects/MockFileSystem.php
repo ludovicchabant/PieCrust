@@ -1,6 +1,7 @@
 <?php
 
 use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use Symfony\Component\Yaml\Yaml;
 
 
@@ -33,6 +34,11 @@ class MockFileSystem
     public function siteRootUrl()
     {
         return $this->url('kitchen');
+    }
+
+    public function getStructure()
+    {
+        return vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure();
     }
 
     public function withCacheDir()
