@@ -29,6 +29,8 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     protected $filter;
     protected $skip;
     protected $limit;
+    protected $sortByName;
+    protected $sortByReverse;
     
     protected $posts;
     protected $hasMorePosts;
@@ -47,6 +49,8 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         $this->filter = null;
         $this->skip = 0;
         $this->limit = -1;
+        $this->sortByName = null;
+        $this->sortByReverse = false;
         
         $this->posts = null;
         $this->hasMorePosts = false;
@@ -198,6 +202,17 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         $this->limit = -1;
         return $this;
     }
+
+    /**
+     * @include
+     * @noCall
+     * @documentation Sort posts by a page setting.
+     */
+    public function sortBy($name, $reverse = false)
+    {
+        $this->sortByName = $name;
+        $this->sortByReverse = $reverse;
+    }
     // }}}
 
     // {{{ Miscellaneous template members
@@ -331,12 +346,20 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         }
         $this->totalPostCount = count($actualDataSource);
 
-        // The given data source is usually from the post FileSystem, which
-        // orders posts by reverse-chronological date. The problem is that
-        // it doesn't know about the time at which a post was posted because
-        // at this point none of the posts have been loaded from disk.
-        // We need to sort by the actual date and time of the post.
-        usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
+        if (!$this->sortByName)
+        {
+            // The given data source is usually from the post FileSystem, which
+            // orders posts by reverse-chronological date. The problem is that
+            // it doesn't know about the time at which a post was posted because
+            // at this point none of the posts have been loaded from disk.
+            // We need to sort by the actual date and time of the post.
+            usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
+        }
+        else
+        {
+            // Sort by some arbitrary setting.
+            usort($actualDataSource, array($this, "sortByCustom"));
+        }
 
         // Find the previous and next posts, if the parent page is in there.
         if ($this->page != null)
@@ -403,6 +426,25 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
             $postsData[] = new PaginationData($post);
         }
         return $postsData;
+    }
+
+    protected function sortByCustom($post1, $post2)
+    {
+        $value1 = $post1->getConfig()->getValue($this->sortByName);
+        $value2 = $post2->getConfig()->getValue($this->sortByName);
+        
+        if ($value1 == null && $value2 == null)
+            return 0;
+        if ($value1 == null && $value2 != null)
+            return $this->sortByReverse ? 1 : -1;
+        if ($value1 != null && $value2 == null)
+            return $this->sortByReverse ? -1 : 1;
+        if ($value1 == $value2)
+            return 0;
+        if ($this->sortByReverse)
+            return ($value1 < $value2) ? 1 : -1;
+        else
+            return ($value1 < $value2) ? -1 : 1;
     }
 
     protected static function sortByReverseTimestamp($post1, $post2)

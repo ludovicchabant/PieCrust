@@ -78,17 +78,17 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             else
                 $expectedCount = ($postCount % 5);
         }
-        $expectedIndexes = array();
+        $expectedIndices = array();
         if ($postCount > 0)
         {
-            $allIndexes = array_reverse(range(0, $postCount - 1));
-            $expectedIndexes = array_slice(
-                $allIndexes,
+            $allIndices = array_reverse(range(0, $postCount - 1));
+            $expectedIndices = array_slice(
+                $allIndices,
                 5 * ($pageNumber - 1),
                 $expectedCount
             );
         }
-        $this->assertExpectedPostsData($expectedIndexes, $posts);
+        $this->assertExpectedPostsData($expectedIndices, $posts);
     }
     
     public function fluentFilteringDataProvider()
@@ -104,7 +104,7 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider fluentFilteringDataProvider
      */
-    public function testFluentFiltering($pageNumber, $postCount, $filterFunc, $expectedIndexes)
+    public function testFluentFiltering($pageNumber, $postCount, $filterFunc, $expectedIndices)
     {
         $pc = new MockPieCrust();
         $pc->getConfig()->setValue('site/posts_per_page', 5);
@@ -117,7 +117,7 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         
         if ($filterFunc)
             $filterFunc($it);
-        $this->assertExpectedPostsData($expectedIndexes, $it);
+        $this->assertExpectedPostsData($expectedIndices, $it);
     }
 
     public function previousAndNextPostsDataProvider()
@@ -175,6 +175,78 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $this->assertNull($nextPost);
         }
     }
+
+    public function sortedPaginationDataProvider()
+    {
+        return array(
+            array(
+                null,
+                null,
+                array_reverse(range(0, 9))
+            ),
+            array(
+                'foo',
+                function ($i) { return $i; },
+                range(0, 9)
+            ),
+            array(
+                'nested/foo',
+                function ($i) { return ($i + 5) % 10; },
+                array(5, 6, 7, 8, 9, 0, 1, 2, 3, 4)
+            ),
+            array(
+                'foo',
+                function ($i) { return $i; },
+                array_reverse(range(0, 9)),
+                true
+            ),
+            array(
+                'nested/foo',
+                function ($i) { return ($i + 5) % 10; },
+                array_reverse(array(5, 6, 7, 8, 9, 0, 1, 2, 3, 4)),
+                true
+            )
+        );
+    }
+
+    /**
+     * @dataProvider sortedPaginationDataProvider
+     */
+    public function testSortedPagination($sortByName, $configSetter, $expectedIndices, $sortByReverse = false)
+    {
+        $pc = new MockPieCrust();
+
+        $posts = array();
+        for ($i = 0; $i < 10; ++$i)
+        {
+            $year = 2012;
+            $month = 1;
+            $day = $i;
+            $name = "test-post-number-$i-name";
+            $path = "test-post-number-$i-path.html";
+
+            $dummyPage = new MockPage($pc);
+            $dummyPage->uri = $name;
+            $dummyPage->path = $path;
+            $dummyPage->date = mktime(0, 0, 0, $month, $day, $year);
+            if ($sortByName && $configSetter)
+                $dummyPage->config->setValue($sortByName, $configSetter($i));
+            $dummyPage->contents = array('content' => ("Test page $i contents."));
+            $posts[] = $dummyPage;
+        }
+
+        $it = new PaginationIterator($pc, 'blog', $posts);
+        if ($sortByName)
+            $it->sortBy($sortByName, $sortByReverse);
+
+        $this->assertEquals(count($expectedIndices), count($it));
+        foreach ($expectedIndices as $k => $i)
+        {
+            $post = $it[$k];
+            $this->assertEquals("test-post-number-$i-name", $post['slug']);
+            $this->assertEquals("Test page $i contents.", $post['content']);
+        }
+    }
     
     protected function buildPaginationDataSource(IPieCrust $pc, $postCount)
     {
@@ -184,14 +256,14 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
             $year = 2006 + ($i / 6); // bump the year up every 6 posts.
             $month = ($i % 12);      // each post a different month.
             $day = (($i * 3) % 28);  // each post on some day between 0 and 27.
-            $name = ('test-post-number-' . $i . '-name');
-            $path = ('test-post-number-' . $i . '-path.html');
+            $name = ("test-post-number-$i-name");
+            $path = ("test-post-number-$i-path.html");
             
             $dummyPage = new MockPage($pc);
             $dummyPage->uri = $name;
             $dummyPage->path = $path;
             $dummyPage->date = mktime(0, 0, 0, $month, $day, $year);
-            $dummyPage->contents = array('content' => ('Test page ' . $i . ' contents.'));
+            $dummyPage->contents = array('content' => ("Test page $i contents."));
             $posts[] = $dummyPage;
         }
 
@@ -202,16 +274,16 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         return $posts;
     }
     
-    protected function assertExpectedPostsData($expectedIndexes, $actualPosts)
+    protected function assertExpectedPostsData($expectedIndices, $actualPosts)
     {
-        $this->assertEquals(count($expectedIndexes), count($actualPosts));
-        foreach ($expectedIndexes as $k => $i)
+        $this->assertEquals(count($expectedIndices), count($actualPosts));
+        foreach ($expectedIndices as $k => $i)
         {
             $post = $actualPosts[$k];
-            $this->assertEquals('test-post-number-' . $i . '-name', $post['slug']);
+            $this->assertEquals("test-post-number-$i-name", $post['slug']);
             $time = mktime(0, 0, 0, ($i % 12), (($i * 3) % 28), 2006 + ($i / 6));
             $this->assertEquals(date('F j, Y', $time), $post['date']);
-            $this->assertEquals('Test page ' . $i . ' contents.', $post['content']);
+            $this->assertEquals("Test page $i contents.", $post['content']);
         }
     }
 }
