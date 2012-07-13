@@ -41,6 +41,12 @@ class MockFileSystem
         return vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure();
     }
 
+    public function getApp($params = array())
+    {
+        $params['root'] = $this->siteRootUrl();
+        return new \PieCrust\PieCrust($params);
+    }
+
     public function withCacheDir()
     {
         mkdir(vfsStream::url('root/kitchen/_cache'));
