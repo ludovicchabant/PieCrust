@@ -7,7 +7,7 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Util\PageConfigWrapper;
+use PieCrust\Data\PaginationData;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -26,6 +26,10 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     protected $page;
     protected $baseDir;
     protected $selfName;
+
+    protected $sortByName;
+    protected $sortByReverse;
+
     protected $linksCache;
     
     /**
@@ -44,6 +48,9 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
             $this->baseDir = dirname($page->getPath()) . '/';
             $this->selfName = basename($page->getPath());
         }
+
+        $this->sortByName = null;
+        $this->sortByReverse = false;
     }
 
     // {{{ Template Data Members
@@ -69,6 +76,15 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     public function is_self()
     {
         return false;
+    }
+
+    /**
+     * @noCall
+     */
+    public function sortBy($name, $reverse = false)
+    {
+        $this->sortByName = $name;
+        $this->sortByReverse = $reverse;
     }
     // }}}
     
@@ -146,15 +162,19 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                 $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
                 $this->linksCache = array();
+                $skipNames = array('Thumbs.db');
                 $it = new FilesystemIterator($this->baseDir);
                 foreach ($it as $item)
                 {
                     $basename = $item->getBasename();
+
+                    // Skip dot files, Thumbs.db, etc.
                     if (!$basename or $basename[0] == '.')
-                    {
                         continue;
-                    }
-                    else if ($item->isDir())
+                    if (in_array($item->getFilename(), $skipNames))
+                        continue;
+                    
+                    if ($item->isDir())
                     {
                         $linker = new Linker($this->page, $item->getPathname());
                         $this->linksCache[$basename . '_'] = $linker;
@@ -165,13 +185,16 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                         // 'link.dirname_' instead of 'link.dirname' but hey, if
                         // you have a better idea, send me an email!
                     }
-                    else if (pathinfo($basename, PATHINFO_EXTENSION) == 'html')
+                    else
                     {
                         $path = $item->getPathname();
-                        $key = $item->getBasename('.html');
                         try
                         {
-                            $relativePath = PathHelper::getRelativePagePath($pieCrust, $path, $this->page->getPageType());
+                            $relativePath = PathHelper::getRelativePagePath(
+                                $pieCrust, 
+                                $path, 
+                                $this->page->getPageType()
+                            );
                             $uri = UriBuilder::buildUri($relativePath);
 
                             // To get the link's page, we need to be careful with the case
@@ -187,21 +210,28 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                             else
                                 $page = $pageRepository->getOrCreatePage($uri, $path);
                             
+                            $key = str_replace('.', '_', $item->getBasename('.html'));
                             $this->linksCache[$key] = array(
                                 'uri' => $uri,
                                 'name' => $key,
                                 'is_dir' => false,
                                 'is_self' => ($basename == $this->selfName),
-                                'page' => new PageConfigWrapper($page)
+                                'page' => new PaginationData($page)
                             );
                         }
                         catch (Exception $e)
                         {
-                            throw new PieCrustException("Error while loading page '" . $path .
-                                                        "' for linking from '" . $this->page->getUri() .
-                                                        "': " . $e->getMessage(), 0, $e);
+                            throw new PieCrustException(
+                                "Error while loading page '{$path}' for linking from '{$this->page->getUri()}': " .
+                                $e->getMessage(), 0, $e
+                            );
                         }
                     }
+                }
+
+                if ($this->sortByName)
+                {
+                    usort($this->linksCache, array($this, 'sortByCustom'));
                 }
                 
                 if ($this->selfName != null)
@@ -248,9 +278,43 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
             }
             catch (Exception $e)
             {
-                throw new PieCrustException("Error while building the links from page '" . $this->page->getUri() .
-                                            "': " . $e->getMessage(), 0, $e);
+                throw new PieCrustException(
+                    "Error while building the links from page '{$this->page->getUri()}': " .
+                    $e->getMessage(), 0, $e
+                );
             }
         }
     }
+
+    protected function sortByCustom($link1, $link2)
+    {
+        $link1IsLinker = ($link1 instanceof Linker);
+        $link2IsLinker = ($link2 instanceof Linker);
+
+        if ($link1IsLinker && $link2IsLinker)
+            return strcmp($link1->name(), $link2->name());
+        if ($link1IsLinker)
+            return $this->sortByReverse ? 1 : -1;
+        if ($link2IsLinker)
+            return $this->sortByReverse ? -1 : 1;
+
+        $page1 = $link1['page']->getPage();
+        $value1 = $page1->getConfig()->getValue($this->sortByName);
+        $page2 = $link2['page']->getPage();
+        $value2 = $page2->getConfig()->getValue($this->sortByName);
+        
+        if ($value1 == null && $value2 == null)
+            return 0;
+        if ($value1 == null && $value2 != null)
+            return $this->sortByReverse ? 1 : -1;
+        if ($value1 != null && $value2 == null)
+            return $this->sortByReverse ? -1 : 1;
+        if ($value1 == $value2)
+            return 0;
+        if ($this->sortByReverse)
+            return ($value1 < $value2) ? 1 : -1;
+        else
+            return ($value1 < $value2) ? -1 : 1;
+    }
+
 }
