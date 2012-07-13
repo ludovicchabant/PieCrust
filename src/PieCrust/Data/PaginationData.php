@@ -42,25 +42,23 @@ class PaginationData extends PageConfigWrapper
 
         // Add some lazy-loading functions for stuff
         // that would load the page's contents.
-        $this->lazyValues['content'] = 'loadContentAndHasMoreProperty';
-        $this->lazyValues['has_more'] = 'loadContentAndHasMoreProperty';
+        $this->lazyValues[self::WILDCARD] = 'loadContent';
     }
 
-    protected function loadContentAndHasMoreProperty()
+    protected function loadContent()
     {
-        if (isset($this->values['content']) or
-            isset($this->values['has_more']))
-            return;
-
         $post = $this->page;
+        foreach ($this->page->getContentSegments() as $key => $segment)
+        {
+            $this->values[$key] = $segment;
+        }
+
         $postHasMore = false;
-        $postContents = $post->getContentSegment('content');
         if ($post->hasContentSegment('content.abstract'))
         {
-            $postContents = $post->getContentSegment('content.abstract');
+            $this->values['content'] = $post->getContentSegment('content.abstract');
             $postHasMore = true;
         }
-        $this->values['content'] = $postContents;
         $this->values['has_more'] = $postHasMore;
     }
 }
