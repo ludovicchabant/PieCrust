@@ -15,10 +15,23 @@ use PieCrust\IPage;
  */
 class PageConfigWrapper implements \ArrayAccess, \Iterator
 {
+    const WILDCARD = '__WILDCARD__';
+
     protected $page;
     protected $values;
     protected $lazyValues;
 
+    /**
+     * Gets the page being wrapped.
+     */
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    /**
+     * Builds a new instance of PageConfigWrapper.
+     */
     public function __construct(IPage $page)
     {
         $this->page = $page;
@@ -111,10 +124,19 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
 
     protected function ensureLazyLoaded($name, $consume = true)
     {
-        if ($this->lazyValues and isset($this->lazyValues[$name]))
+        if ($this->lazyValues)
         {
-            $loader = $this->lazyValues[$name];
-            $this->$loader();
+            if (isset($this->lazyValues[$name]))
+            {
+                $loader = $this->lazyValues[$name];
+                $this->$loader();
+            }
+            elseif (isset($this->lazyValues[self::WILDCARD]))
+            {
+                $loader = $this->lazyValues[self::WILDCARD];
+                $this->$loader();
+                $name = self::WILDCARD;
+            }
 
             if ($consume)
             {
