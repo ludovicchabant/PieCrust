@@ -353,12 +353,14 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
             // it doesn't know about the time at which a post was posted because
             // at this point none of the posts have been loaded from disk.
             // We need to sort by the actual date and time of the post.
-            usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp"));
+            if (false === usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp")))
+                throw new PieCrustException("Error while sorting posts by timestamp.");
         }
         else
         {
             // Sort by some arbitrary setting.
-            usort($actualDataSource, array($this, "sortByCustom"));
+            if (false === usort($actualDataSource, array($this, "sortByCustom")))
+                throw new PieCrustException("Error while sorting posts with the specified setting: {$this->sortByName}");
         }
 
         // Find the previous and next posts, if the parent page is in there.
