@@ -120,12 +120,7 @@ class Paginator
      */
     public function this_page()
     {
-        $thisPageUri = $this->page->getUri();
-        if ($this->page->getPageNumber() > 1)
-        {
-            $thisPageUri .= '/' . $this->page->getPageNumber();
-        }
-        return $thisPageUri;
+        return $this->page($this->page->getPageNumber());
     }
    
     /**
@@ -145,6 +140,8 @@ class Paginator
 
     /**
      * Gets the total number of posts.
+     *
+     * This method is meant to be called from the layouts via the template engine.
      */
     public function total_post_count()
     {
@@ -154,6 +151,8 @@ class Paginator
 
     /**
      * Gets the total number of pages.
+     *
+     * This method is meant to be called from the layouts via the template engine.
      */
     public function total_page_count()
     {
@@ -169,8 +168,48 @@ class Paginator
     }
 
     /**
+     * Gets all the page numbers.
+     *
+     * This method is meant to be called from the layouts via the template engine.
+     */
+    public function all_page_numbers($beforeEllipsis = false, $afterEllipsis = false)
+    {
+        if (!$afterEllipsis)
+            $afterEllipsis = $beforeEllipsis;
+
+        $totalPageCount = $this->total_page_count();
+        if (!$beforeEllipsis and !$afterEllipsis)
+            return range(1, $totalPageCount);
+        elseif ($totalPageCount <= ($beforeEllipsis + $afterEllipsis))
+            return range(1, $totalPageCount);
+        else
+            return array_merge(
+                range(1, $beforeEllipsis),
+                array(false),
+                range($totalPageCount - $afterEllipsis + 1, $totalPageCount)
+            );
+    }
+
+    /**
+     * Get the link to a given page.
+     *
+     * This method is meant to be called from the layouts via the template engine.
+     */
+    public function page($index)
+    {
+        $uri = $this->page->getUri();
+        if ($index > 1)
+        {
+            $uri .= '/' . $index;
+        }
+        return $uri;
+    }
+
+    /**
      * Gets the post coming after the current page, 
      * if it is a post, and it's not the last one.
+     *
+     * This method is meant to be called from the layouts via the template engine.
      */
     public function next_post()
     {
@@ -181,6 +220,8 @@ class Paginator
     /**
      * Gets the post coming before the current page,
      * if it is a post, and it's not the first one.
+     *
+     * This method is meant to be called from the layouts via the template engine.
      */
     public function prev_post()
     {
