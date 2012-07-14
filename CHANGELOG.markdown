@@ -36,6 +36,10 @@ Fresh changes
   segment with the `<--formatter_name-->` syntax.
 * NEW: Content segments can be written with a custom formatter by appending
   `:formatter_name` to the segment name (_e.g_: `---segment:format---`).
+* NEW: Posts and pages obtained from `pagination` or `link` now also provide
+  access to other content segments than the main one.
+* NEW: Added a `sortBy` function to `pagination` and `link`.
+* NEW: Added `all_page_numbers` and `page(i)` functions to `pagination`.
 * CHANGE: The folder structure has been changed to make it look more like an
   application project. For users, this means the `chef` executable has been
   moved to the `/bin` folder (although, for backwards compatibility, a copy is
@@ -50,6 +54,7 @@ Fresh changes
 * CHANGE: The default website, created by `chef init`, is now better.
 * CHANGE: An error message is displayed when a missing page asset is accessed.
 * BUG: Fixed a typo in the help text of `chef prepare`.
+* BUG: Fixed some bugs in the Wordpress importer.
 
 
 Frozen changes
