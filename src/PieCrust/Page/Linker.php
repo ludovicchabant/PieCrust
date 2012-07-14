@@ -85,6 +85,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     {
         $this->sortByName = $name;
         $this->sortByReverse = $reverse;
+        return $this;
     }
     // }}}
     
@@ -231,7 +232,8 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
 
                 if ($this->sortByName)
                 {
-                    usort($this->linksCache, array($this, 'sortByCustom'));
+                    if (false === usort($this->linksCache, array($this, 'sortByCustom')))
+                        throw new PieCrustException("Error while sorting pages with the specified setting: {$this->sortByName}");
                 }
                 
                 if ($this->selfName != null)
@@ -292,7 +294,10 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
         $link2IsLinker = ($link2 instanceof Linker);
 
         if ($link1IsLinker && $link2IsLinker)
-            return strcmp($link1->name(), $link2->name());
+        {
+            $c = strcmp($link1->name(), $link2->name());
+            return $this->sortByReverse ? -$c : $c;
+        }
         if ($link1IsLinker)
             return $this->sortByReverse ? 1 : -1;
         if ($link2IsLinker)
