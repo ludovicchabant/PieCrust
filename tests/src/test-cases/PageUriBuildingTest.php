@@ -21,7 +21,8 @@ class PageUriBuildingTest extends PHPUnit_Framework_TestCase
             array('foo.ext', 'foo.ext'),
             array('somewhere/foo.ext', 'somewhere/foo.ext'),
             array('foo.ext', 'foo', '.ext'),
-            array('somewhere/foo.ext', 'somewhere/foo', '.ext')
+            array('somewhere/foo.ext', 'somewhere/foo', '.ext'),
+            array('backward\slash', 'backward/slash')
         );
     }
 

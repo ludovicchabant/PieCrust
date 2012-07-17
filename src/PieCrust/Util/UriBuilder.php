@@ -15,11 +15,11 @@ class UriBuilder
      */
     public static function buildUri($relativePath, $stripExtension = '.html', $stripIndex = true)
     {
-        $uri = $relativePath;
+        $uri = str_replace('\\', '/', $relativePath);
         if ($stripExtension)
         {
             $stripExtension = preg_quote($stripExtension, '/');
-            $uri = preg_replace('/' . $stripExtension . '$/', '', $relativePath);
+            $uri = preg_replace('/' . $stripExtension . '$/', '', $uri);
         }
         if ($stripIndex)
         {
