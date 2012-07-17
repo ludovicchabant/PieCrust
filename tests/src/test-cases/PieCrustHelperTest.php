@@ -9,6 +9,16 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
     public function formatUriDataProviderWhenRun()
     {
         return array(
+            array('', '/'),
+            array('', '/?!debug', '/', true, true),
+            array('', '/?/', '/', false),
+            array('', '/?/&!debug', '/', false, true),
+
+            array('', '/root/', '/root'),
+            array('', '/root/?!debug', '/root', true, true),
+            array('', '/root/?/', '/root', false),
+            array('', '/root/?/&!debug', '/root', false, true),
+
             array('test', '/test'),
             array('test', '/test?!debug', '/', true, true),
             array('test', '/?/test', '/', false),
@@ -76,6 +86,16 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
     public function formatUriDataProviderWhenBaked()
     {
         return array(
+            array('', '/'),
+            array('', '/', '/', true, true),
+            array('', '/', '/', false),
+            array('', '/', '/', false, true),
+
+            array('', '/root/', '/root'),
+            array('', '/root/', '/root', true, true),
+            array('', '/root/', '/root', false),
+            array('', '/root/', '/root', false, true),
+
             array('test', '/test'),
             array('test', '/test', '/', true, true),
             array('test', '/test.html', '/', false),

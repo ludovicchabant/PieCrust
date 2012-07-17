@@ -103,18 +103,22 @@ class PieCrustHelper
     public static function formatUri(IPieCrust $pieCrust, $uri)
     {
         // We only add a `.html` extension to the URI if we're baking without
-        // 'pretty URLs', and the given URI doesn't have an extension already.
+        // 'pretty URLs', if the given URI doesn't have an extension already,
+        // and if this is not the site's root.
         $extension = '';
-        $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
-        if (!$isPretty)
+        if ($uri != '')
         {
-            $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
-            if ($isBaking)
+            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
+            if (!$isPretty)
             {
-                $hasExtension = pathinfo($uri, PATHINFO_EXTENSION) != null;
-                if (!$hasExtension && $isBaking)
+                $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
+                if ($isBaking)
                 {
-                    $extension = '.html';
+                    $hasExtension = pathinfo($uri, PATHINFO_EXTENSION) != null;
+                    if (!$hasExtension)
+                    {
+                        $extension = '.html';
+                    }
                 }
             }
         }
