@@ -8,6 +8,12 @@ class ServerHelperTest extends PHPUnit_Framework_TestCase
     public function getRequestUriDataProvider()
     {
         return array(
+            // Standard QUERY
+            array(
+                array('QUERY_STRING' => null),
+                false,
+                '/'
+            ),
             array(
                 array('QUERY_STRING' => ''),
                 false,
@@ -48,8 +54,29 @@ class ServerHelperTest extends PHPUnit_Framework_TestCase
                 false,
                 '/blah'
             ),
+            // URL rewriting queries
+            array(
+                array('REQUEST_URI' => '/'),
+                true,
+                '/'
+            ),
+            array(
+                array('QUERY_STRING' => null, 'REQUEST_URI' => '/'),
+                true,
+                '/'
+            ),
             array(
                 array('REQUEST_URI' => '/blah'),
+                true,
+                '/blah'
+            ),
+            array(
+                array('QUERY_STRING' => null, 'REQUEST_URI' => '/blah'),
+                true,
+                '/blah'
+            ),
+            array(
+                array('QUERY_STRING' => '/something/else', 'REQUEST_URI' => '/blah'),
                 true,
                 '/blah'
             ),

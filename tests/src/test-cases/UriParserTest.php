@@ -7,7 +7,7 @@ use PieCrust\Page\Page;
 use PieCrust\Util\UriParser;
 
 
-class PageUriParsingTest extends PHPUnit_Framework_TestCase
+class UriParserTest extends PHPUnit_Framework_TestCase
 {
     protected function makeUriInfo($uri, $path, $wasPathChecked, $pageNumber = 1, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null)
     {
