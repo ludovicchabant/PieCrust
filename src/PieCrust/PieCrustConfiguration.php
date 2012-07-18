@@ -130,7 +130,8 @@ class PieCrustConfiguration extends Configuration
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
                 'cache_time' => 28800,
-                'display_errors' => false
+                'display_errors' => false,
+                'enable_debug_info' => true
             ),
             $config['site']);
 

@@ -39,7 +39,8 @@ class PieCrustData
     
     public function debug_info()
     {
-        if (!$this->pieCrust->isDebuggingEnabled())
+        if (!$this->pieCrust->isDebuggingEnabled() or
+            !$this->pieCrust->getConfig()->getValue('site/enable_debug_info'))
             return '';
         
         $output = '<div id="piecrust-debug-info" style="' . DataStyles::CSS_DEBUGINFO . '">' . PHP_EOL;
