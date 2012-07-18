@@ -15,10 +15,16 @@ use PieCrust\Util\PathHelper;
  */
 class Chef
 {
+    /**
+     * Builds a new instance of Chef.
+     */
     public function __construct()
     {
     }
     
+    /**
+     * Runs Chef given some command-line arguments.
+     */
     public function run($userArgc = null, $userArgv = null)
     {
         try
@@ -34,6 +40,9 @@ class Chef
         }
     }
 
+    /**
+     * Runs Chef given some command-line arguments.
+     */
     public function runUnsafe($userArgc = null, $userArgv = null)
     {
         // Get the arguments.
@@ -127,6 +136,8 @@ class Chef
             return 1;
         }
         $log = \Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
+        // Make the log available for debugging purposes.
+        $GLOBALS['__CHEF_LOG'] = $log;
 
         // Handle deprecated stuff.
         if ($result->command->options['no_cache_old'])
@@ -165,6 +176,9 @@ class Chef
         }
     }
 
+    /**
+     * Formats an exception into an error message.
+     */
     public static function getErrorMessage(Exception $e, $debugMode = false)
     {
         $message = $e->getMessage();
