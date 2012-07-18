@@ -15,6 +15,11 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+Frozen changes
+--------------
+
+### 0.8.0 (2012-07-18)
+
 * BREAKING CHANGE: The filenames created by the baker are now more consistent.
   When `pretty_urls` are disabled, pages that create pagination have the same
   kind of URL as the ones that don't (_i.e._ `foo/bar.html`). Sub-pages are
@@ -61,10 +66,6 @@ Fresh changes
 * BUG: Fixed a bug with page slugs having incorrect slashes on Windows.
 * BUG: Fixed a typo in the help text of `chef prepare`.
 * BUG: Fixed some bugs in the Wordpress importer.
-
-
-Frozen changes
---------------
 
 ### 0.7.2 (2012-05-23)
 
