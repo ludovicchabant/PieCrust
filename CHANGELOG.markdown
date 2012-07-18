@@ -40,6 +40,8 @@ Fresh changes
   access to other content segments than the main one.
 * NEW: Added a `sortBy` function to `pagination` and `link`.
 * NEW: Added `all_page_numbers` and `page(i)` functions to `pagination`.
+* NEW: Added `site/enabled_debug_info` site configuration setting to let users
+  disable `debug_info` on production websites hosted as a CMS.
 * CHANGE: The folder structure has been changed to make it look more like an
   application project. For users, this means the `chef` executable has been
   moved to the `/bin` folder (although, for backwards compatibility, a copy is
@@ -53,6 +55,10 @@ Fresh changes
   no search pattern is given.
 * CHANGE: The default website, created by `chef init`, is now better.
 * CHANGE: An error message is displayed when a missing page asset is accessed.
+* BUG: Fixed a bug with `pcurl` and the root URL when `pretty_urls` are
+  disabled.
+* BUG: Fixed a bug with `debug_info` being possibly incorrectly aligned.
+* BUG: Fixed a bug with page slugs having incorrect slashes on Windows.
 * BUG: Fixed a typo in the help text of `chef prepare`.
 * BUG: Fixed some bugs in the Wordpress importer.
 
