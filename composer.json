@@ -1,0 +1,137 @@
+{
+    "name": "bolt80/piecrust",
+    "description": "A lightweight CMS and static website generator.",
+    "homepage": "http://bolt80.com/piecrust",
+    "authors": [
+        {
+            "name": "Ludovic Chabant",
+            "homepage": "http://ludovic.chabant.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "geshi/geshi",
+                "version": "1.0.8.10",
+                "dist": {
+                    "url":  "http://sourceforge.net/projects/geshi/files/geshi/GeSHi%201.0.8.10/GeSHi-1.0.8.10.zip/download",
+                    "type": "zip"
+                },
+                "autoload": {
+                    "classmap": [ "geshi.php" ]
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "lessphp/lessphp",
+                "version": "0.3.4",
+                "dist": {
+                    "url": "https://github.com/leafo/lessphp/zipball/v0.3.4-2",
+                    "type": "zip"
+                },
+                "autoload": {
+                    "classmap": [ "lessc.inc.php" ]
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "markdown/markdown",
+                "version": "1.0",
+                "dist": {
+                    "url": "https://github.com/michelf/php-markdown/zipball/master",
+                    "type": "zip"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "markdown/markdown-extra",
+                "version": "1.0",
+                "dist": {
+                    "url": "https://github.com/michelf/php-markdown/zipball/extra",
+                    "type": "zip"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "smartypants/smartypants",
+                "version": "1.0",
+                "dist": {
+                    "url": "https://github.com/michelf/php-smartypants/zipball/master",
+                    "type": "zip"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "smartypants/smartypants-typographer",
+                "version": "1.0",
+                "dist": {
+                    "url": "https://github.com/michelf/php-smartypants/zipball/typo",
+                    "type": "zip"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "mustache/mustache",
+                "version": "1.1.0",
+                "dist": {
+                    "url": "https://github.com/bobthecow/mustache.php/zipball/v1.1.0",
+                    "type": "zip"
+                },
+                "autoload": {
+                    "classmap": [ "Mustache.php", "MustacheLoader.php" ]
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "textile/textile",
+                "version": "2.0.0",
+                "dist": {
+                    "url": "http://textile.thresholdstate.com/file_download/1/textile-2.0.0.zip",
+                    "type": "zip"
+                },
+                "autoload": {
+                    "classmap": [ "classTextile.php" ]
+                }
+            }
+        }
+    ],
+    "require": {
+        "php": ">= 5.3.0",
+        "symfony/yaml": "v2.0.14",
+        "twig/twig": "v1.8.1",
+        "mustache/mustache": "1.*",
+        "geshi/geshi": "1.0.*",
+        "lessphp/lessphp": "0.3.*",
+        "markdown/markdown": "1.0",
+        "markdown/markdown-extra": "1.0",
+        "smartypants/smartypants": "1.0",
+        "smartypants/smartypants-typographer": "1.0",
+        "textile/textile": "2.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "PieCrust": "src/",
+            "Log": "libs/pear",
+            "Console": "libs/pear"
+        }
+    },
+    "config": {
+        "vendor-dir": "libs",
+        "bin-dir": "libs/bin"
+    }
+}

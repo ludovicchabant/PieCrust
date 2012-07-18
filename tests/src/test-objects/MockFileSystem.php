@@ -1,9 +1,9 @@
 <?php
 
-require_once 'sfYaml/lib/sfYaml.php';
+use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
+use Symfony\Component\Yaml\Yaml;
 
-require_once 'vfsStream/vfsStream.php';
-require_once 'vfsStream/visitor/vfsStreamStructureVisitor.php';
 
 class MockFileSystem
 {
@@ -16,7 +16,7 @@ class MockFileSystem
 
     public function __construct()
     {
-        vfsStream::create(array(
+        vfsStream::setup('root', null, array(
             'kitchen' => array(
                 '_content' => array(
                     'config.yml' => 'site:\n  title: Mock Website'
@@ -34,6 +34,17 @@ class MockFileSystem
     public function siteRootUrl()
     {
         return $this->url('kitchen');
+    }
+
+    public function getStructure()
+    {
+        return vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure();
+    }
+
+    public function getApp($params = array())
+    {
+        $params['root'] = $this->siteRootUrl();
+        return new \PieCrust\PieCrust($params);
     }
 
     public function withCacheDir()
@@ -59,24 +70,36 @@ class MockFileSystem
     public function withConfig(array $config)
     {
         $configPath = vfsStream::url('root/kitchen/_content/config.yml');
-        file_put_contents($configPath, sfYaml::dump($config));
+        file_put_contents($configPath, Yaml::dump($config));
         return $this;
     }
 
     public function withPage($url, $config = array(), $contents = 'A test page.')
     {
         $text  = '---' . PHP_EOL;
-        $text .= sfYaml::dump($config) . PHP_EOL;
+        $text .= Yaml::dump($config) . PHP_EOL;
         $text .= '---' . PHP_EOL;
         $text .= $contents;
 
-        return $this->withAsset("_content/pages/{$url}.html", $text);
+        // Don't add an extension if there's one already.
+        $fileName = $url . '.html';
+        if (preg_match('/\\.[a-zA-Z0-9]+$/', $url))
+            $fileName = $url;
+        return $this->withAsset("_content/pages/{$fileName}", $text);
+    }
+
+    public function withPageAsset($pageUrl, $assetName, $assetContents = 'A test asset.')
+    {
+        $dir = $pageUrl . '-assets';
+        if (preg_match('/\\.[a-zA-Z0-9]+$/', $pageUrl))
+            $dir = pathinfo($pageUrl, PATHINFO_FILENAME) . '-assets';
+        return $this->withAsset("_content/pages/{$dir}/$assetName", $assetContents);
     }
 
     public function withPost($slug, $day, $month, $year, $config, $contents)
     {
         $text  = '---' . PHP_EOL;
-        $text .= sfYaml::dump($config) . PHP_EOL;
+        $text .= Yaml::dump($config) . PHP_EOL;
         $text .= '---' . PHP_EOL;
         $text .= $contents;
 

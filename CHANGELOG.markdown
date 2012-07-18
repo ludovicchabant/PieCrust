@@ -15,6 +15,53 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: The filenames created by the baker are now more consistent.
+  When `pretty_urls` are disabled, pages that create pagination have the same
+  kind of URL as the ones that don't (_i.e._ `foo/bar.html`). Sub-pages are
+  baked into `foo/bar/n.html` (where `n` is the page number).
+* BREAKING CHANGE: Added support for extensions other than `.html` for source
+  files -- and that extension is carried to the output file when baking. This
+  means that `content_type` is back to being used only for setting HTML headers,
+  as it should be. For now, the old behaviour is also supported, with a warning
+  message.
+* BREAKING CHANGE: Chef syntax changed to use hyphenated long option names
+  everywhere (it was not 100% consistent until now). A warning message is
+  printed when using the old syntax.
+* BREAKING CHANGE: Some options from `chef bake` were removed because they are
+  useless now that PieCrust supports config variants.
+* NEW: PieCrust is now compilable into a `.phar` file.
+* NEW: When using `chef serve`, an error triggered by a file processor will be
+  rendered as an error page.
+* NEW: One can change the current format in the middle of a page's content
+  segment with the `<--formatter_name-->` syntax.
+* NEW: Content segments can be written with a custom formatter by appending
+  `:formatter_name` to the segment name (_e.g_: `---segment:format---`).
+* NEW: Posts and pages obtained from `pagination` or `link` now also provide
+  access to other content segments than the main one.
+* NEW: Added a `sortBy` function to `pagination` and `link`.
+* NEW: Added `all_page_numbers` and `page(i)` functions to `pagination`.
+* NEW: Added `site/enabled_debug_info` site configuration setting to let users
+  disable `debug_info` on production websites hosted as a CMS.
+* CHANGE: The folder structure has been changed to make it look more like an
+  application project. For users, this means the `chef` executable has been
+  moved to the `/bin` folder (although, for backwards compatibility, a copy is
+  still available in `/_piecrust/chef`, but it prints a warning message and will
+  be removed after version 0.9).
+* CHANGE: The `--fileurls` option from `chef bake` is deprecated and replaced by
+  the `--portable` option. This creates a "portable" website where all URLs are
+  specified relatively to the root (with `../../`-type paths).
+* CHANGE: A new version of StupidHttp is used for `chef serve`.
+* CHANGE: `chef plugins find` now lists all plugins from known repositories when
+  no search pattern is given.
+* CHANGE: The default website, created by `chef init`, is now better.
+* CHANGE: An error message is displayed when a missing page asset is accessed.
+* BUG: Fixed a bug with `pcurl` and the root URL when `pretty_urls` are
+  disabled.
+* BUG: Fixed a bug with `debug_info` being possibly incorrectly aligned.
+* BUG: Fixed a bug with page slugs having incorrect slashes on Windows.
+* BUG: Fixed a typo in the help text of `chef prepare`.
+* BUG: Fixed some bugs in the Wordpress importer.
+
 
 Frozen changes
 --------------

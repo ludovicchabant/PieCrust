@@ -1,9 +1,6 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-
+use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Util\PieCrustHelper;
@@ -44,7 +41,7 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
                 'config.yml' => ''
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         // Render our template.
         $pc = new PieCrust(array('cache' => false, 'root' => vfsStream::url('root')));

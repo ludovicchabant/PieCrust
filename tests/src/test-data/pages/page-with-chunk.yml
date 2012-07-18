@@ -1,0 +1,10 @@
+needs:
+  formatter:
+    markdown: MarkdownFormatter
+    textile: TextileFormatter
+config:
+  title: Page with chunk
+content: |
+  This is normal stuff.
+  <h1>This is markdown!</h1>
+

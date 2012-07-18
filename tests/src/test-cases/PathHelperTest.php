@@ -1,9 +1,6 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-
+use org\bovigo\vfs\vfsStream;
 use PieCrust\Util\PathHelper;
 
 
@@ -23,7 +20,7 @@ class PathHelperTest extends PHPUnit_Framework_TestCase
                 )
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         $cwd = vfsStream::url('root/blah/web');
         $webRoot = PathHelper::getAppRootDir($cwd);
@@ -46,7 +43,7 @@ class PathHelperTest extends PHPUnit_Framework_TestCase
                 'other' => array()
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         $cwd = vfsStream::url('root');
         $webRoot = PathHelper::getAppRootDir($cwd);

@@ -1,0 +1,53 @@
+{
+    "hash": "4d76c45e22e72e9fe0912c053e95331f",
+    "packages": [
+        {
+            "package": "geshi/geshi",
+            "version": "1.0.8.10"
+        },
+        {
+            "package": "lessphp/lessphp",
+            "version": "0.3.4"
+        },
+        {
+            "package": "markdown/markdown",
+            "version": "1.0"
+        },
+        {
+            "package": "markdown/markdown-extra",
+            "version": "1.0"
+        },
+        {
+            "package": "mustache/mustache",
+            "version": "1.1.0"
+        },
+        {
+            "package": "smartypants/smartypants",
+            "version": "1.0"
+        },
+        {
+            "package": "smartypants/smartypants-typographer",
+            "version": "1.0"
+        },
+        {
+            "package": "symfony/yaml",
+            "version": "v2.0.14"
+        },
+        {
+            "package": "textile/textile",
+            "version": "2.0.0"
+        },
+        {
+            "package": "twig/twig",
+            "version": "v1.8.1"
+        }
+    ],
+    "packages-dev": null,
+    "aliases": [
+
+    ],
+    "minimum-stability": "dev",
+    "stability-flags": [
+
+    ]
+}

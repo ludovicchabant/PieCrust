@@ -1,9 +1,7 @@
 <?php
 
-require_once 'unittest_setup.php';
-
-require_once 'vfsStream/vfsStream.php';
-
+use org\bovigo\vfs\vfsStream;
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
@@ -38,7 +36,7 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
                 'pages' => array()
             )
         );
-        $root = vfsStream::create($structure);
+        $root = vfsStream::setup('root', null, $structure);
 
         // Create the page that will load our test file.
         $pc = new MockPieCrust();
@@ -51,17 +49,40 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
                 'default_template_engine' => 'none'
             )
         ));
+        // Default template engines.
         $pc->addTemplateEngine('mustache', 'MustacheTemplateEngine');
         $pc->addTemplateEngine('twig', 'TwigTemplateEngine');
-        $p = new Page($pc, '/test', $testFilename);
-        
+
         // Get the stuff we are expecting.
-        $yamlParser = new sfYamlParser();
-        $expectedResults = $yamlParser->parse(file_get_contents($expectedResultsFilename));
+        $expectedResults = Yaml::parse(file_get_contents($expectedResultsFilename));
+
+        // Add needed template engines/formatters.
+        if (isset($expectedResults['needs']))
+        {
+            $needs = $expectedResults['needs'];
+            if (isset($needs['formatter']))
+            {
+                foreach ($needs['formatter'] as $name => $f)
+                {
+                    $pc->addFormatter($name, $f);
+                }
+            }
+            if (isset($needs['template_engine']))
+            {
+                foreach ($needs['template_engine'] as $name => $te)
+                {
+                    $pc->addTemplateEngine($name, $te);
+                }
+            }
+            unset($expectedResults['needs']);
+        }
+        
+        // Build a test page and get the full expected config.
+        $p = new Page($pc, '/test', $testFilename);
         $expectedConfig = PageConfiguration::getValidatedConfig($p, $expectedResults['config']);
+        unset($expectedResults['config']);
         foreach ($expectedResults as $key => $content) // Add the segment names.
         {
-            if ($key == 'config') continue;
             $expectedConfig['segments'][] = $key;
         }
         
@@ -71,8 +92,6 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
         $actualSegments = $p->getContentSegments();
         foreach ($expectedResults as $key => $content)
         {
-            if ($key == 'config') continue;
-            
             $this->assertContains($key, $actualConfig['segments'], 'Expected a declared content segment named: ' . $key);
             $this->assertArrayHasKey($key, $actualSegments, 'Expected a content segment named: ' . $key);
             $this->assertEquals($content, $actualSegments[$key], 'The content segments are not equivalent.');

@@ -1,0 +1,9 @@
+needs:
+  formatter:
+    markdown: MarkdownFormatter
+config:
+  title: Page with 2 segments and custom format
+content: |
+  The normal stuff.
+sidebar: |
+  <p><em>This</em> is a <strong>sidebar</strong>!</p>

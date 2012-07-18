@@ -1,35 +1,32 @@
-# Temp files from Windows/MacOSX/etc.
-.*~$
-\.DS_Store
-Thumbs\.db
+syntax:glob
 
-# App cache files.
-_cache/(?!\.empty)
-^tests/tmp/(?!\.empty)
-bakeinfo\.json
+# Temp files from Windows/MacOSX/etc.
+*~
+*.swp
+.DS_Store
+Thumbs.db
+
+# Caches and temp folders.
+_cache/
+_counter/
+tests/tmp/
+piecrust.phar
 
 # Libs files we don't need.
-.gitignore
-.gitmodules
-^_piecrust/libs/Geshi/docs/
-^_piecrust/libs/sfYaml/doc/
-^_piecrust/libs/sfYaml/test/
-^_piecrust/libs/Twig/bin/
-^_piecrust/libs/Twig/doc/
-^_piecrust/libs/Twig/test/
-^_piecrust/libs/Twig/phpunit\.xml
-^_piecrust/libs/LessPhp/docs/
-^_piecrust/libs/LessPhp/tests/
-^_piecrust/libs/Mustache/examples/
-^_piecrust/libs/Mustache/test/
-^_piecrust/libs/Log/docs/
-^_piecrust/libs/Log/examples/
-^_piecrust/libs/Log/misc/
-^_piecrust/libs/Log/tests/
+libs/.composer
+libs/*/*/.hg*
+libs/*/*/.git*
+libs/*/*/.travis.yml
+libs/*/*/bin/
+libs/*/*/ext/
+libs/*/*/doc/
+libs/*/*/docs/
+libs/*/*/example/
+libs/*/*/examples/
+libs/*/*/test/
+libs/*/*/tests/
+libs/*/*/phpunit*
 
-syntax:glob
-# Log files
-*.log
+# Very specific stuff we don't need.
+libs/mikey179/vfsStream/src/test
 
-# Baked sample website.
-website/_counter
