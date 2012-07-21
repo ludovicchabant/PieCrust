@@ -134,6 +134,10 @@ class PieCrustServer
     {
         $startTime = microtime(true);
         
+        // Things like the plugin loader will add paths to the PHP include path.
+        // Let's save it and restore it later.
+        $includePath = get_include_path();
+
         // Run PieCrust dynamically.
         $pieCrustException = null;
         try
@@ -221,6 +225,9 @@ class PieCrustServer
             $handler = new PieCrustErrorHandler($pieCrust);
             $handler->handleError($pieCrustException, null, $headers);
         }
+
+        // Restore the include path.
+        set_include_path($includePath);
         
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
@@ -272,6 +279,10 @@ class PieCrustServer
 
     protected function prebake($server = null, $path = null)
     {
+        // Things like the plugin loader will add paths to the PHP include path.
+        // Let's save it and restore it later.
+        $includePath = get_include_path();
+
         $pieCrust = new PieCrust(
             array(
                 'root' => $this->rootDir,
@@ -303,6 +314,9 @@ class PieCrustServer
             $this->logger
         );
         $dirBaker->bake($path);
+
+        // Restore the include path.
+        set_include_path($includePath);
 
         return $dirBaker->getBakedFiles();
     }
