@@ -18,6 +18,15 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.8.1 (2012-07-20)
+
+* BUG: In some situations, an incremental bake (_i.e._ a bake without the `-f`
+  option) could miss some pages that needed to be re-processed.
+* BUG: Fixed a bug where the PHP include path could grow insane when previewing
+  a site with `chef serve` that has plugins loaded.
+* BUG: Fixed a bug where some files inside `_content/pages` were incorrectly
+  treated as pages.
+
 ### 0.8.0 (2012-07-18)
 
 * BREAKING CHANGE: The filenames created by the baker are now more consistent.
