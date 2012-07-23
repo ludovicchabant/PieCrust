@@ -135,7 +135,12 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
             ->withPage('foo/bar/test3')
             ->withPage('foo/test-stuff')
             ->withPage('bar/blah')
+            ->withPage('_tag')
+            ->withPage('_category')
+            ->withPage('otherblog/_tag')
+            ->withPage('otherblog/_category')
             ->withPageAsset('bar/blah', 'something.txt')
+            ->withAsset('_content/pages/.whatever', 'fake')
             ->withAsset('_content/pages/.DS_Store', 'fake')
             ->withAsset('_content/pages/.svn/blah', 'fake')
             ->withAsset('_content/pages/Thumbs.db', 'fake')
@@ -153,32 +158,33 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $expected = array(
             array(
                 'path' => $fs->url('kitchen/_content/pages/test1.html'),
-                'relative_path' => '_content/pages/test1.html'
+                'relative_path' => '/test1.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/testxml.xml'),
-                'relative_path' => '_content/pages/testxml.xml'
+                'relative_path' => '/testxml.xml'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/test2.html'),
-                'relative_path' => '_content/pages/foo/test2.html'
+                'relative_path' => '/foo/test2.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/testtxt.txt'),
-                'relative_path' => '_content/pages/foo/testtxt.txt'
+                'relative_path' => '/foo/testtxt.txt'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/bar/test3.html'),
-                'relative_path' => '_content/pages/foo/bar/test3.html'
+                'relative_path' => '/foo/bar/test3.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/test-stuff.html'),
-                'relative_path' => '_content/pages/foo/test-stuff.html'
+                'relative_path' => '/foo/test-stuff.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/bar/blah.html'),
-                'relative_path' => '_content/pages/bar/blah.html'
+                'relative_path' => '/bar/blah.html'
             )
         );
+        $this->assertEquals($expected, $pageFiles);
     }
 }

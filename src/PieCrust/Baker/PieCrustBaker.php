@@ -326,27 +326,24 @@ class PieCrustBaker
     
     protected function bakePage(IPage $page)
     {
-        // Don't bake this file if it is up-to-date and 
-        // is not using any posts (if any was rebaked).
-        $relativePath = PageHelper::getRelativePath($page);
-        if (!$this->shouldRebakeFile($page->getPath()) and 
-                (!$this->bakeRecord->wasAnyPostBaked() or 
-                 !$this->bakeRecord->isPageUsingPosts($relativePath))
-           )
-        {
-            return false;
-        }
-        
         $start = microtime(true);
-        $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters(), $this->logger);
-        $baker->bake($page);
+        $baker = new PageBaker(
+            $this->getBakeDir(), 
+            $this->getPageBakerParameters(), 
+            $this->logger
+        );
+        $didBake = $baker->bake($page);
+        if (!$didBake)
+            return;
+
         if ($baker->wasPaginationDataAccessed())
         {
+            $relativePath = PageHelper::getRelativePath($page);
             $this->bakeRecord->addPageUsingPosts($relativePath);
         }
         
         $pageCount = $baker->getPageCount();
-        $this->logger->info(self::formatTimed($start, $relativePath . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+        $this->logger->info(self::formatTimed($start, ($page->getUri() == '' ? '[main page]' : $page->getUri()) . (($pageCount > 1) ? " [{$pageCount}]" : "")));
         return true;
     }
     
@@ -370,21 +367,21 @@ class PieCrustBaker
 
     protected function bakePost(IPage $post)
     {
-        $postWasBaked = false;
-        if ($this->shouldRebakeFile($post->getPath()))
-        {
-            $start = microtime(true);
-            $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
-            $baker->bake($post);
-            $postWasBaked = true;
+        $start = microtime(true);
+        $baker = new PageBaker(
+            $this->getBakeDir(), 
+            $this->getPageBakerParameters(),
+            $this->logger
+        );
+        $didBake = $baker->bake($post);
+        if ($didBake)
             $this->logger->info(self::formatTimed($start, $post->getUri()));
-        }
 
         $postInfo = array();
         $postInfo['blogKey'] = $post->getBlogKey();
         $postInfo['tags'] = $post->getConfig()->getValue('tags');
         $postInfo['category'] = $post->getConfig()->getValue('category');
-        $postInfo['wasBaked'] = $postWasBaked;
+        $postInfo['wasBaked'] = $didBake;
         $this->bakeRecord->addPostInfo($postInfo);
     }
     
@@ -469,7 +466,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
@@ -515,7 +512,7 @@ class PieCrustBaker
                 $baker->bake($page, $postInfos);
 
                 $pageCount = $baker->getPageCount();
-                $this->logger->info(self::formatTimed($start, $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                $this->logger->info(self::formatTimed($start, 'cat:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
             }
         }
     }
@@ -530,22 +527,12 @@ class PieCrustBaker
         return ($this->pieCrust->getPostsDir() !== false);
     }
     
-    protected function shouldRebakeFile($path)
-    {
-        if ($this->parameters['smart'])
-        {
-            if (filemtime($path) < $this->bakeRecord->getLast('time'))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-    
     protected function getPageBakerParameters()
     {
         return array(
-            'copy_assets' => $this->parameters['copy_assets']
+            'smart' => $this->parameters['smart'],
+            'copy_assets' => $this->parameters['copy_assets'],
+            'bake_record' => $this->bakeRecord
         );
     }
     

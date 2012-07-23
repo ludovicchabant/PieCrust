@@ -44,22 +44,13 @@ abstract class FileSystem
             return array();
 
         $pages = array();
-        $directory = new \RecursiveDirectoryIterator($pagesDir);
-        $iterator = new \RecursiveIteratorIterator($directory);
-        $skipNames = array(
-            'Thumbs.db',
-            PieCrustDefaults::CATEGORY_PAGE_NAME,
-            PieCrustDefaults::TAG_PAGE_NAME
+        $iterator = new \RecursiveIteratorIterator(
+            new PagesRecursiveFilterIterator(
+                new \RecursiveDirectoryIterator($pagesDir)
+            )
         );
-
         foreach ($iterator as $path)
         {
-            // Skip dot files, Thumbs.db, and special pages.
-            if (substr($path->getFilename(), 0, 1) === '.')
-                continue;
-            if (in_array($path->getFilename(), $skipNames))
-                continue;
-
             $pagePath = $path->getPathname();
             $relativePath = PathHelper::getRelativePagePath(
                 $this->pieCrust, 
