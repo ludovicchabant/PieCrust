@@ -4,6 +4,7 @@ namespace PieCrust\Baker;
 
 use \Exception;
 use PieCrust\IPage;
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Page\PageRenderer;
 use PieCrust\Util\PageHelper;
@@ -58,7 +59,8 @@ class PageBaker
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
             array(
-                'copy_assets' => false
+                'copy_assets' => false,
+                'bake_record' => null
             ), 
             $parameters
         );
@@ -69,6 +71,58 @@ class PageBaker
         }
         $this->logger = $logger;
     }
+
+    public function getOutputPath(IPage $page)
+    {
+        $bakePath = $this->bakeDir;
+        $isSubPage = ($page->getPageNumber() > 1);
+        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
+        if ($prettyUrls)
+        {
+            // Output will be one of:
+            // - `uri/name/index.html` (if not a sub-page).
+            // - `uri/name/<n>/index.html` (if a sub-page, where <n> is the page number).
+            // This works also for URIs with extensions, as it will produce:
+            // - `uri/name.ext/index.html`
+            // - `uri/name.ext/2/index.html`
+            $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
+            if ($isSubPage)
+                $bakePath .= $page->getPageNumber() . '/';
+            $bakePath .= self::BAKE_INDEX_DOCUMENT;
+        }
+        else
+        {
+            // Output will be one of:
+            // - `uri/name.html` (if not a sub-page).
+            // - `uri/name/<n>.html` (if a sub-page, where <n> is the page number).
+            // If the page has an extension different than `.html`, use that instead, like so:
+            // - `uri/name.ext`
+            // - `uri/name/<n>.ext`
+            // (So in all examples, `name` refers to the name without the extension)
+            $name = $page->getUri();
+            $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
+            if ($extension)
+                $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
+            if ($page->getUri() == '')
+            {
+                // For the homepage, we have:
+                // - `uri/index.html`
+                // - `uri/2.html` (if a sub-page)
+                if ($isSubPage)
+                    $bakePath .= $page->getPageNumber();
+                else
+                    $bakePath .= 'index';
+            }
+            else
+            {
+                $bakePath .= $name;
+                if ($isSubPage)
+                    $bakePath .= '/' . $page->getPageNumber();
+            }
+            $bakePath .= '.' . ($extension ? $extension : 'html');
+        }
+        return $bakePath;
+    }
     
     /**
      * Bakes the given page. Additional template data can be provided, along with
@@ -76,6 +130,7 @@ class PageBaker
      */
     public function bake(IPage $page, array $extraData = null)
     {
+        $didBake = false;
         try
         {
             $this->bakedFiles = array();
@@ -86,7 +141,7 @@ class PageBaker
             $hasMorePages = true;
             while ($hasMorePages)
             {
-                $this->bakeSinglePage($pageRenderer, $extraData);
+                $didBake |= $this->bakeSinglePage($pageRenderer, $extraData);
                 
                 $data = $page->getPageData();
                 if ($data and isset($data['pagination']))
@@ -106,8 +161,10 @@ class PageBaker
         }
         catch (Exception $e)
         {
-            throw new PieCrustException("Error baking page '" . $page->getUri() . "' (p" . $page->getPageNumber() . "): " . $e->getMessage(), 0, $e);
+            throw new PieCrustException("Error baking page '{$page->getUri()}' (p{$page->getPageNumber()}): {$e->getMessage()}", 0, $e);
         }
+
+        return $didBake;
     }
     
     protected function bakeSinglePage(PageRenderer $pageRenderer, array $extraData = null)
@@ -124,38 +181,32 @@ class PageBaker
             $page->setAssetUrlBaseRemap("%site_root%%uri%");
 
         // Figure out the output HTML path.
-        $bakePath = $this->bakeDir;
-        $isSubPage = ($page->getPageNumber() > 1);
-        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
-        if ($prettyUrls)
+        $bakePath = $this->getOutputPath($page);
+
+        // Figure out if we should re-bake this page.
+        $doBake = true;
+        if (is_file($bakePath) && $this->parameters['smart'])
         {
-            // Output will be one of:
-            // - `uri/name/index.html` (if not a sub-page).
-            // - `uri/name/<n>/index.html` (if a sub-page, where <n> is the page number).
-            $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
-            if ($isSubPage)
-                $bakePath .= $page->getPageNumber() . '/';
-            $bakePath .= self::BAKE_INDEX_DOCUMENT;
+            // Don't rebake if the output seems up-to-date, and
+            // the page isn't known to be using posts.
+            if (filemtime($page->getPath()) < filemtime($bakePath))
+            {
+                $bakeRecord = $this->parameters['bake_record'];
+                if ($bakeRecord)
+                {
+                    $relativePath = PageHelper::getRelativePath($page);
+                    if (!$bakeRecord->wasAnyPostBaked() ||
+                        !$bakeRecord->isPageUsingPosts($relativePath))
+                    {
+                        $doBake = false;
+                    }
+                }
+            }
         }
-        else
+        if (!$doBake)
         {
-            // Output will be one of:
-            // - `uri/name.html` (if not a sub-page).
-            // - `uri/name/<n>.html` (if a sub-page, where <n> is the page number).
-            // If the page has an extension different than `.html`, use that instead, like so:
-            // - `uri/name.ext`
-            // - `uri/name/<n>.ext`
-            // (So in all examples, `name` refers to the name without the extension)
-            $name = $page->getUri();
-            $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
-            if ($extension)
-                $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
-            $bakePath .= (($page->getUri() == '') ? 'index' : $name);
-            if ($isSubPage)
-                $bakePath .= '/' . $page->getPageNumber();
-            if (!$extension)
-                $extension = 'html';
-            $bakePath .= '.' . $extension;
+            $this->logger->warning("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
+            return false;
         }
 
         // Backward compatibility warning and file-copy.
@@ -166,44 +217,14 @@ class PageBaker
         if ($contentType != 'html' && $nativeExtension == 'html')
         {
             $copyToOldPath = $this->bakeDir . $page->getUri();
-            if ($isSubPage)
+            if ($page->getPageNumber() > 1)
                 $copyToOldPath .= $page->getPageNumber() . '/';
             $copyToOldPath .= '.' . $contentType;
         }
 
         // If we're using portable URLs, change the site root to a relative
         // path from the page's directory.
-        $savedSiteRoot = null;
-        $portableUrls = $page->getApp()->getConfig()->getValue('baker/portable_urls');
-        if ($portableUrls)
-        {
-            $siteRoot = '';
-            $curDir = dirname($bakePath);
-            while (strlen($curDir) > strlen($this->bakeDir))
-            {
-                $siteRoot .= '../';
-                $curDir = dirname($curDir);
-            }
-            if ($siteRoot == '')
-                $siteRoot = './';
-
-            $savedSiteRoot = $page->getApp()->getConfig()->getValueUnchecked('site/root');
-            $page->getApp()->getConfig()->setValue('site/root', $siteRoot);
-
-            // We need to force-reevaluate the URI decorators because they cache
-            // the site root in them.
-            // TODO: figure a way to make the configuration do it itself, maybe as 
-            // part of the validation hooks.
-            $page->getApp()->getEnvironment()->getUriDecorators(true);
-
-            // We also need to unload all loaded pages because their rendered
-            // contents will probably be invalid now that the site root changed.
-            $repo = $page->getApp()->getEnvironment()->getPageRepository();
-            foreach ($repo->getPages() as $p)
-            {
-                $p->unload();
-            }
-        }
+        $savedSiteRoot = $this->setPortableSiteRoot($page->getApp(), $bakePath);
         
         // Render the page.
         $bakedContents = $pageRenderer->get();
@@ -230,8 +251,10 @@ class PageBaker
         }
         
         // Copy any used assets for the first sub-page.
-        if (!$isSubPage and $this->parameters['copy_assets'])
+        if ($page->getPageNumber() == 1 and
+            $this->parameters['copy_assets'])
         {
+            $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
             if ($prettyUrls)
             {
                 $bakeAssetDir = dirname($bakePath) . '/';
@@ -262,5 +285,43 @@ class PageBaker
         // Cleanup.
         if ($savedSiteRoot)
             $page->getApp()->getConfig()->setValue('site/root', $savedSiteRoot);
+
+        return true;
+    }
+
+    protected function setPortableSiteRoot(IPieCrust $app, $currentPath)
+    {
+        $portableUrls = $app->getConfig()->getValue('baker/portable_urls');
+        if (!$portableUrls)
+            return null;
+
+        $siteRoot = '';
+        $curDir = dirname($currentPath);
+        while (strlen($curDir) > strlen($this->bakeDir))
+        {
+            $siteRoot .= '../';
+            $curDir = dirname($curDir);
+        }
+        if ($siteRoot == '')
+            $siteRoot = './';
+
+        $savedSiteRoot = $app->getConfig()->getValueUnchecked('site/root');
+        $app->getConfig()->setValue('site/root', $siteRoot);
+
+        // We need to force-reevaluate the URI decorators because they cache
+        // the site root in them.
+        // TODO: figure a way to make the configuration do it itself, maybe as 
+        // part of the validation hooks.
+        $app->getEnvironment()->getUriDecorators(true);
+
+        // We also need to unload all loaded pages because their rendered
+        // contents will probably be invalid now that the site root changed.
+        $repo = $app->getEnvironment()->getPageRepository();
+        foreach ($repo->getPages() as $p)
+        {
+            $p->unload();
+        }
+
+        return $savedSiteRoot;
     }
 }

@@ -9,6 +9,96 @@ use PieCrust\Page\Page;
 
 class PageBakerTest extends PHPUnit_Framework_TestCase
 {
+    public function getOutputPathDataProvider()
+    {
+        return array(
+            // Pretty URLs
+            array(
+                '', 1, true,
+                'index.html'
+            ),
+            array(
+                '', 2, true,
+                '2/index.html'
+            ),
+            array(
+                'foo', 1, true,
+                'foo/index.html'
+            ),
+            array(
+                'foo', 2, true,
+                'foo/2/index.html'
+            ),
+            array(
+                'foo/bar', 1, true,
+                'foo/bar/index.html'
+            ),
+            array(
+                'foo/bar', 2, true,
+                'foo/bar/2/index.html'
+            ),
+            array(
+                'foo.ext', 1, true,
+                'foo.ext/index.html'
+            ),
+            array(
+                'foo.ext', 2, true,
+                'foo.ext/2/index.html'
+            ),
+            // Non-pretty URLs
+            array(
+                '', 1, false,
+                'index.html'
+            ),
+            array(
+                '', 2, false,
+                '2.html'
+            ),
+            array(
+                'foo', 1, false,
+                'foo.html'
+            ),
+            array(
+                'foo', 2, false,
+                'foo/2.html'
+            ),
+            array(
+                'foo/bar', 1, false,
+                'foo/bar.html'
+            ),
+            array(
+                'foo/bar', 2, false,
+                'foo/bar/2.html'
+            ),
+            array(
+                'foo.ext', 1, false,
+                'foo.ext'
+            ),
+            array(
+                'foo.ext', 2, false,
+                'foo/2.ext'
+            )
+        );
+    }
+
+    /**
+     * @dataProvider getOutputPathDataProvider
+     */
+    public function testGetOutputPath($uri, $pageNumber, $prettyUrls, $expectedPath)
+    {
+        $app = new MockPieCrust();
+        $page = new MockPage($app);
+        $page->uri = $uri;
+        $page->pageNumber = $pageNumber;
+        if ($prettyUrls)
+            $page->getConfig()->setValue('pretty_urls', true);
+
+        $baker = new PageBaker('/tmp');
+        $path = $baker->getOutputPath($page);
+        $expectedPath = '/tmp/' . $expectedPath;
+        $this->assertEquals($expectedPath, $path);
+    }
+
     public function pageBakeDataProvider()
     {
         return array(
