@@ -111,12 +111,16 @@ class BitBucketRepository implements IRepository
         $log->debug("Unzipping into: {$cacheDir}");
         ArchiveHelper::unzip($tempZip, $cacheDir, $log);
 
-        $log->debug("Copying archive contents into: {$destination}");
         $globbed = glob($cacheDir . $userName . '-' . $repoSlug . '-*', GLOB_ONLYDIR | GLOB_MARK);
         if (count($globbed) != 1)
             throw new PieCrustException("Can't find extracted directory for downloaded archive!");
         $archiveDir = $globbed[0];
-        PathHelper::ensureDirectory($destination, true);
+        if (is_dir($destination))
+        {
+            $log->debug("Cleaning destination: {$destination}");
+            PathHelper::deleteDirectoryContents($destination);
+        }
+        $log->debug("Moving extracted files into: {$destination}");
         rename($archiveDir, $destination);
 
         $log->debug("Cleaning up...");

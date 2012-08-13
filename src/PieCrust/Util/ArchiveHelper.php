@@ -50,6 +50,8 @@ class ArchiveHelper
         $destination = rtrim($destination, '/\\') . '/';
 
         $zip = zip_open($zipfile);
+        if (!is_resource($zip))
+            throw new PieCrustException("Error opening ZIP file: {$zipfile}");
         while ($entry = zip_read($zip))
         {
             zip_entry_open($zip, $entry);
