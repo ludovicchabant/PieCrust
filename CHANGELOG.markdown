@@ -18,6 +18,10 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.8.2 (2012-08-13)
+
+* BUG: Fixed an error with installing plugins on Windows.
+
 ### 0.8.1 (2012-07-20)
 
 * BUG: In some situations, an incremental bake (_i.e._ a bake without the `-f`
