@@ -154,6 +154,14 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         
         $pcFs = FileSystem::create($pc);
         $pageFiles = $pcFs->getPageFiles();
+        foreach ($pageFiles as &$pf)
+        {
+            // Fix slash/backslash problems on Windows that make
+            // the test fail (PHP won't care about it so it's
+            // functionally the same AFAIK).
+            $pf['path'] = str_replace('\\', '/', $pf['path']);
+            $pf['relative_path'] = str_replace('\\', '/', $pf['relative_path']);
+        }
 
         $expected = array(
             array(

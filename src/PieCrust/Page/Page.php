@@ -3,6 +3,7 @@
 namespace PieCrust\Page;
 
 use \Exception;
+use \InvalidArgumentException;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
