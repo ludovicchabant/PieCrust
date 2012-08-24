@@ -205,7 +205,7 @@ class PageBaker
         }
         if (!$doBake)
         {
-            $this->logger->warning("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
+            $this->logger->debug("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
             return false;
         }
 
