@@ -108,14 +108,22 @@ class PieCrustHelper
         $extension = '';
         if ($uri != '')
         {
-            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
-            if (!$isPretty)
+            $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
+            if ($isBaking)
             {
-                $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
-                if ($isBaking)
+                // We're baking! If we're using pretty-urls, we may need to append
+                // a trailing slash at the end. If not, we need to add `.html`.
+                // This is all unless the page being linked to has a custom extension,
+                // in which case we just leave the URL as-is.
+                $hasExtension = pathinfo($uri, PATHINFO_EXTENSION) != null;
+                if (!$hasExtension)
                 {
-                    $hasExtension = pathinfo($uri, PATHINFO_EXTENSION) != null;
-                    if (!$hasExtension)
+                    $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
+                    if ($isPretty)
+                    {
+                        $extension = '/';
+                    }
+                    else
                     {
                         $extension = '.html';
                     }

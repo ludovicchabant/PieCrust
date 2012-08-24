@@ -171,11 +171,11 @@ EOD;
             array(false, 'something/foo', '../', '../something/blah.html'),
             array(false, 'something/sub/foo', '../../', '../../something/blah.html'),
 
-            array(true, 'foo', '../', '../something/blah'),
-            array(true, 'one/foo', '../../', '../../something/blah'),
-            array(true, 'one/two/foo', '../../../', '../../../something/blah'),
-            array(true, 'something/foo', '../../', '../../something/blah'),
-            array(true, 'something/sub/foo', '../../../', '../../../something/blah')
+            array(true, 'foo', '../', '../something/blah/'),
+            array(true, 'one/foo', '../../', '../../something/blah/'),
+            array(true, 'one/two/foo', '../../../', '../../../something/blah/'),
+            array(true, 'something/foo', '../../', '../../something/blah/'),
+            array(true, 'something/sub/foo', '../../../', '../../../something/blah/')
         );
     }
 
@@ -254,8 +254,8 @@ EOD
             array(
                 true,
                 <<<'EOD'
-Normal: /normal
-Normal in folder: /somewhere/normal
+Normal: /normal/
+Normal in folder: /somewhere/normal/
 Ext: /foo.ext
 Ext in folder: /somewhere/foo.ext
 EOD
