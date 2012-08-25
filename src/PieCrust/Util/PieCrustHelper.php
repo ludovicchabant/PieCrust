@@ -102,31 +102,33 @@ class PieCrustHelper
      */
     public static function formatUri(IPieCrust $pieCrust, $uri)
     {
-        // We only add a `.html` extension to the URI if we're baking without
-        // 'pretty URLs', if the given URI doesn't have an extension already,
-        // and if this is not the site's root.
-        $extension = '';
-        if ($uri != '')
+        // Get the URI format for the current app. There's a couple weird ones
+        // that should be used only if the URI to format doesn't have an extension
+        // specified.
+        $uriFormat = $pieCrust->getEnvironment()->getUriFormat();
+        $tokens = array(
+            '%root%',
+            '%slug%',
+            '%slash_if_no_ext%',
+            '%html_if_no_ext%'
+        );
+        $replacements = array(
+            $pieCrust->getConfig()->getValueUnchecked('site/root'),
+            $uri,
+            '/',
+            '.html'
+        );
+
+        // Adjust the replacement bits if the given URI has an extension.
+        $hasExtensionOrIsRoot = (($uri == '') or (pathinfo($uri, PATHINFO_EXTENSION) != null));
+        if ($hasExtensionOrIsRoot)
         {
-            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
-            if (!$isPretty)
-            {
-                $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
-                if ($isBaking)
-                {
-                    $hasExtension = pathinfo($uri, PATHINFO_EXTENSION) != null;
-                    if (!$hasExtension)
-                    {
-                        $extension = '.html';
-                    }
-                }
-            }
+            $replacements[2] = '';
+            $replacements[3] = '';
         }
 
-        $uriDecorators = $pieCrust->getEnvironment()->getUriDecorators();
-        $uriPrefix = $uriDecorators[0];
-        $uriSuffix = str_replace('%extension%', $extension, $uriDecorators[1]);
-        return $uriPrefix . $uri . $uriSuffix;
+        $formattedUri = str_replace($tokens, $replacements, $uriFormat);
+        return $formattedUri;
     }
 }
 

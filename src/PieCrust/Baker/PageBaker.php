@@ -205,7 +205,7 @@ class PageBaker
         }
         if (!$doBake)
         {
-            $this->logger->warning("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
+            $this->logger->debug("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
             return false;
         }
 
@@ -308,13 +308,7 @@ class PageBaker
         $savedSiteRoot = $app->getConfig()->getValueUnchecked('site/root');
         $app->getConfig()->setValue('site/root', $siteRoot);
 
-        // We need to force-reevaluate the URI decorators because they cache
-        // the site root in them.
-        // TODO: figure a way to make the configuration do it itself, maybe as 
-        // part of the validation hooks.
-        $app->getEnvironment()->getUriDecorators(true);
-
-        // We also need to unload all loaded pages because their rendered
+        // We need to unload all loaded pages because their rendered
         // contents will probably be invalid now that the site root changed.
         $repo = $app->getEnvironment()->getPageRepository();
         foreach ($repo->getPages() as $p)

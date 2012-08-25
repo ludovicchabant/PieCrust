@@ -18,6 +18,12 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.8.3 (2012-08-24)
+
+* NEW: By setting `baker/trailing_slash` to `true` in the site configuration,
+  one can get trailing slashes for pretty-URL-type links on a baked site.
+* BUG: Fixed a debug message incorrectly printed as a warning during bake.
+
 ### 0.8.2 (2012-08-13)
 
 * BUG: Fixed an error with installing plugins on Windows.

@@ -98,16 +98,6 @@ class CachedEnvironment extends Environment
         $this->lastRunInfo = $runInfo;
     }
 
-    protected $urlPrefix;
-    protected $urlSuffix;
-    /**
-     * Gets the URL decorators for the current application.
-     */
-    public function getUrlDecorators()
-    {
-        return array($this->urlPrefix, $this->urlSuffix);
-    }
-
     /**
      * Creates a new instance of Environment.
      */

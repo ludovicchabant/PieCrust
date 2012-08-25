@@ -61,36 +61,51 @@ abstract class Environment
         $this->lastRunInfo = $runInfo;
     }
 
-    protected $uriPrefix;
-    protected $uriSuffix;
+    protected $uriFormat;
     /**
-     * Gets the URI decorators for the current application.
+     * Gets the URI format for the current application.
      */
-    public function getUriDecorators($reevaluate = false)
+    public function getUriFormat()
     {
-        if ($this->uriPrefix == null or $this->uriSuffix == null or $reevaluate)
+        if ($this->uriFormat == null)
         {
             $pieCrust = $this->pieCrust;
             $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
             $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
-            $uriPrefix = $pieCrust->getConfig()->getValueUnchecked('site/root') . (($isPretty or $isBaking) ? '' : '?/');
-            $uriSuffix = '%extension%';
+
+            $this->uriFormat = '%root%';
+            if (!$isPretty and !$isBaking)
+                $this->uriFormat .= '?/';
+            $this->uriFormat .= '%slug%';
+
+            // Add either a trailing slash or the default `.html` extension
+            // to URIs that don't have an extension already, depending on whether
+            // we are using pretty-URLs or not.
+            if ($isBaking)
+            {
+                if ($isPretty)
+                {
+                    if ($pieCrust->getConfig()->getValue('baker/trailing_slash'))
+                        $this->uriFormat .= '%slash_if_no_ext%';
+                }
+                else
+                {
+                    $this->uriFormat .= '%html_if_no_ext%';
+                }
+            }
 
             // Preserve the debug flag if needed.
             if ($pieCrust->isDebuggingEnabled() && !$isBaking)
             {
                 if ($isPretty)
-                    $uriSuffix .= '?!debug';
-                else if (strpos($uriPrefix, '?') === false)
-                    $uriSuffix .= '?!debug';
+                    $this->uriFormat .= '?!debug';
+                else if (strpos($this->uriFormat, '?') === false)
+                    $this->uriFormat .= '?!debug';
                 else
-                    $uriSuffix .= '&!debug';
+                    $this->uriFormat .= '&!debug';
             }
-
-            $this->uriPrefix = $uriPrefix;
-            $this->uriSuffix = $uriSuffix;
         }
-        return array($this->uriPrefix, $this->uriSuffix);
+        return $this->uriFormat;
     }
 
     /**

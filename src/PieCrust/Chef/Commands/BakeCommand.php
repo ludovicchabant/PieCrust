@@ -45,7 +45,7 @@ class BakeCommand extends ChefCommand
         ));
         $bakerParser->addOption('portable_urls', array(
             'long_name'   => '--portable',
-            'description' => "Uses relative paths for all URLs (for previewing website locally).",
+            'description' => "Uses relative paths for all URLs.",
             'default'     => false,
             'action'      => 'StoreTrue',
             'help_name'   => 'PORTABLE'
