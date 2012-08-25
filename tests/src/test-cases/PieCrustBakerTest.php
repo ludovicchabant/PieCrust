@@ -165,24 +165,30 @@ EOD;
     public function bakePortableUrlsDataProvider()
     {
         return array(
-            array(false, 'foo', './', './something/blah.html'),
-            array(false, 'one/foo', '../', '../something/blah.html'),
-            array(false, 'one/two/foo', '../../', '../../something/blah.html'),
-            array(false, 'something/foo', '../', '../something/blah.html'),
-            array(false, 'something/sub/foo', '../../', '../../something/blah.html'),
+            array(false, false, 'foo', './', './something/blah.html'),
+            array(false, false, 'one/foo', '../', '../something/blah.html'),
+            array(false, false, 'one/two/foo', '../../', '../../something/blah.html'),
+            array(false, false, 'something/foo', '../', '../something/blah.html'),
+            array(false, false, 'something/sub/foo', '../../', '../../something/blah.html'),
 
-            array(true, 'foo', '../', '../something/blah/'),
-            array(true, 'one/foo', '../../', '../../something/blah/'),
-            array(true, 'one/two/foo', '../../../', '../../../something/blah/'),
-            array(true, 'something/foo', '../../', '../../something/blah/'),
-            array(true, 'something/sub/foo', '../../../', '../../../something/blah/')
+            array(true, true, 'foo', '../', '../something/blah/'),
+            array(true, true, 'one/foo', '../../', '../../something/blah/'),
+            array(true, true, 'one/two/foo', '../../../', '../../../something/blah/'),
+            array(true, true, 'something/foo', '../../', '../../something/blah/'),
+            array(true, true, 'something/sub/foo', '../../../', '../../../something/blah/'),
+
+            array(true, false, 'foo', '../', '../something/blah'),
+            array(true, false, 'one/foo', '../../', '../../something/blah'),
+            array(true, false, 'one/two/foo', '../../../', '../../../something/blah'),
+            array(true, false, 'something/foo', '../../', '../../something/blah'),
+            array(true, false, 'something/sub/foo', '../../../', '../../../something/blah')
         );
     }
 
     /**
      * @dataProvider bakePortableUrlsDataProvider
      */
-    public function testBakePortableUrls($prettyUrls, $url, $expectedSiteRoot, $expectedBlah)
+    public function testBakePortableUrls($prettyUrls, $trailingSlash, $url, $expectedSiteRoot, $expectedBlah)
     {
         $contents = <<<EOD
 Root: {{ site.root }}
@@ -207,6 +213,8 @@ EOD;
         );
         $app->getConfig()->setValue('site/pretty_urls', $prettyUrls);
         $app->getConfig()->setValue('baker/portable_urls', true);
+        if ($trailingSlash)
+            $app->getConfig()->setValue('baker/trailing_slash', true);
 
         $savedSiteRoot = $app->getConfig()->getValue('site/root');
         $baker = new PieCrustBaker($app);
@@ -244,6 +252,7 @@ EOD;
         return array(
             array(
                 false,
+                false,
                 <<<'EOD'
 Normal: /normal.html
 Normal in folder: /somewhere/normal.html
@@ -252,6 +261,17 @@ Ext in folder: /somewhere/foo.ext
 EOD
             ),
             array(
+                true,
+                false,
+                <<<'EOD'
+Normal: /normal
+Normal in folder: /somewhere/normal
+Ext: /foo.ext
+Ext in folder: /somewhere/foo.ext
+EOD
+            ),
+            array(
+                true,
                 true,
                 <<<'EOD'
 Normal: /normal/
@@ -266,7 +286,7 @@ EOD
     /**
      * @dataProvider urlFormatsDataProvider
      */
-    public function testUrlFormats($prettyUrls, $expectedContents)
+    public function testUrlFormats($prettyUrls, $trailingSlash, $expectedContents)
     {
         $fs = MockFileSystem::create();
         $fs->withPage(
@@ -290,6 +310,8 @@ EOD
             'root' => vfsStream::url('root/kitchen'))
         );
         $app->getConfig()->setValue('site/pretty_urls', $prettyUrls);
+        if ($trailingSlash)
+            $app->getConfig()->setValue('baker/trailing_slash', true);
         $baker = new PieCrustBaker($app);
         $baker->bake();
 

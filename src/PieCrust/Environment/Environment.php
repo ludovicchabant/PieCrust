@@ -84,9 +84,14 @@ abstract class Environment
             if ($isBaking)
             {
                 if ($isPretty)
-                    $this->uriFormat .= '%slash_if_no_ext%';
+                {
+                    if ($pieCrust->getConfig()->getValue('baker/trailing_slash'))
+                        $this->uriFormat .= '%slash_if_no_ext%';
+                }
                 else
+                {
                     $this->uriFormat .= '%html_if_no_ext%';
+                }
             }
 
             // Preserve the debug flag if needed.

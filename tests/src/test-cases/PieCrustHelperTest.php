@@ -96,23 +96,27 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
             array('', '/root/', '/root', false),
             array('', '/root/', '/root', false, true),
 
-            array('test', '/test/'),
-            array('test', '/test/', '/', true, true),
+            array('test', '/test'),
+            array('test', '/test', '/', true, true),
+            array('test', '/test/', '/', true, true, true),
             array('test', '/test.html', '/', false),
             array('test', '/test.html', '/', false, true),
 
-            array('test', '/root/test/', '/root'),
-            array('test', '/root/test/', '/root', true, true),
+            array('test', '/root/test', '/root'),
+            array('test', '/root/test', '/root', true, true),
+            array('test', '/root/test/', '/root', true, true, true),
             array('test', '/root/test.html', '/root', false),
             array('test', '/root/test.html', '/root', false, true),
 
-            array('somewhere/test', '/somewhere/test/'),
-            array('somewhere/test', '/somewhere/test/', '/', true, true),
+            array('somewhere/test', '/somewhere/test'),
+            array('somewhere/test', '/somewhere/test', '/', true, true),
+            array('somewhere/test', '/somewhere/test/', '/', true, true, true),
             array('somewhere/test', '/somewhere/test.html', '/', false),
             array('somewhere/test', '/somewhere/test.html', '/', false, true),
 
-            array('somewhere/test', '/root/somewhere/test/', '/root'),
-            array('somewhere/test', '/root/somewhere/test/', '/root', true, true),
+            array('somewhere/test', '/root/somewhere/test', '/root'),
+            array('somewhere/test', '/root/somewhere/test', '/root', true, true),
+            array('somewhere/test', '/root/somewhere/test/', '/root', true, true, true),
             array('somewhere/test', '/root/somewhere/test.html', '/root', false),
             array('somewhere/test', '/root/somewhere/test.html', '/root', false, true),
 
@@ -141,7 +145,7 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider formatUriDataProviderWhenBaked
      */
-    public function testFormatUriWhenBaked($pageUri, $expectedUri, $siteRoot = '/', $prettyUrls = true, $debug = false)
+    public function testFormatUriWhenBaked($pageUri, $expectedUri, $siteRoot = '/', $prettyUrls = true, $debug = false, $trailingSlash = false)
     {
         $fs = MockFileSystem::create();
         $fs->withConfig(array(
@@ -150,7 +154,8 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
                 'pretty_urls' => $prettyUrls
             ),
             'baker' => array(
-                'is_baking' => true
+                'is_baking' => true,
+                'trailing_slash' => $trailingSlash
             )
         ));
         $pc = new PieCrust(array(
