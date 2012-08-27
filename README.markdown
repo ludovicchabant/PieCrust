@@ -1,4 +1,6 @@
 
+[![build status](https://secure.travis-ci.org/ludovicchabant/PieCrust.png?branch=master)](http://travis-ci.org/ludovicchabant/PieCrust)
+
 PieCrust is a static website generator and lightweight CMS that's all managed
 with text files. No complex setup, databases, or administrative panels.
 Simple, beautiful, and yummy.
