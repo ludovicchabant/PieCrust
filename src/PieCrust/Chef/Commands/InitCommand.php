@@ -154,7 +154,7 @@ class InitCommand extends ChefCommand
 
         if ($options['apache'] || $options['iis'])
         {
-            $this->log->info("Please edit '".$rootDir."index.php' to fix the relative path to '_piecrust/piecrust.php'.");
+            $this->log->info("Please edit '".$rootDir."index.php' to fix the relative path to 'bin/piecrust.php'.");
             $this->log->info("");
             $this->log->info("If your webserver runs under a different user, you may have to change the root directory's permissions so that it's readable.");
             $this->log->info("You may have to also change the permissions on the '_cache' directory so that it's readable.");
