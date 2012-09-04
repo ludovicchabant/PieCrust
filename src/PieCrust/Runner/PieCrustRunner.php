@@ -50,7 +50,7 @@ class PieCrustRunner
         {
             $this->runUnsafe($uri, $server);
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
             $handler = new PieCrustErrorHandler($this->pieCrust);
             $handler->handleError($e);
