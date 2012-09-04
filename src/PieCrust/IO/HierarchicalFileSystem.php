@@ -64,7 +64,7 @@ class HierarchicalFileSystem extends FileSystem
                         continue;
                     
                     $thisDay = $matches[1];
-                    $days[] = array(
+                    $days[$post->getPathname()] = array(
                         'day' => $thisDay, 
                         'name' => $matches[2], 
                         'path' => $post->getPathname()
