@@ -85,10 +85,29 @@ class PageBaker
             // This works also for URIs with extensions, as it will produce:
             // - `uri/name.ext/index.html`
             // - `uri/name.ext/2/index.html`
-            $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
-            if ($isSubPage)
-                $bakePath .= $page->getPageNumber() . '/';
-            $bakePath .= self::BAKE_INDEX_DOCUMENT;
+            // But wait! If the page has `single_page` set to `true`, and it's not
+            // an HTML page, then just use the filename itself:
+            // - `uri/name.ext`
+            if ($page->getConfig()->getValue('single_page'))
+            {
+                if ($isSubPage)
+                    throw new PieCrustException("Page {$page->getUri()} has `single_page` set to `true` but we're baking sub-page {$page->getPageNumber()}. What the hell?");
+
+                $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
+                if ($extension)
+                    $bakePath .= $page->getUri();
+                else
+                    $bakePath .= $page->getUri() . 
+                    (($page->getUri() == '') ? '' : '/') . 
+                    self::BAKE_INDEX_DOCUMENT;
+            }
+            else
+            {
+                $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
+                if ($isSubPage)
+                    $bakePath .= $page->getPageNumber() . '/';
+                $bakePath .= self::BAKE_INDEX_DOCUMENT;
+            }
         }
         else
         {
