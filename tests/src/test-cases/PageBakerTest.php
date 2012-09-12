@@ -45,6 +45,39 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
                 'foo.ext', 2, true,
                 'foo.ext/2/index.html'
             ),
+            array(
+                'foo.bar.ext', 1, true,
+                'foo.bar.ext/index.html'
+            ),
+            array(
+                'foo.bar.ext', 2, true,
+                'foo.bar.ext/2/index.html'
+            ),
+            array(
+                'foo', 1, true,
+                'foo/index.html',
+                true
+            ),
+            array(
+                'foo/bar', 1, true,
+                'foo/bar/index.html',
+                true
+            ),
+            array(
+                'foo.ext', 1, true,
+                'foo.ext',
+                true
+            ),
+            array(
+                'foo.bar.ext', 1, true,
+                'foo.bar.ext',
+                true
+            ),
+            array(
+                'foo/bar.ext', 1, true,
+                'foo/bar.ext',
+                true
+            ),
             // Non-pretty URLs
             array(
                 '', 1, false,
@@ -77,6 +110,14 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
             array(
                 'foo.ext', 2, false,
                 'foo/2.ext'
+            ),
+            array(
+                'foo.bar.ext', 1, false,
+                'foo.bar.ext'
+            ),
+            array(
+                'foo.bar.ext', 2, false,
+                'foo.bar/2.ext'
             )
         );
     }
@@ -84,7 +125,7 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider getOutputPathDataProvider
      */
-    public function testGetOutputPath($uri, $pageNumber, $prettyUrls, $expectedPath)
+    public function testGetOutputPath($uri, $pageNumber, $prettyUrls, $expectedPath, $singlePage = false)
     {
         $app = new MockPieCrust();
         $page = new MockPage($app);
@@ -92,6 +133,8 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
         $page->pageNumber = $pageNumber;
         if ($prettyUrls)
             $page->getConfig()->setValue('pretty_urls', true);
+        if ($singlePage)
+            $page->getConfig()->setValue('single_page', true);
 
         $baker = new PageBaker('/tmp');
         $path = $baker->getOutputPath($page);

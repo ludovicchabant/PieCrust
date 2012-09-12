@@ -18,6 +18,12 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.8.6 (2012-09-11)
+
+* NEW: The `single_page` setting gives simpler output bake paths when baking
+  with pretty URLs enabled. For example, `feed.xml` will map to `feed.xml`
+  instead of `feed.xml/index.html`.
+
 ### 0.8.5 (2012-09-04)
 
 * BUG: Fixed a problem with error handling always showing internal error details
