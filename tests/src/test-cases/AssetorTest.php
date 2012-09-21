@@ -11,21 +11,27 @@ class AssetorTest extends PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                MockFileSystem::create()
-                    ->withPage('foo/bar'),
+                function () {
+                    return MockFileSystem::create()
+                        ->withPage('foo/bar');
+                },
                 array()
             ),
             array(
-                MockFileSystem::create()
-                    ->withPage('foo/bar')
-                    ->withPageAsset('foo/bar', 'one.txt', 'one'),
+                function () {
+                    return MockFileSystem::create()
+                        ->withPage('foo/bar')
+                        ->withPageAsset('foo/bar', 'one.txt', 'one');
+                },
                 array('one' => 'one')
             ),
             array(
-                MockFileSystem::create()
-                    ->withPage('foo/bar')
-                    ->withPageAsset('foo/bar', 'one.txt', 'one')
-                    ->withPageAsset('foo/bar', 'two.txt', 'two'),
+                function () {
+                    return MockFileSystem::create()
+                        ->withPage('foo/bar')
+                        ->withPageAsset('foo/bar', 'one.txt', 'one')
+                        ->withPageAsset('foo/bar', 'two.txt', 'two');
+                },
                 array('one' => 'one', 'two' => 'two')
             )
         );
@@ -34,9 +40,10 @@ class AssetorTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider assetorDataProvider
      */
-    public function testAssetor($fs, $expectedAssets)
+    public function testAssetor($fsCreator, $expectedAssets)
     {
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl()));
+        $fs = $fsCreator();
+        $pc = $fs->getApp();
         $page = Page::createFromUri($pc, 'foo/bar', false);
         $assetor = new Assetor($page);
         foreach ($expectedAssets as $name => $contents)

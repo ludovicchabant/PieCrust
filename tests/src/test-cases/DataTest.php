@@ -17,7 +17,7 @@ class DataTest extends PHPUnit_Framework_TestCase
                 'Some contents.'
             );
 
-        $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
+        $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/blah');
 
         $data = new PaginationData($page);

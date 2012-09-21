@@ -16,7 +16,8 @@ class MockFileSystem
 
     public function __construct()
     {
-        vfsStream::setup('root', null, array(
+        $this->root = 'root_' . rand();
+        vfsStream::setup($this->root, null, array(
             'kitchen' => array(
                 '_content' => array(
                     'config.yml' => 'site:\n  title: Mock Website'
@@ -28,7 +29,7 @@ class MockFileSystem
 
     public function url($path)
     {
-        return vfsStream::url('root/' . $path);
+        return vfsStream::url($this->root . '/' . $path);
     }
 
     public function siteRootUrl()
@@ -49,27 +50,27 @@ class MockFileSystem
 
     public function withCacheDir()
     {
-        mkdir(vfsStream::url('root/kitchen/_cache'));
-        mkdir(vfsStream::url('root/kitchen/_cache/pages_r'));
-        mkdir(vfsStream::url('root/kitchen/_cache/templates_c'));
+        mkdir($this->url('kitchen/_cache'));
+        mkdir($this->url('kitchen/_cache/pages_r'));
+        mkdir($this->url('kitchen/_cache/templates_c'));
         return $this;
     }
 
     public function withPagesDir()
     {
-        mkdir(vfsStream::url('root/kitchen/_content/pages'));
+        mkdir($this->url('kitchen/_content/pages'));
         return $this;
     }
 
     public function withPostsDir()
     {
-        mkdir(vfsStream::url('root/kitchen/_content/posts'));
+        mkdir($this->url('kitchen/_content/posts'));
         return $this;
     }
 
     public function withConfig(array $config)
     {
-        $configPath = vfsStream::url('root/kitchen/_content/config.yml');
+        $configPath = $this->url('kitchen/_content/config.yml');
         file_put_contents($configPath, Yaml::dump($config));
         return $this;
     }
@@ -142,7 +143,7 @@ class MockFileSystem
     public function withAsset($path, $contents)
     {
         // Ensure the path exists.
-        $path = vfsStream::url('root/kitchen/' . $path);
+        $path = $this->url('kitchen/' . $path);
         if (!is_dir(dirname($path)))
             mkdir(dirname($path), 0777, true);
 

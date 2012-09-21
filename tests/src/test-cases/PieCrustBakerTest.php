@@ -1,12 +1,36 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 
 
 class PieCrustBakerTest extends PHPUnit_Framework_TestCase
 {
+    public function testPostsWithOverridenDates()
+    {
+        $fs = MockFileSystem::create();
+        $fs->withTemplate(
+            'post',
+            '/{{ page.date }}/ {{ content }}'
+        );
+        $fs->withPost(
+            'test1', 
+            5, 8, 2012, 
+            array('date' => '2011-05-03', 'format' => 'none'), 
+            'A test with overriden date'
+        );
+        $app = $fs->getApp(array('cache' => false));
+        $baker = new PieCrustBaker($app);
+        $baker->bake();
+
+        $this->assertFileExists($fs->url('kitchen/_counter/2012/08/05/test1.html'));
+        $expectedContents = '/May 3, 2011/ A test with overriden date';
+        $this->assertEquals(
+            $expectedContents,
+            file_get_contents($fs->url('kitchen/_counter/2012/08/05/test1.html'))
+        );
+    }
+
     public function testBakePageWithTagList()
     {
         $templateContents = <<<EOD
@@ -40,35 +64,35 @@ EOD;
 
         $app = new PieCrust(array(
             'cache' => false, 
-            'root' => vfsStream::url('root/kitchen'))
+            'root' => $fs->url('kitchen'))
         );
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
         $this->assertFileExists(
-            vfsStream::url('root/kitchen/_counter/2010/01/01/first-post.html')
+            $fs->url('kitchen/_counter/2010/01/01/first-post.html')
         );
         $this->assertFileExists(
-            vfsStream::url('root/kitchen/_counter/2011/01/01/second-post.html')
+            $fs->url('kitchen/_counter/2011/01/01/second-post.html')
         );
         $this->assertFileExists(
-            vfsStream::url('root/kitchen/_counter/2012/01/01/third-post.html')
+            $fs->url('kitchen/_counter/2012/01/01/third-post.html')
         );
         $this->assertFileExists(
-            vfsStream::url('root/kitchen/_counter/2011/01/01/second-post/bar.jpg')
+            $fs->url('kitchen/_counter/2011/01/01/second-post/bar.jpg')
         );
 
         $this->assertEquals(
             "blah, 3\nFirst post.",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/2010/01/01/first-post.html'))
+            file_get_contents($fs->url('kitchen/_counter/2010/01/01/first-post.html'))
         );
         $this->assertEquals(
             "blah, 3\nSecond post: /2011/01/01/second-post/bar.jpg",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/2011/01/01/second-post.html'))
+            file_get_contents($fs->url('kitchen/_counter/2011/01/01/second-post.html'))
         );
         $this->assertEquals(
             "blah, 3\nThird post.",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/2012/01/01/third-post.html'))
+            file_get_contents($fs->url('kitchen/_counter/2012/01/01/third-post.html'))
         );
     }
 
@@ -108,16 +132,16 @@ EOD;
 
         $app = new PieCrust(array(
             'cache' => false, 
-            'root' => vfsStream::url('root/kitchen'))
+            'root' => $fs->url('kitchen'))
         );
 
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo.html'));
+        $this->assertFileExists($fs->url('kitchen/_counter/foo.html'));
         $this->assertEquals(
             "After...\nThird post.\nSecond post.\nFirst post.\nBefore...\n",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/foo.html'))
+            file_get_contents($fs->url('kitchen/_counter/foo.html'))
         );
     }
 
@@ -149,16 +173,16 @@ EOD;
 
         $app = new PieCrust(array(
             'cache' => false, 
-            'root' => vfsStream::url('root/kitchen'))
+            'root' => $fs->url('kitchen'))
         );
 
         $baker = new PieCrustBaker($app);
         $baker->bake();
 
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/foo.html'));
+        $this->assertFileExists($fs->url('kitchen/_counter/foo.html'));
         $this->assertEquals(
             "Second post.\nFirst post.\n",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/foo.html'))
+            file_get_contents($fs->url('kitchen/_counter/foo.html'))
         );
     }
 
@@ -209,7 +233,7 @@ EOD;
 
         $app = new PieCrust(array(
             'cache' => false, 
-            'root' => vfsStream::url('root/kitchen'))
+            'root' => $fs->url('kitchen'))
         );
         $app->getConfig()->setValue('site/pretty_urls', $prettyUrls);
         $app->getConfig()->setValue('baker/portable_urls', true);
@@ -227,10 +251,10 @@ EOD;
         $blahPath = 'blah.html';
         if ($prettyUrls)
             $blahPath = 'blah/index.html';
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/something/' . $blahPath));
+        $this->assertFileExists($fs->url('kitchen/_counter/something/' . $blahPath));
         $this->assertEquals(
             "BLAH",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/something/' . $blahPath))
+            file_get_contents($fs->url('kitchen/_counter/something/' . $blahPath))
         );
 
         $expectedContents = <<<EOD
@@ -240,10 +264,10 @@ EOD;
         $urlPath = $url . '.html';
         if ($prettyUrls)
             $urlPath = $url . '/index.html';
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $urlPath));
+        $this->assertFileExists($fs->url('kitchen/_counter/' . $urlPath));
         $this->assertEquals(
             $expectedContents,
-            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $urlPath))
+            file_get_contents($fs->url('kitchen/_counter/' . $urlPath))
         );
     }
 
@@ -307,7 +331,7 @@ EOD
 
         $app = new PieCrust(array(
             'cache' => false, 
-            'root' => vfsStream::url('root/kitchen'))
+            'root' => $fs->url('kitchen'))
         );
         $app->getConfig()->setValue('site/pretty_urls', $prettyUrls);
         if ($trailingSlash)
@@ -318,17 +342,17 @@ EOD
         $otherPagePath = 'other_page.foo';
         if ($prettyUrls)
             $otherPagePath = 'other_page.foo/index.html';
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $otherPagePath));
+        $this->assertFileExists($fs->url('kitchen/_counter/' . $otherPagePath));
         $this->assertEquals(
             "THIS IS FOO!",
-            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $otherPagePath))
+            file_get_contents($fs->url('kitchen/_counter/' . $otherPagePath))
         );
 
         $fileName = $prettyUrls ? 'test_page/index.html' : 'test_page.html';
-        $this->assertFileExists(vfsStream::url('root/kitchen/_counter/' . $fileName));
+        $this->assertFileExists($fs->url('kitchen/_counter/' . $fileName));
         $this->assertEquals(
             $expectedContents,
-            file_get_contents(vfsStream::url('root/kitchen/_counter/' . $fileName))
+            file_get_contents($fs->url('kitchen/_counter/' . $fileName))
         );
     }
 }
