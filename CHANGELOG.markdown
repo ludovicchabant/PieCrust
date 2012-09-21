@@ -15,6 +15,9 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BUG: Fixed a bug with posts dates when posts have a `date` configuration
+  setting. This setting is now completely ignored for posts.
+
 Frozen changes
 --------------
 
