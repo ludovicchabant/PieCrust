@@ -24,7 +24,7 @@ class PieCrustBakerTest extends PHPUnit_Framework_TestCase
         $baker->bake();
 
         $this->assertFileExists($fs->url('kitchen/_counter/2012/08/05/test1.html'));
-        $expectedContents = '/May 3, 2011/ A test with overriden date';
+        $expectedContents = '/August 5, 2012/ A test with overriden date';
         $this->assertEquals(
             $expectedContents,
             file_get_contents($fs->url('kitchen/_counter/2012/08/05/test1.html'))

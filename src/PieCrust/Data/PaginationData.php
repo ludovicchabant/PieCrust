@@ -31,14 +31,8 @@ class PaginationData extends PageConfigWrapper
         // Add the easy values to the values array.
         $this->values['url'] = PieCrustHelper::formatUri($pieCrust, $post->getUri());
         $this->values['slug'] = $post->getUri();
-
-        $timestamp = $post->getDate();
-        if ($post->getConfig()->getValue('time'))
-        {
-            $timestamp = strtotime($post->getConfig()->getValue('time'), $timestamp);
-        }
-        $this->values['timestamp'] = $timestamp;
-        $this->values['date'] = date($postsDateFormat, $timestamp);
+        $this->values['timestamp'] = $post->getDate(); //TODO: do we need to move this to the lazy-loaded values?
+        $this->values['date'] = date($postsDateFormat, $post->getDate());
 
         // Add some lazy-loading functions for stuff
         // that would load the page's contents.
