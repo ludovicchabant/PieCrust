@@ -78,7 +78,7 @@ class Page implements IPage
     }
     
     protected $date;
-    protected $dateTimeMissing;
+    protected $dateIsLocked;
     /**
      * Gets the date (and possibly time) this page was created.
      *
@@ -88,22 +88,23 @@ class Page implements IPage
      */
     public function getDate()
     {
-        if ($this->date === null)
+        if ($this->date === null or !$this->dateIsLocked)
         {
-            // Get the date from the config or the file.
+            // Get the date from the file on disk if it was never set.
+            // Override with the date from the config if authorized to do so.
             $dateFromConfig = $this->getConfig()->getValue('date');
             if ($dateFromConfig != null)
-                $this->date = strtotime($this->getConfig()->getValue('date'));
-            else
+                $this->date = strtotime($dateFromConfig);
+            else if ($this->date === null)
                 $this->date = filemtime($this->path);
-        }
-        if ($this->dateTimeMissing)
-        {
+
             // Add/adjust the time of day if needed.
             $timeFromConfig = $this->getConfig()->getValue('time');
             if ($timeFromConfig != null)
                 $this->date = strtotime($timeFromConfig, $this->date);
-            $this->dateTimeMissing = false;
+
+            // Lock the date.
+            $this->dateIsLocked = true;
         }
         return $this->date;
     }
@@ -111,17 +112,17 @@ class Page implements IPage
     /**
      * Sets the date this page was created.
      */
-    public function setDate($date, $includesTime = false)
+    public function setDate($date, $isLocked = false)
     {
         if (is_int($date))
         {
             $this->date = $date;
-            $this->dateTimeMissing = !$includesTime;
+            $this->dateIsLocked = $isLocked;
         }
         else if (is_string($date))
         {
             $this->date = strtotime($date);
-            $this->dateTimeMissing = !$includesTime;
+            $this->dateIsLocked = $isLocked;
         }
         else
         {
@@ -285,7 +286,7 @@ class Page implements IPage
         $this->key = $pageKey;
         $this->pageNumber = $pageNumber;
         $this->date = $date;
-        $this->dateTimeMissing = true;
+        $this->dateIsLocked = false;
         $this->pageData = null;
 
         $this->config = null;
