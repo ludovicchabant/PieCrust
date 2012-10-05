@@ -18,6 +18,10 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.8.7 (2012-10-05)
+
+* BUG: Fixed a crash when using `textfrom()` on an invalid path.
+
 ### 0.8.6 (2012-09-11)
 
 * NEW: The `single_page` setting gives simpler output bake paths when baking

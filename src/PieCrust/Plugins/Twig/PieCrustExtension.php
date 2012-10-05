@@ -5,6 +5,7 @@ namespace PieCrust\Plugins\Twig;
 use \Twig_Filter_Method;
 use \Twig_Function_Method;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 use PieCrust\Environment\LinkCollector;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
