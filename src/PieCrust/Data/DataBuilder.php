@@ -118,19 +118,13 @@ class DataBuilder
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
         
-        if ($page->getConfig()->getValue('date'))
-            $timestamp = strtotime($page->getConfig()->getValue('date'));
-        else
-            $timestamp = $page->getDate();
-        if ($page->getConfig()->getValue('time'))
-            $timestamp = strtotime($page->getConfig()->getValue('time'), $timestamp);
-        $data['page']['timestamp'] = $timestamp;
-        $dateFormat = PageHelper::getConfigValue(
+        $data['page']['timestamp'] = $page->getDate();
+        $dateFormat = PageHelper::getConfigValueUnchecked(
             $page, 
             'date_format', 
-            ($page->getBlogKey() != null ? $page->getBlogKey() : 'site')
+            $page->getConfig()->getValueUnchecked('blog')
         );
-        $data['page']['date'] = date($dateFormat, $timestamp);
+        $data['page']['date'] = date($dateFormat, $page->getDate());
         
         switch ($page->getPageType())
         {

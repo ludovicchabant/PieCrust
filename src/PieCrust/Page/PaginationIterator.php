@@ -452,12 +452,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     protected static function sortByReverseTimestamp($post1, $post2)
     {
         $timestamp1 = $post1->getDate();
-        if ($post1->getConfig()->getValue('time'))
-            $timestamp1 = strtotime($post1->getConfig()->getValue('time'), $timestamp1);
-
         $timestamp2 = $post2->getDate();
-        if ($post2->getConfig()->getValue('time'))
-            $timestamp2 = strtotime($post2->getConfig()->getValue('time'), $timestamp2);
 
         if ($timestamp1 == $timestamp2)
             return 0;

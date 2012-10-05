@@ -1,6 +1,5 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\Baker\PageBaker;
 use PieCrust\Baker\Processors\IProcessor;
@@ -180,22 +179,22 @@ class PageBakerTest extends PHPUnit_Framework_TestCase
                 'Some contents.'
             );
 
-        $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
+        $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/' . $name);
         
-        $baker = new PageBaker(vfsStream::url('root/counter'));
+        $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
         $this->assertEquals(
-            array(vfsStream::url('root/counter/' . $expectedName)), 
+            array($fs->url('counter/' . $expectedName)), 
             $baker->getBakedFiles()
         );
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
+        $this->assertFileExists($fs->url('counter/' . $expectedName));
         $this->assertEquals(
             "Some contents.", 
-            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
+            file_get_contents($fs->url('counter/' . $expectedName))
         );
     }
 
@@ -237,24 +236,24 @@ EOD
             ->withPost('slug4', 18, 9, 2011, array('title' => 'FOUR'), '');
 
         $app = new PieCrust(array(
-            'root' => vfsStream::url('root/kitchen'),
+            'root' => $fs->url('kitchen'),
             'cache' => false
         ));
         $page = Page::createFromUri($app, '/' . $name);
         
-        $baker = new PageBaker(vfsStream::url('root/counter'));
+        $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
 
         $this->assertTrue($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
         $this->assertEquals(
-            array(vfsStream::url('root/counter/' . $expectedName)), 
+            array($fs->url('counter/' . $expectedName)), 
             $baker->getBakedFiles()
         );
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
+        $this->assertFileExists($fs->url('counter/' . $expectedName));
         $this->assertEquals(
             "FOUR\nTHREE\nTWO\nONE\n", 
-            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
+            file_get_contents($fs->url('counter/' . $expectedName))
         );
     }
 
@@ -299,32 +298,32 @@ EOD
             ->withPost('slug7', 17, 10, 2011, array('title' => 'SEVEN'), '');
 
         $app = new PieCrust(array(
-            'root' => vfsStream::url('root/kitchen'),
+            'root' => $fs->url('kitchen'),
             'cache' => false
         ));
         $page = Page::createFromUri($app, '/' . $name);
         
-        $baker = new PageBaker(vfsStream::url('root/counter'));
+        $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
 
         $this->assertTrue($baker->wasPaginationDataAccessed());
         $this->assertEquals(2, $baker->getPageCount());
         $this->assertEquals(
             array(
-                vfsStream::url('root/counter/' . $expectedName1),
-                vfsStream::url('root/counter/' . $expectedName2)
+                $fs->url('counter/' . $expectedName1),
+                $fs->url('counter/' . $expectedName2)
             ), 
             $baker->getBakedFiles()
         );
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName1));
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName2));
+        $this->assertFileExists($fs->url('counter/' . $expectedName1));
+        $this->assertFileExists($fs->url('counter/' . $expectedName2));
         $this->assertEquals(
             "SEVEN\nSIX\nFIVE\nFOUR\nTHREE\n", 
-            file_get_contents(vfsStream::url('root/counter/' . $expectedName1))
+            file_get_contents($fs->url('counter/' . $expectedName1))
         );
         $this->assertEquals(
             "TWO\nONE\n", 
-            file_get_contents(vfsStream::url('root/counter/' . $expectedName2))
+            file_get_contents($fs->url('counter/' . $expectedName2))
         );
     }
 
@@ -361,28 +360,28 @@ EOD
             )
             ->withAsset('_content/pages/blah-assets/foo.txt', 'FOO!');
 
-        $app = new PieCrust(array('root' => vfsStream::url('root/kitchen')));
+        $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/' . $name);
         
-        $baker = new PageBaker(vfsStream::url('root/counter'), array('copy_assets' => true));
+        $baker = new PageBaker($fs->url('counter'), array('copy_assets' => true));
         $baker->bake($page);
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
         $this->assertEquals(1, $baker->getPageCount());
         $this->assertEquals(
-            array(vfsStream::url('root/counter/' . $expectedName)), 
+            array($fs->url('counter/' . $expectedName)), 
             $baker->getBakedFiles()
         );
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedName));
+        $this->assertFileExists($fs->url('counter/' . $expectedName));
         $this->assertEquals(
             "Some contents:\n" . $expectedAsset,
-            file_get_contents(vfsStream::url('root/counter/' . $expectedName))
+            file_get_contents($fs->url('counter/' . $expectedName))
         );
         $expectedAssetPath = substr($expectedAsset, strlen($siteRoot));
-        $this->assertFileExists(vfsStream::url('root/counter/' . $expectedAssetPath));
+        $this->assertFileExists($fs->url('counter/' . $expectedAssetPath));
         $this->assertEquals(
             'FOO!',
-            file_get_contents(vfsStream::url('root/counter/' . $expectedAssetPath))
+            file_get_contents($fs->url('counter/' . $expectedAssetPath))
         );
     }
 }

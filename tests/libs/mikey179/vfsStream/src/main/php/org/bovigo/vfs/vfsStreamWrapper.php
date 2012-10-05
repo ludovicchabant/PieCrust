@@ -59,6 +59,12 @@ class vfsStreamWrapper
      */
     protected static $root;
     /**
+     * disk space quota
+     *
+     * @type  Quota
+     */
+    private static $quota;
+    /**
      * file mode: read only, write only, all
      *
      * @type  int
@@ -96,7 +102,8 @@ class vfsStreamWrapper
      */
     public static function register()
     {
-        self::$root = null;
+        self::$root  = null;
+        self::$quota = Quota::unlimited();
         if (true === self::$registered) {
             return;
         }
@@ -128,6 +135,17 @@ class vfsStreamWrapper
     public static function getRoot()
     {
         return self::$root;
+    }
+
+    /**
+     * sets quota for disk space
+     *
+     * @param  Quota  $quota
+     * @since  1.1.0
+     */
+    public static function setQuota(Quota $quota)
+    {
+        self::$quota = $quota;
     }
 
     /**
@@ -249,18 +267,43 @@ class vfsStreamWrapper
             ) {
                 return false;
             }
-            
+
             if (self::TRUNCATE === $mode) {
                 $this->content->openWithTruncate();
             } elseif (self::APPEND === $mode) {
                 $this->content->openForAppend();
             } else {
+                if (!$this->content->isReadable(vfsStream::getCurrentUser(), vfsStream::getCurrentGroup())) {
+                    if (($options & STREAM_REPORT_ERRORS) === STREAM_REPORT_ERRORS) {
+                        trigger_error('Permission denied', E_USER_WARNING);
+                    }
+                    return false;
+                }
                 $this->content->open();
             }
 
             return true;
         }
 
+        $content = $this->createFile($path, $mode, $options);
+        if (false === $content) {
+            return false;
+        }
+
+        $this->content = $content;
+        return true;
+    }
+
+    /**
+     * creates a file at given path
+     *
+     * @param   string  $path     the path to open
+     * @param   string  $mode     mode for opening
+     * @param   string  $options  options for opening
+     * @return  bool
+     */
+    private function createFile($path, $mode = null, $options = null)
+    {
         $names = $this->splitPath($path);
         if (empty($names['dirname']) === true) {
             if (($options & STREAM_REPORT_ERRORS) === STREAM_REPORT_ERRORS) {
@@ -301,8 +344,7 @@ class vfsStreamWrapper
             return false;
         }
 
-        $this->content = vfsStream::newFile($names['basename'])->at($dir);
-        return true;
+        return vfsStream::newFile($names['basename'])->at($dir);
     }
 
     /**
@@ -368,7 +410,110 @@ class vfsStreamWrapper
             return 0;
         }
 
+        if (self::$quota->isLimited()) {
+            $data = substr($data, 0, self::$quota->spaceLeft(self::$root->sizeSummarized()));
+        }
+
         return $this->content->write($data);
+    }
+
+    /**
+     * truncates a file to a given length
+     *
+     * @param   int  $size  length to truncate file to
+     * @return  bool
+     * @since   1.1.0
+     */
+    public function stream_truncate($size)
+    {
+        if (self::READONLY === $this->mode) {
+            return false;
+        }
+
+        if ($this->content->isWritable(vfsStream::getCurrentUser(), vfsStream::getCurrentGroup()) === false) {
+            return false;
+        }
+
+        if ($this->content->getType() !== vfsStreamContent::TYPE_FILE) {
+            return false;
+        }
+
+        if (self::$quota->isLimited() && $this->content->size() < $size) {
+            $maxSize = self::$quota->spaceLeft(self::$root->sizeSummarized());
+            if (0 === $maxSize) {
+                return false;
+            }
+
+            if ($size > $maxSize) {
+                $size = $maxSize;
+            }
+        }
+
+        return $this->content->truncate($size);
+    }
+
+    /**
+     * sets metadata like owner, user or permissions
+     *
+     * @param   string  $path
+     * @param   int     $option
+     * @param   mixed   $var
+     * @return  bool
+     * @since   1.1.0
+     */
+    public function stream_metadata($path, $option, $var)
+    {
+        $path    = $this->resolvePath(vfsStream::path($path));
+        $content = $this->getContent($path);
+        switch ($option) {
+            case STREAM_META_TOUCH:
+                if (null === $content) {
+                    $content = $this->createFile($path);
+                }
+
+                if (isset($var[0])) {
+                    $content->lastModified($var[0]);
+                }
+
+                if (isset($var[1])) {
+                    $content->lastAccessed($var[1]);
+                }
+
+                return true;
+
+            case STREAM_META_OWNER_NAME:
+                return false;
+
+            case STREAM_META_OWNER:
+                if (null === $content) {
+                    return false;
+                }
+
+                $content->chown($var);
+                return true;
+
+            case STREAM_META_GROUP_NAME:
+                return false;
+
+            case STREAM_META_GROUP:
+                if (null === $content) {
+                    return false;
+                }
+
+                $content->chgrp($var);
+                return true;
+
+            case STREAM_META_ACCESS:
+                if (null === $content) {
+                    return false;
+                }
+
+                $content->chmod($var);
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     /**
@@ -572,23 +717,25 @@ class vfsStreamWrapper
             trigger_error(' No such file or directory', E_USER_WARNING);
             return false;
         }
-
-        $dstContent = clone $srcContent;
-        $dstNames   = $this->splitPath($dstRealPath);
-        // Renaming the filename
-        $dstContent->rename($dstNames['basename']);
-        // Copying to the destination
+        $dstNames = $this->splitPath($dstRealPath);
         $dstParentContent = $this->getContent($dstNames['dirname']);
         if (null == $dstParentContent) {
             trigger_error('No such file or directory', E_USER_WARNING);
             return false;
         }
-
+        if (!$dstParentContent->isWritable(vfsStream::getCurrentUser(), vfsStream::getCurrentGroup())) {
+            trigger_error('Permission denied', E_USER_WARNING);
+            return false;
+        }
         if ($dstParentContent->getType() !== vfsStreamContent::TYPE_DIR) {
             trigger_error('Target is not a directory', E_USER_WARNING);
             return false;
         }
 
+        $dstContent = clone $srcContent;
+        // Renaming the filename
+        $dstContent->rename($dstNames['basename']);
+        // Copying to the destination
         $dstParentContent->addChild($dstContent);
         // Removing the source
         return $this->doUnlink($srcRealPath);

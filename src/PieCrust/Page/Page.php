@@ -78,14 +78,33 @@ class Page implements IPage
     }
     
     protected $date;
+    protected $dateIsLocked;
     /**
-     * Gets the date this page was created.
+     * Gets the date (and possibly time) this page was created.
+     *
+     * This loads the page's configuration, unless the date was already
+     * specifically set with `setDate` (which is the case for blog posts
+     * for example).
      */
     public function getDate()
     {
-        if ($this->date === null)
+        if ($this->date === null or !$this->dateIsLocked)
         {
-            $this->date = filemtime($this->path);
+            // Get the date from the file on disk if it was never set.
+            // Override with the date from the config if authorized to do so.
+            $dateFromConfig = $this->getConfig()->getValue('date');
+            if ($dateFromConfig != null)
+                $this->date = strtotime($dateFromConfig);
+            else if ($this->date === null)
+                $this->date = filemtime($this->path);
+
+            // Add/adjust the time of day if needed.
+            $timeFromConfig = $this->getConfig()->getValue('time');
+            if ($timeFromConfig != null)
+                $this->date = strtotime($timeFromConfig, $this->date);
+
+            // Lock the date.
+            $this->dateIsLocked = true;
         }
         return $this->date;
     }
@@ -93,15 +112,17 @@ class Page implements IPage
     /**
      * Sets the date this page was created.
      */
-    public function setDate($date)
+    public function setDate($date, $isLocked = false)
     {
         if (is_int($date))
         {
             $this->date = $date;
+            $this->dateIsLocked = $isLocked;
         }
         else if (is_string($date))
         {
             $this->date = strtotime($date);
+            $this->dateIsLocked = $isLocked;
         }
         else
         {
@@ -265,6 +286,7 @@ class Page implements IPage
         $this->key = $pageKey;
         $this->pageNumber = $pageNumber;
         $this->date = $date;
+        $this->dateIsLocked = false;
         $this->pageData = null;
 
         $this->config = null;

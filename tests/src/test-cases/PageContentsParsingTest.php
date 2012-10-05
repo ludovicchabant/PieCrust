@@ -1,6 +1,5 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
 use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
@@ -31,16 +30,11 @@ class PageContentsParsingTest extends PHPUnit_Framework_TestCase
      */
     public function testParsePageContents($testFilename, $expectedResultsFilename)
     {
-        $structure = array(
-            '_content' => array(
-                'pages' => array()
-            )
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create()->withPagesDir();
 
         // Create the page that will load our test file.
         $pc = new MockPieCrust();
-        $pc->setPagesDir(vfsStream::url('root/_content/pages/'));
+        $pc->setPagesDir($fs->url('kitchen/_content/pages/'));
         $pc->getConfig()->set(array(
             'site' => array(
                 'root' => 'http://whatever/',

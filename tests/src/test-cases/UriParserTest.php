@@ -1,6 +1,5 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
@@ -25,8 +24,8 @@ class UriParserTest extends PHPUnit_Framework_TestCase
     
     public function parseUriDataProvider()
     {
-        $pagesDir = vfsStream::url('root/kitchen/_content/pages/');
-        $postsDir = vfsStream::url('root/kitchen/_content/posts/');
+        $pagesDir = '%pages_dir%';
+        $postsDir = '%posts_dir%';
         return array(
             array(
                 array(),
@@ -178,6 +177,17 @@ class UriParserTest extends PHPUnit_Framework_TestCase
 
         $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'debug' => true, 'cache' => false));
         $uriInfo = UriParser::parseUri($pc, $uri);
+
+        if ($expectedUriInfo != null && isset($expectedUriInfo['path']))
+        {
+            $pagesDir = $fs->url('kitchen/_content/pages/');
+            $postsDir = $fs->url('kitchen/_content/posts/');
+            $expectedUriInfo['path'] = str_replace(
+                array('%pages_dir%', '%posts_dir%'),
+                array($pagesDir, $postsDir),
+                $expectedUriInfo['path']);
+        }
+
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
     }
 

@@ -1,6 +1,5 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Util\PieCrustHelper;
@@ -34,17 +33,9 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
      */
     public function testTemplateRendering($testFilename, $expectedResultsFilename)
     {
-        $structure = array(
-            '_content' => array(
-                'pages' => array(),
-                'templates' => array(),
-                'config.yml' => ''
-            )
-        );
-        $root = vfsStream::setup('root', null, $structure);
-
         // Render our template.
-        $pc = new PieCrust(array('cache' => false, 'root' => vfsStream::url('root')));
+        $fs = MockFileSystem::create()->withPagesDir();
+        $pc = $fs->getApp(array('cache' => false));
         $pc->getConfig()->setValue('site/root', 'http://whatever/');
         $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
         
