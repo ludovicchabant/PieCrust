@@ -15,11 +15,15 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* BUG: Fixed a bug with posts dates when posts have a `date` configuration
-  setting. This setting is now completely ignored for posts.
-
 Frozen changes
 --------------
+
+### 0.8.7 (2012-10-05)
+
+* BUG: Fixed a crash when using `textfrom()` on an invalid path.
+* BUG: Fixed a bug with posts dates when posts have a `date` configuration
+  setting. This setting can now override the date provided by the file-system.
+* BUG: Fixed some obscure bug in the unit-tests.
 
 ### 0.8.6 (2012-09-11)
 
