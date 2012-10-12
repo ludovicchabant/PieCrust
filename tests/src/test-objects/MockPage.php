@@ -159,5 +159,6 @@ class MockPage implements IPage
             $pieCrust = new MockPieCrust();
         $this->pieCrust = $pieCrust;
         $this->config = new PageConfiguration($this, array());
+        $this->pageNumber = 1;
     }
 }
