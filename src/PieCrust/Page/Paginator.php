@@ -305,14 +305,16 @@ class Paginator
         $this->postsIterator->setCurrentPage($this->page);
         // Add the filters for the current page.
         $postsFilter = $this->getPaginationFilter();
-        $this->postsIterator->setFilter($postsFilter);
+        if ($postsFilter->hasClauses())
+            $this->postsIterator->setFilter($postsFilter);
         // If the `posts_per_page` setting is valid, paginate accordingly.
         $postsPerPage = $this->posts_per_page();
         if (is_int($postsPerPage) && $postsPerPage > 0)
         {
-            $this->postsIterator->limit($postsPerPage);
+            // Skip first, limit second.
             $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
             $this->postsIterator->skip($offset);
+            $this->postsIterator->limit($postsPerPage);
         }
     }
     
