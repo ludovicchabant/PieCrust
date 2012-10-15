@@ -130,6 +130,7 @@
             "Console": "libs/pear"
         }
     },
+	"include-path": [ "libs/pear" ],
     "config": {
         "vendor-dir": "libs",
         "bin-dir": "libs/bin"
