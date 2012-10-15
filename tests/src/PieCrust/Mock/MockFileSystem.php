@@ -142,6 +142,11 @@ class MockFileSystem
         return $this->withAsset('_content/templates/' . $name . '.html', $contents);
     }
 
+    public function withCustomTemplate($name, $subDir, $contents)
+    {
+        return $this->withAsset('_content/' . $subDir . '/' . $name . '.html', $contents);
+    }
+
     public function withAsset($path, $contents)
     {
         // Ensure the path exists.
