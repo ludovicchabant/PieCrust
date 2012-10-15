@@ -70,6 +70,12 @@ class MockFileSystem
         return $this;
     }
 
+    public function withTemplatesDir()
+    {
+        mkdir($this->url('kitchen/_content/templates'));
+        return $this;
+    }
+
     public function withConfig(array $config)
     {
         $configPath = $this->url('kitchen/_content/config.yml');
