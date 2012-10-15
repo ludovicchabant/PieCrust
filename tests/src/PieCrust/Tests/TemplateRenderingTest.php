@@ -1,6 +1,7 @@
 <?php
 
 use PieCrust\PieCrust;
+use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Page\Page;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Mock\MockFileSystem;
@@ -65,5 +66,32 @@ class TemplateRenderingTest extends PHPUnit_Framework_TestCase
         $expectedResults = file_get_contents($expectedResultsFilename);
         $expectedResults = str_replace("\r\n", "\n", $expectedResults);
         $this->assertEquals($expectedResults, $actualResults, 'The rendered template is not what we expected.');
+    }
+
+    public function testOverrideTemplate()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'site' => array(
+                    'templates_dirs' => '_content/override'
+                )
+            ))
+            ->withPage(
+                'blah', 
+                array('layout' => 'default', 'format' => 'none'), 
+                'Blah blah blah.'
+            )
+            ->withTemplate('default', 'DEFAULT TEMPLATE: {{content}}')
+            ->withCustomTemplate('default', 'override', 'OVERRIDE TEMPLATE: {{content}}');
+        $pc = $fs->getApp();
+
+        $baker = new PieCrustBaker($pc);
+        $baker->bake();
+
+        $this->assertFileExists($fs->url('kitchen/_counter/blah.html'));
+        $this->assertEquals(
+            'OVERRIDE TEMPLATE: Blah blah blah.',
+            file_get_contents($fs->url('kitchen/_counter/blah.html'))
+        );
     }
 }

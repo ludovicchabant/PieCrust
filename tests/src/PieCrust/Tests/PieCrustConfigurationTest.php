@@ -1,6 +1,7 @@
 <?php
 
 use PieCrust\PieCrustConfiguration;
+use PieCrust\Mock\MockFileSystem;
 
 
 class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
@@ -80,5 +81,71 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
         ));
         $this->assertEquals("Merged Title", $pc->getValue('site/title'));
         $this->assertEquals("http://without-slash/", $pc->getValue('site/root')); // should have added the trailing slash.
+    }
+
+    public function templateDirectoriesDataProvider()
+    {
+        return array(
+            array(
+                null,
+                array('kitchen/_content/templates/')
+            ),
+            array(
+                '_content/override',
+                array(
+                    'kitchen/_content/override/',
+                    'kitchen/_content/templates/'
+                )
+            ),
+            array(
+                array(
+                    '_content/override',
+                    '../common'
+                ),
+                array(
+                    'kitchen/_content/override/',
+                    'common/',
+                    'kitchen/_content/templates/'
+                )
+            ),
+            array(
+                array(
+                    '_content/override',
+                    '_content/something',
+                    '../common'
+                ),
+                array(
+                    'kitchen/_content/override/',
+                    'kitchen/_content/something/',
+                    'common/',
+                    'kitchen/_content/templates/'
+                )
+            )
+        );
+    }
+
+    /**
+     * @dataProvider templateDirectoriesDataProvider
+     */
+    public function testTemplateDirectories($config, $expectedDirs)
+    {
+        $config = array('site' => array(
+            'templates_dirs' => $config
+        ));
+        $fs = MockFileSystem::create()
+            ->withTemplatesDir()
+            ->withConfig($config);
+        $app = $fs->getApp();
+
+        foreach ($expectedDirs as &$dir)
+        {
+            $dir = $fs->url($dir);
+            if (!is_dir($dir))
+                mkdir($dir);
+        }
+        $this->assertEquals(
+            $expectedDirs,
+            $app->getTemplatesDirs()
+        );
     }
 }

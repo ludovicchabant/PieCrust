@@ -53,18 +53,21 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            // Add the default template directory if it exists.
+            // Start with no template directories.
             $this->templatesDirs = array();
-            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
-            if (is_dir($default))
-                $this->templatesDirs[] = $default;
-
-            // Add custom template directories specified in the configuration.
+            
+            // Add the custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
             if ($additionalPaths)
             {
                 $this->addTemplatesDir($additionalPaths);
             }
+
+            // Add the default template directory if it exists.
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
+            if (is_dir($default))
+                $this->templatesDirs[] = $default;
+
         }
         return $this->templatesDirs;
     }
