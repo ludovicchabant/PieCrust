@@ -121,13 +121,16 @@
         "markdown/markdown-extra": "1.0",
         "smartypants/smartypants": "1.0",
         "smartypants/smartypants-typographer": "1.0",
-        "textile/textile": "2.*"
+        "textile/textile": "2.*",
+        "bolt80/stupidhttp": "v0.2.0",
+        "mikey179/vfsStream": "v1.1.0"
     },
     "autoload": {
         "psr-0": {
-            "PieCrust": "src/",
+            "PieCrust": [ "src/", "tests/src/" ],
             "Log": "libs/pear",
-            "Console": "libs/pear"
+            "Console": "libs/pear",
+            "Benchmark_": "libs/pear"
         }
     },
 	"include-path": [ "libs/pear" ],

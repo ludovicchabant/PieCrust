@@ -1,28 +1,29 @@
--
-  name: 'App Init (cache miss)'
-  profiling:
-    times: 100
-    median: 0.158
-    average: 0.21835
-    max: 6.104
--
-  name: 'App Init (cache hit)'
-  profiling:
-    times: 100
-    median: 0.087
-    average: 0.08746
-    max: 0.104
--
-  name: 'Page Rendering (cache miss)'
-  profiling:
-    times: 100
-    median: 0.231
-    average: 0.69697
-    max: 43.624
--
-  name: 'Page Rendering (cache hit)'
-  profiling:
-    times: 100
-    median: 0.093
-    average: 0.13304
-    max: 3.921
+Ludovics-MacBook-Pro.local:
+  -
+    name: 'App Init (cache miss)'
+    profiling:
+      times: 1000
+      median: 0.093
+      average: 0.099498
+      max: 6.298
+  -
+    name: 'App Init (cache hit)'
+    profiling:
+      times: 1000
+      median: 0.0505
+      average: 0.090258
+      max: 38.544
+  -
+    name: 'Page Rendering (cache miss)'
+    profiling:
+      times: 1000
+      median: 0.255
+      average: 0.311753
+      max: 54.749
+  -
+    name: 'Page Rendering (cache hit)'
+    profiling:
+      times: 1000
+      median: 0.224
+      average: 0.228214
+      max: 4.189

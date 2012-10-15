@@ -20,6 +20,11 @@
         },
         "type": "library",
         "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\Yaml": ""
+            }
+        },
         "license": [
             "MIT"
         ],
@@ -38,30 +43,7 @@
             }
         ],
         "description": "Symfony Yaml Component",
-        "homepage": "http://symfony.com",
-        "autoload": {
-            "psr-0": {
-                "Symfony\\Component\\Yaml": ""
-            }
-        }
-    },
-    {
-        "name": "bolt80/stupidhttp",
-        "version": "1.0",
-        "version_normalized": "1.0.0.0",
-        "dist": {
-            "type": "zip",
-            "url": "https://bitbucket.org/ludovicchabant/stupidhttp/get/default.zip",
-            "reference": null,
-            "shasum": null
-        },
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "StupidHttp_": "lib/StupidHttp"
-            }
-        }
+        "homepage": "http://symfony.com"
     },
     {
         "name": "textile/textile",
@@ -214,6 +196,11 @@
             }
         },
         "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Twig_": "lib/"
+            }
+        },
         "license": [
             "BSD-3"
         ],
@@ -235,11 +222,79 @@
         "homepage": "http://twig.sensiolabs.org",
         "keywords": [
             "templating"
-        ],
+        ]
+    },
+    {
+        "name": "bolt80/stupidhttp",
+        "version": "v0.2.0",
+        "version_normalized": "0.2.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/ludovicchabant/StupidHttp",
+            "reference": "v0.2.0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://github.com/ludovicchabant/StupidHttp/zipball/v0.2.0",
+            "reference": "v0.2.0",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">= 5.3.0"
+        },
+        "type": "library",
+        "installation-source": "dist",
         "autoload": {
             "psr-0": {
-                "Twig_": "lib/"
+                "StupidHttp_": "lib"
             }
-        }
+        },
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "Ludovic Chabant",
+                "homepage": "http://ludovic.chabant.com"
+            }
+        ],
+        "description": "A stupid and simple development HTTP server.",
+        "homepage": "http://bolt80.com/stupidhttp",
+        "keywords": [
+            "http",
+            "web",
+            "server",
+            "net"
+        ]
+    },
+    {
+        "name": "mikey179/vfsStream",
+        "version": "v1.1.0",
+        "version_normalized": "1.1.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/mikey179/vfsStream",
+            "reference": "v1.1.0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://github.com/mikey179/vfsStream/zipball/v1.1.0",
+            "reference": "v1.1.0",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "org\\bovigo\\vfs": "src/main/php"
+            }
+        },
+        "license": [
+            "BSD"
+        ],
+        "homepage": "http://vfs.bovigo.org/"
     }
 ]

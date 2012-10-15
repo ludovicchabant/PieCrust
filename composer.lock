@@ -1,52 +1,298 @@
 {
-    "hash": "4d76c45e22e72e9fe0912c053e95331f",
+    "hash": "1acb904b9147801ea29d7d90d09b6616",
     "packages": [
         {
-            "package": "geshi/geshi",
-            "version": "1.0.8.10"
+            "name": "bolt80/stupidhttp",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ludovicchabant/StupidHttp",
+                "reference": "v0.2.0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/ludovicchabant/StupidHttp/zipball/v0.2.0",
+                "reference": "v0.2.0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">= 5.3.0"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "StupidHttp_": "lib"
+                }
+            },
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Ludovic Chabant",
+                    "homepage": "http://ludovic.chabant.com"
+                }
+            ],
+            "description": "A stupid and simple development HTTP server.",
+            "homepage": "http://bolt80.com/stupidhttp",
+            "keywords": [
+                "http",
+                "web",
+                "server",
+                "net"
+            ]
         },
         {
-            "package": "lessphp/lessphp",
-            "version": "0.3.4"
+            "name": "geshi/geshi",
+            "version": "1.0.8.10",
+            "dist": {
+                "type": "zip",
+                "url": "http://sourceforge.net/projects/geshi/files/geshi/GeSHi%201.0.8.10/GeSHi-1.0.8.10.zip/download",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "geshi.php"
+                ]
+            }
         },
         {
-            "package": "markdown/markdown",
-            "version": "1.0"
+            "name": "lessphp/lessphp",
+            "version": "0.3.4",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/leafo/lessphp/zipball/v0.3.4-2",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "lessc.inc.php",
+                    "lessify.inc.php"
+                ]
+            }
         },
         {
-            "package": "markdown/markdown-extra",
-            "version": "1.0"
+            "name": "markdown/markdown",
+            "version": "1.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/michelf/php-markdown/zipball/master",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist"
         },
         {
-            "package": "mustache/mustache",
-            "version": "1.1.0"
+            "name": "markdown/markdown-extra",
+            "version": "1.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/michelf/php-markdown/zipball/extra",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist"
         },
         {
-            "package": "smartypants/smartypants",
-            "version": "1.0"
+            "name": "mikey179/vfsStream",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mikey179/vfsStream",
+                "reference": "v1.1.0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/mikey179/vfsStream/zipball/v1.1.0",
+                "reference": "v1.1.0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "org\\bovigo\\vfs": "src/main/php"
+                }
+            },
+            "license": [
+                "BSD"
+            ],
+            "homepage": "http://vfs.bovigo.org/"
         },
         {
-            "package": "smartypants/smartypants-typographer",
-            "version": "1.0"
+            "name": "mustache/mustache",
+            "version": "1.1.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/bobthecow/mustache.php/zipball/v1.1.0",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "Mustache.php",
+                    "MustacheLoader.php"
+                ]
+            }
         },
         {
-            "package": "symfony/yaml",
-            "version": "v2.0.14"
+            "name": "smartypants/smartypants",
+            "version": "1.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/michelf/php-smartypants/zipball/master",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist"
         },
         {
-            "package": "textile/textile",
-            "version": "2.0.0"
+            "name": "smartypants/smartypants-typographer",
+            "version": "1.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/michelf/php-smartypants/zipball/typo",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist"
         },
         {
-            "package": "twig/twig",
-            "version": "v1.8.1"
+            "name": "symfony/yaml",
+            "version": "v2.0.14",
+            "target-dir": "Symfony/Component/Yaml",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/Yaml",
+                "reference": "v2.0.14"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/symfony/Yaml/zipball/v2.0.14",
+                "reference": "v2.0.14",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.2"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\Yaml": ""
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com",
+                    "homepage": null,
+                    "role": null
+                },
+                {
+                    "name": "Symfony Community",
+                    "email": null,
+                    "homepage": "http://symfony.com/contributors",
+                    "role": null
+                }
+            ],
+            "description": "Symfony Yaml Component",
+            "homepage": "http://symfony.com"
+        },
+        {
+            "name": "textile/textile",
+            "version": "2.0.0",
+            "dist": {
+                "type": "zip",
+                "url": "http://textile.thresholdstate.com/file_download/1/textile-2.0.0.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "classTextile.php"
+                ]
+            }
+        },
+        {
+            "name": "twig/twig",
+            "version": "v1.8.1",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/fabpot/Twig.git",
+                "reference": "v1.8.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/fabpot/Twig/zipball/v1.8.1",
+                "reference": "v1.8.1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.4"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.8-dev"
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Twig_": "lib/"
+                }
+            },
+            "license": [
+                "BSD-3"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com",
+                    "homepage": null,
+                    "role": null
+                },
+                {
+                    "name": "Armin Ronacher",
+                    "email": "armin.ronacher@active-4.com",
+                    "homepage": null,
+                    "role": null
+                }
+            ],
+            "description": "Twig, the flexible, fast, and secure template language for PHP",
+            "homepage": "http://twig.sensiolabs.org",
+            "keywords": [
+                "templating"
+            ]
         }
     ],
     "packages-dev": null,
     "aliases": [
 
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "stability-flags": [
 
     ]
