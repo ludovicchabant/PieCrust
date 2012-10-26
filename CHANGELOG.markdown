@@ -15,6 +15,14 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Templates directories added with the `site/templates_dirs`
+  settings are now searched _before_ the default `_content/templates` directory.
+* IMPROVEMENT: The Windows bootstrap script can better search for the PHP
+  executable.
+* BUG: Fixed problems when running in XAMPP on Windows.
+* BUG: Fixed a bug with the `pagination` object which could generate
+  double-slashes in navigation links.
+
 Frozen changes
 --------------
 
