@@ -102,15 +102,11 @@ class Paginator
     public function prev_page()
     {
         $previousPageIndex = $this->prev_page_number();
-        $previousPageUri = null;
         if ($previousPageIndex != null)
         {
-            if ($previousPageIndex == 1)
-                $previousPageUri = $this->page->getUri();
-            else
-                $previousPageUri = $this->page->getUri() . '/' . $previousPageIndex;
+            return $this->getSubPageUri($previousPageIndex);
         }
-        return $previousPageUri;
+        return null;
     }
     
     /**
@@ -133,7 +129,7 @@ class Paginator
         $nextPageIndex = $this->next_page_number();
         if ($nextPageIndex != null)
         {
-            return $this->page->getUri() . '/' . $nextPageIndex;
+            return $this->getSubPageUri($nextPageIndex);
         }
         return null;
     }
@@ -197,12 +193,7 @@ class Paginator
      */
     public function page($index)
     {
-        $uri = $this->page->getUri();
-        if ($index > 1)
-        {
-            $uri .= '/' . $index;
-        }
-        return $uri;
+        return $this->getSubPageUri($index);
     }
 
     /**
@@ -340,5 +331,17 @@ class Paginator
             $filter->addClauses($filterInfo);
         }
         return $filter;
+    }
+
+    public function getSubPageUri($index)
+    {
+        $uri = $this->page->getUri();
+        if ($index > 1)
+        {
+            if ($uri != '')
+                $uri .= '/';
+            $uri .= $index;
+        }
+        return $uri;
     }
 }

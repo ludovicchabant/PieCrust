@@ -13,28 +13,36 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
     public function paginatorDataProvider()
     {
         return array(
-            array(1, 0),
-            array(1, 4),
-            array(1, 5),
-            array(1, 8),
-            array(1, 14),
-            array(2, 8),
-            array(2, 14),
-            array(3, 14)
+            array('', 1, 0),
+            array('', 1, 4),
+            array('', 1, 5),
+            array('', 1, 8),
+            array('', 1, 14),
+            array('', 2, 8),
+            array('', 2, 14),
+            array('', 3, 14),
+            array('blog', 1, 0),
+            array('blog', 1, 4),
+            array('blog', 1, 5),
+            array('blog', 1, 8),
+            array('blog', 1, 14),
+            array('blog', 2, 8),
+            array('blog', 2, 14),
+            array('blog', 3, 14)
         );
     }
     
     /**
      * @dataProvider paginatorDataProvider
      */
-    public function testPaginator($pageNumber, $postCount)
+    public function testPaginator($uri, $pageNumber, $postCount)
     {
         $pc = new MockPieCrust();
         $pc->getConfig()->setValue('blog/posts_per_page', 5);
         $pc->getConfig()->setValue('blog/date_format', 'F j, Y');
         
         $page = new MockPage($pc);
-        $page->uri = 'test-page-uri';
+        $page->uri = $uri;
         $page->pageNumber = $pageNumber;
         
         $paginator = new Paginator($page);
@@ -47,29 +55,29 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         {
             // All posts fit on the page.
             $this->assertNull($paginator->prev_page());
-            $this->assertEquals('test-page-uri', $paginator->this_page());
+            $this->assertEquals($uri, $paginator->this_page());
             $this->assertNull($paginator->next_page());
         }
         else if ($pageNumber <= 1)
         {
             // Lots of posts, but this is the first page.
             $this->assertNull($paginator->prev_page());
-            $this->assertEquals('test-page-uri', $paginator->this_page());
-            $this->assertEquals('test-page-uri/2', $paginator->next_page());
+            $this->assertEquals($uri, $paginator->this_page());
+            $this->assertEquals($uri == '' ? '2' : ($uri . '/2'), $paginator->next_page());
         }
         else if ($pageNumber * 5 > $postCount)
         {
             // Lots of posts, and this is a page somewhere in the middle, or
             // the last page.
             if ($pageNumber > 2)
-                $this->assertEquals('test-page-uri/' . ($pageNumber - 1), $paginator->prev_page());
+                $this->assertEquals($uri == '' ? (string)($pageNumber - 1) : ($uri . '/' . ($pageNumber - 1)), $paginator->prev_page());
             else
-                $this->assertEquals('test-page-uri', $paginator->prev_page());
-            $this->assertEquals('test-page-uri/' . $pageNumber, $paginator->this_page());
+                $this->assertEquals($uri, $paginator->prev_page());
+            $this->assertEquals($uri == '' ? (string)$pageNumber : ($uri . '/' . $pageNumber), $paginator->this_page());
             if ($pageNumber * 5 > $postCount)
                 $this->assertNull($paginator->next_page());
             else
-                $this->assertEquals('test-page-uri/' . ($pageNumber + 1), $paginator->next_page());
+                $this->assertEquals($uri == '' ? (string)($pageNumber + 1) : ($uri . '/' . ($pageNumber + 1)), $paginator->next_page());
         }
         
         $expectedCount = $postCount;
