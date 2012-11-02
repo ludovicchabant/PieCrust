@@ -4,6 +4,7 @@ use PieCrust\IPieCrust;
 use PieCrust\Formatters\IFormatter;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PieCrustHelper;
+use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockFormatter;
 use PieCrust\Mock\MockPieCrust;
 use PieCrust\Mock\MockPlugin;
@@ -46,6 +47,28 @@ class FormattingTest extends PHPUnit_Framework_TestCase
              ->will($this->returnValue(array($mockPlugin)));
 
         $this->assertEquals(array($first, $second, $third), $stub->getFormatters());
+    }
+
+    public function testSmartyPantsFormatter()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'smartypants' => array('enabled' => true)
+            ));
+        $app = $fs->getApp();
+
+        $text = PieCrustHelper::formatText($app, 'Something...');
+        $this->assertEquals("<p>Something&#8230;</p>\n", $text);
+
+        // At the beginning you enabled SmartyPants with 'enable', and not 'enabled'.
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'smartypants' => array('enable' => true)
+            ));
+        $app = $fs->getApp();
+
+        $text = PieCrustHelper::formatText($app, 'Something...');
+        $this->assertEquals("<p>Something&#8230;</p>\n", $text);
     }
 
     private function getApp($supportedFormats)
