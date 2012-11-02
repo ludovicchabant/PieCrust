@@ -22,6 +22,9 @@ Fresh changes
 * BUG: Fixed problems when running in XAMPP on Windows.
 * BUG: Fixed a bug with the `pagination` object which could generate
   double-slashes in navigation links.
+* BUG: Fixed a bug with enabling the SmartyPants formatter that could result in
+  an application crash.
+
 
 Frozen changes
 --------------
