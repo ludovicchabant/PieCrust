@@ -123,6 +123,7 @@ class PieCrustBaker
                 'config_variant' => null,
                 'copy_assets' => true,
                 'processors' => '*',
+                'mounts' => array(),
                 'skip_patterns' => array(),
                 'force_patterns' => array(),
                 'tag_combinations' => array()
@@ -234,9 +235,10 @@ class PieCrustBaker
             $this->getBakeDir(),
             array(
                 'smart' => $this->parameters['smart'],
+                'mounts' => $this->parameters['mounts'],
+                'processors' => $this->parameters['processors'],
                 'skip_patterns' => $this->parameters['skip_patterns'],
-                'force_patterns' => $this->parameters['force_patterns'],
-                'processors' => $this->parameters['processors']
+                'force_patterns' => $this->parameters['force_patterns']
             ),
             $this->logger
         );

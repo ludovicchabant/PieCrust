@@ -109,23 +109,11 @@ class InitCommand extends ChefCommand
             $rootDir, 
             PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'default.html'
         );
-        // - templates/main.html
-        $this->createSystemFile(
-            'default_index_template.html',
-            $rootDir,
-            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'main.html'
-        );
         // - templates/post.html
         $this->createSystemFile(
             'default_post_template.html',
             $rootDir,
             PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'post.html'
-        );
-        // - pages/_index.html
-        $this->createSystemFile(
-            'default_index.html', 
-            $rootDir,
-            PieCrustDefaults::CONTENT_PAGES_DIR . '_index.html'
         );
 
         // Create assets.

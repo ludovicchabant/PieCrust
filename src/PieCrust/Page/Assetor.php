@@ -6,7 +6,7 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PageHelper;
-use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -177,7 +177,7 @@ class Assetor implements \ArrayAccess, \Iterator
         $relativePath = str_replace(
             '\\', 
             '/', 
-            PathHelper::getRelativePath($page->getApp(), $page->getPath(), true)
+            PieCrustHelper::getRelativePath($page->getApp(), $page->getPath(), true)
         );
         $uri = $page->getUri();
         $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');

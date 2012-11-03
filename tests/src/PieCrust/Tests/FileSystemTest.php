@@ -168,31 +168,31 @@ class FileSystemTest extends PHPUnit_Framework_TestCase
         $expected = array(
             array(
                 'path' => $fs->url('kitchen/_content/pages/test1.html'),
-                'relative_path' => '/test1.html'
+                'relative_path' => 'test1.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/testxml.xml'),
-                'relative_path' => '/testxml.xml'
+                'relative_path' => 'testxml.xml'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/test2.html'),
-                'relative_path' => '/foo/test2.html'
+                'relative_path' => 'foo/test2.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/testtxt.txt'),
-                'relative_path' => '/foo/testtxt.txt'
+                'relative_path' => 'foo/testtxt.txt'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/bar/test3.html'),
-                'relative_path' => '/foo/bar/test3.html'
+                'relative_path' => 'foo/bar/test3.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/foo/test-stuff.html'),
-                'relative_path' => '/foo/test-stuff.html'
+                'relative_path' => 'foo/test-stuff.html'
             ),
             array(
                 'path' => $fs->url('kitchen/_content/pages/bar/blah.html'),
-                'relative_path' => '/bar/blah.html'
+                'relative_path' => 'bar/blah.html'
             )
         );
         $this->assertEquals($expected, $pageFiles);

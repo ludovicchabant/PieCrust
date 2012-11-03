@@ -75,7 +75,7 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
             )
         ));
         $pc = new PieCrust(array(
-            'root' => $fs->siteRootUrl(), 
+            'root' => $fs->getAppRoot(), 
             'cache' => false,
             'debug' => $debug)
         );
@@ -160,7 +160,7 @@ class PieCrustHelperTest extends PHPUnit_Framework_TestCase
             )
         ));
         $pc = new PieCrust(array(
-            'root' => $fs->siteRootUrl(), 
+            'root' => $fs->getAppRoot(), 
             'cache' => false,
             'debug' => $debug)
         );

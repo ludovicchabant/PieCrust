@@ -101,6 +101,18 @@ class MockPieCrust implements IPieCrust
         $this->pluginsDirs[] = $dir;
     }
 
+    public $themeDir;
+
+    public function getThemeDir()
+    {
+        return $this->themeDir;
+    }
+
+    public function setThemeDir($dir)
+    {
+        $this->themeDir = dir;
+    }
+
     public $pluginLoader;
 
     public function getPluginLoader()

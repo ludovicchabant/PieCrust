@@ -42,7 +42,20 @@ class Cache
         $cacheTime = $this->getCacheTime($uri, $extension);
         if ($cacheTime == false)
             return false;
-        return $cacheTime >= $time;
+
+        if (is_array($time))
+        {
+            foreach ($time as $t)
+            {
+                if ($cacheTime < $time)
+                    return false;
+            }
+            return true;
+        }
+        else
+        {
+            return $cacheTime >= $time;
+        }
     }
     
     public function getCacheTime($uri, $extension)

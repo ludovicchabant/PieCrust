@@ -8,6 +8,7 @@ use PieCrust\Formatters\IFormatter;
 use PieCrust\Page\Page;
 use PieCrust\Plugins\PluginLoader;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -211,6 +212,33 @@ class PieCrust implements IPieCrust
         }
     }
 
+    protected $themeDir;
+    /**
+     * Gets the directory that contains the current theme, if any.
+     */
+    public function getThemeDir()
+    {
+        if ($this->themeDir === null)
+        {
+            $this->themeDir = $this->rootDir . PieCrustDefaults::CONTENT_THEME_DIR;
+            if (!is_dir($this->themeDir))
+                $this->themeDir = false;
+        }
+        return $this->themeDir;
+    }
+
+    /**
+     * Sets the directory that contains the current theme, if any.
+     */
+    public function setThemeDir($dir)
+    {
+        $this->themeDir = rtrim($dir, '/\\') . '/';
+        if (is_dir($this->themeDir) === false)
+        {
+            throw new PieCrustException("The specified theme directory doesn't exist: " . $this->themeDir);
+        }
+    }
+
     protected $cacheDir;
     /**
      * Gets the cache directory ('/_cache' by default).
@@ -313,10 +341,36 @@ class PieCrust implements IPieCrust
         if ($this->config == null)
         {
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
-            $this->config = new PieCrustConfiguration(
-                $this->rootDir . PieCrustDefaults::CONFIG_PATH, 
-                $configCache
-            );
+
+            $configPaths = array();
+            $themeDir = $this->getThemeDir();
+            if ($themeDir !== false)
+                $configPaths[] = $themeDir . PieCrustDefaults::CONFIG_PATH;
+            $configPaths[] = $this->rootDir . PieCrustDefaults::CONFIG_PATH;
+
+            $this->config = new PieCrustConfiguration($configPaths, $configCache);
+            if ($themeDir !== false)
+            {
+                // We'll need to patch the templates directories to be relative
+                // to the site's root, as opposed to the theme root.
+                $relativeThemeDir = PieCrustHelper::getRelativePath($this, $themeDir);
+                $this->config->setFixup(function ($i, &$c) use ($relativeThemeDir) {
+                    if ($i == 0)
+                    {
+                        if (!isset($c['site'])) return;
+                        if (!isset($c['site']['templates_dirs'])) return;
+                        foreach ($c['site']['templates_dirs'] as &$dir)
+                        {
+                            $dir = $relativeThemeDir . $dir;
+                        }
+                    }
+                    else
+                    {
+                        //$c['site']['theme_root'] = str_replace('\\', '/', $relativeThemeDir);
+                        $c['site']['theme_root'] = '_theme/';
+                    }
+                });
+            }
         }
     }
 }

@@ -16,7 +16,7 @@ class PieCrustImporterTest extends PHPUnit_Framework_TestCase
             ->withPagesDir()
             ->withPostsDir();
         $app = new PieCrust(array(
-            'root' => $fs->siteRootUrl()
+            'root' => $fs->getAppRoot()
         ));
         $importer = new PieCrustImporter($app);
 
@@ -30,7 +30,7 @@ class PieCrustImporterTest extends PHPUnit_Framework_TestCase
 
         // Re-create the app to load from the new values.
         $app = new PieCrust(array(
-            'root' => $fs->siteRootUrl()
+            'root' => $fs->getAppRoot()
         ));
 
         // Check the content.

@@ -10,7 +10,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
-use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 class PrepareCommand extends ChefCommand
@@ -114,7 +114,7 @@ class PrepareCommand extends ChefCommand
 
         // Create the full path.
         $fullPath = $app->getPostsDir() . $blogSubDir . $path;
-        $relativePath = PathHelper::getRelativePath($app, $fullPath);
+        $relativePath = PieCrustHelper::getRelativePath($app, $fullPath);
         if (file_exists($fullPath))
             throw new PieCrustException("Post already exists: {$relativePath}");
         $log->info("Creating new post: {$relativePath}");
@@ -155,7 +155,7 @@ class PrepareCommand extends ChefCommand
         $slug = $result->command->args['slug'];
         $slug = ltrim($slug, '/\\');
         $fullPath = $app->getPagesDir() . $slug . '.html';
-        $relativePath = PathHelper::getRelativePath($app, $fullPath);
+        $relativePath = PieCrustHelper::getRelativePath($app, $fullPath);
         if (file_exists($fullPath))
             throw new PieCrustException("Page already exists: {$relativePath}");
         $log->info("Creating new page: {$relativePath}");

@@ -21,6 +21,7 @@ Fresh changes
   avoid confusion with the existing `striptags` filter.
 * IMPROVEMENT: The Windows bootstrap script can better search for the PHP
   executable.
+* NEW: Added support for themes.
 * NEW: Add new Twig filters: `stripslash`, `titlecase` and `xmldate`.
 * BUG: Fixed problems when running in XAMPP on Windows.
 * BUG: Fixed a bug with the `pagination` object which could generate

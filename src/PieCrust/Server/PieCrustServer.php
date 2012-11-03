@@ -113,9 +113,12 @@ class PieCrustServer
                 );
                 foreach ($bakedFiles as $f => $info)
                 {
-                    foreach ($info['outputs'] as $out)
+                    if ($info['was_baked'])
                     {
-                        $this->bakeCacheFiles[$out] = $f;
+                        foreach ($info['outputs'] as $out)
+                        {
+                            $this->bakeCacheFiles[$out] = $f;
+                        }
                     }
                 }
             }
@@ -296,6 +299,7 @@ class PieCrustServer
             $parameters = array();
         $parameters = array_merge(array(
                 'smart' => true,
+                'mounts' => array(),
                 'processors' => '*',
                 'skip_patterns' => array(),
                 'force_patterns' => array()
@@ -307,9 +311,10 @@ class PieCrustServer
             $this->bakeCacheDir,
             array(
                 'smart' => $parameters['smart'],
+                'mounts' => $parameters['mounts'],
+                'processors' => $parameters['processors'],
                 'skip_patterns' => $parameters['skip_patterns'],
-                'force_patterns' => $parameters['force_patterns'],
-                'processors' => $parameters['processors']
+                'force_patterns' => $parameters['force_patterns']
             ),
             $this->logger
         );

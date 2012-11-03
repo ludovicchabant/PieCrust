@@ -3,6 +3,7 @@
 use PieCrust\Page\Page;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
+use PieCrust\Util\PathHelper;
 
 
 class PageTest extends PHPUnit_Framework_TestCase
@@ -43,10 +44,7 @@ class PageTest extends PHPUnit_Framework_TestCase
         Page::createFromUri($app, 'something/missing.html');
     }
 
-    /**
-     * @expectedException \PieCrust\PieCrustException
-     */
-    public function testCreateInvalidTagPage()
+    public function testCreateDefaultTagPage()
     {
         $app = MockFileSystem::create()
             ->withConfig(array(
@@ -55,13 +53,12 @@ class PageTest extends PHPUnit_Framework_TestCase
                 )
             ))
             ->getApp();
-        Page::createFromUri($app, '/tag/foo');
+        $page = Page::createFromUri($app, '/tag/foo');
+        $expected = PathHelper::getUserOrThemeOrResPath($app, '_tag.html');
+        $this->assertEquals($expected, $page->getPath());
     }
 
-    /**
-     * @expectedException \PieCrust\PieCrustException
-     */
-    public function testCreateInvalidCategoryPage()
+    public function testCreateDefaultCategoryPage()
     {
         $app = MockFileSystem::create()
             ->withConfig(array(
@@ -70,7 +67,9 @@ class PageTest extends PHPUnit_Framework_TestCase
                 )
             ))
             ->getApp();
-        Page::createFromUri($app, '/cat/foo');
+        $page = Page::createFromUri($app, '/cat/foo');
+        $expected = PathHelper::getUserOrThemeOrResPath($app, '_category.html');
+        $this->assertEquals($expected, $page->getPath());
     }
 }
 

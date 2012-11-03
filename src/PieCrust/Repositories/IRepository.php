@@ -22,8 +22,19 @@ interface IRepository
     public function getPlugins($source);
 
     /**
+     * Gets the theme metadata available at the
+     * given source.
+     */
+    public function getThemes($source);
+
+    /**
      * Installs the given plugin.
      */
     public function installPlugin($plugin, $context);
+
+    /**
+     * Installs the given theme.
+     */
+    public function installTheme($theme, $context);
 }
 

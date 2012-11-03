@@ -2,6 +2,7 @@
 
 namespace PieCrust\Repositories;
 
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\ArchiveHelper;
@@ -24,7 +25,12 @@ class BitBucketRepository implements IRepository
 
     public function getPlugins($source)
     {
-        return $this->getRepositoryInfos($source, 'PieCrust-Plugin-');
+        return $this->getRepositoryInfos($source, 'PieCrust-Plugin-', 'plugin_info.yml');
+    }
+
+    public function getThemes($source)
+    {
+        return $this->getRepositoryInfos($source, 'PieCrust-Theme-', 'theme_info.yml');
     }
 
     public function installPlugin($plugin, $context)
@@ -33,6 +39,14 @@ class BitBucketRepository implements IRepository
         if (is_dir($destination))
             throw new PieCrustException("'{$plugin['name']}' is already installed.");
         $this->extractRepository($context, $destination, $plugin['username'], $plugin['slug']);
+    }
+
+    public function installTheme($theme, $context)
+    {
+        $destination = $context->getLocalThemeDir(false);
+        if (is_dir($destination))
+            PathHelper::deleteDirectoryContents($destination);
+        $this->extractRepository($context, $destination, $theme['username'], $theme['slug']);
     }
 
     // }}}
@@ -63,7 +77,7 @@ class BitBucketRepository implements IRepository
         return $userInfo;
     }
 
-    public function getRepositoryInfos($source, $prefix)
+    public function getRepositoryInfos($source, $prefix, $infoFilename)
     {
         $infos = array();
         $prefixRegex = '/^' . preg_quote($prefix, '/') . '/';
@@ -72,14 +86,39 @@ class BitBucketRepository implements IRepository
         {
             if (preg_match($prefixRegex, $repo->name))
             {
-                $infos[] = array(
+                // Build some default metadata.
+                $defaultInfo = array(
                     'name' => substr($repo->name, strlen($prefix)),
+                    'authors' => array($userInfo->user->username),
                     'description' => $repo->description,
                     'username' => $userInfo->user->username,
                     'slug' => $repo->slug,
                     'source' => rtrim($source, '/') . '/' . $repo->slug,
                     'resource_uri' => $repo->resource_uri
                 );
+
+                // Look for `plugin_info.yml` or `theme_info.yml`.
+                $url = "https://api.bitbucket.org/1.0/repositories/{$userInfo->user->username}/{$repo->name}/src/default/";
+                $response = file_get_contents(strtolower($url));
+                $srcInfo = json_decode($response);
+                if (count(array_filter(
+                        $srcInfo->files, 
+                        function ($f) use ($infoFilename) { return $f->path == $infoFilename; }
+                    )) > 0)
+                {
+                    // Found! Read it.
+                    $infoUrl = "https://api.bitbucket.org/1.0/repositories/{$userInfo->user->username}/{$repo->name}/raw/default/{$infoFilename}";
+                    $infoRaw = file_get_contents(strtolower($infoUrl));
+                    $infos[] = array_merge(
+                        Yaml::parse($infoRaw),
+                        $defaultInfo
+                    );
+                }
+                else
+                {
+                    // Not found... use the default metadata.
+                    $infos[] = $defaultInfo;
+                }
             }
         }
         return $infos;
@@ -119,6 +158,10 @@ class BitBucketRepository implements IRepository
         {
             $log->debug("Cleaning destination: {$destination}");
             PathHelper::deleteDirectoryContents($destination);
+        }
+        if (!is_dir(dirname($destination)))
+        {
+            mkdir(dirname($destination));
         }
         $log->debug("Moving extracted files into: {$destination}");
         rename($archiveDir, $destination);

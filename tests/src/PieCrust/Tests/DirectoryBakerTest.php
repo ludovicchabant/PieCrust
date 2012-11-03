@@ -1,13 +1,12 @@
 <?php
 
-use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\DirectoryBaker;
 use PieCrust\Baker\ProcessingTreeBuilder;
 use PieCrust\Baker\Processors\IProcessor;
 use PieCrust\Baker\Processors\CopyFileProcessor;
+use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 use PieCrust\Mock\MockPlugin;
 use PieCrust\Mock\MockProcessor;
@@ -17,74 +16,70 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 {
     public function testEmptyBake()
     {
-        $structure = array(
-            'kitchen' => array(),
-            'counter' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
-        
+        $fs = MockFileSystem::create(false)
+            ->withDir('kitchen')
+            ->withDir('counter');
+
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/kitchen/');
+        $pc->rootDir = $fs->url('kitchen');
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/counter');
+
+        $bakeDir = $fs->url('counter');
         $parameters = array(
             'processors' => array('copy')
         );
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(),
                 'counter' => array()
             )),
-            vfsStream::inspect(new vfsStreamStructureVisitor(), $root)->getStructure()
+            $fs->getStructure()
         );
         $baker->bake();
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(),
                 'counter' => array()
             )),
-            vfsStream::inspect(new vfsStreamStructureVisitor(), $root)->getStructure()
+            $fs->getStructure()
         );
         $this->assertEmpty($baker->getBakedFiles());
     }
     
     public function testOneFileBake()
     {
-        $structure = array(
-            'kitchen' => array(
-                'something.html' => 'This is some test file.'
-            ),
-            'counter' => array(),
-            'cache' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withFile('kitchen/something.html', 'This is some test file.')
+            ->withDir('cache')
+            ->withDir('counter');
         
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/kitchen/');
-        $pc->cacheDir = vfsStream::url('root/cache/');
+        $pc->rootDir = $fs->url('kitchen/');
+        $pc->cacheDir = $fs->url('cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/counter');
+
+        $bakeDir = $fs->url('counter');
         $parameters = array(
             'processors' => array('copy')
         );
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(
                     'something.html' => 'This is some test file.'
                 ),
                 'counter' => array(),
                 'cache' => array())
             ),
-            vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
+            $fs->getStructure()
         );
         $baker->bake();
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(
                     'something.html' => 'This is some test file.'
                 ),
@@ -93,15 +88,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
                 ),
                 'cache' => array()
             )),
-            vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
+            $fs->getStructure()
         );
         $this->assertEquals(
             array(
-                vfsStream::url('root/kitchen/something.html') => array(
+                $fs->url('kitchen/something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/counter/something.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('counter/something.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
@@ -110,21 +106,18 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
     
     public function testOneFileBakeInsideKitchen()
     {
-        $structure = array(
-            'kitchen' => array(
-                'something.html' => 'This is some test file.',
-                '_counter' => array(),
-                '_cache' => array()
-            )
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withDir('kitchen/_counter')
+            ->withDir('kitchen/_cache')
+            ->withFile('kitchen/something.html', "This is some test file.");
         
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/kitchen/');
-        $pc->cacheDir = vfsStream::url('root/kitchen/_cache/');
+        $pc->rootDir = $fs->url('kitchen/');
+        $pc->cacheDir = $fs->url('kitchen/_cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/kitchen/_counter');
+
+        $bakeDir = $fs->url('kitchen/_counter');
         $parameters = array(
             'processors' => array('copy'),
             'skip_patterns' => array('/_counter/')
@@ -132,18 +125,18 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(
                     'something.html' => 'This is some test file.',
                     '_counter' => array(),
                     '_cache' => array()
                 ))
             ),
-            vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
+            $fs->getStructure()
         );
         $baker->bake();
         $this->assertEquals(
-            array('root' => array(
+            array($fs->getRootName() => array(
                 'kitchen' => array(
                     'something.html' => 'This is some test file.',
                     '_counter' => array(
@@ -152,15 +145,16 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
                     '_cache' => array()
                 )
             )),
-            vfsStream::inspect(new vfsStreamStructureVisitor())->getStructure()
+            $fs->getStructure()
         );
         $this->assertEquals(
             array(
-                vfsStream::url('root/kitchen/something.html') => array(
+                $fs->url('kitchen/something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/kitchen/_counter/something.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('kitchen/_counter/something.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
@@ -169,25 +163,20 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
     public function testSkipPattern()
     {
-        $structure = array(
-            'kitchen' => array(
-                'something.html' => 'This is a test page.',
-                '_hidden.html' => 'This is hidden',
-                'subdir' => array(
-                    '_important.html' => 'This should not be hidden.'
-                )
-            ),
-            '_counter' => array(),
-            '_cache' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withAsset('something.html', 'This is a test page.')
+            ->withAsset('_hidden.html', 'This is hidden')
+            ->withAsset('subdir/_important.html', 'This should not be hidden.')
+            ->withDir('_counter')
+            ->withDir('_cache');
         
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/kitchen/');
-        $pc->cacheDir = vfsStream::url('root/_cache/');
+        $pc->rootDir = $fs->url('kitchen/');
+        $pc->cacheDir = $fs->url('_cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/_counter');
+
+        $bakeDir = $fs->url('_counter');
         $parameters = array(
             'processors' => array('copy'),
             'skip_patterns' => array('/^_/')
@@ -195,22 +184,24 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
         $baker->bake();
-        $this->assertTrue(is_file(vfsStream::url('root/_counter/something.html')));
-        $this->assertTrue(is_file(vfsStream::url('root/_counter/subdir/_important.html')));
-        $this->assertFalse(is_file(vfsStream::url('root/_counter/_hidden.html')));
+        $this->assertTrue(is_file($fs->url('_counter/something.html')));
+        $this->assertTrue(is_file($fs->url('_counter/subdir/_important.html')));
+        $this->assertFalse(is_file($fs->url('_counter/_hidden.html')));
         $this->assertEquals(
             array(
-                vfsStream::url('root/kitchen/something.html') => array(
+                $fs->url('kitchen/something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/_counter/something.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('_counter/something.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 ),
-                vfsStream::url('root/kitchen/subdir/_important.html') => array(
+                $fs->url('kitchen/subdir/_important.html') => array(
                     'relative_input' => 'subdir/_important.html',
                     'relative_outputs' => array('subdir/_important.html'),
-                    'outputs' => array(vfsStream::url('root/_counter/subdir/_important.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('_counter/subdir/_important.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
@@ -219,25 +210,23 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
     public function testUpToDate()
     {
-        $structure = array(
-            'something.html' => 'This is a test page.',
-            '_counter' => array(),
-            '_cache' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withFile('something.html', 'This is a test page.')
+            ->withDir('_counter')
+            ->withDir('_cache');
 
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/');
-        $pc->cacheDir = vfsStream::url('root/_cache/');
+        $pc->rootDir = $fs->url('');
+        $pc->cacheDir = $fs->url('_cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/_counter');
+        $bakeDir = $fs->url('_counter');
         $parameters = array(
             'processors' => array('copy')
         );
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
-        $outFile = vfsStream::url('root/_counter/something.html');
+        $outFile = $fs->url('_counter/something.html');
         $this->assertFalse(is_file($outFile));
         sleep(1);
         $baker->bake();
@@ -245,29 +234,31 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
         $this->assertEquals(
             array(
-                vfsStream::url('root/something.html') => array(
+                $fs->url('something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/_counter/something.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('_counter/something.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
         );
         clearstatcache();
         $mtime = filemtime($outFile);
-        $this->assertGreaterThan(filemtime(vfsStream::url('root/something.html')), $mtime);
+        $this->assertGreaterThan(filemtime($fs->url('something.html')), $mtime);
 
         sleep(1);
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         $this->assertEquals(
             array(
-                vfsStream::url('root/something.html') => array(
+                $fs->url('something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/_counter/something.html')),
-                    'was_baked' => false
+                    'outputs' => array($fs->url('_counter/something.html')),
+                    'was_baked' => false,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
@@ -277,16 +268,17 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('This is a test page.', file_get_contents($outFile));
 
         sleep(1);
-        file_put_contents(vfsStream::url('root/something.html'), 'New content!');
+        file_put_contents($fs->url('something.html'), 'New content!');
         $baker->bake();
         $this->assertTrue(is_file($outFile));
         $this->assertEquals(
             array(
-                vfsStream::url('root/something.html') => array(
+                $fs->url('something.html') => array(
                     'relative_input' => 'something.html',
                     'relative_outputs' => array('something.html'),
-                    'outputs' => array(vfsStream::url('root/_counter/something.html')),
-                    'was_baked' => true
+                    'outputs' => array($fs->url('_counter/something.html')),
+                    'was_baked' => true,
+                    'was_overridden' => false
                 )
             ),
             $baker->getBakedFiles()
@@ -298,26 +290,24 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
     
     public function testForceBake()
     {
-        $structure = array(
-            'forced.html' => 'This is a test page.',
-            '_counter' => array(),
-            '_cache' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withFile('forced.html', 'This is a test page.')
+            ->withDir('_counter')
+            ->withDir('_cache');
 
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/');
-        $pc->cacheDir = vfsStream::url('root/_cache/');
+        $pc->rootDir = $fs->url('');
+        $pc->cacheDir = $fs->url('_cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/_counter');
+        $bakeDir = $fs->url('_counter');
         $parameters = array(
             'processors' => array('copy'),
             'force_patterns' => array('/forced/')
         );
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
-        $outFile = vfsStream::url('root/_counter/forced.html');
+        $outFile = $fs->url('_counter/forced.html');
         $this->assertFalse(is_file($outFile));
         $baker->bake();
         $this->assertTrue(is_file($outFile));
@@ -334,16 +324,14 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
     public function testChainedProcessors()
     {
-        $structure = array(
-            'something.foo' => 'Some contents.',
-            '_cache' => array(),
-            '_counter' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withFile('something.foo', 'Some contents.')
+            ->withDir('_cache')
+            ->withDir('_counter');
 
         $pc = new MockPieCrust();
-        $pc->rootDir = vfsStream::url('root/');
-        $pc->cacheDir = vfsStream::url('root/_cache/');
+        $pc->rootDir = $fs->url('');
+        $pc->cacheDir = $fs->url('_cache/');
         $pc->isCachingEnabled = true;
         $pc->getPluginLoader()->processors[] = new MockProcessor(
             'uppercase',
@@ -362,13 +350,13 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
             function ($c) { return "<b>{$c}</b>"; }
         );
         $pc->getPluginLoader()->processors[] = new CopyFileProcessor();
-        $bakeDir = vfsStream::url('root/_counter');
+        $bakeDir = $fs->url('_counter');
         $parameters = array(
             'processors' => array('*')
         );
         $baker = new DirectoryBaker($pc, $bakeDir, $parameters);
         
-        $outFile = vfsStream::url('root/_counter/something.html');
+        $outFile = $fs->url('_counter/something.html');
         $this->assertFalse(is_file($outFile));
         $baker->bake();
         $this->assertTrue(is_file($outFile));
@@ -377,12 +365,10 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
 
     public function testProcessingTree()
     {
-        $structure = array(
-            'something.foo' => 'Some contents.',
-            '_cache' => array(),
-            '_counter' => array()
-        );
-        $root = vfsStream::setup('root', null, $structure);
+        $fs = MockFileSystem::create(false)
+            ->withFile('something.foo', 'Some contents.')
+            ->withDir('_cache')
+            ->withDir('_counter');
 
         // Order by priority by hand...
         $processors = array();
@@ -405,9 +391,9 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $processors[] = new CopyFileProcessor();
 
         $builder = new ProcessingTreeBuilder(
-            vfsStream::url('root/'),
-            vfsStream::url('root/_cache/bake_tmp/'),
-            vfsStream::url('root/_counter'),
+            $fs->url(''),
+            $fs->url('_cache/bake_tmp/'),
+            $fs->url('_counter'),
             $processors
         );
         $treeRoot = $builder->build('something.foo');
@@ -447,5 +433,55 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
              ->will($this->returnValue(array($mockPlugin)));
 
         $this->assertEquals(array($first, $second, $third), $stub->getProcessors());
+    }
+
+    public function testThemeMount()
+    {
+        $fs = MockFileSystem::create()
+            ->withAsset('normal-styles.css', ".rule { color: blue; }")
+            ->withAsset('_content/theme/_content/config.yml', '')
+            ->withAsset('_content/theme/theme-styles.css', ".other { color: black; }");
+
+        $app = $fs->getApp();
+        $bakeDir = $fs->url('counter');
+        $baker = new DirectoryBaker($app, $bakeDir);
+        $baker->bake();
+
+        $this->assertFileEquals(
+            $fs->url('kitchen/normal-styles.css'),
+            $fs->url('counter/normal-styles.css')
+        );
+        $this->assertFileEquals(
+            $fs->url('kitchen/_content/theme/theme-styles.css'),
+            $fs->url('counter/theme-styles.css')
+        );
+    }
+
+    public function testThemeMountOverride()
+    {
+        $fs = MockFileSystem::create()
+            ->withAsset('normal-styles.css', ".rule { color: blue; }")
+            ->withAsset('extra-styles.css', ".override { color: white; }")
+            ->withAsset('_content/theme/_content/config.yml', '')
+            ->withAsset('_content/theme/extra-styles.css', ".other { color: black; }");
+
+        $app = $fs->getApp();
+        $bakeDir = $fs->url('counter');
+        $baker = new DirectoryBaker($app, $bakeDir);
+        $baker->bake();
+
+        $this->assertFileEquals(
+            $fs->url('kitchen/normal-styles.css'),
+            $fs->url('counter/normal-styles.css')
+        );
+        $this->assertFileEquals(
+            $fs->url('kitchen/extra-styles.css'),
+            $fs->url('counter/extra-styles.css')
+        );
+
+        $bakedFiles = $baker->getBakedFiles();
+        $overriddenInfo = $bakedFiles[$fs->url('kitchen/_content/theme/extra-styles.css')];
+        $this->assertFalse($overriddenInfo['was_baked']);
+        $this->assertTrue($overriddenInfo['was_overridden']);
     }
 }

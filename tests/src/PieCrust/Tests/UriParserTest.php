@@ -86,32 +86,32 @@ class UriParserTest extends PHPUnit_Framework_TestCase
             array(
                 array(),
                 '/cat/something',
-                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', false, 1, Page::TYPE_CATEGORY, 'blog', 'something')
+                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', true, 1, Page::TYPE_CATEGORY, 'blog', 'something')
             ),
             array(
                 array(),
                 '/cat/something/2',
-                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', false, 2, Page::TYPE_CATEGORY, 'blog', 'something')
+                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', true, 2, Page::TYPE_CATEGORY, 'blog', 'something')
             ),
             array(
                 array(),
                 '/cat/some-thing_',
-                $this->makeUriInfo('cat/some-thing_', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', false, 1, Page::TYPE_CATEGORY, 'blog', 'some-thing_')
+                $this->makeUriInfo('cat/some-thing_', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html', true, 1, Page::TYPE_CATEGORY, 'blog', 'some-thing_')
             ),
             array(
                 array(),
                 '/tag/blah',
-                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', false, 1, Page::TYPE_TAG, 'blog', 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', true, 1, Page::TYPE_TAG, 'blog', 'blah')
             ),
             array(
                 array(),
                 '/tag/blah/2',
-                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', false, 2, Page::TYPE_TAG, 'blog', 'blah')
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', true, 2, Page::TYPE_TAG, 'blog', 'blah')
             ),
             array(
                 array(),
                 '/tag/bl_ah-h',
-                $this->makeUriInfo('tag/bl_ah-h', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', false, 1, Page::TYPE_TAG, 'blog', 'bl_ah-h')
+                $this->makeUriInfo('tag/bl_ah-h', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.html', true, 1, Page::TYPE_TAG, 'blog', 'bl_ah-h')
             ),
             array(
                 array(),
@@ -169,6 +169,8 @@ class UriParserTest extends PHPUnit_Framework_TestCase
             ->withConfig($config)
             ->withPostsDir()
             ->withPage('_index')
+            ->withPage('_category')
+            ->withPage('_tag')
             ->withPage('existing')
             ->withPage('ex-is-ting')
             ->withPage('exist_ing')
@@ -176,7 +178,7 @@ class UriParserTest extends PHPUnit_Framework_TestCase
             ->withPage('ext-ended.foo')
             ->withPage('extend_ed.foo');
 
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'debug' => true, 'cache' => false));
+        $pc = new PieCrust(array('root' => $fs->getAppRoot(), 'debug' => true, 'cache' => false));
         $uriInfo = UriParser::parseUri($pc, $uri);
 
         if ($expectedUriInfo != null && isset($expectedUriInfo['path']))
@@ -197,7 +199,7 @@ class UriParserTest extends PHPUnit_Framework_TestCase
         $fs = MockFileSystem::create()
             ->withPage('existing-page');
 
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'cache' => false));
+        $pc = new PieCrust(array('root' => $fs->getAppRoot(), 'cache' => false));
         $uriInfo = UriParser::parseUri($pc, '/existing-page');
         $this->assertEquals(
             $this->makeUriInfo('existing-page', $fs->url('kitchen/_content/pages/existing-page.html'), true),
@@ -210,7 +212,7 @@ class UriParserTest extends PHPUnit_Framework_TestCase
         $fs = MockFileSystem::create()
             ->withPage('existing-page');
 
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl(), 'cache' => false));
+        $pc = new PieCrust(array('root' => $fs->getAppRoot(), 'cache' => false));
         $uriInfo = UriParser::parseUri($pc, '/non-existing-page', UriParser::PAGE_URI_REGULAR);
         $this->assertNull($uriInfo);
     }

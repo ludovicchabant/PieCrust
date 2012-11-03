@@ -34,6 +34,7 @@ class PieCrustDefaults
     const CONTENT_PAGES_DIR = '_content/pages/';
     const CONTENT_POSTS_DIR = '_content/posts/';
     const CONTENT_PLUGINS_DIR = '_content/plugins/';
+    const CONTENT_THEME_DIR = '_content/theme/';
     const CACHE_DIR = '_cache/';
     const CACHE_INFO_FILENAME = 'cacheinfo';
     
@@ -52,4 +53,5 @@ class PieCrustDefaults
      * Default values for commands and non-CMS stuff.
      */
     const DEFAULT_PLUGIN_SOURCE = 'http://bitbucket.org/ludovicchabant/';
+    const DEFAULT_THEME_SOURCE = 'http://bitbucket.org/ludovicchabant/';
 }

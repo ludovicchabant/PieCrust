@@ -9,24 +9,32 @@ use Symfony\Component\Yaml\Yaml;
 
 class MockFileSystem
 {
-    public static function create()
+    public static function create($withDefaultStructure = true)
     {
-        return new MockFileSystem();
+        return new MockFileSystem($withDefaultStructure);
     }
 
     protected $root;
 
-    public function __construct()
+    public function __construct($withDefaultStructure = true)
     {
         $this->root = 'root_' . rand();
-        vfsStream::setup($this->root, null, array(
-            'kitchen' => array(
+        $structure = array();
+        if ($withDefaultStructure)
+        {
+            $structure['kitchen'] = array(
                 '_content' => array(
                     'config.yml' => 'site:\n  title: Mock Website'
                 )
-            ),
-            'counter' => array()
-        ));
+            );
+            $structure['counter'] = array();
+        }
+        vfsStream::setup($this->root, null, $structure);
+    }
+
+    public function getRootName()
+    {
+        return $this->root;
     }
 
     public function url($path)
@@ -34,7 +42,7 @@ class MockFileSystem
         return vfsStream::url($this->root . '/' . $path);
     }
 
-    public function siteRootUrl()
+    public function getAppRoot()
     {
         return $this->url('kitchen');
     }
@@ -46,8 +54,26 @@ class MockFileSystem
 
     public function getApp($params = array())
     {
-        $params['root'] = $this->siteRootUrl();
+        $params['root'] = $this->getAppRoot();
         return new \PieCrust\PieCrust($params);
+    }
+
+    public function withDir($path)
+    {
+        mkdir($this->url($path), 0777, true);
+        return $this;
+    }
+
+    public function withFile($path, $contents)
+    {
+        // Ensure the path exists.
+        $path = $this->url($path);
+        if (!is_dir(dirname($path)))
+            mkdir(dirname($path), 0777, true);
+
+        // Create the file.
+        file_put_contents($path, $contents);
+        return $this;
     }
 
     public function withCacheDir()
@@ -155,14 +181,7 @@ class MockFileSystem
 
     public function withAsset($path, $contents)
     {
-        // Ensure the path exists.
-        $path = $this->url('kitchen/' . $path);
-        if (!is_dir(dirname($path)))
-            mkdir(dirname($path), 0777, true);
-
-        // Create the file.
-        file_put_contents($path, $contents);
-        return $this;
+        return $this->withFile('kitchen/' . $path, $contents);
     }
 }
 

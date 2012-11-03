@@ -62,7 +62,7 @@ class AssetorTest extends PHPUnit_Framework_TestCase
     public function testMissingAsset()
     {
         $fs = MockFileSystem::create()->withPage('foo/bar');
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl()));
+        $pc = new PieCrust(array('root' => $fs->getAppRoot()));
         $page = Page::createFromUri($pc, 'foo/bar', false);
         $assetor = new Assetor($page);
         $tmp = isset($assetor['blah']);
@@ -77,7 +77,7 @@ class AssetorTest extends PHPUnit_Framework_TestCase
             ->withPage('foo/bar')
             ->withPageAsset('foo/bar', 'one.txt', 'one')
             ->withPageAsset('foo/bar', 'one.xml', 'another one');
-        $pc = new PieCrust(array('root' => $fs->siteRootUrl()));
+        $pc = new PieCrust(array('root' => $fs->getAppRoot()));
         $page = Page::createFromUri($pc, 'foo/bar', false);
         $assetor = new Assetor($page);
         $tmp = $assetor['one'];

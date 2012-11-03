@@ -11,18 +11,18 @@ use PieCrust\PieCrustException;
  */
 class ShallowFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $postsSubDir)
+    public function __construct($pagesDir, $postsDir)
     {
-        FileSystem::__construct($pieCrust, $postsSubDir);
+        FileSystem::__construct($pagesDir, $postsDir);
     }
     
     public function getPostFiles()
     {
-        if (!$this->pieCrust->getPostsDir())
+        if (!$this->postsDir)
             return array();
 
         $years = array();
-        $yearsIterator = new \DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
+        $yearsIterator = new \DirectoryIterator($this->postsDir);
         foreach ($yearsIterator as $year)
         {
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
@@ -37,7 +37,7 @@ class ShallowFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $posts = array();
-            $pathPattern = $this->pieCrust->getPostsDir() . $this->postsSubDir . $year . '/' . '*.html';
+            $pathPattern = $this->postsDir . $year . '/' . '*.html';
             $paths = glob($pathPattern, GLOB_ERR);
             if ($paths === false)
             {

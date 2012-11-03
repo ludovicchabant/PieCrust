@@ -14,39 +14,62 @@ use PieCrust\Util\ServerHelper;
  */
 class PieCrustConfiguration extends Configuration
 {
-    protected $path;
+    protected $paths;
     protected $cache;
+    protected $fixupCallback;
     
     /**
-     * Gets the path to the configuration file.
+     * Gets the paths to the composite configuration file.
      */
-    public function getPath()
+    public function getPaths()
     {
-        return $this->path;
+        return $this->paths;
+    }
+
+    /**
+     * Sets a callback to fixup configuration data before it is merged
+     * into the composite configuration.
+     */
+    public function setFixup($fixupCallback)
+    {
+        $this->fixupCallback = $fixupCallback;
     }
     
     /**
      * Builds a new instance of PieCrustConfiguration.
      */
-    public function __construct($path = null, $cache = false)
+    public function __construct(array $paths = null, $cache = false)
     {
-        $this->path = $path;
+        $this->paths = $paths;
         $this->cache = $cache;
+        $this->fixupCallback = null;
     }
     
     protected function loadConfig()
     {
-        if ($this->path)
+        if ($this->paths)
         {
             // Cache a validated JSON version of the configuration for faster
             // boot-up time (this saves a couple milliseconds).
-            $configTime = @filemtime($this->path);
-            if ($configTime === false)
+            // 
+            // First, get the times of the different configuration files. There's
+            // usually one or two of them (one for the site configuration, an optional
+            // one for the current theme's configuration).
+            $pathTimes = array();
+            foreach ($this->paths as $path)
             {
-                throw new PieCrustException("The PieCrust configuration file is not readable, or doesn't exist: " . $this->path);
+                $pathTimes[] = @filemtime($path);
             }
+            $validPathTimes = array_filter($pathTimes, function ($t) { return $t !== false; });
+            if (count($validPathTimes) == 0)
+            {
+                throw new PieCrustException("No PieCrust configuration file is readable, or none exists: " . implode(', ', $this->paths));
+            }
+
+            // Compare the modification times of those configuration files with the
+            // cached JSON version.
             $cache = $this->cache ? new Cache($this->cache) : null;
-            if ($cache != null and $cache->isValid('config', 'json', $configTime))
+            if ($cache != null and $cache->isValid('config', 'json', $validPathTimes))
             {
                 $configText = $cache->read('config', 'json');
                 $this->config = json_decode($configText, true);
@@ -61,15 +84,34 @@ class PieCrustConfiguration extends Configuration
             }
             else
             {
+                $config = array();
+                foreach ($this->paths as $i => $path)
+                {
+                    try
+                    {
+                        $curConfig = Yaml::parse(file_get_contents($path));
+                        if ($curConfig != null) 
+                        {
+                            if ($this->fixupCallback != null)
+                            {
+                                $fixup = $this->fixupCallback;
+                                $fixup($i, $curConfig);
+                            }
+                            $config = self::mergeArrays($config, $curConfig);
+                        }
+                    }
+                    catch (Exception $e)
+                    {
+                        throw new PieCrustException("An error was found in the PieCrust configuration file '{$path}': " . $e->getMessage(), 0, $e);
+                    }
+                }
                 try
                 {
-                    $config = Yaml::parse(file_get_contents($this->path));
-                    if ($config == null) $config = array();
                     $this->config = $this->validateConfig($config);
                 }
                 catch (Exception $e)
                 {
-                    throw new PieCrustException('An error was found in the PieCrust configuration file: ' . $e->getMessage(), 0, $e);
+                    throw new PieCrustException("Error while validating PieCrust configuration: " . $e->getMessage(), 0, $e);
                 }
                 
                 $yamlMarkup = json_encode($this->config);
@@ -121,6 +163,7 @@ class PieCrustConfiguration extends Configuration
             array(
                 'title' => 'Untitled PieCrust Website',
                 'root' => null,
+                'theme_root' => null,
                 'default_format' => PieCrustDefaults::DEFAULT_FORMAT,
                 'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                 'enable_gzip' => false,
@@ -129,6 +172,7 @@ class PieCrustConfiguration extends Configuration
                 'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
+                'themes_sources' => array(PieCrustDefaults::DEFAULT_THEME_SOURCE),
                 'cache_time' => 28800,
                 'display_errors' => false,
                 'enable_debug_info' => true
@@ -153,6 +197,12 @@ class PieCrustConfiguration extends Configuration
         if (!in_array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE, $config['site']['plugins_sources']))
         {
             $config['site']['plugins_sources'][] = PieCrustDefaults::DEFAULT_PLUGIN_SOURCE;
+        }
+
+        // Validate the themes sources.
+        if (!in_array(PieCrustDefaults::DEFAULT_THEME_SOURCE, $config['site']['themes_sources']))
+        {
+            $config['site']['themes_sources'][] = PieCrustDefaults::DEFAULT_THEME_SOURCE;
         }
         
         // Validate multi-blogs settings.

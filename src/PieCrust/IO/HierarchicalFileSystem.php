@@ -12,20 +12,20 @@ use PieCrust\PieCrustException;
  */
 class HierarchicalFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $postsSubDir)
+    public function __construct($pagesDir, $postsDir)
     {
-        FileSystem::__construct($pieCrust, $postsSubDir);
+        FileSystem::__construct($pagesDir, $postsDir);
     }
     
     public function getPostFiles()
     {
-        if (!$this->pieCrust->getPostsDir())
+        if (!$this->postsDir)
             return array();
 
         $result = array();
         
         $years = array();
-        $yearsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
+        $yearsIterator = new DirectoryIterator($this->postsDir);
         foreach ($yearsIterator as $year)
         {
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
@@ -39,7 +39,7 @@ class HierarchicalFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $months = array();
-            $monthsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir . $year);
+            $monthsIterator = new DirectoryIterator($this->postsDir . $year);
             foreach ($monthsIterator as $month)
             {
                 if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
@@ -53,7 +53,7 @@ class HierarchicalFileSystem extends FileSystem
             foreach ($months as $month)
             {
                 $days = array();
-                $postsIterator = new DirectoryIterator($this->pieCrust->getPostsDir() . $this->postsSubDir . $year . '/' . $month);
+                $postsIterator = new DirectoryIterator($this->postsDir . $year . '/' . $month);
                 foreach ($postsIterator as $post)
                 {
                     if ($post->isDot() or $post->isDir())

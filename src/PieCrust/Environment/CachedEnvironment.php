@@ -112,6 +112,28 @@ class CachedEnvironment extends Environment
         {
             $fs = FileSystem::create($this->pieCrust, null);
             $this->pageInfos = $fs->getPageFiles();
+
+            if ($this->pieCrust->getThemeDir())
+            {
+                $fs = FileSystem::create($this->pieCrust, null, true);
+                $themePageInfos = $fs->getPageFiles();
+                foreach ($themePageInfos as $themePageInfo)
+                {
+                    $isOverridden = false;
+                    foreach ($this->pageInfos as $pageInfo)
+                    {
+                        if ($pageInfo['relative_path'] == $themePageInfo['relative_path'])
+                        {
+                            $isOverridden = true;
+                            break;
+                        }
+                    }
+                    if (!$isOverridden)
+                    {
+                        $this->pageInfos[] = $themePageInfo;
+                    }
+                }
+            }
         }
     }
 

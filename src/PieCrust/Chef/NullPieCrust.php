@@ -78,6 +78,16 @@ class NullPieCrust implements IPieCrust
     {
         throw new PieCrustException("The NullPieCrust application is read-only.");
     }
+
+    public function getThemeDir()
+    {
+        return false;
+    }
+
+    public function setThemeDir($dir)
+    {
+        throw new PieCrustException("The NullPieCrust application is read-only.");
+    }
     
     public function getCacheDir()
     {

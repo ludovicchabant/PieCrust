@@ -7,7 +7,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\Configuration;
-use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -333,7 +333,7 @@ class JekyllImporter extends ImporterBase
         $parsedContents = Configuration::parseHeader($contents);
         $text = substr($contents, $parsedContents['text_offset']);
 
-        $pieCrustRelative = PathHelper::getRelativePath($this->pieCrust, $outputPath);
+        $pieCrustRelative = PieCrustHelper::getRelativePath($this->pieCrust, $outputPath);
         $this->logger->debug(" -> {$pieCrustRelative}");
         if (!is_dir(dirname($outputPath)))
             mkdir(dirname($outputPath), 0755, true);
@@ -344,7 +344,7 @@ class JekyllImporter extends ImporterBase
     {
         $this->logger->debug("Converting {$relative}");
 
-        $pieCrustRelative = PathHelper::getRelativePath($this->pieCrust, $outputPath);
+        $pieCrustRelative = PieCrustHelper::getRelativePath($this->pieCrust, $outputPath);
         $this->logger->debug(" -> {$pieCrustRelative}");
         $this->modified[$pieCrustRelative] = array();
 

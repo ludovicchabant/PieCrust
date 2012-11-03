@@ -356,5 +356,39 @@ EOD
             file_get_contents($fs->url('kitchen/_counter/' . $fileName))
         );
     }
+
+    public function testBakeWithTheme()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withAsset('_content/templates/default.html', '{{content|raw}}')
+            ->withAsset('_content/pages/first-page.html', 'FIRST')
+            ->withAsset('_content/pages/second-page.html', 'SECOND (OVERRIDE)')
+            ->withAsset('_content/theme/_content/pages/second-page.html', 'SECOND')
+            ->withAsset('_content/theme/_content/pages/theme-page.html', 'THEME')
+            ->withAsset('normal.css', 'normal')
+            ->withAsset('extra.css', 'extra (override)')
+            ->withAsset('_content/theme/extra.css', 'extra')
+            ->withAsset('_content/theme/special.css', 'special')
+            ->withAsset('_content/theme/_content/config.yml', '');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $this->assertFileExists($fs->url('counter/first-page.html'));
+        $this->assertEquals('FIRST', file_get_contents($fs->url('counter/first-page.html')));
+        $this->assertFileExists($fs->url('counter/second-page.html'));
+        $this->assertEquals('SECOND (OVERRIDE)', file_get_contents($fs->url('counter/second-page.html')));
+        $this->assertFileExists($fs->url('counter/theme-page.html'));
+        $this->assertEquals('THEME', file_get_contents($fs->url('counter/theme-page.html')));
+        $this->assertFileExists($fs->url('counter/normal.css'));
+        $this->assertEquals('normal', file_get_contents($fs->url('counter/normal.css')));
+        $this->assertFileExists($fs->url('counter/extra.css'));
+        $this->assertEquals('extra (override)', file_get_contents($fs->url('counter/extra.css')));
+        $this->assertFileExists($fs->url('counter/special.css'));
+        $this->assertEquals('special', file_get_contents($fs->url('counter/special.css')));
+    }
 }
 

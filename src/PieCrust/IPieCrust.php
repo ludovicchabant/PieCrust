@@ -73,6 +73,16 @@ interface IPieCrust
      * Adds a directory that contains some user plugins.
      */
     public function addPluginsDir($dir);
+
+    /**
+     * Gets the directory that contains the current theme, if any.
+     */
+    public function getThemeDir();
+
+    /**
+     * Sets the directory that contains the current theme, if any.
+     */
+    public function setThemeDir($dir);
     
     /**
      * Gets the cache directory ('/_cache' by default).

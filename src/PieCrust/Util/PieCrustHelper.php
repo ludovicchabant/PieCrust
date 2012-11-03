@@ -2,8 +2,10 @@
 
 namespace PieCrust\Util;
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -11,6 +13,17 @@ use PieCrust\PieCrustException;
  */
 class PieCrustHelper
 {
+    /**
+     * Returns a path relative to a site's root directory.
+     */
+    public static function getRelativePath(IPieCrust $pieCrust, $path, $stripExtension = false)
+    {
+        $relativePath = PathHelper::getRelativePath($pieCrust->getRootDir(), $path);
+        if ($stripExtension)
+            $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+        return $relativePath;
+    }
+    
     /**
      * Formats a given text using the registered page formatters.
      * 
