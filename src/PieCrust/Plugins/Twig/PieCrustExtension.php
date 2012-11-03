@@ -66,7 +66,10 @@ class PieCrustExtension extends \Twig_Extension
             // Utils
             'nocache' => new Twig_Filter_Method($this, 'addNoCacheParameter'),
             'wordcount' => new Twig_Filter_Method($this, 'getWordCount'),
-            'striptag' => new Twig_Filter_Method($this, 'stripTag')
+            'stripoutertag' => new Twig_Filter_Method($this, 'stripOuterTag'),
+            'stripslash' => new Twig_Filter_Method($this, 'stripSlash'),
+            'titlecase' => new Twig_Filter_Method($this, 'titleCase'),
+            'xmldate' => new Twig_Filter_Method($this, 'toAtomDate')
         );
     }
     
@@ -145,7 +148,7 @@ class PieCrustExtension extends \Twig_Extension
         return count($words);
     }
 
-    public function stripTag($value, $tag = null)
+    public function stripOuterTag($value, $tag = null)
     {
         $tagPattern = '[a-z]+[a-z0-9]*';
         if ($tag != null)
@@ -156,6 +159,21 @@ class PieCrustExtension extends \Twig_Extension
         if (!preg_match($pattern, $value, $matches))
             return $value;
         return $matches[1];
+    }
+
+    public function stripSlash($value)
+    {
+        return rtrim($value, '/');
+    }
+
+    public function titleCase($value)
+    {
+        return ucwords($value);
+    }
+
+    public function toAtomDate($value)
+    {
+        return date(\DateTime::ATOM, $value);
     }
 }
 

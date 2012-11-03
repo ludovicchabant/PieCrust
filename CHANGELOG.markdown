@@ -17,8 +17,11 @@ Fresh changes
 
 * BREAKING CHANGE: Templates directories added with the `site/templates_dirs`
   settings are now searched _before_ the default `_content/templates` directory.
+* BREAKING CHANGE: Changed the Twig filter `striptag` to `stripoutertag` to
+  avoid confusion with the existing `striptags` filter.
 * IMPROVEMENT: The Windows bootstrap script can better search for the PHP
   executable.
+* NEW: Add new Twig filters: `stripslash`, `titlecase` and `xmldate`.
 * BUG: Fixed problems when running in XAMPP on Windows.
 * BUG: Fixed a bug with the `pagination` object which could generate
   double-slashes in navigation links.
