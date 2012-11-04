@@ -108,7 +108,7 @@ class PluginLoader
      */
     public function getRepositories()
     {
-        return $this->getPluginsComponents('getRepositories');
+        return $this->getPluginsComponents('getRepositories', true);
     }
 
     protected function ensureLoaded()

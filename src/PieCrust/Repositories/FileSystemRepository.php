@@ -15,6 +15,10 @@ use PieCrust\Util\PathHelper;
 class FileSystemRepository implements IRepository
 {
     // IRepository members {{{
+
+    public function initialize(IPieCrust $pieCrust)
+    {
+    }
     
     public function supportsSource($source)
     {
