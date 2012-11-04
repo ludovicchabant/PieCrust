@@ -74,7 +74,8 @@ class BuiltinPlugin extends PieCrustPlugin
     public function getRepositories()
     {
         return array(
-            new \PieCrust\Repositories\BitBucketRepository()
+            new \PieCrust\Repositories\BitBucketRepository(),
+            new \PieCrust\Repositories\FileSystemRepository()
         );
     }
 }
