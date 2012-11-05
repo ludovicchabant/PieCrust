@@ -20,7 +20,7 @@ class ThemeInstallContext extends InstallContext
 
     public function getLocalThemeDir($autoCreate = true)
     {
-        $dir = $this->pieCrust->getRootDir() . PieCrustDefaults::CONTENT_THEMES_DIR;
+        $dir = $this->pieCrust->getRootDir() . PieCrustDefaults::CONTENT_THEME_DIR;
         if (!is_dir($dir) && $autoCreate)
         {
             mkdir($dir, 0755, true);

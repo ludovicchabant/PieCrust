@@ -74,7 +74,8 @@ class FileSystemRepository implements IRepository
             $defaultInfo = array(
                 'name' => $subDir->getFilename(),
                 'description' => '',
-                'dir' => $subDir->getPathname()
+                'dir' => $subDir->getPathname(),
+                'source' => $subDir->getPathname()
             );
 
             $infoPath = $subDir->getPathname() . DIRECTORY_SEPARATOR . $infoFilename;

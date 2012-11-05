@@ -9,6 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
+use PieCrust\Repositories\ThemeInstallContext;
 use PieCrust\Util\PieCrustHelper;
 
 
