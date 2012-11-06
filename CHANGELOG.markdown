@@ -19,9 +19,15 @@ Fresh changes
   settings are now searched _before_ the default `_content/templates` directory.
 * BREAKING CHANGE: Changed the Twig filter `striptag` to `stripoutertag` to
   avoid confusion with the existing `striptags` filter.
+* BREAKING CHANGE: The `paginator` object now returns full URLs for `next_page`,
+  `this_page` and `prev_page`. To prevent most cases of broken links after
+  updating to the latest PieCrust, see the first "improvement" below.
 * NEW: Added support for themes.
 * NEW: Added file-system based repository for plugins and themes.
 * NEW: Add new Twig filters: `stripslash`, `titlecase` and `xmldate`.
+* IMPROVEMENT: The `pcurl()` family of Twig functions won't do anything if a
+  given URL is already absolute. This prevents errors where the site's root is
+  added twice to an URL.
 * IMPROVEMENT: The BitBucket repository now caches web requests for an hour.
 * IMPROVEMENT: The Windows bootstrap script can better search for the PHP
   executable.
