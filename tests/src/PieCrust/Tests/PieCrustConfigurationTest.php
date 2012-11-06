@@ -148,4 +148,77 @@ class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
             $app->getTemplatesDirs()
         );
     }
+
+    public function templateDirectoriesWithTemeDataProvider()
+    {
+        return array(
+            array(
+                null,
+                null,
+                array('kitchen/_content/templates/')
+            ),
+            array(
+                null,
+                array('_content/layouts'),
+                array(
+                    'kitchen/_content/theme/_content/layouts/',
+                    'kitchen/_content/templates/'
+                )
+            ),
+            array(
+                array('_content/special'),
+                array('_content/layouts'),
+                array(
+                    'kitchen/_content/special/',
+                    'kitchen/_content/theme/_content/layouts/',
+                    'kitchen/_content/templates/'
+                )
+            )
+        );
+    }
+
+    /**
+     * @dataProvider templateDirectoriesWithTemeDataProvider
+     */
+    public function testTemplateDirectoriesWithTheme($config, $themeConfig, $expectedDirs)
+    {
+        if ($config != null)
+        {
+            $config = array('site' => array(
+                'templates_dirs' => $config
+            ));
+        }
+        else
+        {
+            $config = array();
+        }
+
+        if ($themeConfig != null)
+        {
+            $themeConfig = array('site' => array(
+                'templates_dirs' => $themeConfig
+            ));
+        }
+        else
+        {
+            $themeConfig = array();
+        }
+
+        $fs = MockFileSystem::create()
+            ->withTemplatesDir()
+            ->withConfig($config)
+            ->withThemeConfig($themeConfig);
+        $app = $fs->getApp();
+
+        foreach ($expectedDirs as &$dir)
+        {
+            $dir = $fs->url($dir);
+            if (!is_dir($dir))
+                mkdir($dir);
+        }
+        $this->assertEquals(
+            $expectedDirs,
+            $app->getTemplatesDirs()
+        );
+    }
 }

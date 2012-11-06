@@ -104,9 +104,18 @@ class MockFileSystem
 
     public function withConfig(array $config)
     {
-        $configPath = $this->url('kitchen/_content/config.yml');
-        file_put_contents($configPath, Yaml::dump($config));
-        return $this;
+        return $this->withFile(
+            'kitchen/_content/config.yml',
+            Yaml::dump($config)
+        );
+    }
+
+    public function withThemeConfig(array $config)
+    {
+        return $this->withFile(
+            'kitchen/_content/theme/_content/theme_config.yml',
+            Yaml::dump($config)
+        );
     }
 
     public function withPage($url, $config = array(), $contents = 'A test page.')

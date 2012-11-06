@@ -355,7 +355,7 @@ class Configuration implements \ArrayAccess, \Iterator
         {
             if (is_int($key))
             {
-                $first[] = $value;
+                array_unshift($first, $value);
             }
             else // string key
             {
