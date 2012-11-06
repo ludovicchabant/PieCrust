@@ -115,6 +115,13 @@ class PieCrustHelper
      */
     public static function formatUri(IPieCrust $pieCrust, $uri)
     {
+        if (strlen($uri) > 0 and
+            ($uri[0] == '/' or preg_match(',[a-zA-Z]+://,', $uri)))
+        {
+            // Don't do anything if the URI is already absolute.
+            return $uri;
+        }
+
         // Get the URI format for the current app. There's a couple weird ones
         // that should be used only if the URI to format doesn't have an extension
         // specified.
