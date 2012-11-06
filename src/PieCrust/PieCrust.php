@@ -357,17 +357,16 @@ class PieCrust implements IPieCrust
                 $this->config->setFixup(function ($i, &$c) use ($relativeThemeDir) {
                     if ($i == 0)
                     {
-                        if (!isset($c['site'])) return;
-                        if (!isset($c['site']['templates_dirs'])) return;
+                        if (!isset($c['site']))
+                            return;
+                        if (!isset($c['site']['templates_dirs']))
+                            return;
+                        if (!is_array($c['site']['templates_dirs']))
+                            $c['site']['templates_dirs'] = array($c['site']['templates_dirs']);
                         foreach ($c['site']['templates_dirs'] as &$dir)
                         {
                             $dir = $relativeThemeDir . $dir;
                         }
-                    }
-                    else
-                    {
-                        //$c['site']['theme_root'] = str_replace('\\', '/', $relativeThemeDir);
-                        $c['site']['theme_root'] = '_theme/';
                     }
                 });
             }
