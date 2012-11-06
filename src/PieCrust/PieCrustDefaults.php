@@ -30,6 +30,7 @@ class PieCrustDefaults
      */
     const CONTENT_DIR = '_content/';
     const CONFIG_PATH = '_content/config.yml';
+    const THEME_CONFIG_PATH = '_content/theme_config.yml';
     const CONTENT_TEMPLATES_DIR = '_content/templates/';
     const CONTENT_PAGES_DIR = '_content/pages/';
     const CONTENT_POSTS_DIR = '_content/posts/';

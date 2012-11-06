@@ -439,7 +439,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
     {
         $fs = MockFileSystem::create()
             ->withAsset('normal-styles.css', ".rule { color: blue; }")
-            ->withAsset('_content/theme/_content/config.yml', '')
+            ->withAsset('_content/theme/_content/theme_config.yml', '')
             ->withAsset('_content/theme/theme-styles.css', ".other { color: black; }");
 
         $app = $fs->getApp();
@@ -462,7 +462,7 @@ class DirectoryBakerTest extends PHPUnit_Framework_TestCase
         $fs = MockFileSystem::create()
             ->withAsset('normal-styles.css', ".rule { color: blue; }")
             ->withAsset('extra-styles.css', ".override { color: white; }")
-            ->withAsset('_content/theme/_content/config.yml', '')
+            ->withAsset('_content/theme/_content/theme_config.yml', '')
             ->withAsset('_content/theme/extra-styles.css', ".other { color: black; }");
 
         $app = $fs->getApp();

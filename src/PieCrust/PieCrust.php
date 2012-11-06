@@ -345,7 +345,7 @@ class PieCrust implements IPieCrust
             $configPaths = array();
             $themeDir = $this->getThemeDir();
             if ($themeDir !== false)
-                $configPaths[] = $themeDir . PieCrustDefaults::CONFIG_PATH;
+                $configPaths[] = $themeDir . PieCrustDefaults::THEME_CONFIG_PATH;
             $configPaths[] = $this->rootDir . PieCrustDefaults::CONFIG_PATH;
 
             $this->config = new PieCrustConfiguration($configPaths, $configCache);

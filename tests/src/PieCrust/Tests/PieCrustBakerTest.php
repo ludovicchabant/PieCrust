@@ -370,7 +370,7 @@ EOD
             ->withAsset('extra.css', 'extra (override)')
             ->withAsset('_content/theme/extra.css', 'extra')
             ->withAsset('_content/theme/special.css', 'special')
-            ->withAsset('_content/theme/_content/config.yml', '');
+            ->withAsset('_content/theme/_content/theme_config.yml', '');
 
         $app = $fs->getApp();
         $baker = new PieCrustBaker($app);
