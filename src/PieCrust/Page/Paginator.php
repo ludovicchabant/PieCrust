@@ -7,6 +7,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -116,7 +117,7 @@ class Paginator
      */
     public function this_page()
     {
-        return $this->page($this->page->getPageNumber());
+        return $this->getSubPageUri($this->page->getPageNumber());
     }
    
     /**
@@ -342,6 +343,6 @@ class Paginator
                 $uri .= '/';
             $uri .= $index;
         }
-        return $uri;
+        return PieCrustHelper::formatUri($this->page->getApp(), $uri);
     }
 }

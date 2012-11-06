@@ -37,7 +37,11 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
      */
     public function testPaginator($uri, $pageNumber, $postCount)
     {
+        $siteRoot = 'http://example.org/';
+
         $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('site/root', $siteRoot);
+        $pc->getConfig()->setValue('site/pretty_urls', true);
         $pc->getConfig()->setValue('blog/posts_per_page', 5);
         $pc->getConfig()->setValue('blog/date_format', 'F j, Y');
         
@@ -54,30 +58,70 @@ class PaginatorTest extends PHPUnit_Framework_TestCase
         if ($postCount <= 5)
         {
             // All posts fit on the page.
+            $this->assertNull($paginator->prev_page_number());
             $this->assertNull($paginator->prev_page());
-            $this->assertEquals($uri, $paginator->this_page());
+
+            $this->assertEquals(1, $paginator->this_page_number());
+            $this->assertEquals($siteRoot . $uri, $paginator->this_page());
+
+            $this->assertNull($paginator->next_page_number());
             $this->assertNull($paginator->next_page());
         }
         else if ($pageNumber <= 1)
         {
             // Lots of posts, but this is the first page.
+            $this->assertNull($paginator->prev_page_number());
             $this->assertNull($paginator->prev_page());
-            $this->assertEquals($uri, $paginator->this_page());
-            $this->assertEquals($uri == '' ? '2' : ($uri . '/2'), $paginator->next_page());
+
+            $this->assertEquals(1, $paginator->this_page_number());
+            $this->assertEquals($siteRoot . $uri, $paginator->this_page());
+
+            $this->assertEquals(2, $paginator->next_page_number());
+            $this->assertEquals(
+                $siteRoot . ($uri == '' ? '2' : ($uri . '/2')),
+                $paginator->next_page()
+            );
         }
         else if ($pageNumber * 5 > $postCount)
         {
             // Lots of posts, and this is a page somewhere in the middle, or
             // the last page.
-            if ($pageNumber > 2)
-                $this->assertEquals($uri == '' ? (string)($pageNumber - 1) : ($uri . '/' . ($pageNumber - 1)), $paginator->prev_page());
+            if ($pageNumber >= 2)
+            {
+                $this->assertEquals($pageNumber - 1, $paginator->prev_page_number());
+
+                $prevPage = $uri == '' ? 
+                    (string)($pageNumber - 1) : 
+                    ($uri . '/' . ($pageNumber - 1));
+                if ($pageNumber - 1 <= 1)
+                    $prevPage = $uri;
+                $this->assertEquals($siteRoot . $prevPage, $paginator->prev_page());
+            }
             else
-                $this->assertEquals($uri, $paginator->prev_page());
-            $this->assertEquals($uri == '' ? (string)$pageNumber : ($uri . '/' . $pageNumber), $paginator->this_page());
+            {
+                $this->assertNull($paginator->prev_page_number());
+                $this->assertNull($paginator->prev_page());
+            }
+
+            $this->assertEquals($pageNumber, $paginator->this_page_number());
+            $this->assertEquals(
+                $siteRoot . ($uri == '' ? (string)$pageNumber : ($uri . '/' . $pageNumber)), 
+                $paginator->this_page()
+            );
+
             if ($pageNumber * 5 > $postCount)
+            {
+                $this->assertNull($paginator->next_page_number());
                 $this->assertNull($paginator->next_page());
+            }
             else
-                $this->assertEquals($uri == '' ? (string)($pageNumber + 1) : ($uri . '/' . ($pageNumber + 1)), $paginator->next_page());
+            {
+                $this->assertEquals($pageNumber + 1, $paginator->next_page_number());
+                $this->assertEquals(
+                    $siteRoot . ($uri == '' ? (string)($pageNumber + 1) : ($uri . '/' . ($pageNumber + 1))),
+                    $paginator->next_page()
+                );
+            }
         }
         
         $expectedCount = $postCount;
