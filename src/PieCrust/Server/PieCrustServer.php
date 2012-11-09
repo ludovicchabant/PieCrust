@@ -42,6 +42,7 @@ class PieCrustServer
         $this->options = array_merge(
             array(
                 'port' => 8080,
+                'address' => 'localhost',
                 'mime_types' => array('less' => 'text/css'),
                 'log_file' => null,
                 'debug' => false,
@@ -249,7 +250,7 @@ class PieCrustServer
         PathHelper::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
-        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);
+        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port'], $this->options['address']);
         if ($this->options['log_file'])
         {
             $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));

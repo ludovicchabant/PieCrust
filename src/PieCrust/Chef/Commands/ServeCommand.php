@@ -36,6 +36,13 @@ class ServeCommand extends ChefCommand
             'default'     => 8080,
             'help_name'   => 'PORT'
         ));
+        $serverParser->addOption('address', array(
+            'short_name'  => '-a',
+            'long_name'   => '--address',
+            'description' => "Sets the address for the server.",
+            'default'     => 'localhost',
+            'help_name'   => 'PORT'
+        ));
         $serverParser->addOption('log_file', array(
             'short_name'  => '-l',
             'long_name'   => '--log',
@@ -66,6 +73,7 @@ class ServeCommand extends ChefCommand
 
         $rootDir = $context->getApp()->getRootDir();
         $port = intval($result->command->options['port']);
+        $address = $result->command->options['address'];
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
         $debug = $result->command->options['debug'];
@@ -75,6 +83,7 @@ class ServeCommand extends ChefCommand
         $server = new PieCrustServer($rootDir,
             array(
                 'port' => $port,
+                'address' => $address,
                 'log_file' => $logFile,
                 'debug' => $debug,
                 'cache' => !$nocache
