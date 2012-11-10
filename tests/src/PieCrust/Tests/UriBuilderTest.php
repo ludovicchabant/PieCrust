@@ -33,5 +33,43 @@ class UriBuilderTest extends PHPUnit_Framework_TestCase
         $uri = UriBuilder::buildUri($relativePath, $stripExtension, $stripIndex);
         $this->assertEquals($expectedUri, $uri);
     }
+
+    public function buildTagUriDataProvider()
+    {
+        return array(
+            array('foo', '/foo'),
+            array(array('foo', 'bar'), '/foo/bar'),
+            array('foo bar', '/foo-bar'),
+            array('f o o   b a r', '/f-o-o-b-a-r'),
+            array(array('f o o', 'b a r'), '/f-o-o/b-a-r'),
+        );
+    }
+
+    /**
+     * @dataProvider buildTagUriDataProvider
+     */
+    public function testBuildTagUri($tag, $expectedUri)
+    {
+        $uri = UriBuilder::buildTagUri('/%tag%', $tag);
+        $this->assertEquals($expectedUri, $uri);
+    }
+
+    public function buildCategoryUriDataProvider()
+    {
+        return array(
+            array('foo', '/foo'),
+            array('foo bar', '/foo-bar'),
+            array('f o o   b a r', '/f-o-o-b-a-r')
+        );
+    }
+
+    /**
+     * @dataProvider buildCategoryUriDataProvider
+     */
+    public function testBuildCategoryUri($category, $expectedUri)
+    {
+        $uri = UriBuilder::buildCategoryUri('/%category%', $category);
+        $this->assertEquals($expectedUri, $uri);
+    }
 }
 
