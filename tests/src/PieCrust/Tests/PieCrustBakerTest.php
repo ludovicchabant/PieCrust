@@ -45,6 +45,9 @@ EOD;
         $fs->withTemplate(
             'post',
             $templateContents);
+        $fs->withTemplate(
+            'default',
+            '');
         $fs->withPage(
             'foo',
             array('layout' => 'none', 'format' => 'none'),
@@ -389,6 +392,76 @@ EOD
         $this->assertEquals('extra (override)', file_get_contents($fs->url('counter/extra.css')));
         $this->assertFileExists($fs->url('counter/special.css'));
         $this->assertEquals('special', file_get_contents($fs->url('counter/special.css')));
+    }
+
+    public function testBakeTagPages()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('post', '{{content|raw}}')
+            ->withPage(
+                '_tag', 
+                array('layout' => 'none'),
+                <<<EOD
+{% for post in pagination.posts %}
+{{ post.content|raw }}
+{% endfor %}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2010, array('tags' => array('foo')), 'POST ONE')
+            ->withPost('post2', 2, 1, 2010, array('tags' => array('foo')), 'POST TWO')
+            ->withPost('post3', 3, 1, 2010, array('tags' => array('bar')), 'POST THREE')
+            ->withPost('post4', 4, 1, 2010, array('tags' => array('bar')), 'POST FOUR')
+            ->withPost('post5', 5, 1, 2010, array('tags' => array('foo', 'bar')), 'POST FIVE');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $this->assertEquals(
+            "POST FIVE\nPOST TWO\nPOST ONE\n", 
+            file_get_contents($fs->url('counter/tag/foo.html'))
+        );
+        $this->assertEquals(
+            "POST FIVE\nPOST FOUR\nPOST THREE\n", 
+            file_get_contents($fs->url('counter/tag/bar.html'))
+        );
+    }
+
+    public function testBakeCategoryPage()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('post', '{{content|raw}}')
+            ->withPage(
+                '_category', 
+                array('layout' => 'none'),
+                <<<EOD
+{% for post in pagination.posts %}
+{{ post.content|raw }}
+{% endfor %}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2010, array('category' => 'foo'), 'POST ONE')
+            ->withPost('post2', 2, 1, 2010, array('category' => 'foo'), 'POST TWO')
+            ->withPost('post3', 3, 1, 2010, array('category' => 'bar'), 'POST THREE')
+            ->withPost('post4', 4, 1, 2010, array('category' => 'bar'), 'POST FOUR')
+            ->withPost('post5', 5, 1, 2010, array('category' => 'foo'), 'POST FIVE');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $this->assertEquals(
+            "POST FIVE\nPOST TWO\nPOST ONE\n", 
+            file_get_contents($fs->url('counter/foo.html'))
+        );
+        $this->assertEquals(
+            "POST FOUR\nPOST THREE\n", 
+            file_get_contents($fs->url('counter/bar.html'))
+        );
     }
 }
 
