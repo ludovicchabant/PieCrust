@@ -10,6 +10,7 @@ class PieCrustBakerTest extends PHPUnit_Framework_TestCase
     public function testPostsWithOverridenDates()
     {
         $fs = MockFileSystem::create();
+        $fs->withTemplate('default', '');
         $fs->withTemplate(
             'post',
             '/{{ page.date }}/ {{ content }}'
@@ -109,6 +110,7 @@ EOD;
 EOD;
 
         $fs = MockFileSystem::create();
+        $fs->withTemplate('default', '');
         $fs->withPage(
             'foo',
             array('layout' => 'none', 'format' => 'none'),
@@ -158,6 +160,7 @@ EOD;
 EOD;
 
         $fs = MockFileSystem::create();
+        $fs->withTemplate('default', '');
         $fs->withPage(
             'foo',
             array('layout' => 'none', 'format' => 'none'),
@@ -224,6 +227,7 @@ Blah: {{ pcurl('something/blah') }}
 EOD;
 
         $fs = MockFileSystem::create();
+        $fs->withTemplate('default', '');
         $fs->withPage(
             'something/blah',
             array('layout' => 'none', 'format' => 'none'),
@@ -317,6 +321,7 @@ EOD
     public function testUrlFormats($prettyUrls, $trailingSlash, $expectedContents)
     {
         $fs = MockFileSystem::create();
+        $fs->withTemplate('default', '');
         $fs->withPage(
             'test_page',
             array('layout' => 'none', 'format' => 'none'),
@@ -398,6 +403,7 @@ EOD
     {
         $fs = MockFileSystem::create()
             ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('default', '')
             ->withTemplate('post', '{{content|raw}}')
             ->withPage(
                 '_tag', 
@@ -433,6 +439,7 @@ EOD
     {
         $fs = MockFileSystem::create()
             ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('default', '')
             ->withTemplate('post', '{{content|raw}}')
             ->withPage(
                 '_category', 

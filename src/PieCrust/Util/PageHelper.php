@@ -21,7 +21,7 @@ class PageHelper
     {
         $basePath = null;
         $themeDir = $page->getApp()->getThemeDir();
-        if ($themeDir and strncmp($page->getPath(), $themeDir, strlen($themeDir)))
+        if ($themeDir and strncmp($page->getPath(), $themeDir, strlen($themeDir)) == 0)
         {
             // This is a theme page.
             switch ($page->getPageType())
@@ -37,6 +37,11 @@ class PageHelper
                 default:
                     throw new InvalidArgumentException("Unknown page type given: " . $page->getPageType());
             }
+        }
+        else if (strncmp($page->getPath(), PieCrustDefaults::RES_DIR(), strlen(PieCrustDefaults::RES_DIR())) == 0)
+        {
+            // This is a `res` page.
+            $basePath = PieCrustDefaults::RES_DIR() . 'pages/';
         }
         else
         {
