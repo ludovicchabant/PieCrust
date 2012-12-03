@@ -55,4 +55,12 @@ class PieCrustDefaults
      */
     const DEFAULT_PLUGIN_SOURCE = 'http://bitbucket.org/ludovicchabant/';
     const DEFAULT_THEME_SOURCE = 'http://bitbucket.org/ludovicchabant/';
+
+    /**
+     * The application's resources directory.
+     */
+    public static function RES_DIR()
+    {
+        return dirname(dirname(__DIR__)) . '/res/';
+    }
 }

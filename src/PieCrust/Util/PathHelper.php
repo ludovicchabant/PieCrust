@@ -141,8 +141,7 @@ class PathHelper
             }
         }
 
-        $resDir = dirname(dirname(PieCrustDefaults::APP_DIR)) . '/res/';
-        $path = $resDir . 'pages/' . $relativePath;
+        $path = PieCrustDefaults::RES_DIR() . 'pages/' . $relativePath;
         if (is_file($path))
         {
             return $path;
