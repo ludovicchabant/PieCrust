@@ -21,6 +21,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 0.9.1 (2012-12-04)
+
+* BREAKING CHANGE: Removed buggy `lastmod` options for the sitemap processor.
+  There's now just `now` or a hard-coded date.
+
 ### 0.9.0 (2012-12-03)
 
 * BREAKING CHANGE: Templates directories added with the `site/templates_dirs`

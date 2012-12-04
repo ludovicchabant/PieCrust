@@ -19,6 +19,8 @@ class SitemapProcessor extends SimpleFileProcessor
         $sitemap = Yaml::parse(file_get_contents($inputPath));
         if (!isset($sitemap['locations']))
             throw new PieCrustException("No locations were defined in the sitemap.");
+
+        $rootUrl = $this->pieCrust->getConfig()->getValueUnchecked('site/root');
         
         $xml = new \XMLWriter();
         $xml->openMemory();
@@ -31,47 +33,33 @@ class SitemapProcessor extends SimpleFileProcessor
             $xml->startElement('url');
             {
                 // loc
-                $locUrl = $this->pieCrust->getConfig()->getValueUnchecked('site/root') . ltrim($loc['url'], '/');
+                $locUrl = $rootUrl . ltrim($loc['url'], '/');
                 $xml->writeElement('loc', $locUrl);
                 
                 // lastmod
-                $locLastMod = null;
+                $locLastModType = 'now';
                 if (isset($loc['lastmod']))
                 {
-                    $locLastMod = $loc['lastmod'];
+                    $locLastModType = $loc['lastmod'];
                 }
-                else if (isset($loc['lastmod_path']))
+
+                $locLastMod = $locLastModType;
+                if ($locLastModType == 'now')
                 {
-                    $fullPath = $this->pieCrust->getRootDir() . ltrim($loc['lastmod_path'], '/\\');
-                    $locLastMod = date('c', filemtime($fullPath));
-                }
-                else
-                {
-                    $urlInfo = UriParser::parseUri($this->pieCrust, $loc['url']);
-                    if ($urlInfo)
-                    {
-                        if (is_file($urlInfo['path']))
-                        {
-                            $locLastMod = date('c', filemtime($urlInfo['path']));
-                        }
-                    }
-                }
-                if (!$locLastMod)
-                {
-                    throw new PieCrustException("No idea what '".$loc['url']."' is. Please specify a 'lastmod' time, or 'lastmod_path' path.");
+                    $locLastMod = date('c');
                 }
                 $xml->writeElement('lastmod', $locLastMod);
                 
                 // changefreq
                 if (isset($loc['changefreq']))
                 {
-                    $xml->writeAttribute('changefreq', $loc['changefreq']);
+                    $xml->writeElement('changefreq', $loc['changefreq']);
                 }
                 
                 // priority
                 if (isset($loc['priority']))
                 {
-                    $xml->writeAttribute('priority', $loc['priority']);
+                    $xml->writeElement('priority', $loc['priority']);
                 }
             }
             $xml->endElement();
