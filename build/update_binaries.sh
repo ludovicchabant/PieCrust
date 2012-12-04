@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -7,7 +7,7 @@ EXE_DIR=`pwd`
 CLONE_DIR=$EXE_DIR/piecrust-src
 OUT_DIR=$EXE_DIR/piecrust-bin
 BUILD_SCRIPT=build/compile.php
-REPO_URL=https://bitbucket.org/ludovicchabant/piecrust
+REPO_URL="$EXE_DIR"
 PHAR_FILE=piecrust.phar
 VERSION_FILE=version
 BUILDLOG_FILE=buildlog
@@ -17,16 +17,23 @@ LASTVERSION_FILE=lastversion
 # Display help/usage?
 if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     echo "Usage: "
-    echo "  $0 <output_dir>"
+    echo "  $0 [out_dir] [tmp_dir]"
     echo ""
-    echo "This will create/update the PieCrust binaries for each known version in <output_dir>."
-    echo "Note that the repository will be cloned at: $CLONE_DIR"
+    echo "This will create/update the PieCrust binaries for each known version in <out_dir>."
+    echo "A clone of the current repository will be created in <tmp_dir>."
+    echo ""
+    echo "Default values:"
+    echo "  <out_dir>   $OUT_DIR"
+    echo "  <tmp_dir>   $CLONE_DIR"
     exit 1
 fi
 
 # Get arguments.
 if [ "$1" != "" ]; then
     OUT_DIR=$1
+fi
+if [ "$2" != "" ]; then
+    CLONE_DIR=$2
 fi
 
 # Clone the PieCrust source if needed.
@@ -43,6 +50,8 @@ fi
 # We'll do everything from the cloned repository, so we can run Mercurial commands directly.
 cd "$CLONE_DIR"
 
+# Bring the clone up to date.
+hg pull $REPO_URL -u
 
 # Create binaries for default and stable branches.
 BuildHeadBinary() {
