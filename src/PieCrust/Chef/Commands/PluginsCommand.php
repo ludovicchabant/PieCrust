@@ -8,9 +8,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
-use PieCrust\Repositories\BitBucketRepository;
 use PieCrust\Repositories\PluginInstallContext;
-use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 
 

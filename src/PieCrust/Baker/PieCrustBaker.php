@@ -123,6 +123,7 @@ class PieCrustBaker
                 'config_variant' => null,
                 'copy_assets' => true,
                 'processors' => '*',
+                'mounts' => array(),
                 'skip_patterns' => array(),
                 'force_patterns' => array(),
                 'tag_combinations' => array()
@@ -234,9 +235,10 @@ class PieCrustBaker
             $this->getBakeDir(),
             array(
                 'smart' => $this->parameters['smart'],
+                'mounts' => $this->parameters['mounts'],
+                'processors' => $this->parameters['processors'],
                 'skip_patterns' => $this->parameters['skip_patterns'],
-                'force_patterns' => $this->parameters['force_patterns'],
-                'processors' => $this->parameters['processors']
+                'force_patterns' => $this->parameters['force_patterns']
             ),
             $this->logger
         );
@@ -314,8 +316,6 @@ class PieCrustBaker
     {
         if ($this->bakeRecord == null)
             throw new PieCrustException("Can't bake pages without a bake-record active.");
-        if (!$this->hasPages())
-            return;
 
         $pages = PageHelper::getPages($this->pieCrust);
         foreach ($pages as $page)
@@ -351,8 +351,6 @@ class PieCrustBaker
     {
         if ($this->bakeRecord == null)
             throw new PieCrustException("Can't bake posts without a bake-record active.");
-        if (!$this->hasPosts())
-            return;
 
         $blogKeys = $this->pieCrust->getConfig()->getValue('site/blogs');
         foreach ($blogKeys as $blogKey)
@@ -389,8 +387,6 @@ class PieCrustBaker
     {
         if ($this->bakeRecord == null)
             throw new PieCrustException("Can't bake tags without a bake-record active.");
-        if (!$this->hasPages() or !$this->hasPosts())
-            return;
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
@@ -399,8 +395,10 @@ class PieCrustBaker
             $prefix = '';
             if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
-            $tagPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-            if (!is_file($tagPagePath))
+
+            $tagPageName = $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
+            $tagPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $tagPageName);
+            if ($tagPagePath === false)
                 continue;
             
             // Get single and multi tags to bake.
@@ -476,19 +474,18 @@ class PieCrustBaker
     {
         if ($this->bakeRecord == null)
             throw new PieCrustException("Can't bake categories without a bake-record active.");
-        if (!$this->hasPages() or !$this->hasPosts())
-            return;
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
-        $pageRepository = $this->pieCrust->getEnvironment()->getPageRepository();
         foreach ($blogKeys as $blogKey)
         {
             // Check that there is a category listing page to bake.
             $prefix = '';
             if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
-            $categoryPagePath = $this->pieCrust->getPagesDir() . $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-            if (!is_file($categoryPagePath))
+
+            $categoryPageName = $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $categoryPageName);
+            if ($categoryPagePath === false)
                 continue;
 
             // Order categories so it looks nicer when we bake.
@@ -496,23 +493,27 @@ class PieCrustBaker
             sort($categoriesToBake);
 
             // Bake!
+            $pageRepository = $this->pieCrust->getEnvironment()->getPageRepository();
             foreach ($categoriesToBake as $category)
             {
                 $start = microtime(true);
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
-                $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
-                $page = $pageRepository->getOrCreatePage(
-                    $uri, 
-                    $categoryPagePath,
-                    IPage::TYPE_CATEGORY,
-                    $blogKey,
-                    $category
-                );
-                $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
-                $baker->bake($page, $postInfos);
+                if (count($postInfos) > 0)
+                {
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
+                    $page = $pageRepository->getOrCreatePage(
+                        $uri, 
+                        $categoryPagePath,
+                        IPage::TYPE_CATEGORY,
+                        $blogKey,
+                        $category
+                    );
+                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker->bake($page);
 
-                $pageCount = $baker->getPageCount();
-                $this->logger->info(self::formatTimed($start, 'cat:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $pageCount = $baker->getPageCount();
+                    $this->logger->info(self::formatTimed($start, 'category:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                }
             }
         }
     }

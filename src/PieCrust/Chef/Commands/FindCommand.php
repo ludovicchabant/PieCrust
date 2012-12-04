@@ -11,6 +11,7 @@ use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 class FindCommand extends ChefCommand
@@ -167,7 +168,7 @@ class FindCommand extends ChefCommand
 
             $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $page->getPath());
             if (!$fullPath)
-                $path = PathHelper::getRelativePath($pieCrust, $path);
+                $path = PieCrustHelper::getRelativePath($pieCrust, $path);
 
             if ($returnComponents)
             {
@@ -221,7 +222,7 @@ class FindCommand extends ChefCommand
                     if ($it->isDot())
                         continue;
 
-                    $relativePath = PathHelper::getRelativePath($pieCrust, $path->getPathname());
+                    $relativePath = PieCrustHelper::getRelativePath($pieCrust, $path->getPathname());
 
                     if ($exact)
                     {

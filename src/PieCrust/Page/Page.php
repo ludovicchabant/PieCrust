@@ -9,7 +9,7 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Data\DataBuilder;
 use PieCrust\IO\Cache;
-use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriParser;
 use PieCrust\Util\UriBuilder;
 
@@ -385,7 +385,7 @@ class Page implements IPage
         if (!is_file($path))
             throw new InvalidArgumentException("The given path does not exist: " . $path);
         
-        $relativePath = PathHelper::getRelativePath($pieCrust, $path, $pageType);
+        $relativePath = PieCrustHelper::getRelativePath($pieCrust, $path, true);
         $uri = UriBuilder::buildUri($relativePath);
         return new Page(
                 $pieCrust,

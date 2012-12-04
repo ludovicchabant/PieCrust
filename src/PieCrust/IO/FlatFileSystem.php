@@ -12,18 +12,18 @@ use PieCrust\PieCrustException;
  */
 class FlatFileSystem extends FileSystem
 {
-    public function __construct(IPieCrust $pieCrust, $postsSubDir)
+    public function __construct($pagesDir, $postsDir)
     {
-        FileSystem::__construct($pieCrust, $postsSubDir);
+        FileSystem::__construct($pagesDir, $postsDir);
     }
     
     public function getPostFiles()
     {
-        if (!$this->pieCrust->getPostsDir())
+        if (!$this->postsDir)
             return array();
 
         $paths = array();
-        $pathsIterator = new FilesystemIterator($this->pieCrust->getPostsDir() . $this->postsSubDir);
+        $pathsIterator = new FilesystemIterator($this->postsDir);
         foreach ($pathsIterator as $p)
         {
             $extension = pathinfo($p->getFilename(), PATHINFO_EXTENSION);

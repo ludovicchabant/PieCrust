@@ -6,18 +6,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ site.title }}{% if page.title %} &mdash; {{ page.title }}{% endif %}</title>
   <link rel="stylesheet" type="text/css" href="{{ site.root }}css/simple.css" />
-  <link rel="stylesheet" href="http://basehold.it/31/ff0000">
+  <!--link rel="stylesheet" href="http://basehold.it/31/ff0000"-->
 </head>
 <body>
   <div id="container">
     <header>
         {% block header %}
+        {% if page.title %}
         <p class="site-title"><a href="{{ site.root }}">{{ site.title }}</a></p>
+        {% else %}
+        <h1><a href="{{ site.root }}">{{ site.title }}</a></h1>
+        {% endif %}
         {% endblock %}
     </header>
     <section id="main" role="main">
         {% block main %}
-        {% if page.title %}<h1 class="post-title">{{ page.title }}</h1>{% endif %}
+        {% if page.title %}
+        <h1 class="page-title">{{ page.title }}</h1>
+        {% endif %}
+
         {{ content|raw }}
         {% endblock %}
     </section>

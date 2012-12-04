@@ -7,6 +7,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Util\PageHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -102,15 +103,11 @@ class Paginator
     public function prev_page()
     {
         $previousPageIndex = $this->prev_page_number();
-        $previousPageUri = null;
         if ($previousPageIndex != null)
         {
-            if ($previousPageIndex == 1)
-                $previousPageUri = $this->page->getUri();
-            else
-                $previousPageUri = $this->page->getUri() . '/' . $previousPageIndex;
+            return $this->getSubPageUri($previousPageIndex);
         }
-        return $previousPageUri;
+        return null;
     }
     
     /**
@@ -120,7 +117,7 @@ class Paginator
      */
     public function this_page()
     {
-        return $this->page($this->page->getPageNumber());
+        return $this->getSubPageUri($this->page->getPageNumber());
     }
    
     /**
@@ -133,7 +130,7 @@ class Paginator
         $nextPageIndex = $this->next_page_number();
         if ($nextPageIndex != null)
         {
-            return $this->page->getUri() . '/' . $nextPageIndex;
+            return $this->getSubPageUri($nextPageIndex);
         }
         return null;
     }
@@ -197,12 +194,7 @@ class Paginator
      */
     public function page($index)
     {
-        $uri = $this->page->getUri();
-        if ($index > 1)
-        {
-            $uri .= '/' . $index;
-        }
-        return $uri;
+        return $this->getSubPageUri($index);
     }
 
     /**
@@ -305,14 +297,16 @@ class Paginator
         $this->postsIterator->setCurrentPage($this->page);
         // Add the filters for the current page.
         $postsFilter = $this->getPaginationFilter();
-        $this->postsIterator->setFilter($postsFilter);
+        if ($postsFilter->hasClauses())
+            $this->postsIterator->setFilter($postsFilter);
         // If the `posts_per_page` setting is valid, paginate accordingly.
         $postsPerPage = $this->posts_per_page();
         if (is_int($postsPerPage) && $postsPerPage > 0)
         {
-            $this->postsIterator->limit($postsPerPage);
+            // Skip first, limit second.
             $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
             $this->postsIterator->skip($offset);
+            $this->postsIterator->limit($postsPerPage);
         }
     }
     
@@ -338,5 +332,17 @@ class Paginator
             $filter->addClauses($filterInfo);
         }
         return $filter;
+    }
+
+    public function getSubPageUri($index)
+    {
+        $uri = $this->page->getUri();
+        if ($index > 1)
+        {
+            if ($uri != '')
+                $uri .= '/';
+            $uri .= $index;
+        }
+        return PieCrustHelper::formatUri($this->page->getApp(), $uri);
     }
 }

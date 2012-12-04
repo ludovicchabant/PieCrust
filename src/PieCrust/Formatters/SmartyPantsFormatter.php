@@ -12,14 +12,15 @@ class SmartyPantsFormatter implements IFormatter
     
     public function initialize(IPieCrust $pieCrust)
     {
-        $config = $pieCrust->getConfig();
         $this->smartypantsLibDir = 'smartypants';
-        if (isset($config['smartypants']))
+        $smartypantsConfig = $pieCrust->getConfig()->getValue('smartypants');
+        if ($smartypantsConfig)
         {
-            $smartypantsConfig = $config['smartypants'];
-            $this->enabled = ($smartypantsConfig['enable'] == true);
-            if (isset($smartypantsConfig['use_smartypants_typographer']) and
-                $smartypantsConfig['use_smartypants_typographer'] == true)
+            $this->enabled = (
+                $pieCrust->getConfig()->getValue('smartypants/enable') or
+                $pieCrust->getConfig()->getValue('smartypants/enabled')
+            );
+            if ($pieCrust->getConfig()->getValue('smartypants/use_smartypants_typographer'))
             {
                 $this->smartypantsLibDir = 'smartypants-typographer';
             }

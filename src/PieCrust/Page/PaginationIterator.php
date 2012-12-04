@@ -7,6 +7,12 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Data\PaginationData;
 use PieCrust\Page\Filtering\PaginationFilter;
+use PieCrust\Page\Iteration\BaseIterator;
+use PieCrust\Page\Iteration\DateSortIteratorModifier;
+use PieCrust\Page\Iteration\FilterIteratorModifier;
+use PieCrust\Page\Iteration\LimitIteratorModifier;
+use PieCrust\Page\Iteration\SkipIteratorModifier;
+use PieCrust\Page\Iteration\SortIteratorModifier;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
 
@@ -20,45 +26,41 @@ use PieCrust\Util\PieCrustHelper;
  * @explicitInclude
  * @documentation The list of posts.
  */
-class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
+class PaginationIterator extends BaseIterator
 {
     protected $pieCrust;
     protected $dataSource;
     protected $blogKey;
     
-    protected $filter;
-    protected $skip;
-    protected $limit;
-    protected $sortByName;
-    protected $sortByReverse;
-    
-    protected $posts;
-    protected $hasMorePosts;
-    protected $totalPostCount;
+    protected $modifierChain;
 
     protected $page;
     protected $previousPost;
     protected $nextPost;
+    protected $hasMorePosts;
+    protected $totalPostCount;
     
     public function __construct(IPieCrust $pieCrust, $blogKey, array $dataSource)
     {
+        parent::__construct();
+
         $this->pieCrust = $pieCrust;
         $this->dataSource = $dataSource;
         $this->blogKey = $blogKey;
         
-        $this->filter = null;
-        $this->skip = 0;
-        $this->limit = -1;
-        $this->sortByName = null;
-        $this->sortByReverse = false;
-        
-        $this->posts = null;
-        $this->hasMorePosts = false;
-        $this->totalPostCount = 0;
+        $this->modifierChain = array();
 
         $this->page = null;
         $this->previousPost = null;
         $this->nextPost = null;
+        $this->hasMorePosts = false;
+        $this->totalPostCount = 0;
+    }
+
+    // {{{ Internal members
+    public function getCurrentPage()
+    {
+        return $this->page;
     }
 
     public function setCurrentPage(IPage $page)
@@ -70,7 +72,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function setFilter(PaginationFilter $filter)
     {
         $this->unload();
-        $this->filter = $filter;
+        array_unshift($this->modifierChain, new FilterIteratorModifier($filter));
     }
 
     public function getTotalPostCount()
@@ -96,7 +98,8 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         $this->ensureLoaded();
         return $this->previousPost;
     }
-    
+    // }}}
+
     // {{{ Fluent-interface template members
     /**
      * @include
@@ -106,7 +109,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function skip($count)
     {
         $this->unload();
-        $this->skip = $count;
+        $this->modifierChain[] = new SkipIteratorModifier($count);
         return $this;
     }
     
@@ -118,7 +121,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function limit($count)
     {
         $this->unload();
-        $this->limit = $count;
+        $this->modifierChain[] = new LimitIteratorModifier($count);
         return $this;
     }
 
@@ -133,11 +136,12 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
         if ($this->page == null)
             throw new PieCrustException("Can't use 'filter()' because no parent page was set for the pagination iterator.");
         if (!$this->page->getConfig()->hasValue($filterName))
-            throw new PieCrustException("Couldn't find filter '{$filterName}' in the page's configuration header.");
+            throw new PieCrustException("Couldn't find filter '{$filterName}' in the configuration header for page: {$this->page->getPath()}");
         
         $filterDefinition = $this->page->getConfig()->getValue($filterName);
-        $this->filter = new PaginationFilter();
-        $this->filter->addClauses($filterDefinition);
+        $filter = new PaginationFilter();
+        $filter->addClauses($filterDefinition);
+        $this->modifierChain[] = new FilterIteratorModifier($filter);
         return $this;
     }
 
@@ -149,8 +153,9 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function in_category($category)
     {
         $this->unload();
-        $this->filter = new PaginationFilter();
-        $this->filter->addClauses(array('is_category' => $category));
+        $filter = new PaginationFilter();
+        $filter->addClauses(array('is_category' => $category));
+        $this->modifierChain[] = new FilterIteratorModifier($filter);
         return $this;
     }
 
@@ -162,8 +167,9 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function with_tag($tag)
     {
         $this->unload();
-        $this->filter = new PaginationFilter();
-        $this->filter->addClauses(array('has_tags' => $tag));
+        $filter = new PaginationFilter();
+        $filter->addClauses(array('has_tags' => $tag));
+        $this->modifierChain[] = new FilterIteratorModifier($filter);
         return $this;
     }
 
@@ -184,8 +190,9 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
             $tagClauses['has_tags'] = $tag;
         }
 
-        $this->filter = new PaginationFilter();
-        $this->filter->addClauses(array('and' => $tagClauses));
+        $filter = new PaginationFilter();
+        $filter->addClauses(array('and' => $tagClauses));
+        $this->modifierChain[] = new FilterIteratorModifier($filter);
         return $this;
     }
     
@@ -197,9 +204,7 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     public function all()
     {
         $this->unload();
-        $this->filter = null;
-        $this->skip = 0;
-        $this->limit = -1;
+        $this->modifierChain = array();
         return $this;
     }
 
@@ -210,8 +215,8 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
      */
     public function sortBy($name, $reverse = false)
     {
-        $this->sortByName = $name;
-        $this->sortByReverse = $reverse;
+        $this->modifierChain[] = new SortIteratorModifier($name, $reverse);
+        return $this;
     }
     // }}}
 
@@ -230,144 +235,65 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
     }
     // }}}
     
-    // {{{ Countable members
-    /**
-     * @include
-     * @noCall
-     * @documentation Return the number of matching posts.
-     */
-    public function count()
-    {
-        $this->ensureLoaded();
-        return count($this->posts);
-    }
-    // }}}
-    
-    // {{{ Iterator members
-    public function current()
-    {
-        $this->ensureLoaded();
-        return current($this->posts);
-    }
-    
-    public function key()
-    {
-        $this->ensureLoaded();
-        return key($this->posts);
-    }
-    
-    public function next()
-    {
-        $this->ensureLoaded();
-        next($this->posts);
-    }
-    
-    public function rewind()
-    {
-        $this->unload();
-        $this->ensureLoaded();
-        reset($this->posts);
-    }
-    
-    public function valid()
-    {
-        if (!$this->isLoaded())
-            return false;
-        $this->ensureLoaded();
-        return (key($this->posts) !== null);
-    }
-    // }}}
-    
-    // {{{ ArrayAccess members
-    public function offsetExists($offset)
-    {
-        if (!is_int($offset))
-            return false;
-        
-        $this->ensureLoaded();
-        return isset($this->posts[$offset]);
-    }
-    
-    public function offsetGet($offset)
-    {
-        if (!is_int($offset))
-           throw new OutOfRangeException();
-            
-        $this->ensureLoaded();
-        return $this->posts[$offset];
-    }
-    
-    public function offsetSet($offset, $value)
-    {
-        throw new PieCrustException("The pagination is read-only.");
-    }
-    
-    public function offsetUnset($offset)
-    {
-        throw new PieCrustException("The pagination is read-only.");
-    }
-    // }}}
-    
     // {{{ Protected members
-    protected function isLoaded()
+    protected function load()
     {
-        return ($this->posts != null);
-    }
-
-    protected function unload()
-    {
-        $this->posts = null;
-    }
-
-    protected function ensureLoaded()
-    {
-        if ($this->posts != null)
-            return;
-        
         $pieCrust = $this->pieCrust;
         $blogKey = $this->blogKey;
-        $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
+        $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey . '/post_url');
 
-        // If we have any filter, apply it to the pagination data source.
-        if ($this->filter != null and $this->filter->hasClauses())
+        // Work with copies of our arrays so we can unload and reload.
+        $dataSource = $this->dataSource;
+        $modifierChain = $this->modifierChain;
+
+        // The given data source is usually from the post FileSystem, which
+        // orders posts by reverse-chronological date. The problem is that
+        // it doesn't know about the time at which a post was posted because
+        // at this point none of the posts have been loaded from disk.
+        // We need to sort by the actual date and time of the post.
+        // (this will load the configurations of all posts)
+        //
+        // However, we need to check for other sorting modifiers at the
+        // beginning of the chain, so as not to sort posts by date for nothing
+        // because they're going to be sorted some other way just after that.
+        // 
+        // And to be really optimal, we'll insert the sorter just before the
+        // first modifier that depends on order. If there's no modifiers in the
+        // chain, we'll add the sorter anyway.
+        $insertSorterAt = 0;
+        foreach ($modifierChain as $i => $it)
         {
-            $actualDataSource = array();
-            foreach ($this->dataSource as $post)
+            if ($it->dependsOnOrder())
             {
-                if ($this->filter->postMatches($post))
-                {
-                    $actualDataSource[] = $post;
-                }
+                $insertSorterAt = $i;
+                break;
+            }
+            else if ($it->affectsOrder())
+            {
+                $insertSorterAt = -1;
+                break;
             }
         }
-        else
+        if ($insertSorterAt >= 0)
         {
-            $actualDataSource = $this->dataSource;
+            $sorter = new DateSortIteratorModifier();
+            array_splice($modifierChain, $insertSorterAt, 0, array($sorter));
         }
-        $this->totalPostCount = count($actualDataSource);
 
-        if (!$this->sortByName)
+        // Now run the chain on the data source.
+        foreach ($modifierChain as $it)
         {
-            // The given data source is usually from the post FileSystem, which
-            // orders posts by reverse-chronological date. The problem is that
-            // it doesn't know about the time at which a post was posted because
-            // at this point none of the posts have been loaded from disk.
-            // We need to sort by the actual date and time of the post.
-            if (false === usort($actualDataSource, array("\PieCrust\Page\PaginationIterator", "sortByReverseTimestamp")))
-                throw new PieCrustException("Error while sorting posts by timestamp.");
+            $dataSource = $it->modify($dataSource);
         }
-        else
-        {
-            // Sort by some arbitrary setting.
-            if (false === usort($actualDataSource, array($this, "sortByCustom")))
-                throw new PieCrustException("Error while sorting posts with the specified setting: {$this->sortByName}");
-        }
+
+        // Get the final post count.
+        $this->totalPostCount = count($dataSource);
 
         // Find the previous and next posts, if the parent page is in there.
         if ($this->page != null)
         {
             $pageIndex = -1;
-            foreach ($actualDataSource as $i => $post)
+            foreach ($dataSource as $i => $post)
             {
                 if ($post === $this->page)
                 {
@@ -380,9 +306,9 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
                 // Get the previous and next posts.
                 $prevAndNextPost = array(null, null);
                 if ($pageIndex > 0)
-                    $prevAndNextPost[0] = $actualDataSource[$pageIndex - 1];
+                    $prevAndNextPost[0] = $dataSource[$pageIndex - 1];
                 if ($pageIndex < $this->totalPostCount - 1)
-                    $prevAndNextPost[1] = $actualDataSource[$pageIndex + 1];
+                    $prevAndNextPost[1] = $dataSource[$pageIndex + 1];
 
                 // Get their template data.
                 $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
@@ -393,22 +319,17 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
                 $this->nextPost = $prevAndNextPostData[0];
             }
         }
-
-        // Now honour the skip and limit clauses.
-        $upperLimit = count($this->dataSource);
-        if ($this->limit > 0)
-            $upperLimit = min($this->skip + $this->limit, $upperLimit);
-        $actualDataSource = array_slice($actualDataSource, $this->skip, $upperLimit - $this->skip);
         
-        // Get the posts data and see whether there's more than this slice.
-        $this->posts = $this->getPostsData($actualDataSource);
-        if ($this->limit > 0)
+        // Get the posts data and see whether there's more than what we got.
+        $this->posts = $this->getPostsData($dataSource);
+        $this->hasMorePosts = false;
+        foreach ($modifierChain as $it)
         {
-            $this->hasMorePosts = ($this->totalPostCount > ($this->skip + $this->limit));
-        }
-        else
-        {
-            $this->hasMorePosts = false;
+            if ($it->didStripItems())
+            {
+                $this->hasMorePosts = true;
+                break;
+            }
         }
     }
     
@@ -428,37 +349,6 @@ class PaginationIterator implements \Iterator, \ArrayAccess, \Countable
             $postsData[] = new PaginationData($post);
         }
         return $postsData;
-    }
-
-    protected function sortByCustom($post1, $post2)
-    {
-        $value1 = $post1->getConfig()->getValue($this->sortByName);
-        $value2 = $post2->getConfig()->getValue($this->sortByName);
-        
-        if ($value1 == null && $value2 == null)
-            return 0;
-        if ($value1 == null && $value2 != null)
-            return $this->sortByReverse ? 1 : -1;
-        if ($value1 != null && $value2 == null)
-            return $this->sortByReverse ? -1 : 1;
-        if ($value1 == $value2)
-            return 0;
-        if ($this->sortByReverse)
-            return ($value1 < $value2) ? 1 : -1;
-        else
-            return ($value1 < $value2) ? -1 : 1;
-    }
-
-    protected static function sortByReverseTimestamp($post1, $post2)
-    {
-        $timestamp1 = $post1->getDate();
-        $timestamp2 = $post2->getDate();
-
-        if ($timestamp1 == $timestamp2)
-            return 0;
-        if ($timestamp1 < $timestamp2)
-            return 1;
-        return -1;
     }
     // }}}
 }

@@ -5,6 +5,7 @@ namespace PieCrust\Util;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 use PieCrust\Util\UriBuilder;
 
 
@@ -18,7 +19,54 @@ class PageHelper
      */
     public static function getRelativePath(IPage $page, $stripExtension = false)
     {
-        return PathHelper::getRelativePagePath($page->getApp(), $page->getPath(), $page->getPageType(), $stripExtension);
+        $basePath = null;
+        $themeDir = $page->getApp()->getThemeDir();
+        if ($themeDir and strncmp($page->getPath(), $themeDir, strlen($themeDir)) == 0)
+        {
+            // This is a theme page.
+            switch ($page->getPageType())
+            {
+                case IPage::TYPE_REGULAR:
+                case IPage::TYPE_CATEGORY:
+                case IPage::TYPE_TAG:
+                    $basePath = $themeDir . PieCrustDefaults::CONTENT_PAGES_DIR;
+                    break;
+                case IPage::TYPE_POST:
+                    $basePath = $themeDir . PieCrustDefaults::CONTENT_POSTS_DIR;
+                    break;
+                default:
+                    throw new InvalidArgumentException("Unknown page type given: " . $page->getPageType());
+            }
+        }
+        else if (strncmp($page->getPath(), PieCrustDefaults::RES_DIR(), strlen(PieCrustDefaults::RES_DIR())) == 0)
+        {
+            // This is a `res` page.
+            $basePath = PieCrustDefaults::RES_DIR() . 'pages/';
+        }
+        else
+        {
+            // This is a website page.
+            switch ($page->getPageType())
+            {
+                case IPage::TYPE_REGULAR:
+                case IPage::TYPE_CATEGORY:
+                case IPage::TYPE_TAG:
+                    $basePath = $page->getApp()->getPagesDir();
+                    break;
+                case IPage::TYPE_POST:
+                    $basePath = $page->getApp()->getPostsDir();
+                    break;
+                default:
+                    throw new InvalidArgumentException("Unknown page type given: " . $page->getPageType());
+            }
+        }
+        if (!$basePath)
+            throw new PieCrustException("Can't get a relative page path if no pages or posts directory exsists in the website.");
+        
+        $relativePath = substr($page->getPath(), strlen($basePath));
+        if ($stripExtension)
+            $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+        return $relativePath;
     }
 
     /**

@@ -8,6 +8,7 @@ use PieCrust\Formatters\IFormatter;
 use PieCrust\Page\Page;
 use PieCrust\Plugins\PluginLoader;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -53,18 +54,21 @@ class PieCrust implements IPieCrust
     {
         if ($this->templatesDirs === null)
         {
-            // Add the default template directory if it exists.
+            // Start with no template directories.
             $this->templatesDirs = array();
-            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
-            if (is_dir($default))
-                $this->templatesDirs[] = $default;
-
-            // Add custom template directories specified in the configuration.
+            
+            // Add the custom template directories specified in the configuration.
             $additionalPaths = $this->getConfig()->getValue('site/templates_dirs');
             if ($additionalPaths)
             {
                 $this->addTemplatesDir($additionalPaths);
             }
+
+            // Add the default template directory if it exists.
+            $default = $this->rootDir . PieCrustDefaults::CONTENT_TEMPLATES_DIR;
+            if (is_dir($default))
+                $this->templatesDirs[] = $default;
+
         }
         return $this->templatesDirs;
     }
@@ -208,6 +212,33 @@ class PieCrust implements IPieCrust
         }
     }
 
+    protected $themeDir;
+    /**
+     * Gets the directory that contains the current theme, if any.
+     */
+    public function getThemeDir()
+    {
+        if ($this->themeDir === null)
+        {
+            $this->themeDir = $this->rootDir . PieCrustDefaults::CONTENT_THEME_DIR;
+            if (!is_dir($this->themeDir))
+                $this->themeDir = false;
+        }
+        return $this->themeDir;
+    }
+
+    /**
+     * Sets the directory that contains the current theme, if any.
+     */
+    public function setThemeDir($dir)
+    {
+        $this->themeDir = rtrim($dir, '/\\') . '/';
+        if (is_dir($this->themeDir) === false)
+        {
+            throw new PieCrustException("The specified theme directory doesn't exist: " . $this->themeDir);
+        }
+    }
+
     protected $cacheDir;
     /**
      * Gets the cache directory ('/_cache' by default).
@@ -310,10 +341,35 @@ class PieCrust implements IPieCrust
         if ($this->config == null)
         {
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
-            $this->config = new PieCrustConfiguration(
-                $this->rootDir . PieCrustDefaults::CONFIG_PATH, 
-                $configCache
-            );
+
+            $configPaths = array();
+            $themeDir = $this->getThemeDir();
+            if ($themeDir !== false)
+                $configPaths[] = $themeDir . PieCrustDefaults::THEME_CONFIG_PATH;
+            $configPaths[] = $this->rootDir . PieCrustDefaults::CONFIG_PATH;
+
+            $this->config = new PieCrustConfiguration($configPaths, $configCache);
+            if ($themeDir !== false)
+            {
+                // We'll need to patch the templates directories to be relative
+                // to the site's root, as opposed to the theme root.
+                $relativeThemeDir = PieCrustHelper::getRelativePath($this, $themeDir);
+                $this->config->setFixup(function ($i, &$c) use ($relativeThemeDir) {
+                    if ($i == 0)
+                    {
+                        if (!isset($c['site']))
+                            return;
+                        if (!isset($c['site']['templates_dirs']))
+                            return;
+                        if (!is_array($c['site']['templates_dirs']))
+                            $c['site']['templates_dirs'] = array($c['site']['templates_dirs']);
+                        foreach ($c['site']['templates_dirs'] as &$dir)
+                        {
+                            $dir = $relativeThemeDir . $dir;
+                        }
+                    }
+                });
+            }
         }
     }
 }

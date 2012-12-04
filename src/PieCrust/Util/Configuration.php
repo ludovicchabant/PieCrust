@@ -353,20 +353,27 @@ class Configuration implements \ArrayAccess, \Iterator
     {
         foreach ($second as $key => $value)
         {
-            if (isset($first[$key]))
+            if (is_int($key))
             {
-                if (is_array($value) and is_array($first[$key]))
+                array_unshift($first, $value);
+            }
+            else // string key
+            {
+                if (isset($first[$key]))
                 {
-                    $first[$key] = self::mergeArrayRecursive($first[$key], $value);
+                    if (is_array($value) and is_array($first[$key]))
+                    {
+                        $first[$key] = self::mergeArrayRecursive($first[$key], $value);
+                    }
+                    else
+                    {
+                        $first[$key] = $value;
+                    }
                 }
                 else
                 {
                     $first[$key] = $value;
                 }
-            }
-            else
-            {
-                $first[$key] = $value;
             }
         }
         return $first;

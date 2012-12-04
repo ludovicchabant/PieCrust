@@ -2,8 +2,10 @@
 
 namespace PieCrust\Repositories;
 
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\IO\Cache;
 use PieCrust\Util\ArchiveHelper;
 use PieCrust\Util\PathHelper;
 
@@ -15,7 +17,24 @@ use PieCrust\Util\PathHelper;
  */
 class BitBucketRepository implements IRepository
 {
+    protected $cache;
+    protected $cacheTime;
+
     // IRepository members {{{
+
+    public function initialize(IPieCrust $pieCrust)
+    {
+        if ($pieCrust->isCachingEnabled())
+        {
+            $this->cache = new Cache($pieCrust->getCacheDir() . 'bitbucket_requests/');
+            $this->cacheTime = 60 * 60; // Cache requests for one hour.
+        }
+        else
+        {
+            $this->cache = null;
+            $this->cacheTime = false;
+        }
+    }
     
     public function supportsSource($source)
     {
@@ -24,7 +43,12 @@ class BitBucketRepository implements IRepository
 
     public function getPlugins($source)
     {
-        return $this->getRepositoryInfos($source, 'PieCrust-Plugin-');
+        return $this->getRepositoryInfos($source, 'PieCrust-Plugin-', 'plugin_info.yml');
+    }
+
+    public function getThemes($source)
+    {
+        return $this->getRepositoryInfos($source, 'PieCrust-Theme-', 'theme_info.yml');
     }
 
     public function installPlugin($plugin, $context)
@@ -35,7 +59,32 @@ class BitBucketRepository implements IRepository
         $this->extractRepository($context, $destination, $plugin['username'], $plugin['slug']);
     }
 
+    public function installTheme($theme, $context)
+    {
+        $destination = $context->getLocalThemeDir(false);
+        if (is_dir($destination))
+            PathHelper::deleteDirectoryContents($destination);
+        $this->extractRepository($context, $destination, $theme['username'], $theme['slug']);
+    }
+
     // }}}
+
+    protected function getRequest($url)
+    {
+        if ($this->cache == null)
+            return file_get_contents($url);
+
+        $cacheUrl = preg_replace('/[^A-Za-z0-9_\-]/', '_', $url);
+        $cacheTime = $this->cache->getCacheTime($cacheUrl, 'json');
+        if ($cacheTime !== false and $cacheTime + $this->cacheTime >= time())
+        {
+            return $this->cache->read($cacheUrl, 'json');
+        }
+
+        $data = file_get_contents($url);
+        $this->cache->write($cacheUrl, 'json', $data);
+        return $data;
+    }
 
     protected function getUserName($source)
     {
@@ -58,12 +107,12 @@ class BitBucketRepository implements IRepository
             throw new PieCrustException("The given source is not a valid BitBucket source: {$source}");
 
         $url = 'https://api.bitbucket.org/1.0/users/' . $userName;
-        $response = file_get_contents($url);
+        $response = $this->getRequest($url);
         $userInfo = json_decode($response);
         return $userInfo;
     }
 
-    public function getRepositoryInfos($source, $prefix)
+    public function getRepositoryInfos($source, $prefix, $infoFilename)
     {
         $infos = array();
         $prefixRegex = '/^' . preg_quote($prefix, '/') . '/';
@@ -72,14 +121,39 @@ class BitBucketRepository implements IRepository
         {
             if (preg_match($prefixRegex, $repo->name))
             {
-                $infos[] = array(
+                // Build some default metadata.
+                $defaultInfo = array(
                     'name' => substr($repo->name, strlen($prefix)),
+                    'authors' => array($userInfo->user->username),
                     'description' => $repo->description,
                     'username' => $userInfo->user->username,
                     'slug' => $repo->slug,
                     'source' => rtrim($source, '/') . '/' . $repo->slug,
                     'resource_uri' => $repo->resource_uri
                 );
+
+                // Look for `plugin_info.yml` or `theme_info.yml`.
+                $url = "https://api.bitbucket.org/1.0/repositories/{$userInfo->user->username}/{$repo->name}/src/default/";
+                $response = $this->getRequest(strtolower($url));
+                $srcInfo = json_decode($response);
+                if (count(array_filter(
+                        $srcInfo->files, 
+                        function ($f) use ($infoFilename) { return $f->path == $infoFilename; }
+                    )) > 0)
+                {
+                    // Found! Read it.
+                    $infoUrl = "https://api.bitbucket.org/1.0/repositories/{$userInfo->user->username}/{$repo->name}/raw/default/{$infoFilename}";
+                    $infoRaw = $this->getRequest(strtolower($infoUrl));
+                    $infos[] = array_merge(
+                        Yaml::parse($infoRaw),
+                        $defaultInfo
+                    );
+                }
+                else
+                {
+                    // Not found... use the default metadata.
+                    $infos[] = $defaultInfo;
+                }
             }
         }
         return $infos;
@@ -119,6 +193,10 @@ class BitBucketRepository implements IRepository
         {
             $log->debug("Cleaning destination: {$destination}");
             PathHelper::deleteDirectoryContents($destination);
+        }
+        if (!is_dir(dirname($destination)))
+        {
+            mkdir(dirname($destination));
         }
         $log->debug("Moving extracted files into: {$destination}");
         rename($archiveDir, $destination);

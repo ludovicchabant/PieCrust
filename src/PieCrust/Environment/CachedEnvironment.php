@@ -4,8 +4,10 @@ namespace PieCrust\Environment;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\IO\FileSystem;
+use PieCrust\IO\FlatFileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\UriBuilder;
 
@@ -110,8 +112,57 @@ class CachedEnvironment extends Environment
     {
         if ($this->pageInfos == null)
         {
-            $fs = FileSystem::create($this->pieCrust, null);
+            // TODO: optimize this, it's quite stupid.
+
+            // Start with the built-in pages.
+            $resPagesDir = PieCrustDefaults::RES_DIR() . 'pages/';
+            $fs = new FlatFileSystem($resPagesDir, null);
             $this->pageInfos = $fs->getPageFiles();
+
+            // Override with the theme pages.
+            if ($this->pieCrust->getThemeDir())
+            {
+                $fs = FileSystem::create($this->pieCrust, null, true);
+                $themePageInfos = $fs->getPageFiles();
+                foreach ($themePageInfos as $themePageInfo)
+                {
+                    $isOverridden = false;
+                    foreach ($this->pageInfos as &$pageInfo)
+                    {
+                        if ($pageInfo['relative_path'] == $themePageInfo['relative_path'])
+                        {
+                            $isOverridden = true;
+                            $pageInfo['path'] = $themePageInfo['path'];
+                            break;
+                        }
+                    }
+                    if (!$isOverridden)
+                    {
+                        $this->pageInfos[] = $themePageInfo;
+                    }
+                }
+            }
+
+            // And finally override with the user pages.
+            $fs = FileSystem::create($this->pieCrust, null);
+            $userPageInfos = $fs->getPageFiles();
+            foreach ($userPageInfos as $userPageInfo)
+            {
+                $isOverridden = false;
+                foreach ($this->pageInfos as &$pageInfo)
+                {
+                    if ($pageInfo['relative_path'] == $userPageInfo['relative_path'])
+                    {
+                        $isOverridden = true;
+                        $pageInfo['path'] = $userPageInfo['path'];
+                        break;
+                    }
+                }
+                if (!$isOverridden)
+                {
+                    $this->pageInfos[] = $userPageInfo;
+                }
+            }
         }
     }
 

@@ -9,6 +9,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Plugins\PluginLoader;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -19,6 +20,7 @@ class DirectoryBaker
     protected $pieCrust;
     protected $logger;
     protected $rootDirLength;
+    protected $mountDirLengths;
     protected $tmpDir;
     protected $bakeDir;
     protected $parameters;
@@ -55,6 +57,7 @@ class DirectoryBaker
         $this->parameters = array_merge(
             array(
                 'smart' => true,
+                'mounts' => array(),
                 'skip_patterns' => array(),
                 'force_patterns' => array(),
                 'processors' => array('copy')
@@ -66,13 +69,19 @@ class DirectoryBaker
             $logger = \Log::singleton('null', '', '');
         }
         $this->logger = $logger;
+
+        // Add a special mount point for the theme directory, if any.
+        if ($this->pieCrust->getThemeDir())
+        {
+            $this->parameters['mounts']['theme'] = $this->pieCrust->getThemeDir();
+        }
         
         // Validate skip patterns.
         $this->parameters['skip_patterns'] = self::validatePatterns(
             $this->parameters['skip_patterns'],
             array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
         );
-        
+
         // Validate force-bake patterns.
         $this->parameters['force_patterns'] = self::validatePatterns(
             $this->parameters['force_patterns']
@@ -81,8 +90,12 @@ class DirectoryBaker
         // Compute the number of characters we need to remove from file paths
         // to get their relative paths.
         $rootDir = $this->pieCrust->getRootDir();
-        $rootDir = rtrim($rootDir, '/\\') . '/';
-        $this->rootDirLength = strlen($rootDir);
+        $this->rootDirLength = strlen(rtrim($rootDir, '/\\')) + 1;
+        $this->mountDirLengths = array();
+        foreach ($this->parameters['mounts'] as $name => $dir)
+        {
+            $this->mountDirLengths[$name] = strlen(rtrim($dir, '/\\')) + 1;
+        }
 
         $this->bakedFiles = array();
         
@@ -100,14 +113,50 @@ class DirectoryBaker
     {
         $this->bakedFiles = array();
         if ($path == null)
-            $this->bakeDirectory($this->pieCrust->getRootDir(), 0);
-        else if (is_file($path))
-            $this->bakeFile($path);
-        else if (is_dir($path))
-            $this->bakeDirectory($path, 0);
+        {
+            // Bake everything (root directory and special mount points).
+            $this->logger->debug("Initiating bake on: {$this->pieCrust->getRootDir()}");
+            $this->bakeDirectory(
+                $this->pieCrust->getRootDir(), 
+                0, 
+                $this->pieCrust->getRootDir(), 
+                $this->rootDirLength
+            );
+            foreach ($this->parameters['mounts'] as $name => $dir)
+            {
+                $this->logger->debug("Initiating bake on: {$dir}");
+                $this->bakeDirectory($dir, 0, $dir, $this->mountDirLengths[$name]);
+            }
+        }
+        else
+        {
+            // Find if this path belongs to a special mount point.
+            $rootDir = $this->pieCrust->getRootDir();
+            $rootDirLength = $this->rootDirLength;
+            foreach ($this->parameters['mounts'] as $name => $dir)
+            {
+                if (substr($path, 0, $this->mountDirLengths[$name]) == $dir)
+                {
+                    $rootDir = $dir;
+                    $rootDirLength = $this->mountDirLengths[$name];
+                    break;
+                }
+            }
+
+            if (is_dir($path))
+            {
+                $this->logger->debug("Initiating bake on: {$rootDir}");
+                $this->bakeDirectory($path, 0, $rootDir, $rootDirLength);
+            }
+            else if (is_file($path))
+            {
+                $this->logger->debug("Initiating bake on: {$rootDir}");
+                $this->bakeFile($path, $rootDir, $rootDirLength);
+            }
+        }
     }
-    
-    protected function bakeDirectory($currentDir, $level)
+
+    protected function bakeDirectory($currentDir, $level, $rootDir, $rootDirLength)
     {
         $it = new DirectoryIterator($currentDir);
         foreach ($it as $i)
@@ -119,7 +168,7 @@ class DirectoryBaker
 
             // Figure out the root-relative path.
             $absolute = str_replace('\\', '/', $i->getPathname());
-            $relative = substr($absolute, $this->rootDirLength);
+            $relative = substr($absolute, $rootDirLength);
 
             // See if we need to skip this file/directory.
             $shouldSkip = false;
@@ -151,23 +200,49 @@ class DirectoryBaker
                     if (@mkdir($destination, 0777, true) === false)
                         throw new PieCrustException("Can't create directory: " . $destination);
                 }
-                $this->bakeDirectory($absolute, $level + 1);
+                $this->bakeDirectory($absolute, $level + 1, $rootDir, $rootDirLength);
             }
             else if ($i->isFile())
             {
-                $this->bakeFile($absolute);
+                $this->bakeFile($absolute, $rootDir, $rootDirLength);
             }
         }
     }
 
-    protected function bakeFile($path)
+    protected function bakeFile($path, $rootDir, $rootDirLength)
     {
+        // Start timing this.
+        $start = microtime(true);
+
         // Figure out the root-relative path.
-        $relative = substr($path, $this->rootDirLength);
+        $relative = substr($path, $rootDirLength);
+
+        // Figure out if a previously baked file has overridden this one.
+        // This can happen for example when a theme's file (baked via a
+        // special mount point) is overridden in the user's website (baked
+        // via the first normal root directory).
+        $isOverridden = false;
+        foreach ($this->bakedFiles as $bakedFile)
+        {
+            if ($bakedFile['relative_input'] == $relative)
+            {
+                $isOverridden = true;
+            }
+        }
+        if ($isOverridden)
+        {
+            $this->bakedFiles[$path] = array(
+                'relative_input' => $relative,
+                'was_baked' => false,
+                'was_overridden' => true
+            );
+            $this->logger->info(PieCrustBaker::formatTimed($start, $relative) . ' [not baked, overridden]');
+            return;
+        }
 
         // Get the processing tree for that file.
         $builder = new ProcessingTreeBuilder(
-            $this->pieCrust->getRootDir(),
+            $rootDir,
             $this->tmpDir,
             $this->bakeDir,
             $this->getProcessors());
@@ -190,7 +265,8 @@ class DirectoryBaker
                 },
                 $treeLeaves
             ),
-            'was_baked' => false
+            'was_baked' => false,
+            'was_overridden' => false
         );
 
         // See if we should force bake the file.
@@ -211,202 +287,18 @@ class DirectoryBaker
             $treeRoot->setState(ProcessingTreeNode::STATE_DIRTY, true);
         }
 
-        $start = microtime(true);
-        if ($this->bakeSubTree($treeRoot))
+        // Bake!
+        $runner = new ProcessingTreeRunner(
+            $rootDir,
+            $this->tmpDir,
+            $this->bakeDir,
+            $this->logger
+        );
+        if ($runner->bakeSubTree($treeRoot))
         {
             $this->bakedFiles[$path]['was_baked'] = true;
             $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
         }
-    }
-
-    protected function bakeSubTree($root)
-    {
-        $didBake = false;
-        $walkStack = array($root);
-        while (count($walkStack) > 0)
-        {
-            $curNode = array_pop($walkStack);
-
-            // Make sure we have a processor.
-            $processor = $curNode->getProcessor();
-            if (!$processor)
-            {
-                $this->logger->err("Can't find processor for: {$curNode->getPath()}");
-                continue;
-            }
-
-            // Make sure we have a valid clean/dirty state.
-            if ($curNode->getState() == ProcessingTreeNode::STATE_UNKNOWN)
-                $this->computeNodeDirtyness($curNode);
-
-            // If the node is dirty, re-process it.
-            if ($curNode->getState() == ProcessingTreeNode::STATE_DIRTY)
-            {
-                $didBakeThisNode = $this->processNode($curNode);
-                $didBake |= $didBakeThisNode;
-
-                // If we really re-processed it, push its output
-                // nodes on the stack (unless they're leaves in the tree,
-                // which means they don't themselves have anything to
-                // produce).
-                if ($didBakeThisNode)
-                {
-                    foreach ($curNode->getOutputs() as $out)
-                    {
-                        if (!$out->isLeaf())
-                            array_push($walkStack, $out);
-                    }
-                }
-            }
-        }
-        return $didBake;
-    }
-    
-    protected function computeNodeDirtyness($node)
-    {
-        $processor = $node->getProcessor();
-        if ($processor->isDelegatingDependencyCheck())
-        {
-            // Get the paths and last modification times for the input file and
-            // all its dependencies, if any.
-            $nodeRootDir = $this->getNodeRootDir($node);
-            $path = $nodeRootDir . $node->getPath();
-            $pathMTime = filemtime($path);
-            $inputTimes = array($path => $pathMTime);
-            try
-            {
-                $dependencies = $processor->getDependencies($path);
-                if ($dependencies)
-                {
-                    foreach ($dependencies as $dep)
-                    {
-                        $inputTimes[$dep] = filemtime($dep);
-                    }
-                }
-            }
-            catch(Exception $e)
-            {
-                $this->logger->warning($e->getMessage() . 
-                    " -- Will force-bake {$node->getPath()}");
-                $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
-                return;
-            }
-
-            // Get the paths and last modification times for the output files.
-            $outputTimes = array();
-            foreach ($node->getOutputs() as $out)
-            {
-                $outputRootDir = $this->getNodeRootDir($out);
-                $fullOut = $outputRootDir . $out->getPath();
-                $outputTimes[$fullOut] = is_file($fullOut) ? filemtime($fullOut) : false;
-            }
-
-            // Compare those times to see if the output file is up to date.
-            foreach ($inputTimes as $iFn => $iTime)
-            {
-                foreach ($outputTimes as $oFn => $oTime)
-                {
-                    if (!$oTime || $iTime >= $oTime)
-                    {
-                        $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
-
-                        if (!$oTime)
-                            $message = "Output file '{$oFn}' doesn't exist. Re-processing sub-tree.";
-                        else
-                            $message = "Input file is newer than '{$oFn}'. Re-processing sub-tree.";
-                        $this->printProcessingTreeNode($node, $message);
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // The processor wants to handle dependencies himself.
-            // We'll have to start rebaking from there.
-            // However, we don't set the state recursively -- instead,
-            // child nodes of this one will re-evaluate their dirtyness
-            // after this one has run, in case the processor figures
-            // it's clean after all.
-            $node->setState(ProcessingTreeNode::STATE_DIRTY, false);
-            $this->printProcessingTreeNode($node, "Handles dependencies itself, set locally to 'dirty'.");
-        }
-    }
-
-    protected function processNode($node)
-    {
-        // Get the input path.
-        $nodeRootDir = $this->getNodeRootDir($node);
-        $path = $nodeRootDir . $node->getPath();
-
-        // Get the output directory.
-        // (all outputs of a node go to the same directory, so we
-        //  can just get the directory of the first output node).
-        $nodeOutputs = $node->getOutputs();
-        $outputRootDir = $this->getNodeRootDir($nodeOutputs[0]);
-        $outputChildDir = dirname($node->getPath());
-        if ($outputChildDir == '.')
-            $outputChildDir = '';
-        $outputDir = $outputRootDir . $outputChildDir;
-        if ($outputChildDir != '')
-            $outputDir .= '/';
-        $relativeOutputDir = PathHelper::getRelativePath($this->pieCrust, $outputDir);
-        PathHelper::ensureDirectory($outputDir, true);
-
-        // If we need to, re-process the node!
-        $didBake = false;
-        try
-        {
-            $start = microtime(true);
-            $processor = $node->getProcessor();
-            if ($processor->process($path, $outputDir) !== false)
-            {
-                $end = microtime(true);
-                $processTime = sprintf('%8.1f ms', ($end - $start)*1000.0);
-                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [{$processTime}].");
-                $didBake = true;
-            }
-            else
-            {
-                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean].");
-            }
-        }
-        catch (Exception $e)
-        {
-            throw new PieCrustException("Error processing '{$node->getPath()}': {$e->getMessage()}", 0, $e);
-        }
-        return $didBake;
-    }
-
-    protected function printProcessingTreeNode($node, $message = null, $recursive = false)
-    {
-        $indent = str_repeat('  ', $node->getLevel() + 1);
-        $processor = $node->getProcessor() ? $node->getProcessor()->getName() : 'n/a';
-        $path = PathHelper::getRelativePath(
-            $this->pieCrust, 
-            $this->getNodeRootDir($node) . $node->getPath());
-        if (!$message)
-            $message = '';
-
-        $this->logger->debug("{$indent}{$path} [{$processor}] {$message}");
-
-        if ($recursive)
-        {
-            foreach ($node->getOutputs() as $out)
-            {
-                $this->printProcessingTreeNode($out, true);
-            }
-        }
-    }
-
-    protected function getNodeRootDir($node)
-    {
-        $dir = $this->tmpDir . $node->getLevel() . '/';
-        if ($node->getLevel() == 0)
-            $dir = $this->pieCrust->getRootDir();
-        else if ($node->isLeaf())
-            $dir = $this->bakeDir;
-        return $dir;
     }
 
     protected function ensureProcessors()

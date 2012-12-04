@@ -18,20 +18,16 @@ use PieCrust\Util\PathHelper;
  */
 abstract class FileSystem
 {
-    protected $pieCrust;
-    protected $postsSubDir;
+    protected $pagesDir;
+    protected $postsDir;
     
     /**
      * Builds a new instance of FileSystem.
      */
-    protected function __construct(IPieCrust $pieCrust, $postsSubDir)
+    protected function __construct($pagesDir, $postsDir)
     {
-        $this->pieCrust = $pieCrust;
-        
-        if ($postsSubDir == null)
-            $this->postsSubDir = '';
-        else 
-            $this->postsSubDir = trim($postsSubDir, '\\/') . '/';
+        $this->pagesDir = $pagesDir;
+        $this->postsDir = $postsDir;
     }
 
     /**
@@ -39,28 +35,23 @@ abstract class FileSystem
      */
     public function getPageFiles()
     {
-        $pagesDir = $this->pieCrust->getPagesDir();
-        if (!$pagesDir)
+        if (!$this->pagesDir)
             return array();
 
         $pages = array();
         $iterator = new \RecursiveIteratorIterator(
             new PagesRecursiveFilterIterator(
-                new \RecursiveDirectoryIterator($pagesDir)
+                new \RecursiveDirectoryIterator($this->pagesDir)
             )
         );
         foreach ($iterator as $path)
         {
             $pagePath = $path->getPathname();
-            $relativePath = PathHelper::getRelativePagePath(
-                $this->pieCrust, 
-                $pagePath, 
-                IPage::TYPE_REGULAR
-            );
             // Skip files in page asset folders.
-            if (preg_match('#\-assets[/\\\\]#', $relativePath))
+            if (preg_match('#\-assets[/\\\\]#', $pagePath))
                 continue;
 
+            $relativePath = PathHelper::getRelativePath($this->pagesDir, $pagePath);
             $pages[] = array(
                 'path' => $pagePath, 
                 'relative_path' => $relativePath
@@ -85,8 +76,7 @@ abstract class FileSystem
      */
     public function getPostPathInfo($captureGroups)
     {
-        $postsDir = $this->pieCrust->getPostsDir();
-        if (!$postsDir)
+        if (!$this->postsDir)
             throw new PieCrustException("Can't get the path info for a captured post URL when no post directory exists in the website.");
 
         $needsRecapture = false;
@@ -125,7 +115,7 @@ abstract class FileSystem
             array($year, $month, $day, $slug),
             $path
         );
-        $path = $postsDir . $this->postsSubDir . $path;
+        $path = $this->postsDir . $path;
         
         $pathInfo = array(
             'year' => $year,
@@ -174,19 +164,36 @@ abstract class FileSystem
      * Creates the appropriate implementation of `FileSystem` based
      * on the configuration of the website.
      */
-    public static function create(IPieCrust $pieCrust, $postsSubDir = null)
+    public static function create(IPieCrust $pieCrust, $postsSubDir = null, $themeFs = false)
     {
-        if ($postsSubDir == PieCrustDefaults::DEFAULT_BLOG_KEY)
-            $postsSubDir = null;
         $postsFs = $pieCrust->getConfig()->getValueUnchecked('site/posts_fs');
+
+        if ($themeFs)
+        {
+            $themeDir = $pieCrust->getThemeDir();
+            if (!$themeDir)
+                throw new PieCrustException("Can't create a theme file-system because there's no theme in the current website.");
+            $pagesDir = $themeDir . PieCrustDefaults::CONTENT_PAGES_DIR;
+            $postsDir = $themeDir . PieCrustDefaults::CONTENT_POSTS_DIR;
+        }
+        else
+        {
+            $pagesDir = $pieCrust->getPagesDir();
+            $postsDir = $pieCrust->getPostsDir();
+            if ($postsSubDir == PieCrustDefaults::DEFAULT_BLOG_KEY)
+                $postsSubDir = null;
+            if ($postsSubDir != null)
+                $postsDir .= trim($postsSubDir, '\\/') . '/';
+        }
+
         switch ($postsFs)
         {
         case 'hierarchy':
-            return new HierarchicalFileSystem($pieCrust, $postsSubDir);
+            return new HierarchicalFileSystem($pagesDir, $postsDir);
         case 'shallow':
-            return new ShallowFileSystem($pieCrust, $postsSubDir);
+            return new ShallowFileSystem($pagesDir, $postsDir);
         case 'flat':
-            return new FlatFileSystem($pieCrust, $postsSubDir);
+            return new FlatFileSystem($pagesDir, $postsDir);
         default:
             throw new PieCrustException("Unknown posts_fs: " . $postsFs);
         }

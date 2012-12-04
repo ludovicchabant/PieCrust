@@ -70,7 +70,9 @@ class UriBuilder
      */
     public static function buildTagUri($tagUrlFormat, $tag)
     {
-        if (is_array($tag)) $tag = implode('/', $tag);
+        if (is_array($tag))
+            $tag = implode('/', $tag);
+        $tag = preg_replace('/\s+/', '-', $tag);
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
     
@@ -87,6 +89,7 @@ class UriBuilder
      */
     public static function buildCategoryUri($categoryUrlFormat, $category)
     {
+        $category = preg_replace('/\s+/', '-', $category);
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     

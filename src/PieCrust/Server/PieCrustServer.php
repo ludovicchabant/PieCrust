@@ -42,6 +42,7 @@ class PieCrustServer
         $this->options = array_merge(
             array(
                 'port' => 8080,
+                'address' => 'localhost',
                 'mime_types' => array('less' => 'text/css'),
                 'log_file' => null,
                 'debug' => false,
@@ -113,9 +114,12 @@ class PieCrustServer
                 );
                 foreach ($bakedFiles as $f => $info)
                 {
-                    foreach ($info['outputs'] as $out)
+                    if ($info['was_baked'])
                     {
-                        $this->bakeCacheFiles[$out] = $f;
+                        foreach ($info['outputs'] as $out)
+                        {
+                            $this->bakeCacheFiles[$out] = $f;
+                        }
                     }
                 }
             }
@@ -246,7 +250,7 @@ class PieCrustServer
         PathHelper::ensureDirectory($this->bakeCacheDir);
 
         // Set-up the stupid web server.
-        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port']);
+        $this->server = new StupidHttp_WebServer($this->bakeCacheDir, $this->options['port'], $this->options['address']);
         if ($this->options['log_file'])
         {
             $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));
@@ -296,6 +300,7 @@ class PieCrustServer
             $parameters = array();
         $parameters = array_merge(array(
                 'smart' => true,
+                'mounts' => array(),
                 'processors' => '*',
                 'skip_patterns' => array(),
                 'force_patterns' => array()
@@ -307,9 +312,10 @@ class PieCrustServer
             $this->bakeCacheDir,
             array(
                 'smart' => $parameters['smart'],
+                'mounts' => $parameters['mounts'],
+                'processors' => $parameters['processors'],
                 'skip_patterns' => $parameters['skip_patterns'],
-                'force_patterns' => $parameters['force_patterns'],
-                'processors' => $parameters['processors']
+                'force_patterns' => $parameters['force_patterns']
             ),
             $this->logger
         );

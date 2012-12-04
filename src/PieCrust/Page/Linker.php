@@ -9,7 +9,6 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Data\PaginationData;
 use PieCrust\Util\PageHelper;
-use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
@@ -191,11 +190,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                         $path = $item->getPathname();
                         try
                         {
-                            $relativePath = PathHelper::getRelativePagePath(
-                                $pieCrust, 
-                                $path, 
-                                $this->page->getPageType()
-                            );
+                            $relativePath = PageHelper::getRelativePath($this->page);
                             $uri = UriBuilder::buildUri($relativePath);
 
                             // To get the link's page, we need to be careful with the case

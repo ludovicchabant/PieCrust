@@ -11,9 +11,9 @@ return array(
     'nodecounter' => $baseDir . '/libs/lessphp/lessphp/lessify.inc.php',
     'lessify' => $baseDir . '/libs/lessphp/lessphp/lessify.inc.php',
     'MustacheLoader' => $baseDir . '/libs/mustache/mustache/MustacheLoader.php',
-    'Textile' => $baseDir . '/libs/textile/textile/classTextile.php',
-    'lessc' => $baseDir . '/libs/lessphp/lessphp/lessc.inc.php',
     'GeSHi' => $baseDir . '/libs/geshi/geshi/geshi.php',
+    'lessc' => $baseDir . '/libs/lessphp/lessphp/lessc.inc.php',
     'Mustache' => $baseDir . '/libs/mustache/mustache/Mustache.php',
     'MustacheException' => $baseDir . '/libs/mustache/mustache/Mustache.php',
+    'Textile' => $baseDir . '/libs/textile/textile/classTextile.php',
 );

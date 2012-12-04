@@ -15,6 +15,29 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Templates directories added with the `site/templates_dirs`
+  settings are now searched _before_ the default `_content/templates` directory.
+* BREAKING CHANGE: Changed the Twig filter `striptag` to `stripoutertag` to
+  avoid confusion with the existing `striptags` filter.
+* BREAKING CHANGE: The `paginator` object now returns full URLs for `next_page`,
+  `this_page` and `prev_page`. To prevent most cases of broken links after
+  updating to the latest PieCrust, see the first "improvement" below.
+* NEW: Added support for themes.
+* NEW: Added file-system based repository for plugins and themes.
+* NEW: Add new Twig filters: `stripslash`, `titlecase` and `xmldate`.
+* IMPROVEMENT: The `pcurl()` family of Twig functions won't do anything if a
+  given URL is already absolute. This prevents errors where the site's root is
+  added twice to an URL.
+* IMPROVEMENT: The BitBucket repository now caches web requests for an hour.
+* IMPROVEMENT: The Windows bootstrap script can better search for the PHP
+  executable.
+* BUG: Fixed problems when running in XAMPP on Windows.
+* BUG: Fixed a bug with the `pagination` object which could generate
+  double-slashes in navigation links.
+* BUG: Fixed a bug with enabling the SmartyPants formatter that could result in
+  an application crash.
+
+
 Frozen changes
 --------------
 

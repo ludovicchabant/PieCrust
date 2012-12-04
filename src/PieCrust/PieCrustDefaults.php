@@ -11,7 +11,7 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.8.7';
+    const VERSION = '0.9.0';
     
     /**
      * The application's source code directory.
@@ -30,10 +30,12 @@ class PieCrustDefaults
      */
     const CONTENT_DIR = '_content/';
     const CONFIG_PATH = '_content/config.yml';
+    const THEME_CONFIG_PATH = '_content/theme_config.yml';
     const CONTENT_TEMPLATES_DIR = '_content/templates/';
     const CONTENT_PAGES_DIR = '_content/pages/';
     const CONTENT_POSTS_DIR = '_content/posts/';
     const CONTENT_PLUGINS_DIR = '_content/plugins/';
+    const CONTENT_THEME_DIR = '_content/theme/';
     const CACHE_DIR = '_cache/';
     const CACHE_INFO_FILENAME = 'cacheinfo';
     
@@ -52,4 +54,13 @@ class PieCrustDefaults
      * Default values for commands and non-CMS stuff.
      */
     const DEFAULT_PLUGIN_SOURCE = 'http://bitbucket.org/ludovicchabant/';
+    const DEFAULT_THEME_SOURCE = 'http://bitbucket.org/ludovicchabant/';
+
+    /**
+     * The application's resources directory.
+     */
+    public static function RES_DIR()
+    {
+        return dirname(dirname(__DIR__)) . '/res/';
+    }
 }

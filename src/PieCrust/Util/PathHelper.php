@@ -73,40 +73,15 @@ class PathHelper
     }
 
     /**
-     * Gets the relative file-system path from the app root.
+     * Gets the relative file-system path from a given root.
+     * The path _must_ be inside the root -- no '../..' will be added.
      */
-    public static function getRelativePath(IPieCrust $pieCrust, $path, $stripExtension = false)
+    public static function getRelativePath($root, $path)
     {
-        $rootDir = $pieCrust->getRootDir();
-        $relativePath = substr($path, strlen($rootDir));
-        if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-        return $relativePath;
-    }
-    
-    /**
-     * Gets the relative file-system path from the pages or posts directories.
-     */
-    public static function getRelativePagePath(IPieCrust $pieCrust, $path, $pageType = IPage::TYPE_REGULAR, $stripExtension = false)
-    {
-        switch ($pageType)
-        {
-            case IPage::TYPE_REGULAR:
-            case IPage::TYPE_CATEGORY:
-            case IPage::TYPE_TAG:
-                $basePath = $pieCrust->getPagesDir();
-                break;
-            case IPage::TYPE_POST:
-                $basePath = $pieCrust->getPostsDir();
-                break;
-            default:
-                throw new InvalidArgumentException("Unknown page type given: " . $pageType);
-        }
-        if (!$basePath)
-            throw new PieCrustException("Can't get a relative page path if no pages or posts directory exsists in the website.");
-        
-        $relativePath = substr($path, strlen($basePath));
-        if ($stripExtension) $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
-        return $relativePath;
+        $len = strlen($root);
+        if ($root[$len - 1] != '/' and $root[$len - 1] != '\\')
+            $len = $len + 1;
+        return substr($path, $len);
     }
     
     /**
@@ -142,6 +117,37 @@ class PathHelper
             }
         }
         throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
+    }
+
+    public static function getUserOrThemeOrResPath(IPieCrust $pieCrust, $relativePath)
+    {
+        $pagesDir = $pieCrust->getPagesDir();
+        if ($pagesDir !== false)
+        {
+            $path = $pagesDir . $relativePath;
+            if (is_file($path))
+            {
+                return $path;
+            }
+        }
+
+        $themeDir = $pieCrust->getThemeDir();
+        if ($themeDir !== false)
+        {
+            $path = $themeDir . '_content/pages/' . $relativePath;
+            if (is_file($path))
+            {
+                return $path;
+            }
+        }
+
+        $path = PieCrustDefaults::RES_DIR() . 'pages/' . $relativePath;
+        if (is_file($path))
+        {
+            return $path;
+        }
+
+        return false;
     }
 
     /**
@@ -226,6 +232,47 @@ class PathHelper
     }
 
     /**
+     * Copies a directory recursively.
+     */
+    public static function copyDirectory($source, $destination, $skipPattern = null)
+    { 
+        self::copyDirectoryRecursive($source, $destination, $skipPattern, 0, '');
+    }
+
+    private static function copyDirectoryRecursive($source, $destination, $skipPattern, $relativeParent)
+    {
+        $files = new \FilesystemIterator($source);
+        if (!is_dir($destination))
+            mkdir($destination);
+        foreach ($files as $file)
+        {
+            $relativePathname = $file->getFilename();
+            if ($relativeParent != '')
+                $relativePathname = $relativeParent . '/' . $file->getFilename();
+
+            if ($skipPattern != null and preg_match($skipPattern, $relativePathname))
+                continue;
+
+            if ($file->isDir())
+            {
+                self::copyDirectoryRecursive(
+                    $file->getPathname(), 
+                    $destination . DIRECTORY_SEPARATOR . $file->getFilename(),
+                    $skipPattern,
+                    $relativePathname
+                );
+            }
+            else
+            {
+                copy(
+                    $file->getPathname(),
+                    $destination . DIRECTORY_SEPARATOR . $file->getFilename()
+                );
+            }
+        }
+    } 
+
+    /**
      * Deletes the contents of a directory, but optionally skips files
      * matching a given pattern.
      */
@@ -240,11 +287,9 @@ class PathHelper
         $files = new \FilesystemIterator($dir);
         foreach ($files as $file)
         {
-            $relativePathname = $file->getPathname();
+            $relativePathname = $file->getFilename();
             if ($relativeParent != '')
-            {
-                $relativePathname = $relativeParent . '/' . $file->getPathname();
-            }
+                $relativePathname = $relativeParent . '/' . $file->getFilename();
 
             if ($skipPattern != null and preg_match($skipPattern, $relativePathname))
             {
@@ -254,11 +299,16 @@ class PathHelper
             
             if ($file->isDir())
             {
-                $skippedFiles |= self::deleteDirectoryContentsRecursive($file->getPathname(), $skipPattern, $level + 1, $relativePathname);
+                $skippedFiles |= self::deleteDirectoryContentsRecursive(
+                    $file->getPathname(), 
+                    $skipPattern, 
+                    $level + 1, 
+                    $relativePathname
+                );
             }
             else
             {
-                if (!unlink($file))
+                if (!unlink($file->getPathname()))
                     throw new PieCrustException("Can't unlink file: ".$file);
             }
         }

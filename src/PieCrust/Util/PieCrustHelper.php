@@ -2,8 +2,10 @@
 
 namespace PieCrust\Util;
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PathHelper;
 
 
 /**
@@ -11,6 +13,17 @@ use PieCrust\PieCrustException;
  */
 class PieCrustHelper
 {
+    /**
+     * Returns a path relative to a site's root directory.
+     */
+    public static function getRelativePath(IPieCrust $pieCrust, $path, $stripExtension = false)
+    {
+        $relativePath = PathHelper::getRelativePath($pieCrust->getRootDir(), $path);
+        if ($stripExtension)
+            $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
+        return $relativePath;
+    }
+    
     /**
      * Formats a given text using the registered page formatters.
      * 
@@ -102,6 +115,13 @@ class PieCrustHelper
      */
     public static function formatUri(IPieCrust $pieCrust, $uri)
     {
+        if (strlen($uri) > 0 and
+            ($uri[0] == '/' or preg_match(',[a-zA-Z]+://,', $uri)))
+        {
+            // Don't do anything if the URI is already absolute.
+            return $uri;
+        }
+
         // Get the URI format for the current app. There's a couple weird ones
         // that should be used only if the URI to format doesn't have an extension
         // specified.
