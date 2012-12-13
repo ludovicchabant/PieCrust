@@ -15,7 +15,8 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* _none_
+* NEW: The `sitemap` processor can now auto-generate entries for pages and/or
+  posts.
 
 
 Frozen changes
