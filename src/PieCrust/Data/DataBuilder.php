@@ -87,6 +87,9 @@ class DataBuilder
             }
             $data[$blogKey] = $blogData;
         }
+        // Add the pages linker.
+        $data['pages'] = new Linker($page, $pieCrust->getPagesDir());
+        // Done!
         return $data;
     }
 
