@@ -7,7 +7,7 @@ use PieCrust\Util\UriParser;
 use PieCrust\Mock\MockFileSystem;
 
 
-class UriParserTest extends PHPUnit_Framework_TestCase
+class UriParserTest extends \PHPUnit_Framework_TestCase
 {
     protected function makeUriInfo($uri, $path, $wasPathChecked, $pageNumber = 1, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null)
     {

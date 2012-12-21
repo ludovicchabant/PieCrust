@@ -6,7 +6,7 @@ use PieCrust\Mock\MockPieCrust;
 use PieCrust\Util\PathHelper;
 
 
-class PageTest extends PHPUnit_Framework_TestCase
+class PageTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @expectedException \InvalidArgumentException

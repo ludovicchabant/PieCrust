@@ -4,7 +4,7 @@ use PieCrust\Baker\Processors\IProcessor;
 use PieCrust\Baker\Processors\SimpleFileProcessor;
 
 
-class SimpleFileProcessorTest extends PHPUnit_Framework_TestCase
+class SimpleFileProcessorTest extends \PHPUnit_Framework_TestCase
 {
     public function processFileDataProvider()
     {

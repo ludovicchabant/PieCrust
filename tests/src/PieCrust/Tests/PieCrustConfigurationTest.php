@@ -4,7 +4,7 @@ use PieCrust\PieCrustConfiguration;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustConfigurationTest extends PHPUnit_Framework_TestCase
+class PieCrustConfigurationTest extends \PHPUnit_Framework_TestCase
 {
     public function configurationDataProvider()
     {

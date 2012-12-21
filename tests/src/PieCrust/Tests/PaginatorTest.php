@@ -8,7 +8,7 @@ use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PaginatorTest extends PHPUnit_Framework_TestCase
+class PaginatorTest extends \PHPUnit_Framework_TestCase
 {
     public function paginatorDataProvider()
     {

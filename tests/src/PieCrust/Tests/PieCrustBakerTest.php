@@ -5,7 +5,7 @@ use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustBakerTest extends PHPUnit_Framework_TestCase
+class PieCrustBakerTest extends \PHPUnit_Framework_TestCase
 {
     public function testPostsWithOverridenDates()
     {

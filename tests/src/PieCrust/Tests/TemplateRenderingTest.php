@@ -7,7 +7,7 @@ use PieCrust\Util\PieCrustHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class TemplateRenderingTest extends PHPUnit_Framework_TestCase
+class TemplateRenderingTest extends \PHPUnit_Framework_TestCase
 {
     public function renderTemplateDataProvider()
     {
