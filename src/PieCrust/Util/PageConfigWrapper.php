@@ -115,16 +115,19 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
 
     protected function ensureAllLazyLoaded()
     {
-        foreach (array_keys($this->lazyValues) as $name)
+        if ($this->lazyValues != null)
         {
-            $this->ensureLazyLoaded($name, false);
+            foreach (array_keys($this->lazyValues) as $name)
+            {
+                $this->ensureLazyLoaded($name, false);
+            }
+            $this->lazyValues = null;
         }
-        $this->lazyValues = null;
     }
 
     protected function ensureLazyLoaded($name, $consume = true)
     {
-        if ($this->lazyValues)
+        if ($this->lazyValues != null)
         {
             if (isset($this->lazyValues[$name]))
             {
