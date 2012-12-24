@@ -76,6 +76,16 @@ class MockFileSystem
         return $this;
     }
 
+    public function withAsset($path, $contents)
+    {
+        return $this->withFile('kitchen/' . $path, $contents);
+    }
+
+    public function withAssetDir($path)
+    {
+        return $this->withDir('kitchen/' . $path);
+    }
+
     public function withCacheDir()
     {
         mkdir($this->url('kitchen/_cache'));
@@ -140,7 +150,7 @@ class MockFileSystem
         return $this->withAsset("_content/pages/{$dir}/$assetName", $assetContents);
     }
 
-    public function withPost($slug, $day, $month, $year, $config, $contents)
+    public function withPost($slug, $day, $month, $year, $config, $contents, $blog = null)
     {
         $text  = '---' . PHP_EOL;
         $text .= Yaml::dump($config) . PHP_EOL;
@@ -150,7 +160,11 @@ class MockFileSystem
         if (is_int($day)) $day = sprintf('%02d', $day);
         if (is_int($month)) $month = sprintf('%02d', $month);
         if (is_int($year)) $year = sprintf('%04d', $year);
-        $path = "_content/posts/{$year}-{$month}-{$day}_{$slug}.html";
+
+        $blogDir = '';
+        if ($blog != null)
+            $blogDir = $blog . '/';
+        $path = "_content/posts/{$blogDir}{$year}-{$month}-{$day}_{$slug}.html";
         return $this->withAsset($path, $text);
     }
 
@@ -186,11 +200,6 @@ class MockFileSystem
     public function withCustomTemplate($name, $subDir, $contents)
     {
         return $this->withAsset('_content/' . $subDir . '/' . $name . '.html', $contents);
-    }
-
-    public function withAsset($path, $contents)
-    {
-        return $this->withFile('kitchen/' . $path, $contents);
     }
 }
 
