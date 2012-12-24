@@ -5,6 +5,7 @@ namespace PieCrust\Baker\Processors;
 use Symfony\Component\Yaml\Yaml;
 use PieCrust\PieCrustException;
 use PieCrust\Util\UriParser;
+use PieCrust\Util\PieCrustHelper;
 
 
 class SitemapProcessor extends SimpleFileProcessor
@@ -17,10 +18,6 @@ class SitemapProcessor extends SimpleFileProcessor
     protected function doProcess($inputPath, $outputPath)
     {
         $sitemap = Yaml::parse(file_get_contents($inputPath));
-        if (!isset($sitemap['locations']))
-            throw new PieCrustException("No locations were defined in the sitemap.");
-
-        $rootUrl = $this->pieCrust->getConfig()->getValueUnchecked('site/root');
         
         $xml = new \XMLWriter();
         $xml->openMemory();
@@ -28,6 +25,53 @@ class SitemapProcessor extends SimpleFileProcessor
         $xml->startDocument('1.0', 'utf-8');
         $xml->startElement('urlset');
         $xml->writeAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+        $this->addManualLocations($sitemap, $xml);
+        $this->addAutomaticLocations($sitemap, $xml);
+        $xml->endElement();
+        $xml->endDocument();
+        $markup  = $xml->outputMemory(true);
+        file_put_contents($outputPath, $markup);
+    }
+
+    private function addAutomaticLocations($sitemap, $xml)
+    {
+        if (!isset($sitemap['autogen']))
+            return;
+
+        $autogen = $sitemap['autogen'];
+        if (isset($autogen['pages']) && $autogen['pages'])
+        {
+            foreach ($this->pieCrust->getEnvironment()->getPages() as $page)
+            {
+                $xml->startElement('url');
+                $xml->writeElement('loc', PieCrustHelper::formatUri($this->pieCrust, $page->getUri()));
+                $xml->writeElement('lastmod', date('c'));
+                $xml->endElement();
+            }
+        }
+
+        if (isset($autogen['posts']) && $autogen['posts'])
+        {
+            $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+            foreach ($blogKeys as $blogKey)
+            {
+                foreach ($this->pieCrust->getEnvironment()->getPosts($blogKey) as $page)
+                {
+                    $xml->startElement('url');
+                    $xml->writeElement('loc', PieCrustHelper::formatUri($this->pieCrust, $page->getUri()));
+                    $xml->writeElement('lastmod', date('c'));
+                    $xml->endElement();
+                }
+            }
+        }
+    }
+
+    private function addManualLocations($sitemap, $xml)
+    {
+        if (!isset($sitemap['locations']))
+            return;
+
+        $rootUrl = $this->pieCrust->getConfig()->getValueUnchecked('site/root');
         foreach ($sitemap['locations'] as $loc)
         {
             $xml->startElement('url');
@@ -64,9 +108,5 @@ class SitemapProcessor extends SimpleFileProcessor
             }
             $xml->endElement();
         }
-        $xml->endElement();
-        $xml->endDocument();
-        $markup  = $xml->outputMemory(true);
-        file_put_contents($outputPath, $markup);
     }
 }

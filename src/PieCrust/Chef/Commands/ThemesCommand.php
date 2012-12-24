@@ -9,6 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
+use PieCrust\Chef\Commands\PluginsCommand;
 use PieCrust\Repositories\ThemeInstallContext;
 use PieCrust\Util\PieCrustHelper;
 
@@ -112,11 +113,12 @@ class ThemesCommand extends ChefCommand
             throw new PieCrustException("Can't find a single theme named: {$themeName}");
 
         $theme = $themes[0];
-        $log->debug("Installing '{$theme['name']}' from: {$theme['source']}");
+        $log->info("GET {$theme['source']} [{$theme['name']}]");
         $className = $theme['repository_class'];
         $repository = new $className;
-        $context = new ThemeInstallContext($app, $log);
-        $repository->installTheme($theme, $context);
+        $installContext = new ThemeInstallContext($app, $log);
+        $repository->installTheme($theme, $installContext);
+        $this->installRequirements($theme, $context);
         $log->info("Theme {$theme['name']} is now installed.");
     }
 
@@ -179,5 +181,29 @@ class ThemesCommand extends ChefCommand
             }
         }
         return $metadata;
+    }
+
+    protected function installRequirements(array $theme, ChefContext $context)
+    {
+        if (!isset($theme['requires']))
+            return;
+
+        $log = $context->getLog();
+
+        $requirements = $theme['requires'];
+        if (isset($requirements['plugins']))
+        {
+            $requiredPlugins = $requirements['plugins'];
+            if (!is_array($requiredPlugins))
+                $requiredPlugins = array($requiredPlugins);
+
+            $log->info("Installing required plugins: ");
+            $installer = new PluginsCommand();
+            foreach ($requiredPlugins as $pluginName)
+            {
+                $log->debug("Installing {$pluginName}...");
+                $installer->installPlugin($pluginName, $context);
+            }
+        }
     }
 }
