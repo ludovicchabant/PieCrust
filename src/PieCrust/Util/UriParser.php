@@ -154,8 +154,9 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $relativeTagPage = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $relativeTagPage);
+        $tagPageName = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.html';
+        $themeOrResTagPageName = PieCrustDefaults::TAG_PAGE_NAME . '.html';
+        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $tagPageName, $themeOrResTagPageName);
         if ($path === false)
             return false;
 
@@ -194,8 +195,9 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $relativeTagPage = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $relativeTagPage);
+        $categoryPageName = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+        $themeOrResCategoryPageName = PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $categoryPageName, $themeOrResCategoryPageName);
         if ($path === false)
             return false;
 

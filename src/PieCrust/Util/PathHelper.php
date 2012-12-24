@@ -119,7 +119,7 @@ class PathHelper
         throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
     }
 
-    public static function getUserOrThemeOrResPath(IPieCrust $pieCrust, $relativePath)
+    public static function getUserOrThemeOrResPath(IPieCrust $pieCrust, $relativePath, $themeOrResPath = false)
     {
         $pagesDir = $pieCrust->getPagesDir();
         if ($pagesDir !== false)
@@ -131,17 +131,20 @@ class PathHelper
             }
         }
 
+        if ($themeOrResPath == null)
+            $themeOrResPath = $relativePath;
+
         $themeDir = $pieCrust->getThemeDir();
         if ($themeDir !== false)
         {
-            $path = $themeDir . '_content/pages/' . $relativePath;
+            $path = $themeDir . '_content/pages/' . $themeOrResPath;
             if (is_file($path))
             {
                 return $path;
             }
         }
 
-        $path = PieCrustDefaults::RES_DIR() . 'pages/' . $relativePath;
+        $path = PieCrustDefaults::RES_DIR() . 'pages/' . $themeOrResPath;
         if (is_file($path))
         {
             return $path;
