@@ -24,7 +24,7 @@ class DataBuilder
     {
         $pageData = $page->getPageData();
         $siteData = self::getSiteData($page);
-        $appData = DataBuilder::getAppData($page->getApp(), $siteData, $pageData, null, false);
+        $appData = self::getAppData($page->getApp(), $siteData, $pageData, null, false);
 
         $renderData = Configuration::mergeArrays(
             $pageData,
