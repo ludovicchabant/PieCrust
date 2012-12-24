@@ -172,35 +172,4 @@ class PageHelper
     {
         return $pieCrust->getEnvironment()->getPosts($blogKey);
     }
-
-    /**
-     * Gets a tag listing page.
-     */
-    public static function getTagPage(IPieCrust $pieCrust, $tag, $blogKey = null)
-    {
-        if ($blogKey == null)
-        {
-            $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
-            $blogKey = $blogKeys[0];
-        }
-        $pathPrefix = '';
-        if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
-            $pathPrefix = $blogKey . DIRECTORY_SEPARATOR;
-
-        $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-
-        $uri = UriBuilder::buildTagUri($pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
-        $path = $pieCrust->getPagesDir() . $pathPrefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-        if (!is_file($path))
-            return null;
-
-        $page = $pageRepository->getOrCreatePage(
-            $uri,
-            $tagPagePath,
-            IPage::TYPE_TAG,
-            $blogKey,
-            $tag
-        );
-        return $page;
-    }
 }
