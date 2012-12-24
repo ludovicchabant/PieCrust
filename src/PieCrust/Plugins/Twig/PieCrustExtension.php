@@ -16,21 +16,11 @@ class PieCrustExtension extends \Twig_Extension
 {
     protected $pieCrust;
     protected $linkCollector;
-    protected $defaultBlogKey;
-    protected $postUrlFormat;
-    protected $tagUrlFormat;
-    protected $categoryUrlFormat;
     
     public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->linkCollector = $pieCrust->getEnvironment()->getLinkCollector();
-        
-        $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
-        $this->defaultBlogKey = $blogKeys[0];
-        $this->postUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/post_url');
-        $this->tagUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/tag_url');
-        $this->categoryUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKeys[0].'/category_url');
     }
     
     public function getName()
@@ -86,22 +76,28 @@ class PieCrustExtension extends \Twig_Extension
             'day' => $day,
             'name' => $slug
         );
-        $format = ($blogKey == null) ? $this->postUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
+
+        $blogKey = $this->getSafeBlogKey($blogKey);
+        $format = $this->pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url');
         return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildPostUri($format, $postInfo));
     }
     
     public function getTagUrl($value, $blogKey = null)
     {
-        if ($this->linkCollector)
-            $this->linkCollector->registerTagCombination($blogKey == null ? $this->defaultBlogKey : $blogKey, $value);
+        $blogKey = $this->getSafeBlogKey($blogKey);
 
-        $format = ($blogKey == null) ? $this->tagUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url');
+        if ($this->linkCollector)
+            $this->linkCollector->registerTagCombination($blogKey, $value);
+
+        $format = $this->pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url');
         return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildTagUri($format, $value));
     }
     
     public function getCategoryUrl($value, $blogKey = null)
     {
-        $format = ($blogKey == null) ? $this->categoryUrlFormat : $pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
+        $blogKey = $this->getSafeBlogKey($blogKey);
+
+        $format = $this->pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url');
         return PieCrustHelper::formatUri($this->pieCrust, UriBuilder::buildCategoryUri($format, $value));
     }
 
@@ -174,6 +170,21 @@ class PieCrustExtension extends \Twig_Extension
     public function toAtomDate($value)
     {
         return date(\DateTime::ATOM, $value);
+    }
+
+    private function getSafeBlogKey($blogKey)
+    {
+        if ($blogKey == null)
+        {
+            return PieCrustHelper::getDefaultBlogKey($this->pieCrust);
+        }
+        else
+        {
+            $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+            if (!in_array($blogKey, $blogKeys))
+                throw new PieCrustException("No such blog in the website: {$blogKey}");
+            return $blogKey;
+        }
     }
 }
 

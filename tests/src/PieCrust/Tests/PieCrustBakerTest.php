@@ -365,6 +365,116 @@ EOD
         );
     }
 
+    public function testUrlWithMultipleBlogs()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'site' => array('blogs' => array('one', 'two')),
+                'two' => array('tag_url' => 'tagged/%tag%')
+            ))
+            ->withTemplate('default', '')
+            ->withTemplate('post', '{{content|raw}}')
+            ->withPage(
+                'normal',
+                array('layout' => 'none', 'format' => 'none'),
+                <<<'EOD'
+{{pctagurl('foo')}}
+{{pctagurl('foo', 'one')}}
+{{pctagurl('bar', 'two')}}
+EOD
+            )
+            ->withPage(
+                'second',
+                array('layout' => 'none', 'format' => 'none', 'blog' => 'two'),
+                <<<'EOD'
+{{pctagurl('foo')}}
+{{pctagurl('foo', 'one')}}
+{{pctagurl('bar', 'two')}}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2012, array('format' => 'none'), "POST ONE {{pctagurl('foo')}}", 'one')
+            ->withPost('post2', 1, 1, 2012, array('format' => 'none'), "POST TWO {{pctagurl('bar')}}", 'two');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->bake();
+
+        $this->assertEquals(
+            "/one/tag/foo.html\n/one/tag/foo.html\n/tagged/bar.html",
+            file_get_contents($fs->url('kitchen/_counter/normal.html'))
+        );
+        $this->assertEquals(
+            "/tagged/foo.html\n/one/tag/foo.html\n/tagged/bar.html",
+            file_get_contents($fs->url('kitchen/_counter/second.html'))
+        );
+        $this->assertEquals(
+            "POST ONE /one/tag/foo.html",
+            file_get_contents($fs->url('kitchen/_counter/one/2012/01/01/post1.html'))
+        );
+        $this->assertEquals(
+            "POST TWO /tagged/bar.html",
+            file_get_contents($fs->url('kitchen/_counter/two/2012/01/01/post2.html'))
+        );
+    }
+
+    public function testUrlInTemplateWithMultipleBlogs()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'site' => array('blogs' => array('one', 'two')),
+                'two' => array('tag_url' => 'tagged/%tag%')
+            ))
+            ->withTemplate('default', "{{content|raw}}\nTPL:{{pctagurl('foo')}}")
+            ->withTemplate('post', "{{content|raw}}\nTPL:{{pctagurl('bar')}}")
+            ->withPage(
+                'normal',
+                array('format' => 'none'),
+                <<<'EOD'
+{% for post in one.posts %}
+{{post.content|raw}}
+{% endfor %}
+{% for post in two.posts %}
+{{post.content|raw}}
+{% endfor %}
+EOD
+            )
+            ->withPage(
+                'second',
+                array('format' => 'none', 'blog' => 'two'),
+                <<<'EOD'
+{% for post in one.posts %}
+{{post.content|raw}}
+{% endfor %}
+{% for post in two.posts %}
+{{post.content|raw}}
+{% endfor %}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2012, array('format' => 'none'), "POST ONE {{pctagurl('foo')}}", 'one')
+            ->withPost('post2', 1, 1, 2012, array('format' => 'none'), "POST TWO {{pctagurl('bar')}}", 'two');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->bake();
+
+        $this->assertEquals(
+            "POST ONE /one/tag/foo.html\nPOST TWO /tagged/bar.html\n\nTPL:/one/tag/foo.html",
+            file_get_contents($fs->url('kitchen/_counter/normal.html'))
+        );
+        $this->assertEquals(
+            "POST ONE /one/tag/foo.html\nPOST TWO /tagged/bar.html\n\nTPL:/tagged/foo.html",
+            file_get_contents($fs->url('kitchen/_counter/second.html'))
+        );
+        $this->assertEquals(
+            "POST ONE /one/tag/foo.html\nTPL:/one/tag/bar.html",
+            file_get_contents($fs->url('kitchen/_counter/one/2012/01/01/post1.html'))
+        );
+        $this->assertEquals(
+            "POST TWO /tagged/bar.html\nTPL:/tagged/bar.html",
+            file_get_contents($fs->url('kitchen/_counter/two/2012/01/01/post2.html'))
+        );
+    }
+
     public function testBakeWithTheme()
     {
         $fs = MockFileSystem::create()
@@ -435,6 +545,59 @@ EOD
         );
     }
 
+    public function testBakeTagPagesForMultipleBlogsWithThemeListing()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none', 'blogs' => array('one', 'two'))))
+            ->withTemplate('default', '')
+            ->withTemplate('post', '{{content|raw}}')
+            ->withThemeConfig(array())
+            ->withAsset(
+                '_content/theme/_content/pages/_tag.html', 
+                <<<EOD
+---
+layout: none
+---
+{% for post in pagination.posts %}
+THEME: {{ post.content|raw }}
+{% endfor %}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2010, array('tags' => array('foo')), '1/POST ONE', 'one')
+            ->withPost('post2', 2, 1, 2010, array('tags' => array('foo')), '1/POST TWO', 'one')
+            ->withPost('post3', 3, 1, 2010, array('tags' => array('bar')), '1/POST THREE', 'one')
+            ->withPost('post4', 4, 1, 2010, array('tags' => array('bar')), '1/POST FOUR', 'one')
+            ->withPost('post5', 5, 1, 2010, array('tags' => array('foo', 'bar')), '1/POST FIVE', 'one')
+            ->withPost('post1', 1, 1, 2010, array('tags' => array('foo')), '2/POST ONE', 'two')
+            ->withPost('post2', 2, 1, 2010, array('tags' => array('foo', 'bar')), '2/POST TWO', 'two')
+            ->withPost('post3', 3, 1, 2010, array('tags' => array('foo')), '2/POST THREE', 'two')
+            ->withPost('post4', 4, 1, 2010, array('tags' => array('bar')), '2/POST FOUR', 'two')
+            ->withPost('post5', 5, 1, 2010, array('tags' => array('foo', 'bar')), '2/POST FIVE', 'two');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $this->assertEquals(
+            "THEME: 1/POST FIVE\nTHEME: 1/POST TWO\nTHEME: 1/POST ONE\n", 
+            file_get_contents($fs->url('counter/one/tag/foo.html'))
+        );
+        $this->assertEquals(
+            "THEME: 1/POST FIVE\nTHEME: 1/POST FOUR\nTHEME: 1/POST THREE\n", 
+            file_get_contents($fs->url('counter/one/tag/bar.html'))
+        );
+
+        $this->assertEquals(
+            "THEME: 2/POST FIVE\nTHEME: 2/POST THREE\nTHEME: 2/POST TWO\nTHEME: 2/POST ONE\n", 
+            file_get_contents($fs->url('counter/two/tag/foo.html'))
+        );
+        $this->assertEquals(
+            "THEME: 2/POST FIVE\nTHEME: 2/POST FOUR\nTHEME: 2/POST TWO\n", 
+            file_get_contents($fs->url('counter/two/tag/bar.html'))
+        );
+    }
+
     public function testBakeCategoryPage()
     {
         $fs = MockFileSystem::create()
@@ -468,6 +631,59 @@ EOD
         $this->assertEquals(
             "POST FOUR\nPOST THREE\n", 
             file_get_contents($fs->url('counter/bar.html'))
+        );
+    }
+
+    public function testBakeCategoryPageForMultipleBlogsWithThemeListing()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none', 'blogs' => array('one', 'two'))))
+            ->withTemplate('default', '')
+            ->withTemplate('post', '{{content|raw}}')
+            ->withThemeConfig(array())
+            ->withAsset(
+                '_content/theme/_content/pages/_category.html', 
+                <<<EOD
+---
+layout: none
+---
+{% for post in pagination.posts %}
+THEME: {{ post.content|raw }}
+{% endfor %}
+EOD
+            )
+            ->withPost('post1', 1, 1, 2010, array('category' => 'foo'), '1/POST ONE', 'one')
+            ->withPost('post2', 2, 1, 2010, array('category' => 'foo'), '1/POST TWO', 'one')
+            ->withPost('post3', 3, 1, 2010, array('category' => 'bar'), '1/POST THREE', 'one')
+            ->withPost('post4', 4, 1, 2010, array('category' => 'bar'), '1/POST FOUR', 'one')
+            ->withPost('post5', 5, 1, 2010, array('category' => 'foo'), '1/POST FIVE', 'one')
+            ->withPost('post1', 1, 1, 2010, array('category' => 'foo'), '2/POST ONE', 'two')
+            ->withPost('post2', 2, 1, 2010, array('category' => 'foo'), '2/POST TWO', 'two')
+            ->withPost('post3', 3, 1, 2010, array('category' => 'bar'), '2/POST THREE', 'two')
+            ->withPost('post4', 4, 1, 2010, array('category' => 'bar'), '2/POST FOUR', 'two')
+            ->withPost('post5', 5, 1, 2010, array('category' => 'foo'), '2/POST FIVE', 'two');
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $this->assertEquals(
+            "THEME: 1/POST FIVE\nTHEME: 1/POST TWO\nTHEME: 1/POST ONE\n", 
+            file_get_contents($fs->url('counter/one/foo.html'))
+        );
+        $this->assertEquals(
+            "THEME: 1/POST FOUR\nTHEME: 1/POST THREE\n", 
+            file_get_contents($fs->url('counter/one/bar.html'))
+        );
+
+        $this->assertEquals(
+            "THEME: 2/POST FIVE\nTHEME: 2/POST TWO\nTHEME: 2/POST ONE\n", 
+            file_get_contents($fs->url('counter/two/foo.html'))
+        );
+        $this->assertEquals(
+            "THEME: 2/POST FOUR\nTHEME: 2/POST THREE\n", 
+            file_get_contents($fs->url('counter/two/bar.html'))
         );
     }
 }

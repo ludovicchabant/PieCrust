@@ -215,14 +215,21 @@ class PieCrustBaker
         if ($this->pieCrust->isCachingEnabled())
             $bakeInfoPath = $this->pieCrust->getCacheDir() . self::BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
+
+        //Create the execution context.
+        $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext(true);
         
         // Get the cache validity information.
         $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
         $cacheValidity = $cacheInfo->getValidity(false);
+        $executionContext->isCacheValid = $cacheValidity['is_valid'];
         
         // Figure out if we need to clean the cache.
         if ($this->pieCrust->isCachingEnabled())
-            $this->cleanCacheIfNeeded($cacheValidity);
+        {
+            if ($this->cleanCacheIfNeeded($cacheValidity))
+                $executionContext->wasCacheCleaned = true;
+        }
 
         // Bake!
         $this->bakePosts();
@@ -310,6 +317,7 @@ class PieCrustBaker
             
             $this->parameters['smart'] = false;
         }
+        return $cleanCache;
     }
     
     protected function bakePages()
@@ -461,7 +469,11 @@ class PieCrustBaker
                         $blogKey,
                         $tag
                     );
-                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker(
+                        $this->getBakeDir(), 
+                        $this->getPageBakerParameters(),
+                        $this->logger
+                    );
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
@@ -510,7 +522,11 @@ class PieCrustBaker
                         $blogKey,
                         $category
                     );
-                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker(
+                        $this->getBakeDir(),
+                        $this->getPageBakerParameters(),
+                        $this->logger
+                    );
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();

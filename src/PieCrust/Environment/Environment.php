@@ -4,6 +4,7 @@ namespace PieCrust\Environment;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Runner\ExecutionContext;
 
 
 /**
@@ -44,21 +45,16 @@ abstract class Environment
      */
     public abstract function getPosts($blogKey);
 
-    protected $lastRunInfo;
+    protected $executionContext;
     /**
-     * Gets the info about the last executed request.
+     * Gets the info about the current executed request, if any.
+     * This info will stay available until a new request is executed.
      */
-    public function getLastRunInfo()
+    public function getExecutionContext($autoCreate = false)
     {
-        return $this->lastRunInfo;
-    }
-
-    /**
-     * Sets the info about the last executed request.
-     */
-    public function setLastRunInfo($runInfo)
-    {
-        $this->lastRunInfo = $runInfo;
+        if ($autoCreate && $this->executionContext == null)
+            $this->executionContext = new ExecutionContext();
+        return $this->executionContext;
     }
 
     protected $uriFormat;
