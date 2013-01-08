@@ -191,7 +191,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                             // to all kinds of bad things!
                             // TODO: obviously, there needs to be some design changes to
                             // prevent this kind of chaotic behaviour. 
-                            if ($path == $this->page->getPath())
+                            if (str_replace('\\', '/', $path) == str_replace('\\', '/', $this->page->getPath()))
                             {
                                 $page = $this->page;
                             }

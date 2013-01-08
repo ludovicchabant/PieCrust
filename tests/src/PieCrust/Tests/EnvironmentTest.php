@@ -16,7 +16,10 @@ class EnvironmentTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(1, count($pageInfos));
         $this->assertEquals('_index.html', $pageInfos[0]['relative_path']);
-        $this->assertEquals(PieCrustDefaults::RES_DIR() . 'pages/_index.html', $pageInfos[0]['path']);
+        $this->assertEquals(
+            str_replace('\\', '/', PieCrustDefaults::RES_DIR() . 'pages/_index.html'),
+            str_replace('\\', '/', $pageInfos[0]['path'])
+        );
     }
 
     public function testGetSimpleSitePageInfos()
@@ -28,7 +31,10 @@ class EnvironmentTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(1, count($pageInfos));
         $this->assertEquals('_index.html', $pageInfos[0]['relative_path']);
-        $this->assertEquals($fs->url('kitchen/_content/pages/_index.html'), $pageInfos[0]['path']);
+        $this->assertEquals(
+            str_replace('\\', '/', $fs->url('kitchen/_content/pages/_index.html')),
+            str_replace('\\', '/', $pageInfos[0]['path'])
+        );
     }
 }
 
