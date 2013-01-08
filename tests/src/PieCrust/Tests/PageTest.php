@@ -71,5 +71,61 @@ class PageTest extends \PHPUnit_Framework_TestCase
         $expected = PathHelper::getUserOrThemeOrResPath($app, '_category.html');
         $this->assertEquals($expected, $page->getPath());
     }
+
+    public function testTagPages()
+    {
+        $app = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withPost('test1', 1, 1, 2012, array('tags' => array('tag one')), 'Test one')
+            ->withPost('test2', 1, 2, 2012, array('tags' => array('foo')), 'Test two')
+            ->withPost('test3', 1, 3, 2012, array(), 'Test three')
+            ->withPost('test4', 1, 4, 2012, array('tags' => array('bar', 'tag one')), 'Test four')
+            ->withPost('test5', 1, 5, 2012, array('tags' => array('foo', 'tag one')), 'Test five')
+            ->withPage(
+                '_tag', 
+                array('layout' => 'none'), 
+                "{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
+            )
+            ->getApp();
+
+        $page = Page::createFromUri($app, '/tag/foo');
+        $this->assertEquals(
+            "Test five\nTest two\n",
+            $page->getContentSegment()
+        );
+        $page = Page::createFromUri($app, '/tag/tag-one');
+        $this->assertEquals(
+            "Test five\nTest four\nTest one\n",
+            $page->getContentSegment()
+        );
+    }
+
+    public function testCategoryPages()
+    {
+        $app = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withPost('test1', 1, 1, 2012, array('category' => 'cat one'), 'Test one')
+            ->withPost('test2', 1, 2, 2012, array('category' => 'foo'), 'Test two')
+            ->withPost('test3', 1, 3, 2012, array('category' => 'foo'), 'Test three')
+            ->withPost('test4', 1, 4, 2012, array('category' => 'cat one'), 'Test four')
+            ->withPost('test5', 1, 5, 2012, array('category' => 'cat one'), 'Test five')
+            ->withPage(
+                '_category', 
+                array('layout' => 'none'), 
+                "{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
+            )
+            ->getApp();
+
+        $page = Page::createFromUri($app, '/foo');
+        $this->assertEquals(
+            "Test three\nTest two\n",
+            $page->getContentSegment()
+        );
+        $page = Page::createFromUri($app, '/cat-one');
+        $this->assertEquals(
+            "Test five\nTest four\nTest one\n",
+            $page->getContentSegment()
+        );
+    }
 }
 

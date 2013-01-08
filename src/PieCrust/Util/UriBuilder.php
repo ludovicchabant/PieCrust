@@ -72,7 +72,7 @@ class UriBuilder
     {
         if (is_array($tag))
             $tag = implode('/', $tag);
-        $tag = preg_replace('/\s+/', '-', $tag);
+        $tag = self::slugify($tag);
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
     
@@ -89,7 +89,7 @@ class UriBuilder
      */
     public static function buildCategoryUri($categoryUrlFormat, $category)
     {
-        $category = preg_replace('/\s+/', '-', $category);
+        $category = self::slugify($category);
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     
@@ -99,5 +99,14 @@ class UriBuilder
     public static function buildCategoryUriPattern($categoryUrlFormat)
     {
         return '/^' . str_replace('%category%', '(?P<cat>[\w\-\.]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
+    }
+
+    /**
+     * Transform a string into something that can be used for an URL.
+     * TODO: replace other character, remove diacritics, etc.
+     */
+    public static function slugify($value)
+    {
+        return preg_replace('/\s+/', '-', $value);
     }
 }
