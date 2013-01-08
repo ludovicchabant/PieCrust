@@ -216,7 +216,7 @@ class PieCrustBaker
             $bakeInfoPath = $this->pieCrust->getCacheDir() . self::BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
 
-        //Create the execution context.
+        // Create the execution context.
         $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext(true);
         
         // Get the cache validity information.
@@ -225,10 +225,14 @@ class PieCrustBaker
         $executionContext->isCacheValid = $cacheValidity['is_valid'];
         
         // Figure out if we need to clean the cache.
+        $this->parameters['__smart_content'] = $this->parameters['smart'];
         if ($this->pieCrust->isCachingEnabled())
         {
             if ($this->cleanCacheIfNeeded($cacheValidity))
+            {
                 $executionContext->wasCacheCleaned = true;
+                $this->parameters['__smart_content'] = false;
+            }
         }
 
         // Bake!
@@ -314,8 +318,6 @@ class PieCrustBaker
             PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir());
             file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
             $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
-            
-            $this->parameters['smart'] = false;
         }
         return $cleanCache;
     }
@@ -549,7 +551,7 @@ class PieCrustBaker
     protected function getPageBakerParameters()
     {
         return array(
-            'smart' => $this->parameters['smart'],
+            'smart' => $this->parameters['__smart_content'],
             'copy_assets' => $this->parameters['copy_assets'],
             'bake_record' => $this->bakeRecord
         );
