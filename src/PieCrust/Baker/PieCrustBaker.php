@@ -455,21 +455,27 @@ class PieCrustBaker
             foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
-                
-                $formattedTag = $tag;
-                if (is_array($tag))
-                    $formattedTag = implode('+', $tag);
-                
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
                     $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
+                    if (is_array($tag))
+                    {
+                        $slugifiedTag = array_map(function($t) { return UriBuilder::slugify($t); }, $tag);
+                        $formattedTag = implode('+', $tag);
+                    }
+                    else
+                    {
+                        $slugifiedTag = UriBuilder::slugify($tag);
+                        $formattedTag = $tag;
+                    }
+
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
                         IPage::TYPE_TAG,
                         $blogKey,
-                        $tag
+                        $slugifiedTag
                     );
                     $baker = new PageBaker(
                         $this->getBakeDir(), 
@@ -517,12 +523,14 @@ class PieCrustBaker
                 if (count($postInfos) > 0)
                 {
                     $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
+                    $slugifiedCategory = UriBuilder::slugify($category);
+
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
                         IPage::TYPE_CATEGORY,
                         $blogKey,
-                        $category
+                        $slugifiedCategory
                     );
                     $baker = new PageBaker(
                         $this->getBakeDir(),
