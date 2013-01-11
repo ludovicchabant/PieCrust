@@ -84,18 +84,18 @@ class PageTest extends \PHPUnit_Framework_TestCase
             ->withPage(
                 '_tag', 
                 array('layout' => 'none'), 
-                "{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
+                "{{tag}}\n{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
             )
             ->getApp();
 
         $page = Page::createFromUri($app, '/tag/foo');
         $this->assertEquals(
-            "Test five\nTest two\n",
+            "foo\nTest five\nTest two\n",
             $page->getContentSegment()
         );
         $page = Page::createFromUri($app, '/tag/tag-one');
         $this->assertEquals(
-            "Test five\nTest four\nTest one\n",
+            "tag one\nTest five\nTest four\nTest one\n",
             $page->getContentSegment()
         );
     }
@@ -112,18 +112,18 @@ class PageTest extends \PHPUnit_Framework_TestCase
             ->withPage(
                 '_category', 
                 array('layout' => 'none'), 
-                "{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
+                "{{category}}\n{% for p in pagination.posts %}\n{{p.content|raw}}\n{% endfor %}"
             )
             ->getApp();
 
         $page = Page::createFromUri($app, '/foo');
         $this->assertEquals(
-            "Test three\nTest two\n",
+            "foo\nTest three\nTest two\n",
             $page->getContentSegment()
         );
         $page = Page::createFromUri($app, '/cat-one');
         $this->assertEquals(
-            "Test five\nTest four\nTest one\n",
+            "cat one\nTest five\nTest four\nTest one\n",
             $page->getContentSegment()
         );
     }

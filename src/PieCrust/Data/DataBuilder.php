@@ -10,6 +10,7 @@ use PieCrust\Page\Paginator;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -140,9 +141,38 @@ class DataBuilder
                 {
                     $data['tag'] = $page->getPageKey();
                 }
+                if (strpos($page->getPageKey(), '-') >= 0)
+                {
+                    // The tag may have been slugified. Let's cheat a bit by looking at
+                    // the first tag that matches in the first pagination post, and
+                    // using that instead.
+                    $paginationPosts = $paginator->posts();
+                    if (count($paginationPosts) > 0)
+                    {
+                        $firstPost = $paginationPosts[0];
+                        $firstPostTags = $firstPost['tags'];
+                        if (!is_array($firstPostTags))
+                            $firstPostTags = array($firstPostTags);
+                        foreach ($firstPostTags as $t)
+                        {
+                            if (UriBuilder::slugify($t) == $data['tag'])
+                                $data['tag'] = $t;
+                        }
+                    }
+                }
                 break;
             case IPage::TYPE_CATEGORY:
                 $data['category'] = $page->getPageKey();
+                if (strpos($page->getPageKey(), '-') >= 0)
+                {
+                    // Same remark as for tags.
+                    $paginationPosts = $paginator->posts();
+                    if (count($paginationPosts) > 0)
+                    {
+                        $firstPost = $paginationPosts[0];
+                        $data['category'] = $firstPost['category'];
+                    }
+                }
                 break;
         }
         
