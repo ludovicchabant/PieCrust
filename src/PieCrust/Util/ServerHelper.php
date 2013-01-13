@@ -18,7 +18,7 @@ class ServerHelper
         if (isset($server['HTTP_HOST']))
         {
             $host = ((isset($server['HTTPS']) and $server['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $server['HTTP_HOST'];
-            $folder = rtrim(dirname($server['PHP_SELF']), '/') .'/';
+            $folder = rtrim(dirname($server['PHP_SELF']), '\\/') .'/';
             return $host . $folder;
         }
         else
@@ -71,7 +71,7 @@ class ServerHelper
                 // query string that we should ignore because we're using 'pretty URLs'.
                 if (isset($server['PHP_SELF']))
                 {
-                    $rootDirectory = rtrim(dirname($server['PHP_SELF']), '/') . '/';
+                    $rootDirectory = rtrim(dirname($server['PHP_SELF']), '\\/') . '/';
                     if (strlen($rootDirectory) > 1)
                     {
                         if (strlen($requestUri) < strlen($rootDirectory))
