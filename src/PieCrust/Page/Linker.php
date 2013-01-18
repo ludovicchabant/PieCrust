@@ -187,6 +187,10 @@ class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
 
                     if ($item->isDir())
                     {
+                        // Skip "asset" directories.
+                        if (preg_match('/\-assets$/', $filename))
+                            continue;
+
                         $linker = new Linker($this->page, $item->getPathname());
                         $this->linksCache[$filename . '_'] = $linker;
                         // We add '_' at the end of the directory name to avoid

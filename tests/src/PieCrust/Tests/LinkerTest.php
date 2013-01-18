@@ -144,6 +144,32 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
         ));
     }
 
+    public function testSiteWithPageAssets()
+    {
+        $fs = MockFileSystem::create()
+            ->withPage('foo', array(), '')
+            ->withPageAsset('foo', 'bar1')
+            ->withPageAsset('foo', 'bar2')
+            ->withPage('something-assets', array(), '');
+        $pc = $fs->getApp();
+
+        $page = Page::createFromUri($pc, '/foo', false);
+        $data = DataBuilder::getSiteData($page);
+        $linker = $data['site']['pages'];
+        $this->assertLinkerIsPagesArray($linker, array(
+            $this->makeLinkData('foo', '/?/foo', true),
+            $this->makeLinkData('something-assets', '/?/something-assets')
+        ));
+
+        $page = Page::createFromUri($pc, '/something-assets', false);
+        $data = DataBuilder::getSiteData($page);
+        $linker = $data['site']['pages'];
+        $this->assertLinkerIsPagesArray($linker, array(
+            $this->makeLinkData('foo', '/?/foo'),
+            $this->makeLinkData('something-assets', '/?/something-assets', true)
+        ));
+    }
+
     protected function assertLinkerIsPage($linker, $name, $uri, $isSelf)
     {
         $this->assertTrue($linker instanceof LinkData);
