@@ -7,7 +7,6 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Data\PaginationData;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
@@ -18,9 +17,9 @@ use PieCrust\Util\UriBuilder;
  *
  * @formatObject
  * @explicitInclude
- * @documentation The list of pages in the same directory as the current one. See the documentation for more information.
+ * @documentation The list of pages in the current sub-directory. See the documentation for more information.
  */
-class Linker implements \ArrayAccess, \Iterator, \Countable
+class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
 {
     protected $page;
     protected $baseDir;
@@ -29,7 +28,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     protected $sortByReverse;
 
     protected $linksCache;
-    
+
     /**
      * Creates a new instance of Linker.
      */
@@ -50,10 +49,10 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
     public function name()
     {
         if (strlen($this->baseDir) == strlen($this->page->getApp()->getPagesDir()))
-                return '';
+            return '';
         return basename($this->baseDir);
     }
-    
+
     /**
      * Gets whether this maps to a directory. Always returns true.
      */
@@ -80,7 +79,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
         return $this;
     }
     // }}}
-    
+
     // {{{ Countable members
     public function count()
     {
@@ -95,56 +94,74 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
         $this->ensureLinksCache();
         return isset($this->linksCache[$offset]);
     }
-    
-    public function offsetGet($offset) 
+
+    public function offsetGet($offset)
     {
         $this->ensureLinksCache();
         return $this->linksCache[$offset];
     }
-    
+
     public function offsetSet($offset, $value)
     {
         throw new PieCrustException('Linker is read-only.');
     }
-    
+
     public function offsetUnset($offset)
     {
         throw new PieCrustException('Linker is read-only.');
     }
     // }}}
-    
+
     // {{{ Iterator members
     public function rewind()
     {
         $this->ensureLinksCache();
         reset($this->linksCache);
     }
-  
+
     public function current()
     {
         $this->ensureLinksCache();
         return current($this->linksCache);
     }
-  
+
     public function key()
     {
         $this->ensureLinksCache();
         return key($this->linksCache);
     }
-  
+
     public function next()
     {
         $this->ensureLinksCache();
         next($this->linksCache);
     }
-  
+
     public function valid()
     {
         $this->ensureLinksCache();
         return key($this->linksCache) !== null;
     }
     // }}}
-    
+
+    // {{{ RecursiveIterator members
+    public function getChildren()
+    {
+        $linker = $this->current();
+        if (!($linker instanceof Linker))
+            return null;
+        return $linker;
+    }
+
+    public function hasChildren()
+    {
+        $linker = $this->current();
+        if (!($linker instanceof Linker))
+            return false;
+        return $linker->count() > 0;
+    }
+    // }}}
+
     protected function ensureLinksCache()
     {
         if ($this->linksCache === null)
@@ -155,6 +172,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                 $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
                 $this->linksCache = array();
+
                 $skipNames = array('Thumbs.db');
                 $it = new FilesystemIterator($this->baseDir);
                 foreach ($it as $item)
@@ -166,14 +184,14 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                         continue;
                     if (in_array($filename, $skipNames))
                         continue;
-                    
+
                     if ($item->isDir())
                     {
                         $linker = new Linker($this->page, $item->getPathname());
                         $this->linksCache[$filename . '_'] = $linker;
                         // We add '_' at the end of the directory name to avoid
                         // collisions with a possibly existing page with the same
-                        // name (since we strip out the '.html' extension).
+                        // name (since we strip out the file extension).
                         // This means the user must access directories with
                         // 'link.dirname_' instead of 'link.dirname' but hey, if
                         // you have a better idea, send me an email!
@@ -190,7 +208,7 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                             // change the page number *while* we're rendering, which leads
                             // to all kinds of bad things!
                             // TODO: obviously, there needs to be some design changes to
-                            // prevent this kind of chaotic behaviour. 
+                            // prevent this kind of chaotic behaviour.
                             if (str_replace('\\', '/', $path) == str_replace('\\', '/', $this->page->getPath()))
                             {
                                 $page = $this->page;
@@ -201,15 +219,16 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
                                 $uri = UriBuilder::buildUri($relativePath);
                                 $page = $pageRepository->getOrCreatePage($uri, $path);
                             }
-                            
+
                             $key = preg_replace('/\.[a-zA-Z0-9]+$/', '', $filename);
                             $key = str_replace('.', '_', $key);
-                            $this->linksCache[$key] = array(
-                                'uri' => PieCrustHelper::formatUri($pieCrust, $page->getUri()),
-                                'name' => $key,
-                                'is_dir' => false,
-                                'is_self' => ($page == $this->page),
-                                'page' => new PaginationData($page)
+                            $this->linksCache[$key] = new LinkData(
+                                $page,
+                                array(
+                                    'name' => $key,
+                                    'is_dir' => false,
+                                    'is_self' => ($page == $this->page)
+                                )
                             );
                         }
                         catch (Exception $e)
@@ -253,11 +272,11 @@ class Linker implements \ArrayAccess, \Iterator, \Countable
         if ($link2IsLinker)
             return $this->sortByReverse ? -1 : 1;
 
-        $page1 = $link1['page']->getPage();
+        $page1 = $link1->getPage();
         $value1 = $page1->getConfig()->getValue($this->sortByName);
-        $page2 = $link2['page']->getPage();
+        $page2 = $link2->getPage();
         $value2 = $page2->getConfig()->getValue($this->sortByName);
-        
+
         if ($value1 == null && $value2 == null)
             return 0;
         if ($value1 == null && $value2 != null)

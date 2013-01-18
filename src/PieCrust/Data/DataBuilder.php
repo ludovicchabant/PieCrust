@@ -45,10 +45,10 @@ class DataBuilder
         $pageContentSegments = $page->getContentSegments();
         $siteData = self::getSiteData($page);
         $appData = self::getAppData(
-            $pieCrust, 
-            $siteData, 
-            $pageData, 
-            $pageContentSegments, 
+            $pieCrust,
+            $siteData,
+            $pageData,
+            $pageContentSegments,
             $page->wasCached()
         );
         $renderData = Configuration::mergeArrays(
@@ -89,7 +89,11 @@ class DataBuilder
             $data[$blogKey] = $blogData;
         }
         // Add the pages linker.
-        $data['pages'] = new Linker($page, $pieCrust->getPagesDir());
+        if (!isset($data['site']))
+            $data['site'] = array();
+        $linker = new Linker($page, $pieCrust->getPagesDir());
+        $linkerIterator = new \RecursiveIteratorIterator($linker, \RecursiveIteratorIterator::LEAVES_ONLY);
+        $data['site']['pages'] = $linkerIterator;
         // Done!
         return $data;
     }
@@ -104,11 +108,11 @@ class DataBuilder
     public static function getPageData(IPage $page)
     {
         $pieCrust = $page->getApp();
-        
+
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
- 
+
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
 
@@ -118,18 +122,18 @@ class DataBuilder
             'pagination' => $paginator,
             'link' => $linker
         );
-        
+
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
-        
+
         $data['page']['timestamp'] = $page->getDate();
         $dateFormat = PageHelper::getConfigValueUnchecked(
-            $page, 
-            'date_format', 
+            $page,
+            'date_format',
             $page->getConfig()->getValueUnchecked('blog')
         );
         $data['page']['date'] = date($dateFormat, $page->getDate());
-        
+
         switch ($page->getPageType())
         {
             case IPage::TYPE_TAG:
@@ -175,7 +179,7 @@ class DataBuilder
                 }
                 break;
         }
-        
+
         $extraData = $page->getExtraPageData();
         if ($extraData)
         {
@@ -191,7 +195,7 @@ class DataBuilder
                 $data['extra'] = $extraData;
             }
         }
-        
+
         return $data;
     }
 }
