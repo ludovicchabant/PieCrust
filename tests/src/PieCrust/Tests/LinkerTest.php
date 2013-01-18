@@ -194,7 +194,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
     protected function assertLinkerIsPagesArray($linker, $pages)
     {
-        $this->assertInstanceOf('\RecursiveIteratorIterator', $linker);
+        $this->assertInstanceOf('\PieCrust\Page\RecursiveLinkerIterator', $linker);
 
         $count = 0;
         foreach ($linker as $key => $actual)

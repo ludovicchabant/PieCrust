@@ -5,6 +5,7 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Linker;
+use PieCrust\Page\RecursiveLinkerIterator;
 use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
 use PieCrust\Util\Configuration;
@@ -92,7 +93,7 @@ class DataBuilder
         if (!isset($data['site']))
             $data['site'] = array();
         $linker = new Linker($page, $pieCrust->getPagesDir());
-        $linkerIterator = new \RecursiveIteratorIterator($linker, \RecursiveIteratorIterator::LEAVES_ONLY);
+        $linkerIterator = new RecursiveLinkerIterator($linker);
         $data['site']['pages'] = $linkerIterator;
         // Done!
         return $data;

@@ -42,7 +42,14 @@ class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
         $this->sortByReverse = false;
     }
 
-    // {{{ Template Data Members
+    // {{{ Internal members
+    public function getPage()
+    {
+        return $this->page;
+    }
+    // }}}
+
+    // {{{ Template data members
     /**
      * Gets the name of the current directory.
      */
