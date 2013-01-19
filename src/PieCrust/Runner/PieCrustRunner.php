@@ -132,6 +132,7 @@ class PieCrustRunner
     
         // Output with or without GZip compression.
         $gzipEnabled = (($this->pieCrust->getConfig()->getValueUnchecked('site/enable_gzip') === true) and
+                        (array_key_exists('HTTP_ACCEPT_ENCODING', $server)) and
                         (strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
         if ($gzipEnabled)
         {
