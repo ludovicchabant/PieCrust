@@ -316,7 +316,7 @@ class Configuration implements \ArrayAccess, \Iterator
             }
             catch (\Exception $e)
             {
-                throw new PieCrustException('An error occured while reading the YAML header.', $e);
+                throw new PieCrustException('An error occured while reading the YAML header.', 0, $e);
             }
             $offset = strlen($yamlHeaderMatches[0]);
         }
