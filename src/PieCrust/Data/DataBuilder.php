@@ -146,7 +146,7 @@ class DataBuilder
                 {
                     $data['tag'] = $page->getPageKey();
                 }
-                if (strpos($page->getPageKey(), '-') >= 0)
+                if (strpos($data['tag'], '-') >= 0)
                 {
                     // The tag may have been slugified. Let's cheat a bit by looking at
                     // the first tag that matches in the first pagination post, and
