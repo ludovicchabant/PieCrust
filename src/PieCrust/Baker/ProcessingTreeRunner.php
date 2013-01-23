@@ -74,6 +74,18 @@ class ProcessingTreeRunner
                     }
                 }
             }
+            else
+            {
+                // If the node is clean, let's still look at the
+                // the rest of the tree, in case the user tempered
+                // with the cache or output folders.
+                $this->printProcessingTreeNode($curNode, "[clean]", false);
+                foreach ($curNode->getOutputs() as $out)
+                {
+                    if (!$out->isLeaf())
+                        array_push($walkStack, $out);
+                }
+            }
         }
         return $didBake;
     }

@@ -181,7 +181,10 @@ class DirectoryBaker
                 }
             }
             if ($shouldSkip)
+            {
+                $this->logger->debug("Skipping '$relative' [skip_patterns]");
                 continue;
+            }
             
             if ($i->isDir())
             {
