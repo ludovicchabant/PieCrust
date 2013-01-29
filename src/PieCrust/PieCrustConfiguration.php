@@ -253,6 +253,12 @@ class PieCrustConfiguration extends Configuration
                         ),
                         $config[$blogKey]);
         }
+
+        // Set the timezone if it's specified.
+        if (isset($config['site']['timezone']))
+        {
+            date_default_timezone_set($config['site']['timezone']);
+        }
         
         return $config;
     }
