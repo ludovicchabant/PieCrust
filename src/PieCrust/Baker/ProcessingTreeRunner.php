@@ -134,7 +134,7 @@ class ProcessingTreeRunner
             {
                 foreach ($outputTimes as $oFn => $oTime)
                 {
-                    if (!$oTime || $iTime >= $oTime)
+                    if (!$oTime || $iTime > $oTime)
                     {
                         $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
 
@@ -143,7 +143,7 @@ class ProcessingTreeRunner
                         else
                             $message = "Input file is newer than '{$oFn}'. Re-processing sub-tree.";
                         $this->printProcessingTreeNode($node, $message);
-                        break;
+                        break 2;
                     }
                 }
             }
@@ -223,7 +223,7 @@ class ProcessingTreeRunner
         {
             foreach ($node->getOutputs() as $out)
             {
-                $this->printProcessingTreeNode($out, true);
+                $this->printProcessingTreeNode($out, null, true);
             }
         }
     }
