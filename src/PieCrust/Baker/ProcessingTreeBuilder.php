@@ -12,17 +12,10 @@ use PieCrust\PieCrustException;
  */
 class ProcessingTreeBuilder
 {
-    protected $rootDir;
-    protected $tmpDir;
-    protected $outDir;
-
     protected $processors;
 
-    public function __construct($rootDir, $tmpDir, $outDir, array $processors)
+    public function __construct(array $processors)
     {
-        $this->rootDir = $rootDir;
-        $this->tmpDir = $tmpDir;
-        $this->outDir = $outDir;
         $this->processors = $processors;
     }
 

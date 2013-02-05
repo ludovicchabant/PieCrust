@@ -392,12 +392,7 @@ class DirectoryBakerTest extends \PHPUnit_Framework_TestCase
         );
         $processors[] = new CopyFileProcessor();
 
-        $builder = new ProcessingTreeBuilder(
-            $fs->url(''),
-            $fs->url('_cache/bake_tmp/'),
-            $fs->url('_counter'),
-            $processors
-        );
+        $builder = new ProcessingTreeBuilder($processors);
         $treeRoot = $builder->build('something.foo');
 
         $this->assertEquals('something.foo', $treeRoot->getPath());
