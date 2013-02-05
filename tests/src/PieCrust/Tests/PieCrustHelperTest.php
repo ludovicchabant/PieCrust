@@ -5,7 +5,7 @@ use PieCrust\Util\PieCrustHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustHelperTest extends PHPUnit_Framework_TestCase
+class PieCrustHelperTest extends \PHPUnit_Framework_TestCase
 {
     public function formatUriDataProviderWhenRun()
     {

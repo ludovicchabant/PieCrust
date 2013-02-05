@@ -215,14 +215,25 @@ class PieCrustBaker
         if ($this->pieCrust->isCachingEnabled())
             $bakeInfoPath = $this->pieCrust->getCacheDir() . self::BAKE_INFO_FILE;
         $this->bakeRecord = new BakeRecord($blogKeys, $bakeInfoPath);
+
+        // Create the execution context.
+        $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext(true);
         
         // Get the cache validity information.
         $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
         $cacheValidity = $cacheInfo->getValidity(false);
+        $executionContext->isCacheValid = $cacheValidity['is_valid'];
         
         // Figure out if we need to clean the cache.
+        $this->parameters['__smart_content'] = $this->parameters['smart'];
         if ($this->pieCrust->isCachingEnabled())
-            $this->cleanCacheIfNeeded($cacheValidity);
+        {
+            if ($this->cleanCacheIfNeeded($cacheValidity))
+            {
+                $executionContext->wasCacheCleaned = true;
+                $this->parameters['__smart_content'] = false;
+            }
+        }
 
         // Bake!
         $this->bakePosts();
@@ -307,9 +318,8 @@ class PieCrustBaker
             PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir());
             file_put_contents($cacheValidity['path'], $cacheValidity['hash']);
             $this->logger->info(self::formatTimed($start, 'cleaned cache (reason: ' . $cleanCacheReason . ')'));
-            
-            $this->parameters['smart'] = false;
         }
+        return $cleanCache;
     }
     
     protected function bakePages()
@@ -397,7 +407,8 @@ class PieCrustBaker
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
 
             $tagPageName = $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-            $tagPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $tagPageName);
+            $themeOrResTagPageName = PieCrustDefaults::TAG_PAGE_NAME . '.html';
+            $tagPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $tagPageName, $themeOrResTagPageName);
             if ($tagPagePath === false)
                 continue;
             
@@ -444,23 +455,33 @@ class PieCrustBaker
             foreach ($tagsToBake as $tag)
             {
                 $start = microtime(true);
-                
-                $formattedTag = $tag;
-                if (is_array($tag))
-                    $formattedTag = implode('+', $tag);
-                
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
                     $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
+                    if (is_array($tag))
+                    {
+                        $slugifiedTag = array_map(function($t) { return UriBuilder::slugify($t); }, $tag);
+                        $formattedTag = implode('+', $tag);
+                    }
+                    else
+                    {
+                        $slugifiedTag = UriBuilder::slugify($tag);
+                        $formattedTag = $tag;
+                    }
+
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
                         IPage::TYPE_TAG,
                         $blogKey,
-                        $tag
+                        $slugifiedTag
                     );
-                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker(
+                        $this->getBakeDir(), 
+                        $this->getPageBakerParameters(),
+                        $this->logger
+                    );
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
@@ -484,7 +505,8 @@ class PieCrustBaker
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
 
             $categoryPageName = $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-            $categoryPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $categoryPageName);
+            $themeOrResCategoryPageName = PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $categoryPageName, $themeOrResCategoryPageName);
             if ($categoryPagePath === false)
                 continue;
 
@@ -501,14 +523,20 @@ class PieCrustBaker
                 if (count($postInfos) > 0)
                 {
                     $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
+                    $slugifiedCategory = UriBuilder::slugify($category);
+
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
                         IPage::TYPE_CATEGORY,
                         $blogKey,
-                        $category
+                        $slugifiedCategory
                     );
-                    $baker = new PageBaker($this->getBakeDir(), $this->getPageBakerParameters());
+                    $baker = new PageBaker(
+                        $this->getBakeDir(),
+                        $this->getPageBakerParameters(),
+                        $this->logger
+                    );
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
@@ -531,7 +559,7 @@ class PieCrustBaker
     protected function getPageBakerParameters()
     {
         return array(
-            'smart' => $this->parameters['smart'],
+            'smart' => $this->parameters['__smart_content'],
             'copy_assets' => $this->parameters['copy_assets'],
             'bake_record' => $this->bakeRecord
         );

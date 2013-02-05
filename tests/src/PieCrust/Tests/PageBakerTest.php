@@ -9,7 +9,7 @@ use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PageBakerTest extends PHPUnit_Framework_TestCase
+class PageBakerTest extends \PHPUnit_Framework_TestCase
 {
     public function getOutputPathDataProvider()
     {

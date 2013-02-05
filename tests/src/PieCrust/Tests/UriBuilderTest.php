@@ -6,7 +6,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriBuilder;
 
-class UriBuilderTest extends PHPUnit_Framework_TestCase
+class UriBuilderTest extends \PHPUnit_Framework_TestCase
 {
     public function buildUriDataProvider()
     {

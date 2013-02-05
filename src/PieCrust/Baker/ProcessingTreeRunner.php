@@ -74,6 +74,18 @@ class ProcessingTreeRunner
                     }
                 }
             }
+            else
+            {
+                // If the node is clean, let's still look at the
+                // the rest of the tree, in case the user tempered
+                // with the cache or output folders.
+                $this->printProcessingTreeNode($curNode, "[clean]", false);
+                foreach ($curNode->getOutputs() as $out)
+                {
+                    if (!$out->isLeaf())
+                        array_push($walkStack, $out);
+                }
+            }
         }
         return $didBake;
     }
@@ -122,7 +134,7 @@ class ProcessingTreeRunner
             {
                 foreach ($outputTimes as $oFn => $oTime)
                 {
-                    if (!$oTime || $iTime >= $oTime)
+                    if (!$oTime || $iTime > $oTime)
                     {
                         $node->setState(ProcessingTreeNode::STATE_DIRTY, true);
 
@@ -131,7 +143,7 @@ class ProcessingTreeRunner
                         else
                             $message = "Input file is newer than '{$oFn}'. Re-processing sub-tree.";
                         $this->printProcessingTreeNode($node, $message);
-                        break;
+                        break 2;
                     }
                 }
             }
@@ -211,7 +223,7 @@ class ProcessingTreeRunner
         {
             foreach ($node->getOutputs() as $out)
             {
-                $this->printProcessingTreeNode($out, true);
+                $this->printProcessingTreeNode($out, null, true);
             }
         }
     }

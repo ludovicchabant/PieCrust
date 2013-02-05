@@ -54,19 +54,18 @@ class PieCrustData
         
         // If we have some execution info in the environment, 
         // add more information.
-        if ($this->pieCrust->getEnvironment()->getLastRunInfo() != null)
+        if ($this->pieCrust->getEnvironment()->getExecutionContext() != null)
         {
-            $runInfo = $this->pieCrust->getEnvironment()->getLastRunInfo();
-            if ($runInfo['cache_validity'] != null)
+            $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext();
+            if ($this->pieCrust->isCachingEnabled())
             {
-                $wasCacheCleaned = $runInfo['cache_validity']['was_cleaned'];
-                $output .= ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
+                $output .= ", from a " . ($executionContext->wasCacheCleaned ? "brand new" : "valid") . " cache";
             }
             else
             {
                 $output .= ", with no cache";
             }
-            $timeSpan = microtime(true) - $runInfo['start_time'];
+            $timeSpan = microtime(true) - $executionContext->startTime;
             $output .= ", in " . sprintf('%8.1f', $timeSpan * 1000.0) . " ms";
         }
 

@@ -8,7 +8,7 @@ use PieCrust\Interop\PieCrustImporter;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustImporterTest extends PHPUnit_Framework_TestCase
+class PieCrustImporterTest extends \PHPUnit_Framework_TestCase
 {
     public function testImportWordpress()
     {

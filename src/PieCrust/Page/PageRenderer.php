@@ -16,8 +16,6 @@ use PieCrust\Util\PieCrustHelper;
  */
 class PageRenderer
 {
-    protected $runInfo;
-
     protected $page;
     /**
      * Gets the page this renderer is bound to.
@@ -30,10 +28,9 @@ class PageRenderer
     /**
      * Creates a new instance of PageRenderer.
      */
-    public function __construct(IPage $page, $runInfo = null)
+    public function __construct(IPage $page)
     {
         $this->page = $page;
-        $this->runInfo = $runInfo;
     }
     
     /**
@@ -43,6 +40,10 @@ class PageRenderer
     {
         $pieCrust = $this->page->getApp();
         $pageConfig = $this->page->getConfig();
+
+        // Set the page as the current context.
+        $executionContext = $pieCrust->getEnvironment()->getExecutionContext(true);
+        $executionContext->pushPage($this->page);
         
         // Get the template name.
         $templateName = $this->page->getConfig()->getValue('layout');
@@ -73,12 +74,9 @@ class PageRenderer
             // No template... just output the 'content' segment.
             echo $this->page->getContentSegment();
         }
-        
-        if ($pieCrust->isDebuggingEnabled())
-        {
-            // Add a footer with version, caching and timing information.
-            $this->renderStatsFooter($this->page);
-        }
+
+        // Restore the previous context.
+        $executionContext->popPage();
     }
     
     public function get()
@@ -94,29 +92,6 @@ class PageRenderer
             ob_end_clean();
             throw $e;
         }
-    }
-    
-    public function renderStatsFooter()
-    {
-        if ($this->runInfo == null)
-        {
-            echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - Error: can't get stats for this page. -->";
-            return;
-        }
-        
-        echo "<!-- PieCrust " . PieCrustDefaults::VERSION . " - ";
-        echo ($this->page->wasCached() ? "baked this morning" : "baked just now");
-        if ($this->runInfo['cache_validity'] != null)
-        {
-            $wasCacheCleaned = $this->runInfo['cache_validity']['was_cleaned'];
-            echo ", from a " . ($wasCacheCleaned ? "brand new" : "valid") . " cache";
-        }
-        else
-        {
-            echo ", with no cache";
-        }
-        $timeSpan = microtime(true) - $this->runInfo['start_time'];
-        echo ", in " . $timeSpan * 1000 . " milliseconds. -->";
     }
     
     public static function getHeaders($contentType, $server = null)

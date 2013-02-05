@@ -15,11 +15,22 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* _none_
-
-
 Frozen changes
 --------------
+
+### 0.9.2 (2013-02-04)
+
+* NEW: Added `site.pages` template data to list all the pages in the website
+  recursively.
+* NEW: The `sitemap` processor can now auto-generate entries for pages and/or
+  posts.
+* NEW: Themes can declare plugin dependencies that will be installed along with
+  the theme.
+* IMPROVEMENT: Slightly improved baking times.
+* BUG: Assets (images, JS, CSS, etc.) were unnecessarily re-baked when the cache
+  was invalidated.
+* BUG: Fixed some bugs with tags and categories with spaces in them when
+  previewing or baking a website.
 
 ### 0.9.1 (2012-12-04)
 

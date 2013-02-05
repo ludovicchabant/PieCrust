@@ -46,6 +46,26 @@ class PluginsCommand extends ChefCommand
         ));
     }
 
+    public function installPlugin($pluginName, ChefContext $context)
+    {
+        $app = $context->getApp();
+        $log = $context->getLog();
+
+        $sources = $this->getSources($app, $log);
+        $plugins = $this->getPluginMetadata($app, $sources, $pluginName, true, $log);
+        if (count($plugins) != 1)
+            throw new PieCrustException("Can't find a single plugin named: {$pluginName}");
+
+        $plugin = $plugins[0];
+        $log->info("GET {$plugin['source']} [{$plugin['name']}]");
+        $className = $plugin['repository_class'];
+        $repository = new $className;
+        $context = new PluginInstallContext($app, $log);
+        $repository->installPlugin($plugin, $context);
+
+        return $plugin;
+    }
+
     public function run(ChefContext $context)
     {
         $result = $context->getResult();
@@ -97,22 +117,10 @@ class PluginsCommand extends ChefCommand
 
     protected function installPlugins(ChefContext $context)
     {
-        $app = $context->getApp();
         $log = $context->getLog();
         $result = $context->getResult();
-
-        $sources = $this->getSources($app, $log);
         $pluginName = $result->command->command->args['name'];
-        $plugins = $this->getPluginMetadata($app, $sources, $pluginName, true, $log);
-        if (count($plugins) != 1)
-            throw new PieCrustException("Can't find a single plugin named: {$pluginName}");
-
-        $plugin = $plugins[0];
-        $log->debug("Installing '{$plugin['name']}' from: {$plugin['source']}");
-        $className = $plugin['repository_class'];
-        $repository = new $className;
-        $context = new PluginInstallContext($app, $log);
-        $repository->installPlugin($plugin, $context);
+        $plugin = $this->installPlugin($pluginName);
         $log->info("Plugin {$plugin['name']} is now installed.");
     }
 

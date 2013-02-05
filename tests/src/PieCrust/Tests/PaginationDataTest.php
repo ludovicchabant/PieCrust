@@ -6,7 +6,7 @@ use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PaginationDataTest extends PHPUnit_Framework_TestCase
+class PaginationDataTest extends \PHPUnit_Framework_TestCase
 {
     public function pageMetadataDataProvider()
     {

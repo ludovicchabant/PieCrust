@@ -3,7 +3,7 @@
 use PieCrust\Util\ServerHelper;
 
 
-class ServerHelperTest extends PHPUnit_Framework_TestCase
+class ServerHelperTest extends \PHPUnit_Framework_TestCase
 {
     public function getRequestUriDataProvider()
     {

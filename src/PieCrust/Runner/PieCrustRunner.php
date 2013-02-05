@@ -24,15 +24,6 @@ class PieCrustRunner
         return $this->pieCrust;
     }
 
-    protected $lastRunInfo = null;
-    /**
-     * Gets the information about the last execution (call to run() or runUnsafe()).
-     */
-    public function getLastRunInfo()
-    {
-        return $this->lastRunInfo;
-    }
-
     /**
      * Creates a new instance of PieCrustRunner.
      */
@@ -63,23 +54,17 @@ class PieCrustRunner
      */
     public function runUnsafe($uri = null, array $server = null, $extraPageData = null, array &$headers = null)
     {
-        // Remember the time.
-        $this->lastRunInfo = array('start_time' => microtime(true));
+        // Create an execution context.
+        $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext(true);
         
         // Check the cache validity, and clean it automatically.
         if ($this->pieCrust->isCachingEnabled())
         {
             $cacheInfo = new PieCrustCacheInfo($this->pieCrust);
             $cacheValidity = $cacheInfo->getValidity(true);
-            $this->lastRunInfo['cache_validity'] = $cacheValidity;
+            $executionContext->isCacheValid = $cacheValidity['is_valid'];
+            $executionContext->wasCacheCleaned = $cacheValidity['was_cleaned'];
         }
-        else
-        {
-            $this->lastRunInfo['cache_validity'] = null;
-        }
-
-        // Store the execution info in the environment.
-        $this->pieCrust->getEnvironment()->setLastRunInfo($this->lastRunInfo);
 
         // Get the resource URI and corresponding physical path.
         if ($server == null)
@@ -93,11 +78,12 @@ class PieCrustRunner
 
         // Do the heavy lifting.
         $page = Page::createFromUri($this->pieCrust, $uri);
+        $executionContext->pushPage($page);
         if ($extraPageData != null)
         {
             $page->setExtraPageData($extraPageData);
         }
-        $pageRenderer = new PageRenderer($page, $this->lastRunInfo);
+        $pageRenderer = new PageRenderer($page);
         $output = $pageRenderer->get();
         
         // Set or return the HTML headers.
@@ -146,6 +132,7 @@ class PieCrustRunner
     
         // Output with or without GZip compression.
         $gzipEnabled = (($this->pieCrust->getConfig()->getValueUnchecked('site/enable_gzip') === true) and
+                        (array_key_exists('HTTP_ACCEPT_ENCODING', $server)) and
                         (strpos($server['HTTP_ACCEPT_ENCODING'], 'gzip') !== false));
         if ($gzipEnabled)
         {

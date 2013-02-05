@@ -90,9 +90,6 @@ function piecrust_setup($profile = 'web')
     $loader->add('Console_', $libsDir . '/pear');
     $loader->add('Log_', $libsDir . '/pear');
     
-    // Set the time zone.
-    date_default_timezone_set('UTC');
-    
     // Set error handling.
     switch ($profile)
     {

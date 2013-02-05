@@ -1,9 +1,11 @@
 <?php
 
+namespace PieCrust\Test;
+
 use PieCrust\Util\Configuration;
 
 
-class ConfigurationTest extends PHPUnit_Framework_TestCase
+class ConfigurationTest extends \PHPUnit_Framework_TestCase
 {
     public function configurationDataProvider()
     {

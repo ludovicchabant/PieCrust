@@ -229,14 +229,21 @@ class PageLoader
 
     protected function formatContentsUnsafe(array $rawSegments)
     {
+        $pieCrust = $this->page->getApp();
+
+        // Set the page as the current context.
+        $executionContext = $pieCrust->getEnvironment()->getExecutionContext(true);
+        $executionContext->pushPage($this->page);
+
+        // Get the data and the template engine.
         $data = DataBuilder::getPageRenderingData($this->page);
 
-        $pieCrust = $this->page->getApp();
         $templateEngineName = $this->page->getConfig()->getValue('template_engine');
         $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $templateEngineName);
         if (!$templateEngine)
             throw new PieCrustException("Unknown template engine '{$templateEngineName}'.");
 
+        // Render each text segment.
         $contents = array();
         foreach ($rawSegments as $key => $pieces)
         {
@@ -284,6 +291,9 @@ class PageLoader
                 $contents['content.abstract'] = $abstract;
             }
         }
+
+        // Restore the previous context.
+        $executionContext->popPage();
 
         return $contents;
     }

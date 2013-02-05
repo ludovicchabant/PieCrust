@@ -83,23 +83,6 @@ class CachedEnvironment extends Environment
         return $this->posts[$blogKey];
     }
 
-    protected $lastRunInfo;
-    /**
-     * Gets the info about the last executed request.
-     */
-    public function getLastRunInfo()
-    {
-        return $this->lastRunInfo;
-    }
-
-    /**
-     * Sets the info about the last executed request.
-     */
-    public function setLastRunInfo($runInfo)
-    {
-        $this->lastRunInfo = $runInfo;
-    }
-
     /**
      * Creates a new instance of Environment.
      */

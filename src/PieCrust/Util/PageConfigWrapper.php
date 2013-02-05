@@ -44,25 +44,25 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
         $this->ensureLazyLoaded($offset);
         return isset($this->values[$offset]);
     }
-    
-    public function offsetGet($offset) 
+
+    public function offsetGet($offset)
     {
         $this->ensureLoaded();
         $this->ensureLazyLoaded($offset);
         return $this->values[$offset];
     }
-    
+
     public function offsetSet($offset, $value)
     {
         throw new PieCrustException('PageConfigWrapper is read-only.');
     }
-    
+
     public function offsetUnset($offset)
     {
         throw new PieCrustException('PageConfigWrapper is read-only.');
     }
     // }}}
-    
+
     // {{{ Iterator members
     public function rewind()
     {
@@ -70,32 +70,32 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
         $this->ensureAllLazyLoaded();
         return reset($this->values);
     }
-  
+
     public function current()
     {
         $this->ensureLoaded();
         return current($this->values);
     }
-  
+
     public function key()
     {
         $this->ensureLoaded();
         return key($this->values);
     }
-  
+
     public function next()
     {
         $this->ensureLoaded();
         return next($this->values);
     }
-  
+
     public function valid()
     {
         $this->ensureLoaded();
         return key($this->values) !== null;
     }
     // }}}
-    
+
     protected function ensureLoaded()
     {
         if ($this->values == null)
@@ -115,16 +115,25 @@ class PageConfigWrapper implements \ArrayAccess, \Iterator
 
     protected function ensureAllLazyLoaded()
     {
-        foreach (array_keys($this->lazyValues) as $name)
+        if ($this->lazyValues != null)
         {
-            $this->ensureLazyLoaded($name, false);
+            foreach (array_keys($this->lazyValues) as $name)
+            {
+                $this->ensureLazyLoaded($name, false, true);
+            }
+            $this->lazyValues = null;
         }
-        $this->lazyValues = null;
     }
 
-    protected function ensureLazyLoaded($name, $consume = true)
+    protected function ensureLazyLoaded($name, $consume = true, $overwrite = false)
     {
-        if ($this->lazyValues)
+        if (!$overwrite)
+        {
+            if ($this->values != null && isset($this->values[$name]))
+                return;
+        }
+
+        if ($this->lazyValues != null)
         {
             if (isset($this->lazyValues[$name]))
             {

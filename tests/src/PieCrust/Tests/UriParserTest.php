@@ -7,7 +7,7 @@ use PieCrust\Util\UriParser;
 use PieCrust\Mock\MockFileSystem;
 
 
-class UriParserTest extends PHPUnit_Framework_TestCase
+class UriParserTest extends \PHPUnit_Framework_TestCase
 {
     protected function makeUriInfo($uri, $path, $wasPathChecked, $pageNumber = 1, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null)
     {
@@ -42,6 +42,16 @@ class UriParserTest extends PHPUnit_Framework_TestCase
                 array(),
                 '/2',
                 $this->makeUriInfo('', $pagesDir . '_index.html', true, 2)
+            ),
+            array(
+                array(),
+                '/error500',
+                $this->makeUriInfo('error500', $pagesDir . 'error500.html', true)
+            ),
+            array(
+                array(),
+                '/42things',
+                $this->makeUriInfo('42things', $pagesDir . '42things.html', true)
             ),
             array(
                 array(),
@@ -171,6 +181,8 @@ class UriParserTest extends PHPUnit_Framework_TestCase
             ->withPage('_index')
             ->withPage('_category')
             ->withPage('_tag')
+            ->withPage('error500')
+            ->withPage('42things')
             ->withPage('existing')
             ->withPage('ex-is-ting')
             ->withPage('exist_ing')

@@ -1,10 +1,12 @@
 <?php
 
+namespace PieCrust\Test;
+
 use PieCrust\PieCrustDefaults;
 use PieCrust\Baker\BakeRecord;
 
 
-class BakeRecordTest extends PHPUnit_Framework_TestCase
+class BakeRecordTest extends \PHPUnit_Framework_TestCase
 {
     public function testShouldDoFullBake1()
     {

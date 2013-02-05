@@ -181,7 +181,10 @@ class DirectoryBaker
                 }
             }
             if ($shouldSkip)
+            {
+                $this->logger->debug("Skipping '$relative' [skip_patterns]");
                 continue;
+            }
             
             if ($i->isDir())
             {
@@ -241,11 +244,7 @@ class DirectoryBaker
         }
 
         // Get the processing tree for that file.
-        $builder = new ProcessingTreeBuilder(
-            $rootDir,
-            $this->tmpDir,
-            $this->bakeDir,
-            $this->getProcessors());
+        $builder = new ProcessingTreeBuilder($this->getProcessors());
         $treeRoot = $builder->build($relative);
 
         // Add an entry in the baked files' metadata.

@@ -5,11 +5,13 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Linker;
+use PieCrust\Page\RecursiveLinkerIterator;
 use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -24,7 +26,7 @@ class DataBuilder
     {
         $pageData = $page->getPageData();
         $siteData = self::getSiteData($page);
-        $appData = DataBuilder::getAppData($page->getApp(), $siteData, $pageData, null, false);
+        $appData = self::getAppData($page->getApp(), $siteData, $pageData, null, false);
 
         $renderData = Configuration::mergeArrays(
             $pageData,
@@ -44,10 +46,10 @@ class DataBuilder
         $pageContentSegments = $page->getContentSegments();
         $siteData = self::getSiteData($page);
         $appData = self::getAppData(
-            $pieCrust, 
-            $siteData, 
-            $pageData, 
-            $pageContentSegments, 
+            $pieCrust,
+            $siteData,
+            $pageData,
+            $pageContentSegments,
             $page->wasCached()
         );
         $renderData = Configuration::mergeArrays(
@@ -87,6 +89,13 @@ class DataBuilder
             }
             $data[$blogKey] = $blogData;
         }
+        // Add the pages linker.
+        if (!isset($data['site']))
+            $data['site'] = array();
+        $linker = new Linker($page, $pieCrust->getPagesDir());
+        $linkerIterator = new RecursiveLinkerIterator($linker);
+        $data['site']['pages'] = $linkerIterator;
+        // Done!
         return $data;
     }
 
@@ -100,11 +109,11 @@ class DataBuilder
     public static function getPageData(IPage $page)
     {
         $pieCrust = $page->getApp();
-        
+
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
- 
+
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
 
@@ -114,18 +123,18 @@ class DataBuilder
             'pagination' => $paginator,
             'link' => $linker
         );
-        
+
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
-        
+
         $data['page']['timestamp'] = $page->getDate();
         $dateFormat = PageHelper::getConfigValueUnchecked(
-            $page, 
-            'date_format', 
+            $page,
+            'date_format',
             $page->getConfig()->getValueUnchecked('blog')
         );
         $data['page']['date'] = date($dateFormat, $page->getDate());
-        
+
         switch ($page->getPageType())
         {
             case IPage::TYPE_TAG:
@@ -137,12 +146,41 @@ class DataBuilder
                 {
                     $data['tag'] = $page->getPageKey();
                 }
+                if (strpos($data['tag'], '-') >= 0)
+                {
+                    // The tag may have been slugified. Let's cheat a bit by looking at
+                    // the first tag that matches in the first pagination post, and
+                    // using that instead.
+                    $paginationPosts = $paginator->posts();
+                    if (count($paginationPosts) > 0)
+                    {
+                        $firstPost = $paginationPosts[0];
+                        $firstPostTags = $firstPost['tags'];
+                        if (!is_array($firstPostTags))
+                            $firstPostTags = array($firstPostTags);
+                        foreach ($firstPostTags as $t)
+                        {
+                            if (UriBuilder::slugify($t) == $data['tag'])
+                                $data['tag'] = $t;
+                        }
+                    }
+                }
                 break;
             case IPage::TYPE_CATEGORY:
                 $data['category'] = $page->getPageKey();
+                if (strpos($page->getPageKey(), '-') >= 0)
+                {
+                    // Same remark as for tags.
+                    $paginationPosts = $paginator->posts();
+                    if (count($paginationPosts) > 0)
+                    {
+                        $firstPost = $paginationPosts[0];
+                        $data['category'] = $firstPost['category'];
+                    }
+                }
                 break;
         }
-        
+
         $extraData = $page->getExtraPageData();
         if ($extraData)
         {
@@ -158,7 +196,7 @@ class DataBuilder
                 $data['extra'] = $extraData;
             }
         }
-        
+
         return $data;
     }
 }

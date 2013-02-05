@@ -94,20 +94,25 @@ class PieCrustHelper
     }
 
     /**
-     * Gets the default blog key.
+     * Gets the default blog key. This is either the blog key for the current
+     * page (if there's a current request running), or the first declared blog.
      */
     public static function getDefaultBlogKey(IPieCrust $pieCrust)
     {
+        $executionContext = $pieCrust->getEnvironment()->getExecutionContext();
+        if ($executionContext != null)
+        {
+            $page = $executionContext->getPage();
+            if ($page != null)
+            {
+                $blogKey = $page->getConfig()->getValueUnchecked('blog');
+                if ($blogKey != null)
+                    return $blogKey;
+            }
+        }
+
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         return $blogKeys[0];
-    }
-
-    /**
-     * Gets all the blog keys.
-     */
-    public static function getBlogKeys(IPieCrust $pieCrust)
-    {
-        return $pieCrust->getConfig()->getValueUnchecked('site/blogs');
     }
 
     /**

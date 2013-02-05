@@ -4,6 +4,7 @@ namespace PieCrust\Page\Filtering;
 
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -46,17 +47,17 @@ class PaginationFilter
                 $wrapper = new AndBooleanClause();
                 foreach ($pageKey as $k)
                 {
-                    $wrapper->addClause(new HasFilterClause('tags', $k));
+                    $wrapper->addClause(new HasFilterClause('tags', $k, function($t) { return UriBuilder::slugify($t); }));
                 }
                 $this->addClause($wrapper);
             }
             else
             {
-                $this->addClause(new HasFilterClause('tags', $pageKey));
+                $this->addClause(new HasFilterClause('tags', $pageKey, function($t) { return UriBuilder::slugify($t); }));
             }
             break;
         case IPage::TYPE_CATEGORY:
-            $this->addClause(new IsFilterClause('category', $page->getPageKey()));
+            $this->addClause(new IsFilterClause('category', $page->getPageKey(), function($c) { return UriBuilder::slugify($c); }));
             break;
         }
     }
