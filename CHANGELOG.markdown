@@ -15,6 +15,10 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
+* NEW: Added `prepare feed` command to create RSS/Atom feeds.
+
+
 Frozen changes
 --------------
 
