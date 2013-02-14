@@ -87,9 +87,11 @@ class Chef
         }
         else
         {
+            $environment = new ChefEnvironment($this);
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
-                'cache' => !in_array('--no-cache', $userArgv)
+                'cache' => !in_array('--no-cache', $userArgv),
+                'environment' => $environment
             ));
         }
 

@@ -6,6 +6,7 @@ use \Console_CommandLine;
 use \Console_CommandLine_Result;
 use PieCrust\IPieCrust;
 use PieCrust\Chef\ChefContext;
+use PieCrust\Chef\ChefEnvironment;
 
 
 /**

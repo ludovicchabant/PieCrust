@@ -65,9 +65,8 @@ abstract class Environment
     {
         if ($this->uriFormat == null)
         {
-            $pieCrust = $this->pieCrust;
-            $isBaking = ($pieCrust->getConfig()->getValue('baker/is_baking') === true);
-            $isPretty = ($pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
+            $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') === true);
+            $isPretty = ($this->pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
 
             $this->uriFormat = '%root%';
             if (!$isPretty and !$isBaking)
@@ -81,7 +80,7 @@ abstract class Environment
             {
                 if ($isPretty)
                 {
-                    if ($pieCrust->getConfig()->getValue('baker/trailing_slash'))
+                    if ($this->pieCrust->getConfig()->getValue('baker/trailing_slash'))
                         $this->uriFormat .= '%slash_if_no_ext%';
                 }
                 else
@@ -91,7 +90,7 @@ abstract class Environment
             }
 
             // Preserve the debug flag if needed.
-            if ($pieCrust->isDebuggingEnabled() && !$isBaking)
+            if ($this->pieCrust->isDebuggingEnabled() && !$isBaking)
             {
                 if ($isPretty)
                     $this->uriFormat .= '?!debug';
@@ -105,9 +104,16 @@ abstract class Environment
     }
 
     /**
-     * Creates a new instance of Environment.
+     * Creates a new instance of `Environment`.
      */
-    protected function __construct(IPieCrust $pieCrust)
+    protected function __construct()
+    {
+    }
+
+    /**
+     * Initializes this environment for the given application.
+     */
+    public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
     }
