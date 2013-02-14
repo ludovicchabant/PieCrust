@@ -73,6 +73,10 @@ class PrepareFeedCommandExtension extends ChefCommandExtension
         $f = fopen($fullPath, 'w');
         fwrite($f, $template);
         fclose($f);
+
+        $fullUrl = $app->getConfig()->getValue('site/root') . $slug;
+        $log->info("Don't forget to add a link into your main page's header like so:");
+        $log->info("<link rel=\"alternate\" type=\"application/rss+xml\" href=\"{$fullUrl}\" />");
     }
 }
 
