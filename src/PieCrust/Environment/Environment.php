@@ -66,6 +66,7 @@ abstract class Environment
         if ($this->uriFormat == null)
         {
             $isBaking = ($this->pieCrust->getConfig()->getValue('baker/is_baking') === true);
+            $isPreviewing = ($this->pieCrust->getConfig()->getValue('server/is_hosting') === true);
             $isPretty = ($this->pieCrust->getConfig()->getValueUnchecked('site/pretty_urls') === true);
 
             $this->uriFormat = '%root%';
@@ -76,11 +77,12 @@ abstract class Environment
             // Add either a trailing slash or the default `.html` extension
             // to URIs that don't have an extension already, depending on whether
             // we are using pretty-URLs or not.
-            if ($isBaking)
+            if ($isBaking || $isPreviewing)
             {
                 if ($isPretty)
                 {
-                    if ($this->pieCrust->getConfig()->getValue('baker/trailing_slash'))
+                    if ($this->pieCrust->getConfig()->getValue('site/trailing_slash') ||
+                        $this->pieCrust->getConfig()->getValue('baker/trailing_slash'))
                         $this->uriFormat .= '%slash_if_no_ext%';
                 }
                 else

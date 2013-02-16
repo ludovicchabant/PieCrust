@@ -17,6 +17,9 @@ Fresh changes
 
 * BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
+* CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by 
+  `site/trailing_slash`. This setting also now affects the URLs in a preview
+  server (`chef serve`) as well as during the bake.
 
 
 Frozen changes
