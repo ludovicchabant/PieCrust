@@ -6,6 +6,7 @@ use \Console_CommandLine;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
+use PieCrust\Chef\ChefEnvironment;
 
 
 class PrepareCommand extends ChefCommand
@@ -19,11 +20,15 @@ class PrepareCommand extends ChefCommand
     {
         $parser->description = "Helps with the creation of content in the website.";
 
-        $extensions = $pieCrust->getEnvironment()->getCommandExtensions($this->getName());
-        foreach ($extensions as $ext)
+        $environment = $pieCrust->getEnvironment();
+        if ($environment instanceof ChefEnvironment)
         {
-            $extensionParser = $parser->addCommand($ext->getName());
-            $ext->setupParser($extensionParser, $pieCrust);
+            $extensions = $environment->getCommandExtensions($this->getName());
+            foreach ($extensions as $ext)
+            {
+                $extensionParser = $parser->addCommand($ext->getName());
+                $ext->setupParser($extensionParser, $pieCrust);
+            }
         }
     }
 
@@ -33,8 +38,12 @@ class PrepareCommand extends ChefCommand
         $result = $context->getResult();
         $log = $context->getLog();
 
+        $environment = $app->getEnvironment();
+        if (!($environment instanceof ChefEnvironment))
+            throw new PieCrustException("Can't run the `prepare` command without a Chef environment.");
+
         $extensionName = $result->command->command_name;
-        $extensions = $app->getEnvironment()->getCommandExtensions($this->getName());
+        $extensions = $environment->getCommandExtensions($this->getName());
         foreach ($extensions as $ext)
         {
             if ($ext->getName() == $extensionName)
