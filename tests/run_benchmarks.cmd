@@ -1,2 +1,2 @@
 @echo off
-php %~dp0run_benchmarks.php
+php %~dp0run_benchmarks.php %*
