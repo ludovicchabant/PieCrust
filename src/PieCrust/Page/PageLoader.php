@@ -128,7 +128,7 @@ class PageLoader
         else
         {
             // Load the page from disk.
-            $rawContents = file_get_contents($this->page->getPath());
+            $rawContents = utf8_encode(file_get_contents($this->page->getPath()));
             $parsedContents = Configuration::parseHeader($rawContents);
             
             // Set the configuration.
@@ -153,7 +153,8 @@ class PageLoader
                 $keys = $config['segments'];
                 foreach ($keys as $key)
                 {
-                    $this->cache->write($this->page->getUri() . '.' . $key, 'json', json_encode($contents[$key]));
+                    $cacheData = json_encode($contents[$key]);
+                    $this->cache->write($this->page->getUri() . '.' . $key, 'json', $cacheData);
                 }
             }
             
