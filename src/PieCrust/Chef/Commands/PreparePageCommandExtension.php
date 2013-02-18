@@ -44,7 +44,7 @@ class PreparePageCommandExtension extends ChefCommandExtension
         }
 
         // Create the path of the new page.
-        $slug = $result->command->args['slug'];
+        $slug = $result->command->command->args['slug'];
         $slug = ltrim($slug, '/\\');
         $fullPath = $app->getPagesDir() . $slug;
         if (!preg_match('/\.[a-z0-9]+$/i', $slug))

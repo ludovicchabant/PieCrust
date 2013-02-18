@@ -9,6 +9,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
+use PieCrust\Util\PieCrustHelper;
 
 
 class PreparePostCommandExtension extends ChefCommandExtension
@@ -52,7 +53,7 @@ class PreparePostCommandExtension extends ChefCommandExtension
 
         // Create the relative path of the new post by using the
         // path format of the website's post file-system.
-        $slug = $result->command->args['slug'];
+        $slug = $result->command->command->args['slug'];
         $replacements = array(
             '%day%' => date('d'),
             '%month%' => date('m'),
@@ -69,7 +70,7 @@ class PreparePostCommandExtension extends ChefCommandExtension
 
         // Figure out which blog to create this post for (if the website
         // is hosting several blogs).
-        $blogKey = $result->command->options['blog'];
+        $blogKey = $result->command->command->options['blog'];
         $blogKeys = $app->getConfig()->getValue('site/blogs');
         if ($blogKey == null)
         {
