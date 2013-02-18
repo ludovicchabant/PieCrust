@@ -107,9 +107,12 @@ class Chef
         // Add commands to the parser.
         foreach ($sortedCommands as $command)
         {
-            $commandParser = $parser->addCommand($command->getName());
-            $command->setupParser($commandParser, $pieCrust);
-            $this->addCommonOptionsAndArguments($commandParser);
+            if ($rootDir != null || !$command->requiresWebsite())
+            {
+                $commandParser = $parser->addCommand($command->getName());
+                $command->setupParser($commandParser, $pieCrust);
+                $this->addCommonOptionsAndArguments($commandParser);
+            }
         }
 
         // Parse the command line.
