@@ -4,7 +4,9 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
+use PieCrust\Page\Filtering\PaginationFilter;
 use PieCrust\Mock\MockFileSystem;
+use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
@@ -92,5 +94,44 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
             $this->assertArrayHasKey($key, $actualSegments, 'Expected a content segment named: ' . $key);
             $this->assertEquals($content, $actualSegments[$key], 'The content segments are not equivalent.');
         }
+    }
+
+    public function testSimpleFilterParsing()
+    {
+        $filterInfo = array('has_foo' => 'blah');
+        $filter = new PaginationFilter();
+
+        $this->assertFalse($filter->hasClauses());
+        $filter->addClauses($filterInfo);
+        $this->assertTrue($filter->hasClauses());
+        
+        $page = new MockPage();
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', array('nieuh'));
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', 'blah');
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', array('nieuh', 'blah'));
+        $this->assertTrue($filter->postMatches($page));
+    }
+
+    public function testAndFilterParsing()
+    {
+        $filterInfo = array('and' => array(
+            'has_foo'=> 'blah',
+            'has_bar'=> 'nieuh'
+        ));
+        $filter = new PaginationFilter();
+        $filter->addClauses($filterInfo);
+        
+        $page = new MockPage();
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', array('nieuh'));
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', array('nieuh', 'blah'));
+        $this->assertFalse($filter->postMatches($page));
+        $page->getConfig()->setValue('foo', array('blah'));
+        $page->getConfig()->setValue('bar', array('nieuh'));
+        $this->assertTrue($filter->postMatches($page));
     }
 }

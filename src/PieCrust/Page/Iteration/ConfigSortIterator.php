@@ -5,38 +5,35 @@ namespace PieCrust\Page\Iteration;
 use PieCrust\PieCrustException;
 
 
-class SortIteratorModifier extends BaseIteratorModifier
+/**
+ * An iterator that sorts an input iterator by timestamp.
+ */
+class ConfigSortIterator extends BaseIterator implements \OuterIterator
 {
+    protected $iterator;
     protected $sortByName;
     protected $sortByReverse;
 
-    public function __construct($sortByName, $sortByReverse = false)
+    public function __construct($iterator, $sortByName, $sortByReverse = false)
     {
+        parent::__construct();
+
+        $this->iterator = $iterator;
         $this->sortByName = $sortByName;
         $this->sortByReverse = $sortByReverse;
     }
 
-    public function affectsOrder()
+    public function getInnerIterator()
     {
-        return true;
+        return $this->iterator;
     }
 
-    public function dependsOnOrder()
+    protected function load()
     {
-        return false;
-    }
-
-    public function modify($items)
-    {
+        $items = iterator_to_array($this->iterator);
         if (false === usort($items, array($this, "sortByCustom")))
-            throw new PieCrustException("Error while sorting posts with the specified setting: {$this->sortByName}");
+            throw new PieCrustException("Error while sorting posts by '{$this->sortByName}'.");
         return $items;
-    }
-
-    public function __toString()
-    {
-        return 'Sort(' . ($this->sortByReverse ? '-' : '') . $this->sortByName . ')';
-        //return substr(get_class($this), 24, -16) . "(" . $this->sortByReverse ? '-' : '' . $this->sortByName . ")";
     }
 
     protected function sortByCustom($post1, $post2)

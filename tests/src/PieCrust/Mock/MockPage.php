@@ -153,7 +153,7 @@ class MockPage implements IPage
     {
     }
 
-    public function __construct(IPieCrust $pieCrust)
+    public function __construct(IPieCrust $pieCrust = null)
     {
         if (!$pieCrust)
             $pieCrust = new MockPieCrust();

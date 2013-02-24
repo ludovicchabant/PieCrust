@@ -5,20 +5,29 @@ namespace PieCrust\Page\Iteration;
 use PieCrust\PieCrustException;
 
 
-class DateSortIteratorModifier extends BaseIteratorModifier
+/**
+ * An iterator that sorts an input iterator by a given
+ * configuration setting.
+ */
+class DateSortIterator extends BaseIterator implements \OuterIterator
 {
-    public function dependsOnOrder()
+    protected $iterator;
+
+    public function __construct($iterator)
     {
-        return false;
+        parent::__construct();
+
+        $this->iterator = $iterator;
     }
 
-    public function affectsOrder()
+    public function getInnerIterator()
     {
-        return true;
+        return $this->iterator;
     }
 
-    public function modify($items)
+    protected function load()
     {
+        $items = iterator_to_array($this->iterator);
         if (false === usort($items, array($this, "sortByReverseTimestamp")))
             throw new PieCrustException("Error while sorting posts by timestamp.");
         return $items;

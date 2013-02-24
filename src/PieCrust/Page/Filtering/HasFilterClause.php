@@ -26,6 +26,8 @@ class HasFilterClause extends FilterClause
             $coerceFunc = $this->coerceFunc;
             $actualValue = $coerceFunc($actualValue);
         }
-        return $actualValue != null && in_array($this->settingValue, $actualValue);
+        return $actualValue != null && 
+            is_array($actualValue) &&
+            in_array($this->settingValue, $actualValue);
     }
 }

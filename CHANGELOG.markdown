@@ -16,10 +16,22 @@ Fresh changes
 -------------
 
 * BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
+* BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
+  modifying it, which could otherwise result in confusing behaviour.
+* BREAKING BUG FIX: Monthly blog archives were incorrectly order
+  chronologically, instead of reverse-chronologically.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
+* CHANGE: Any place that returns a list of pages or posts should now be a proper
+  pagination iterator, with all the sorting and filtering features.
 * CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by 
   `site/trailing_slash`. This setting also now affects the URLs in a preview
   server (`chef serve`) as well as during the bake.
+* CHANGE: It is now possible to specify `posts_filters` on category and tag
+  listing pages. Those filters will be combined with an `AND` boolean clause.
+* BUG: Fixed some incorrect behaviour when a page/post iterator is iterated
+  several times on a page.
+* BUG: Fixed a crash when using a `has_xxx` filter on a setting that's not an
+  array.
 
 
 Frozen changes

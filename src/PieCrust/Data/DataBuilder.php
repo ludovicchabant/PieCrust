@@ -5,9 +5,9 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Linker;
-use PieCrust\Page\RecursiveLinkerIterator;
 use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
+use PieCrust\Page\Iteration\RecursiveLinkerIterator;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -89,12 +89,14 @@ class DataBuilder
             }
             $data[$blogKey] = $blogData;
         }
-        // Add the pages linker.
-        if (!isset($data['site']))
-            $data['site'] = array();
-        $linker = new Linker($page, $pieCrust->getPagesDir());
-        $linkerIterator = new RecursiveLinkerIterator($linker);
-        $data['site']['pages'] = $linkerIterator;
+        // Replace the `site` section with an wrapper object
+        // that adds some built-in stuff.
+        $siteData = new SiteData($page);
+        if (isset($data['site']))
+        {
+            $siteData->mergeUserData($data['site']);
+        }
+        $data['site'] = $siteData;
         // Done!
         return $data;
     }

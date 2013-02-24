@@ -1,18 +1,12 @@
 <?php
 
-namespace PieCrust\Page;
+namespace PieCrust\Page\Iteration;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Data\PaginationData;
 use PieCrust\Page\Filtering\PaginationFilter;
-use PieCrust\Page\Iteration\BaseIterator;
-use PieCrust\Page\Iteration\DateSortIteratorModifier;
-use PieCrust\Page\Iteration\FilterIteratorModifier;
-use PieCrust\Page\Iteration\LimitIteratorModifier;
-use PieCrust\Page\Iteration\SkipIteratorModifier;
-use PieCrust\Page\Iteration\SortIteratorModifier;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
 
@@ -26,35 +20,35 @@ use PieCrust\Util\PieCrustHelper;
  * @explicitInclude
  * @documentation The list of posts.
  */
-class PaginationIterator extends BaseIterator
+class PageIterator extends BaseIterator
 {
     protected $pieCrust;
-    protected $dataSource;
     protected $blogKey;
     
-    protected $modifierChain;
+    protected $iterator;
+    protected $gotSorter;
+    protected $isLocked;
 
     protected $page;
     protected $previousPost;
     protected $nextPost;
     protected $hasMorePosts;
-    protected $totalPostCount;
     
     public function __construct(IPieCrust $pieCrust, $blogKey, array $dataSource)
     {
         parent::__construct();
 
         $this->pieCrust = $pieCrust;
-        $this->dataSource = $dataSource;
         $this->blogKey = $blogKey;
         
-        $this->modifierChain = array();
+        $this->iterator = new WrapperIterator($dataSource);
+        $this->gotSorter = false;
+        $this->isLocked = false;
 
         $this->page = null;
         $this->previousPost = null;
         $this->nextPost = null;
         $this->hasMorePosts = false;
-        $this->totalPostCount = 0;
     }
 
     // {{{ Internal members
@@ -72,15 +66,9 @@ class PaginationIterator extends BaseIterator
     public function setFilter(PaginationFilter $filter)
     {
         $this->unload();
-        array_unshift($this->modifierChain, new FilterIteratorModifier($filter));
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
     }
 
-    public function getTotalPostCount()
-    {
-        $this->ensureLoaded();
-        return $this->totalPostCount;
-    }
-    
     public function hasMorePosts()
     {
         $this->ensureLoaded();
@@ -98,6 +86,11 @@ class PaginationIterator extends BaseIterator
         $this->ensureLoaded();
         return $this->previousPost;
     }
+
+    public function setLocked($locked = true)
+    {
+        $this->isLocked = $locked;
+    }
     // }}}
 
     // {{{ Fluent-interface template members
@@ -108,8 +101,10 @@ class PaginationIterator extends BaseIterator
      */
     public function skip($count)
     {
+        $this->ensureUnlocked();
         $this->unload();
-        $this->modifierChain[] = new SkipIteratorModifier($count);
+        $this->ensureSorter();
+        $this->iterator = new SliceIterator($this->iterator, $count);
         return $this;
     }
     
@@ -120,8 +115,10 @@ class PaginationIterator extends BaseIterator
      */
     public function limit($count)
     {
+        $this->ensureUnlocked();
         $this->unload();
-        $this->modifierChain[] = new LimitIteratorModifier($count);
+        $this->ensureSorter();
+        $this->iterator = new SliceIterator($this->iterator, 0, $count);
         return $this;
     }
 
@@ -132,16 +129,19 @@ class PaginationIterator extends BaseIterator
      */
     public function filter($filterName)
     {
+        $this->ensureUnlocked();
         $this->unload();
+
         if ($this->page == null)
             throw new PieCrustException("Can't use 'filter()' because no parent page was set for the pagination iterator.");
-        if (!$this->page->getConfig()->hasValue($filterName))
-            throw new PieCrustException("Couldn't find filter '{$filterName}' in the configuration header for page: {$this->page->getPath()}");
         
         $filterDefinition = $this->page->getConfig()->getValue($filterName);
+        if ($filterDefinition == null)
+            throw new PieCrustException("Couldn't find filter '{$filterName}' in the configuration header for page: {$this->page->getPath()}");
+
         $filter = new PaginationFilter();
         $filter->addClauses($filterDefinition);
-        $this->modifierChain[] = new FilterIteratorModifier($filter);
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
         return $this;
     }
 
@@ -152,10 +152,12 @@ class PaginationIterator extends BaseIterator
      */
     public function in_category($category)
     {
+        $this->ensureUnlocked();
         $this->unload();
+
         $filter = new PaginationFilter();
         $filter->addClauses(array('is_category' => $category));
-        $this->modifierChain[] = new FilterIteratorModifier($filter);
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
         return $this;
     }
 
@@ -166,10 +168,12 @@ class PaginationIterator extends BaseIterator
      */
     public function with_tag($tag)
     {
+        $this->ensureUnlocked();
         $this->unload();
+
         $filter = new PaginationFilter();
         $filter->addClauses(array('has_tags' => $tag));
-        $this->modifierChain[] = new FilterIteratorModifier($filter);
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
         return $this;
     }
 
@@ -180,6 +184,7 @@ class PaginationIterator extends BaseIterator
      */
     public function with_tags($tag1, $tag2 /*, $tag3, ... */)
     {
+        $this->ensureUnlocked();
         $this->unload();
 
         $tagClauses = array();
@@ -192,19 +197,7 @@ class PaginationIterator extends BaseIterator
 
         $filter = new PaginationFilter();
         $filter->addClauses(array('and' => $tagClauses));
-        $this->modifierChain[] = new FilterIteratorModifier($filter);
-        return $this;
-    }
-    
-    /**
-     * @include
-     * @noCall
-     * @documentation Return all posts.
-     */
-    public function all()
-    {
-        $this->unload();
-        $this->modifierChain = array();
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
         return $this;
     }
 
@@ -215,7 +208,11 @@ class PaginationIterator extends BaseIterator
      */
     public function sortBy($name, $reverse = false)
     {
-        $this->modifierChain[] = new SortIteratorModifier($name, $reverse);
+        $this->ensureUnlocked();
+        $this->unload();
+
+        $this->iterator = new ConfigSortIterator($this->iterator, $name, $reverse);
+        $this->gotSorter = true;
         return $this;
     }
     // }}}
@@ -229,71 +226,39 @@ class PaginationIterator extends BaseIterator
     public function first()
     {
         $this->ensureLoaded();
-        if (count($this->posts) == 0)
+        if ($this->items->count() == 0)
             return null;
-        return $this->posts[0];
+        return $this->items[0];
     }
     // }}}
     
     // {{{ Protected members
+    protected function ensureUnlocked()
+    {
+        if ($this->isLocked)
+            throw new PieCrustException("The `paginator` object always returns the posts required for correct pagination. You can add more filtering with the `posts_filters` configuration setting, or get a custom posts list with `blog.posts`.");
+    }
+
+    protected function ensureSorter()
+    {
+        if ($this->gotSorter)
+            return;
+
+        $this->iterator = new DateSortIterator($this->iterator);
+        $this->gotSorter = true;
+    }
+
     protected function load()
     {
-        $pieCrust = $this->pieCrust;
-        $blogKey = $this->blogKey;
-        $postsUrlFormat = $pieCrust->getConfig()->getValueUnchecked($blogKey . '/post_url');
-
-        // Work with copies of our arrays so we can unload and reload.
-        $dataSource = $this->dataSource;
-        $modifierChain = $this->modifierChain;
-
-        // The given data source is usually from the post FileSystem, which
-        // orders posts by reverse-chronological date. The problem is that
-        // it doesn't know about the time at which a post was posted because
-        // at this point none of the posts have been loaded from disk.
-        // We need to sort by the actual date and time of the post.
-        // (this will load the configurations of all posts)
-        //
-        // However, we need to check for other sorting modifiers at the
-        // beginning of the chain, so as not to sort posts by date for nothing
-        // because they're going to be sorted some other way just after that.
-        // 
-        // And to be really optimal, we'll insert the sorter just before the
-        // first modifier that depends on order. If there's no modifiers in the
-        // chain, we'll add the sorter anyway.
-        $insertSorterAt = 0;
-        foreach ($modifierChain as $i => $it)
-        {
-            if ($it->dependsOnOrder())
-            {
-                $insertSorterAt = $i;
-                break;
-            }
-            else if ($it->affectsOrder())
-            {
-                $insertSorterAt = -1;
-                break;
-            }
-        }
-        if ($insertSorterAt >= 0)
-        {
-            $sorter = new DateSortIteratorModifier();
-            array_splice($modifierChain, $insertSorterAt, 0, array($sorter));
-        }
-
-        // Now run the chain on the data source.
-        foreach ($modifierChain as $it)
-        {
-            $dataSource = $it->modify($dataSource);
-        }
-
-        // Get the final post count.
-        $this->totalPostCount = count($dataSource);
+        // Run the iterator chain!
+        $this->ensureSorter();
+        $posts = iterator_to_array($this->iterator);
 
         // Find the previous and next posts, if the parent page is in there.
         if ($this->page != null)
         {
             $pageIndex = -1;
-            foreach ($dataSource as $i => $post)
+            foreach ($posts as $i => $post)
             {
                 if ($post === $this->page)
                 {
@@ -306,9 +271,9 @@ class PaginationIterator extends BaseIterator
                 // Get the previous and next posts.
                 $prevAndNextPost = array(null, null);
                 if ($pageIndex > 0)
-                    $prevAndNextPost[0] = $dataSource[$pageIndex - 1];
-                if ($pageIndex < $this->totalPostCount - 1)
-                    $prevAndNextPost[1] = $dataSource[$pageIndex + 1];
+                    $prevAndNextPost[0] = $posts[$pageIndex - 1];
+                if ($pageIndex < count($posts) - 1)
+                    $prevAndNextPost[1] = $posts[$pageIndex + 1];
 
                 // Get their template data.
                 $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
@@ -320,17 +285,24 @@ class PaginationIterator extends BaseIterator
             }
         }
         
-        // Get the posts data and see whether there's more than what we got.
-        $this->posts = $this->getPostsData($dataSource);
+        // Get the posts data, and use that as the items we'll return.
+        $items = $this->getPostsData($posts);
+
+        // See whether there's more than what we got.
         $this->hasMorePosts = false;
-        foreach ($modifierChain as $it)
+        $currentIterator = $this->iterator;
+        while ($currentIterator != null)
         {
-            if ($it->didStripItems())
+            if ($currentIterator instanceof SliceIterator)
             {
-                $this->hasMorePosts = true;
-                break;
+                $this->hasMorePosts |= $currentIterator->hadMoreItems();
+                if ($this->hasMorePosts)
+                    break;
             }
+            $currentIterator = $currentIterator->getInnerIterator();
         }
+
+        return $items;
     }
     
     protected function getPostsData(array $posts)

@@ -7,6 +7,7 @@ use \FilesystemIterator;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Page\Iteration\BaseIterator;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
@@ -17,17 +18,15 @@ use PieCrust\Util\UriBuilder;
  *
  * @formatObject
  * @explicitInclude
- * @documentation The list of pages in the current sub-directory. See the documentation for more information.
+ * @documentation The list of pages in the current sub-directory.
  */
-class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
+class Linker extends BaseIterator implements \RecursiveIterator
 {
     protected $page;
     protected $baseDir;
 
     protected $sortByName;
     protected $sortByReverse;
-
-    protected $linksCache;
 
     /**
      * Creates a new instance of Linker.
@@ -87,70 +86,6 @@ class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
     }
     // }}}
 
-    // {{{ Countable members
-    public function count()
-    {
-        $this->ensureLinksCache();
-        return count($this->linksCache);
-    }
-    // }}}
-
-    // {{{ ArrayAccess members
-    public function offsetExists($offset)
-    {
-        $this->ensureLinksCache();
-        return isset($this->linksCache[$offset]);
-    }
-
-    public function offsetGet($offset)
-    {
-        $this->ensureLinksCache();
-        return $this->linksCache[$offset];
-    }
-
-    public function offsetSet($offset, $value)
-    {
-        throw new PieCrustException('Linker is read-only.');
-    }
-
-    public function offsetUnset($offset)
-    {
-        throw new PieCrustException('Linker is read-only.');
-    }
-    // }}}
-
-    // {{{ Iterator members
-    public function rewind()
-    {
-        $this->ensureLinksCache();
-        reset($this->linksCache);
-    }
-
-    public function current()
-    {
-        $this->ensureLinksCache();
-        return current($this->linksCache);
-    }
-
-    public function key()
-    {
-        $this->ensureLinksCache();
-        return key($this->linksCache);
-    }
-
-    public function next()
-    {
-        $this->ensureLinksCache();
-        next($this->linksCache);
-    }
-
-    public function valid()
-    {
-        $this->ensureLinksCache();
-        return key($this->linksCache) !== null;
-    }
-    // }}}
-
     // {{{ RecursiveIterator members
     public function getChildren()
     {
@@ -169,102 +104,102 @@ class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
     }
     // }}}
 
-    protected function ensureLinksCache()
+    // {{{ Loading members
+    protected function load()
     {
-        if ($this->linksCache === null)
+        try
         {
-            try
+            $pieCrust = $this->page->getApp();
+            $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+
+            $items = array();
+
+            $skipNames = array('Thumbs.db');
+            $it = new FilesystemIterator($this->baseDir);
+            foreach ($it as $item)
             {
-                $pieCrust = $this->page->getApp();
-                $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
+                $filename = $item->getFilename();
 
-                $this->linksCache = array();
+                // Skip dot files, Thumbs.db, etc.
+                if (!$filename or $filename[0] == '.')
+                    continue;
+                if (in_array($filename, $skipNames))
+                    continue;
 
-                $skipNames = array('Thumbs.db');
-                $it = new FilesystemIterator($this->baseDir);
-                foreach ($it as $item)
+                if ($item->isDir())
                 {
-                    $filename = $item->getFilename();
-
-                    // Skip dot files, Thumbs.db, etc.
-                    if (!$filename or $filename[0] == '.')
-                        continue;
-                    if (in_array($filename, $skipNames))
+                    // Skip "asset" directories.
+                    if (preg_match('/\-assets$/', $filename))
                         continue;
 
-                    if ($item->isDir())
+                    $linker = new Linker($this->page, $item->getPathname());
+                    $items[$filename . '_'] = $linker;
+                    // We add '_' at the end of the directory name to avoid
+                    // collisions with a possibly existing page with the same
+                    // name (since we strip out the file extension).
+                    // This means the user must access directories with
+                    // 'link.dirname_' instead of 'link.dirname' but hey, if
+                    // you have a better idea, send me an email!
+                }
+                else
+                {
+                    $path = $item->getPathname();
+                    try
                     {
-                        // Skip "asset" directories.
-                        if (preg_match('/\-assets$/', $filename))
-                            continue;
+                        // To get the link's page, we need to be careful with the case
+                        // where that page is the currently rendering one. This is
+                        // because it could be rendering a sub-page -- but we would be
+                        // requesting the default first page, which would effectively
+                        // change the page number *while* we're rendering, which leads
+                        // to all kinds of bad things!
+                        // TODO: obviously, there needs to be some design changes to
+                        // prevent this kind of chaotic behaviour.
+                        if (str_replace('\\', '/', $path) == str_replace('\\', '/', $this->page->getPath()))
+                        {
+                            $page = $this->page;
+                        }
+                        else
+                        {
+                            $relativePath = PathHelper::getRelativePath($pieCrust->getPagesDir(), $path);
+                            $uri = UriBuilder::buildUri($relativePath);
+                            $page = $pageRepository->getOrCreatePage($uri, $path);
+                        }
 
-                        $linker = new Linker($this->page, $item->getPathname());
-                        $this->linksCache[$filename . '_'] = $linker;
-                        // We add '_' at the end of the directory name to avoid
-                        // collisions with a possibly existing page with the same
-                        // name (since we strip out the file extension).
-                        // This means the user must access directories with
-                        // 'link.dirname_' instead of 'link.dirname' but hey, if
-                        // you have a better idea, send me an email!
+                        $key = preg_replace('/\.[a-zA-Z0-9]+$/', '', $filename);
+                        $key = str_replace('.', '_', $key);
+                        $items[$key] = new LinkData(
+                            $page,
+                            array(
+                                'name' => $key,
+                                'is_dir' => false,
+                                'is_self' => ($page == $this->page)
+                            )
+                        );
                     }
-                    else
+                    catch (Exception $e)
                     {
-                        $path = $item->getPathname();
-                        try
-                        {
-                            // To get the link's page, we need to be careful with the case
-                            // where that page is the currently rendering one. This is
-                            // because it could be rendering a sub-page -- but we would be
-                            // requesting the default first page, which would effectively
-                            // change the page number *while* we're rendering, which leads
-                            // to all kinds of bad things!
-                            // TODO: obviously, there needs to be some design changes to
-                            // prevent this kind of chaotic behaviour.
-                            if (str_replace('\\', '/', $path) == str_replace('\\', '/', $this->page->getPath()))
-                            {
-                                $page = $this->page;
-                            }
-                            else
-                            {
-                                $relativePath = PathHelper::getRelativePath($pieCrust->getPagesDir(), $path);
-                                $uri = UriBuilder::buildUri($relativePath);
-                                $page = $pageRepository->getOrCreatePage($uri, $path);
-                            }
-
-                            $key = preg_replace('/\.[a-zA-Z0-9]+$/', '', $filename);
-                            $key = str_replace('.', '_', $key);
-                            $this->linksCache[$key] = new LinkData(
-                                $page,
-                                array(
-                                    'name' => $key,
-                                    'is_dir' => false,
-                                    'is_self' => ($page == $this->page)
-                                )
-                            );
-                        }
-                        catch (Exception $e)
-                        {
-                            throw new PieCrustException(
-                                "Error while loading page '{$path}' for linking from '{$this->page->getUri()}': " .
-                                $e->getMessage(), 0, $e
-                            );
-                        }
+                        throw new PieCrustException(
+                            "Error while loading page '{$path}' for linking from '{$this->page->getUri()}': " .
+                            $e->getMessage(), 0, $e
+                        );
                     }
                 }
+            }
 
-                if ($this->sortByName)
-                {
-                    if (false === usort($this->linksCache, array($this, 'sortByCustom')))
-                        throw new PieCrustException("Error while sorting pages with the specified setting: {$this->sortByName}");
-                }
-            }
-            catch (Exception $e)
+            if ($this->sortByName)
             {
-                throw new PieCrustException(
-                    "Error while building the links from page '{$this->page->getUri()}': " .
-                    $e->getMessage(), 0, $e
-                );
+                if (false === usort($items, array($this, 'sortByCustom')))
+                    throw new PieCrustException("Error while sorting pages with the specified setting: {$this->sortByName}");
             }
+
+            return $items;
+        }
+        catch (Exception $e)
+        {
+            throw new PieCrustException(
+                "Error while building the links from page '{$this->page->getUri()}': " .
+                $e->getMessage(), 0, $e
+            );
         }
     }
 
@@ -301,5 +236,5 @@ class Linker implements \ArrayAccess, \RecursiveIterator, \Countable
         else
             return ($value1 < $value2) ? -1 : 1;
     }
-
+    // }}}
 }

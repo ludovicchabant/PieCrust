@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Page;
+namespace PieCrust\Page\Iteration;
 
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
@@ -52,7 +52,7 @@ class RecursiveLinkerIterator implements \ArrayAccess, \OuterIterator
     /**
      * @include
      * @noCall
-     * @documentation Apply a named filter from the page's config (similar to `posts_filter`).
+     * @documentation Apply a named filter from the page's config (similar to `posts_filters`).
      */
     public function filter($filterName)
     {
@@ -65,7 +65,7 @@ class RecursiveLinkerIterator implements \ArrayAccess, \OuterIterator
         $filterDefinition = $page->getConfig()->getValue($filterName);
         $filter = new PaginationFilter();
         $filter->addClauses($filterDefinition);
-        $this->innerIterator = new FilterLinkerIterator($this->innerIterator, $filter);
+        $this->innerIterator = new ConfigFilterIterator($this->innerIterator, $filter, function ($data) { return $data->getPage(); });
         return $this;
     }
     // }}}

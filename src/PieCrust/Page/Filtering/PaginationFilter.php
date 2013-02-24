@@ -18,6 +18,11 @@ class PaginationFilter
     {
         $this->rootClause = null;
     }
+
+    public function getRootClause()
+    {
+        return $this->getSafeRootClause();
+    }
     
     public function hasClauses()
     {
@@ -34,31 +39,48 @@ class PaginationFilter
         $this->addClausesRecursive($filterInfo, $this->getSafeRootClause());
     }
     
-    public function addPageClauses(IPage $page)
+    public function addPageClauses(IPage $page, array $userFilterInfo = null)
     {
         // If the current page is a tag/category page, add filtering
         // for that.
+        $pageClause = null;
         switch ($page->getPageType())
         {
         case IPage::TYPE_TAG:
             $pageKey = $page->getPageKey();
             if (is_array($pageKey))
             {
-                $wrapper = new AndBooleanClause();
+                $pageClause = new AndBooleanClause();
                 foreach ($pageKey as $k)
                 {
-                    $wrapper->addClause(new HasFilterClause('tags', $k, function($t) { return UriBuilder::slugify($t); }));
+                    $pageClause->addClause(new HasFilterClause('tags', $k, function($t) { return UriBuilder::slugify($t); }));
                 }
-                $this->addClause($wrapper);
             }
             else
             {
-                $this->addClause(new HasFilterClause('tags', $pageKey, function($t) { return UriBuilder::slugify($t); }));
+                $pageClause = new HasFilterClause('tags', $pageKey, function($t) { return UriBuilder::slugify($t); });
             }
             break;
         case IPage::TYPE_CATEGORY:
-            $this->addClause(new IsFilterClause('category', $page->getPageKey(), function($c) { return UriBuilder::slugify($c); }));
+            $pageClause = new IsFilterClause('category', $page->getPageKey(), function($c) { return UriBuilder::slugify($c); });
             break;
+        }
+
+        if ($pageClause != null)
+        {
+            // Combine the default page filters with some user filters,
+            // if any.
+            if ($userFilterInfo != null)
+            {
+                $combinedClause = new AndBooleanClause();
+                $combinedClause->addClause($pageClause);
+                $this->addClausesRecursive($userFilterInfo, $combinedClause);
+                $this->addClause($combinedClause);
+            }
+            else
+            {
+                $this->addClause($pageClause);
+            }
         }
     }
     
@@ -73,7 +95,11 @@ class PaginationFilter
     {
         foreach ($filterInfo as $key => $value)
         {
-            if ($key == 'and')
+            if (is_int($key))
+            {
+                $this->addClausesRecursive($value, $clause);
+            }
+            else if ($key == 'and')
             {
                 if (!is_array($value) or count($value) == 0)
                     throw new PieCrustException("The given boolean 'AND' filter clause doesn't have an array of child clauses.");
