@@ -142,6 +142,8 @@ class FindCommand extends ChefCommand
         );
         $pathComponentsRegex = '/' . $pathComponentsRegex . '/';
 
+        $foundAny = false;
+
         // Print the matching pages.
         foreach ($pages as $page)
         {
@@ -201,10 +203,12 @@ class FindCommand extends ChefCommand
                     $str .= $k . ': ' . $v . PHP_EOL;
                 }
                 $logger->info($str);
+                $foundAny = true;
             }
             else
             {
                 $logger->info($path);
+                $foundAny = true;
             }
         }
 
@@ -248,13 +252,21 @@ class FindCommand extends ChefCommand
                     {
                         $logger->info("path: {$finalPath}");
                         $logger->info("type: template");
+                        $foundAny = true;
                     }
                     else
                     {
                         $logger->info($finalPath);
+                        $foundAny = true;
                     }
                 }
             }
+        }
+
+        if (!$foundAny)
+        {
+            $pattern = $result->command->args['pattern'];
+            $logger->info("No match found for '{$pattern}'.");
         }
 
         return 0;
