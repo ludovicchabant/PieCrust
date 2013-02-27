@@ -108,7 +108,7 @@ class PieCrustData
                 catch (Exception $e)
                 {
                     ob_end_clean();
-                    throw new PieCrustException("Error while generating the debug data: " . $e->getMessage(), 0, $e);
+                    throw new PieCrustException("Error while generating the debug data.", 0, $e);
                 }
                 $output .= ob_get_clean();
                 $output .= '</div>' .PHP_EOL;

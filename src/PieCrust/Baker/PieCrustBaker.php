@@ -119,7 +119,6 @@ class PieCrustBaker
         $this->parameters = array_merge(array(
                 'smart' => true,
                 'clean_cache' => false,
-                'info_only' => false,
                 'config_variant' => null,
                 'copy_assets' => true,
                 'processors' => '*',
@@ -154,36 +153,19 @@ class PieCrustBaker
             $this->parameters['tag_combinations'] = $combinationsExploded;
         }
         
-        // Apply the default configuration variant, if it exists.
-        $variants = $this->pieCrust->getConfig()->getValue('baker/config_variants');
-        if ($variants and isset($variants['default']))
+        // Apply the specified configuration variant, if any. Otherwise,
+        // use the default variant if it exists.
+        $isDefault = false;
+        $variantName = $this->parameters['config_variant'];
+        if (!$variantName)
         {
-            if (!is_array($variants['default']))
-            {
-                throw new PieCrustException("Baker configuration variant '".$variantName."' is not an array. Check your configuration file.");
-            }
-            $this->pieCrust->getConfig()->merge($variants['default']);
+            $isDefault = true;
+            $variantName = 'default';
         }
-        
-        // Apply the specified configuration variant, if any.
-        if ($this->parameters['config_variant'])
-        {
-            if (!$variants)
-            {
-                throw new PieCrustException("No baker configuration variants have been defined. You need to create a 'baker/config_variants' section in the configuration file.");
-            }
-            $variantName = $this->parameters['config_variant'];
-            if (!isset($variants[$variantName]))
-            {
-                throw new PieCrustException("Baker configuration variant '".$variantName."' does not exist. Check your configuration file.");
-            }
-            $configVariant = $variants[$variantName];
-            if (!is_array($configVariant))
-            {
-                throw new PieCrustException("Baker configuration variant '".$variantName."' is not an array. Check your configuration file.");
-            }
-            $this->pieCrust->getConfig()->merge($configVariant);
-        }
+        $this->pieCrust->getConfig()->applyVariant(
+            "baker/config_variants/{$variantName}",
+            !$isDefault
+        );
     }
     
     /**
@@ -193,16 +175,9 @@ class PieCrustBaker
     {
         $overallStart = microtime(true);
         
-        // Display the banner.
-        $bannerLevel = PEAR_LOG_DEBUG;
-        if ($this->parameters['info_only'])
-            $bannerLevel = PEAR_LOG_NOTICE;
-        $this->logger->log("PieCrust Baker v." . PieCrustDefaults::VERSION, $bannerLevel);
-        $this->logger->log("  website :  " . $this->pieCrust->getRootDir(), $bannerLevel);
-        $this->logger->log("  output  :  " . $this->getBakeDir(), $bannerLevel);
-        $this->logger->log("  url     :  " . $this->pieCrust->getConfig()->getValueUnchecked('site/root'), $bannerLevel);
-        if ($this->parameters['info_only'])
-            return;
+        // Display debug information.
+        $this->logger->debug("  Bake Output: " . $this->getBakeDir());
+        $this->logger->debug("  Root URL: " . $this->pieCrust->getConfig()->getValue('site/root'));
         
         // Setup the PieCrust environment.
         if ($this->parameters['copy_assets'])
@@ -567,7 +542,26 @@ class PieCrustBaker
     
     public static function formatTimed($startTime, $message)
     {
+        static $color = null;
+        if ($color === null)
+        {
+            if (PieCrustDefaults::IS_WINDOWS())
+                $color = false;
+            else
+                $color = new \Console_Color2();
+        }
+
         $endTime = microtime(true);
-        return sprintf('[%8.1f ms] ', ($endTime - $startTime)*1000.0) . $message;
+        $endTimeStr = sprintf('%8.1f ms', ($endTime - $startTime)*1000.0);
+        if ($color)
+        {
+            $endTimeStr = $color->escape($endTimeStr);
+            $message = $color->escape($message);
+            return $color->convert("[%g{$endTimeStr}%n] {$message}");
+        }
+        else
+        {
+            return "[{$endTimeStr}] {$message}";
+        }
     }
 }

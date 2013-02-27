@@ -89,7 +89,7 @@ class PageLoader
         catch (Exception $e)
         {
             $relativePath = PageHelper::getRelativePath($this->page);
-            throw new PieCrustException("Error loading page '{$relativePath}': {$e->getMessage()}", 0, $e);
+            throw new PieCrustException("Error loading page: {$relativePath}", 0, $e);
         }
     }
 
@@ -102,7 +102,7 @@ class PageLoader
         catch (Exception $e)
         {
             $relativePath = PageHelper::getRelativePath($this->page);
-            throw new PieCrustException("Error formatting page '{$relativePath}': {$e->getMessage()}", 0, $e);
+            throw new PieCrustException("Error formatting page: {$relativePath}", 0, $e);
         }
     }
 

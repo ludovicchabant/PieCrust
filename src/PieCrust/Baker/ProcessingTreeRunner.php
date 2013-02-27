@@ -201,7 +201,7 @@ class ProcessingTreeRunner
         }
         catch (Exception $e)
         {
-            throw new PieCrustException("Error processing '{$node->getPath()}': {$e->getMessage()}", 0, $e);
+            throw new PieCrustException("Error processing '{$node->getPath()}'.", 0, $e);
         }
         return $didBake;
     }

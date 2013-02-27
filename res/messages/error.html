@@ -60,9 +60,6 @@
 
             		</div>
         <hr />
-        	<p class="note">To see your custom error pages, make sure you don&#8217;t initialize <strong>PieCrust</strong>
-    with the <code>debug</code> parameter, and don&#8217;t turn on the <code>site/display_errors</code> configuration
-    setting. To see detailed errors, on the other hand, use the <code>--debug</code> parameter
-    in <code>chef</code>, append <code>?!debug</code> to the <span class="caps">URL</span>, or turn on <code>site/display_errors</code>.</p>	</div>
+        	<p class="note">You&#8217;re seeing this because something wrong happend. To see detailed errors with callstacks, run chef with the <code>--debug</code> parameter, append <code>?!debug</code> to the <span class="caps">URL</span>, or initialize the <code>PieCrust</code> object with <code>{&#39;debug&#39;=&#62;true}</code>. On the other hand, to see you custom error pages, set the <code>site/display_errors</code> setting  to <code>false</code>.</p>	</div>
 </body>
 </html>

@@ -50,13 +50,6 @@ class BakeCommand extends ChefCommand
             'action'      => 'StoreTrue',
             'help_name'   => 'PORTABLE'
         ));
-        $bakerParser->addOption('info_only', array(
-            'long_name'   => '--info',
-            'description' => "Prints only high-level information about what the baker will do.",
-            'default'     => false,
-            'action'      => 'StoreTrue',
-            'help_name'   => 'INFO_ONLY'
-        ));
 
         // Deprecated stuff.
         $bakerParser->addOption('root_url_old', array(
@@ -106,7 +99,6 @@ class BakeCommand extends ChefCommand
         $bakerParameters = array(
             'smart' => !$result->command->options['force'],
             'clean_cache' => $result->command->options['force'],
-            'info_only' => $result->command->options['info_only'],
             'config_variant' => $result->command->options['config_variant']
         );
         $baker = new PieCrustBaker($pieCrust, $bakerParameters, $context->getLog());

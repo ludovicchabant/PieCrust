@@ -1,5 +1,5 @@
 {
-    "hash": "1acb904b9147801ea29d7d90d09b6616",
+    "hash": "1580c1c230a5e9d9829869ec71835d82",
     "packages": [
         {
             "name": "bolt80/stupidhttp",
@@ -19,7 +19,6 @@
                 "php": ">= 5.3.0"
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "psr-0": {
                     "StupidHttp_": "lib"
@@ -38,9 +37,9 @@
             "homepage": "http://bolt80.com/stupidhttp",
             "keywords": [
                 "http",
-                "web",
+                "net",
                 "server",
-                "net"
+                "web"
             ]
         },
         {
@@ -53,7 +52,6 @@
                 "shasum": null
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "classmap": [
                     "geshi.php"
@@ -70,7 +68,6 @@
                 "shasum": null
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "classmap": [
                     "lessc.inc.php",
@@ -87,8 +84,7 @@
                 "reference": null,
                 "shasum": null
             },
-            "type": "library",
-            "installation-source": "dist"
+            "type": "library"
         },
         {
             "name": "markdown/markdown-extra",
@@ -99,8 +95,7 @@
                 "reference": null,
                 "shasum": null
             },
-            "type": "library",
-            "installation-source": "dist"
+            "type": "library"
         },
         {
             "name": "mikey179/vfsStream",
@@ -120,7 +115,6 @@
                 "php": ">=5.3.0"
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "psr-0": {
                     "org\\bovigo\\vfs": "src/main/php"
@@ -141,13 +135,60 @@
                 "shasum": null
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "classmap": [
                     "Mustache.php",
                     "MustacheLoader.php"
                 ]
             }
+        },
+        {
+            "name": "pear/Console_Color2",
+            "version": "0.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pear/Console_Color2",
+                "reference": "0.1.2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/pear/Console_Color2/zipball/0.1.2",
+                "reference": "0.1.2",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Console_Color2": ""
+                }
+            },
+            "notification-url": "http://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Daniel O'Connor",
+                    "email": "daniel.oconnor@gmail.com"
+                },
+                {
+                    "name": "Stefan Walk",
+                    "email": "et@php.net"
+                },
+                {
+                    "name": "Scott Mattocks",
+                    "email": "scottmattocks@php.net"
+                }
+            ],
+            "description": "This Class allows you to easily use ANSI console colors in your application.",
+            "homepage": "https://github.com/pear/Console_Color2",
+            "keywords": [
+                "console"
+            ],
+            "time": "2012-10-23 04:52:18"
         },
         {
             "name": "smartypants/smartypants",
@@ -158,8 +199,7 @@
                 "reference": null,
                 "shasum": null
             },
-            "type": "library",
-            "installation-source": "dist"
+            "type": "library"
         },
         {
             "name": "smartypants/smartypants-typographer",
@@ -170,8 +210,7 @@
                 "reference": null,
                 "shasum": null
             },
-            "type": "library",
-            "installation-source": "dist"
+            "type": "library"
         },
         {
             "name": "symfony/yaml",
@@ -192,7 +231,6 @@
                 "php": ">=5.3.2"
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "psr-0": {
                     "Symfony\\Component\\Yaml": ""
@@ -228,7 +266,6 @@
                 "shasum": null
             },
             "type": "library",
-            "installation-source": "dist",
             "autoload": {
                 "classmap": [
                     "classTextile.php"
@@ -258,7 +295,6 @@
                     "dev-master": "1.8-dev"
                 }
             },
-            "installation-source": "dist",
             "autoload": {
                 "psr-0": {
                     "Twig_": "lib/"

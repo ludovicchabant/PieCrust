@@ -19,10 +19,10 @@ class PieCrustErrorHandler
     /**
      * Formats an exception, along with its inner exceptions, into a chunk of HTML.
      */
-    public static function formatException($error, $printDetails = false)
+    public static function formatException($error, $debugInfo = false)
     {
         $errorMessage = "<h3>{$error->getMessage()}</h3>" . PHP_EOL;
-        if ($printDetails)
+        if ($debugInfo)
         {
             $cur = $error;
             $errorMessage .= "<ul>" . PHP_EOL;
@@ -34,9 +34,18 @@ class PieCrustErrorHandler
                     "Line <code>{$cur->getLine()}</code><br/>" .
                     "Trace: <code><pre>{$cur->getTraceAsString()}</pre></code></p>";
                 $cur = $cur->getPrevious();
-                $errorMessage .= "</li>";
+                $errorMessage .= "</li>" . PHP_EOL;
             }
-            $errorMessage .= "</ul>";
+            $errorMessage .= "</ul>" . PHP_EOL;
+        }
+        else
+        {
+            $cur = $error->getPrevious();
+            while ($cur != null)
+            {
+                $errorMessage .= "<h3>{$cur->getMessage()}</h3>" . PHP_EOL;
+                $cur = $cur->getPrevious();
+            }
         }
         return $errorMessage;
     }
@@ -54,11 +63,11 @@ class PieCrustErrorHandler
      */
     public function handleError(Exception $e, $server = null, array &$headers = null)
     {
-        $displayErrors = ($this->pieCrust->isDebuggingEnabled() ||
-                          $this->pieCrust->getConfig()->getValue('site/display_errors'));
+        $isDebuggingEnabled = $this->pieCrust->isDebuggingEnabled();
+        $displayErrors = $this->pieCrust->getConfig()->getValue('site/display_errors');
         
         // If debugging is enabled, just display the error and exit.
-        if ($displayErrors)
+        if ($isDebuggingEnabled || $displayErrors)
         {
             if ($e->getMessage() == '404')
             {
@@ -66,16 +75,8 @@ class PieCrustErrorHandler
                 piecrust_show_system_message('404');
                 return;
             }
-            $errorMessage = self::formatException($e, true);
+            $errorMessage = self::formatException($e, $isDebuggingEnabled);
             piecrust_show_system_message('error', $errorMessage);
-            return;
-        }
-        
-        // First of all, check that we're not running
-        // some completely brand new and un-configured website.
-        if ($this->isEmptySetup())
-        {
-            piecrust_show_system_message('welcome');
             return;
         }
         
@@ -127,18 +128,7 @@ class PieCrustErrorHandler
         {
             // We don't have a custom error page. Just show the generic
             // error page.
-            $errorMessage = self::formatException($e, false);
             piecrust_show_system_message(substr($errorPageUri, 1), $errorMessage);
         }
-    }
-    
-    protected function isEmptySetup()
-    {
-        if (!is_dir($this->pieCrust->getRootDir() . PieCrustDefaults::CONTENT_DIR))
-            return true;
-        if (!is_file($this->pieCrust->getRootDir() . PieCrustDefaults::CONFIG_PATH))
-            return true;
-        
-        return false;
     }
 }
