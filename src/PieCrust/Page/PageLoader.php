@@ -120,7 +120,12 @@ class PageLoader
             $contents  = array();
             foreach ($config['segments'] as $key)
             {
-                $contents[$key] = json_decode($this->cache->read($this->page->getUri(), $key . '.json'),true);
+                $contents[$key] = json_decode($this->cache->read($this->page->getUri(), $key . '.json'), true);
+
+                // Sanity test: if the first content segment is null, it may mean that the
+                // original page file was in a non-supported encoding.
+                if (count($contents[$key]) > 0 && $contents[$key][0]['content'] === null)
+                    throw new PieCrustException("Corrupted cache: is the page not saved in UTF-8 encoding?");
             }
             
             return $contents;
@@ -128,7 +133,7 @@ class PageLoader
         else
         {
             // Load the page from disk.
-            $rawContents = utf8_encode(file_get_contents($this->page->getPath()));
+            $rawContents = file_get_contents($this->page->getPath());
             $parsedContents = Configuration::parseHeader($rawContents);
             
             // Set the configuration.
