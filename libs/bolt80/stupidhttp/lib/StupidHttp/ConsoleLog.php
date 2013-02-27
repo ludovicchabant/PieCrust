@@ -16,6 +16,7 @@ class StupidHttp_ConsoleLog extends StupidHttp_Log
      */
     public function __construct($level = StupidHttp_Log::TYPE_INFO, $prefixAllMessages = false)
     {
+        parent::__construct();
         $this->level = $level;
         $this->prefixAllMessages = $prefixAllMessages;
         $this->isBuffering = false;

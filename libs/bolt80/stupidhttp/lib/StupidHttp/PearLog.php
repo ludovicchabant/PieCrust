@@ -24,6 +24,7 @@ class StupidHttp_PearLog extends StupidHttp_Log
      */
     public function __construct(Log $log)
     {
+        parent::__construct();
         $this->log = $log;
         $this->isBuffering = false;
         $this->bufferedMessages = array();
