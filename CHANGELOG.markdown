@@ -18,9 +18,13 @@ Fresh changes
 * BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
 * BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
   modifying it, which could otherwise result in confusing behaviour.
+* BREAKING CHANGE: Global `chef` options like `--root`, `--debug` or `--quiet`
+  are not really global, and must be specified before the command name.
 * BREAKING BUG FIX: Monthly blog archives were incorrectly order
   chronologically, instead of reverse-chronologically.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
+* CHANGE: Error handling and reporting has been made more consistent. On Mac and
+  Linux, `serve` and `bake` will also print pretty colors!
 * CHANGE: Any place that returns a list of pages or posts should now be a proper
   pagination iterator, with all the sorting and filtering features.
 * CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by 
@@ -28,6 +32,7 @@ Fresh changes
   server (`chef serve`) as well as during the bake.
 * CHANGE: It is now possible to specify `posts_filters` on category and tag
   listing pages. Those filters will be combined with an `AND` boolean clause.
+* CHANGE: Removed useless banner and `--info-only` option from `chef bake`.
 * BUG: Fixed some incorrect behaviour when a page/post iterator is iterated
   several times on a page.
 * BUG: Fixed a crash when using a `has_xxx` filter on a setting that's not an
