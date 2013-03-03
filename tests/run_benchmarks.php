@@ -5,6 +5,9 @@ require 'bootstrap.php';
 use Symfony\Component\Yaml\Yaml;
 use PieCrust\Benchmarks\ApplicationBenchmark;
 
+$color = null;
+if (DIRECTORY_SEPARATOR != "\\")
+    $color = new Console_Color2();
 
 function compare_times($oldTime, $newTime)
 {
@@ -20,7 +23,16 @@ function compare_times($oldTime, $newTime)
     $averageDiff = $newAverage * 100.0 / $oldAverage - 100.0;
     $maxDiff = $newMax * 100.0 / $oldMax - 100.0;
 
-    echo $newTime['name'] . ' : ' . sprintf("%+01.1f%%", $medianDiff) . PHP_EOL;
+    $medianDiffStr = sprintf("%+01.1f%%", $medianDiff);
+    global $color;
+    if ($color)
+    {
+        if ($medianDiff > 0)
+            $medianDiffStr = $color->convert("%r" . $color->escape($medianDiffStr) . "%n");
+        else
+            $medianDiffStr = $color->convert("%g" . $color->escape($medianDiffStr) . "%n");
+    }
+    echo $newTime['name'] . ' : ' . $medianDiffStr . PHP_EOL;
     echo sprintf('  median  : %01.2fms -> %01.2fms', $oldMedian, $newMedian) . PHP_EOL;
     echo sprintf('  average : %01.2fms -> %01.2fms', $oldAverage, $newAverage) . PHP_EOL;
     echo sprintf('  max     : %01.2fms -> %01.2fms', $oldMax, $newMax) . PHP_EOL;
