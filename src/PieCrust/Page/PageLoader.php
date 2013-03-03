@@ -135,7 +135,21 @@ class PageLoader
             // Load the page from disk.
             $rawContents = file_get_contents($this->page->getPath());
             $parsedContents = Configuration::parseHeader($rawContents);
-            
+
+            // Set the format from the file extension.
+            if (!isset($parsedContents['config']['format']))
+            {
+                $app = $this->page->getApp();
+                $autoFormats = $app->getConfig()->getValueUnchecked('site/auto_formats');
+                $extension = pathinfo($this->page->getPath(), PATHINFO_EXTENSION);
+                if (isset($autoFormats[$extension]))
+                {
+                    $format = $autoFormats[$extension];
+                    if ($format)
+                        $parsedContents['config']['format'] = $autoFormats[$extension];
+                }
+            }
+
             // Set the configuration.
             $config = $this->page->getConfig();
             $config->set($parsedContents['config']);

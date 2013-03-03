@@ -2,6 +2,7 @@
 
 namespace PieCrust\IO;
 
+use \FilesystemIterator;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -11,9 +12,9 @@ use PieCrust\PieCrustException;
  */
 class ShallowFileSystem extends FileSystem
 {
-    public function __construct($pagesDir, $postsDir)
+    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
     {
-        FileSystem::__construct($pagesDir, $postsDir);
+        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
     }
     
     public function getPostFiles()
@@ -22,34 +23,38 @@ class ShallowFileSystem extends FileSystem
             return array();
 
         $years = array();
-        $yearsIterator = new \DirectoryIterator($this->postsDir);
+        $yearsIterator = new FilesystemIterator($this->postsDir);
         foreach ($yearsIterator as $year)
         {
+            if (!$year->isDir())
+                continue;
+
             if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
                 continue;
             
             $thisYear = $year->getFilename();
             $years[] = $thisYear;
         }
-        rsort($years);
         
         $result = array();
         foreach ($years as $year)
         {
-            $posts = array();
-            $pathPattern = $this->postsDir . $year . '/' . '*.html';
-            $paths = glob($pathPattern, GLOB_ERR);
-            if ($paths === false)
+            $postsIterator = new FilesystemIterator($this->postsDir . $year);
+            foreach ($postsIterator as $path)
             {
-                throw new PieCrustException('An error occured while reading the posts directory.');
-            }
-            rsort($paths);
-            
-            foreach ($paths as $path)
-            {
+                if ($path->isDir())
+                    continue;
+
+                $extension = pathinfo($path->getFilename(), PATHINFO_EXTENSION);
+                if (!in_array($extension, $this->htmlExtensions))
+                    continue;
+        
                 $matches = array();
-                
-                if (preg_match('/(\d{4})\/(\d{2})-(\d{2})_(.*)\.html$/', $path, $matches) == false)
+                $pathName = $path->getPathname();
+                if (preg_match(
+                    '/(\d{4})\/(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
+                    $pathName,
+                    $matches) === false)
                     continue;
                 
                 $result[] = array(
@@ -57,7 +62,8 @@ class ShallowFileSystem extends FileSystem
                     'month' => $matches[2],
                     'day' => $matches[3],
                     'name' => $matches[4],
-                    'path' => $path
+                    'ext' => $extension,
+                    'path' => $pathName
                 );
             }
         }
@@ -66,6 +72,6 @@ class ShallowFileSystem extends FileSystem
     
     public function getPostPathFormat()
     {
-        return '%year%/%month%-%day%_%slug%.html';
+        return '%year%/%month%-%day%_%slug%.%ext%';
     }
 }

@@ -209,6 +209,7 @@ class PieCrustConfiguration extends Configuration
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
                 'themes_sources' => array(PieCrustDefaults::DEFAULT_THEME_SOURCE),
+                'auto_formats' => array('html' => ''),
                 'cache_time' => 28800,
                 'display_errors' => true,
                 'enable_debug_info' => true
@@ -227,6 +228,17 @@ class PieCrustConfiguration extends Configuration
         {
             $config['site']['root'] = rtrim($config['site']['root'], '/') . '/';
             $config['site']['is_auto_root'] = false;
+        }
+
+        // Validate auto-format extensions: make sure the HTML extension is in
+        // there.
+        if (!is_array($config['site']['auto_formats']))
+        {
+            $config['site']['auto_formats'] = array($config['site']['auto_formats']);
+        }
+        if (!isset($config['site']['auto_formats']['html']))
+        {
+            $config['site']['auto_formats']['html'] = '';
         }
 
         // Validate the plugins sources.

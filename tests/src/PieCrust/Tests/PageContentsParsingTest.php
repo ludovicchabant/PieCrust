@@ -5,6 +5,7 @@ use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Filtering\PaginationFilter;
+use PieCrust\Util\PathHelper;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
@@ -16,7 +17,7 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
     {
         $data = array();
         
-        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/pages/*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_DATA_DIR . 'pages/*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
         foreach ($htmlFiles as $htmlFile)
         {
             $info = pathinfo($htmlFile);
@@ -133,5 +134,66 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
         $page->getConfig()->setValue('foo', array('blah'));
         $page->getConfig()->setValue('bar', array('nieuh'));
         $this->assertTrue($filter->postMatches($page));
+    }
+
+    public static function autoFormatExtensionsDataProvider()
+    {
+        return array(
+            array(
+                'foo',
+                'markdown',
+                "<h1>FOO!</h1>"
+            ),
+            array(
+                'bar/baz',
+                'textile',
+                "<h1>BAZ!</h1>"
+            ),
+            array(
+                '2012/08/16/some-post',
+                'markdown',
+                "<h1>SOME POST</h1>"
+            ),
+            array(
+                '2012/08/17/other-post',
+                'textile',
+                "<h1>Other Post</h1>"
+            )
+        );
+    }
+
+    /**
+     * @dataProvider autoFormatExtensionsDataProvider
+     */
+    public function testAutoFormatExtensions($uri, $expectedFormat, $expectedContents)
+    {
+        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+            ->withConfig(array(
+                'site' => array(
+                    'auto_formats' => array(
+                        'md' => 'markdown',
+                        'text' => 'textile'
+                    )
+                )
+            ))
+            ->withPage('foo.md', array(), "FOO!\n====\n")
+            ->withPage('bar/baz.text', array(), "h1. BAZ!\n")
+            ->withPost('some-post', 16, 8, 2012, array(), "SOME POST\n=========\n", null, 'md')
+            ->withPost('other-post', 17, 8, 2012, array(), "h1. Other Post\n", null, 'text');
+        $app = $fs->getApp();
+
+        $page = Page::createFromUri($app, $uri, false);
+        $this->assertEquals($expectedFormat, $page->getConfig()->getValue('format'));
+        $this->assertEquals($expectedContents, trim($page->getContentSegment()));
+    }
+
+    public function tearDown()
+    {
+        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
+        if (is_dir($mockDir))
+        {
+            PathHelper::deleteDirectoryContents($mockDir);
+            rmdir($mockDir);
+        }
     }
 }

@@ -20,14 +20,18 @@ abstract class FileSystem
 {
     protected $pagesDir;
     protected $postsDir;
+    protected $htmlExtensions;
     
     /**
      * Builds a new instance of FileSystem.
      */
-    protected function __construct($pagesDir, $postsDir)
+    protected function __construct($pagesDir, $postsDir, $htmlExtensions = null)
     {
         $this->pagesDir = $pagesDir;
         $this->postsDir = $postsDir;
+        if ($htmlExtensions == null)
+            $htmlExtensions = array('html');
+        $this->htmlExtensions = $htmlExtensions;
     }
 
     /**
@@ -107,12 +111,29 @@ abstract class FileSystem
             $day = '??';
             $needsRecapture = true;
         }
+        if (array_key_exists('ext', $captureGroups))
+        {
+            $ext = $captureGroups['ext'];
+        }
+        else
+        {
+            $extCount = count($this->htmlExtensions);
+            if ($extCount <= 1)
+            {
+                $ext = 'html';
+            }
+            else
+            {
+                $ext = '*';
+                $needsRecapture = true;
+            }
+        }
         $slug = $captureGroups['slug']; // 'slug' is required.
         
         $path = $this->getPostPathFormat();
         $path = str_replace(
-            array('%year%', '%month%', '%day%', '%slug%'),
-            array($year, $month, $day, $slug),
+            array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
+            array($year, $month, $day, $slug, $ext),
             $path
         );
         $path = $this->postsDir . $path;
@@ -122,6 +143,7 @@ abstract class FileSystem
             'month' => $month,
             'day' => $day,
             'slug' => $slug,
+            'ext' => $ext,
             'path' => $path
         );
         if ($needsRecapture)
@@ -130,7 +152,8 @@ abstract class FileSystem
             // post URL format doesn't capture all of them).
             // We need to find a physical file that matches everything we have,
             // and fill in the blanks.
-            $possiblePaths = glob($path);
+            $possiblePaths = glob($path, GLOB_NOSORT);
+            // TODO: throw different exceptions if we find 0 or more than 1 file.
             if (count($possiblePaths) != 1)
                 throw new PieCrustException('404');
             
@@ -138,19 +161,23 @@ abstract class FileSystem
             
             $pathComponentsRegex = preg_quote($this->getPostPathFormat(), '/');
             $pathComponentsRegex = str_replace(
-                array('%year%', '%month%', '%day%', '%slug%'),
-                array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)'),
+                array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
+                array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)', '(\w+)'),
                 $pathComponentsRegex
             );
             $pathComponentsRegex = '/' . $pathComponentsRegex . '/';
             $pathComponentsMatches = array();
-            if (preg_match($pathComponentsRegex, str_replace('\\', '/', $possiblePaths[0]), $pathComponentsMatches) !== 1)
+            if (preg_match(
+                $pathComponentsRegex,
+                str_replace('\\', '/', $possiblePaths[0]),
+                $pathComponentsMatches) !== 1)
                 throw new PieCrustException("Can't extract path components from path: " . $possiblePaths[0]);
             
             $pathInfo['year'] = $pathComponentsMatches[1];
             $pathInfo['month'] = $pathComponentsMatches[2];
             $pathInfo['day'] = $pathComponentsMatches[3];
             $pathInfo['slug'] = $pathComponentsMatches[4];
+            $pathInfo['ext'] = $pathComponentsMatches[5];
         }
         return $pathInfo;
     }
@@ -167,6 +194,8 @@ abstract class FileSystem
     public static function create(IPieCrust $pieCrust, $postsSubDir = null, $themeFs = false)
     {
         $postsFs = $pieCrust->getConfig()->getValueUnchecked('site/posts_fs');
+        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+        $htmlExtensions = array_keys($autoFormats);
 
         if ($themeFs)
         {
@@ -189,11 +218,11 @@ abstract class FileSystem
         switch ($postsFs)
         {
         case 'hierarchy':
-            return new HierarchicalFileSystem($pagesDir, $postsDir);
+            return new HierarchicalFileSystem($pagesDir, $postsDir, $htmlExtensions);
         case 'shallow':
-            return new ShallowFileSystem($pagesDir, $postsDir);
+            return new ShallowFileSystem($pagesDir, $postsDir, $htmlExtensions);
         case 'flat':
-            return new FlatFileSystem($pagesDir, $postsDir);
+            return new FlatFileSystem($pagesDir, $postsDir, $htmlExtensions);
         default:
             throw new PieCrustException("Unknown posts_fs: " . $postsFs);
         }

@@ -13,7 +13,7 @@ class TemplateRenderingTest extends \PHPUnit_Framework_TestCase
     {
         $data = array();
         
-        $files = new GlobIterator(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates/*', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $files = new GlobIterator(PIECRUST_UNITTESTS_DATA_DIR . 'templates/*', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
         foreach ($files as $file)
         {
             $info = pathinfo($file);
@@ -39,7 +39,7 @@ class TemplateRenderingTest extends \PHPUnit_Framework_TestCase
         $fs = MockFileSystem::create()->withPagesDir();
         $pc = $fs->getApp(array('cache' => false));
         $pc->getConfig()->setValue('site/root', 'http://whatever/');
-        $pc->setTemplatesDirs(PIECRUST_UNITTESTS_TEST_DATA_DIR . '/templates');
+        $pc->setTemplatesDirs(PIECRUST_UNITTESTS_DATA_DIR . 'templates');
         
         $testInfo = pathinfo($testFilename);
         $engine = PieCrustHelper::getTemplateEngine($pc, $testInfo['extension']);

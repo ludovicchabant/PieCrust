@@ -12,9 +12,9 @@ use PieCrust\PieCrustException;
  */
 class FlatFileSystem extends FileSystem
 {
-    public function __construct($pagesDir, $postsDir)
+    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
     {
-        FileSystem::__construct($pagesDir, $postsDir);
+        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
     }
     
     public function getPostFiles()
@@ -22,23 +22,23 @@ class FlatFileSystem extends FileSystem
         if (!$this->postsDir)
             return array();
 
-        $paths = array();
-        $pathsIterator = new FilesystemIterator($this->postsDir);
-        foreach ($pathsIterator as $p)
-        {
-            $extension = pathinfo($p->getFilename(), PATHINFO_EXTENSION);
-            if ($extension != 'html')
-                continue;
-            $paths[] = $p->getPathname();
-        }
-        rsort($paths);
-        
         $result = array();
-        foreach ($paths as $path)
+        $pathsIterator = new FilesystemIterator($this->postsDir);
+        foreach ($pathsIterator as $path)
         {
+            if ($path->isDir())
+                continue;
+
+            $extension = pathinfo($path->getFilename(), PATHINFO_EXTENSION);
+            if (!in_array($extension, $this->htmlExtensions))
+                continue;
+        
             $matches = array();
-            
-            if (preg_match('/(\d{4})-(\d{2})-(\d{2})_(.*)\.html$/', $path, $matches) == false)
+            $pathName = $path->getPathname();
+            if (preg_match(
+                '/(\d{4})-(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/', 
+                $pathName, 
+                $matches) === false)
                 continue;
             
             $result[] = array(
@@ -46,7 +46,8 @@ class FlatFileSystem extends FileSystem
                 'month' => $matches[2],
                 'day' => $matches[3],
                 'name' => $matches[4],
-                'path' => $path
+                'ext' => $extension,
+                'path' => $pathName
             );
         }
         return $result;
@@ -54,6 +55,6 @@ class FlatFileSystem extends FileSystem
     
     public function getPostPathFormat()
     {
-        return '%year%-%month%-%day%_%slug%.html';
+        return '%year%-%month%-%day%_%slug%.%ext%';
     }
 }

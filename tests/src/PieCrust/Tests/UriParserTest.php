@@ -3,6 +3,7 @@
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
+use PieCrust\Util\PathHelper;
 use PieCrust\Util\UriParser;
 use PieCrust\Mock\MockFileSystem;
 
@@ -177,7 +178,7 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
 
         $fs = MockFileSystem::create()
             ->withConfig($config)
-            ->withPostsDir()
+            ->withPost('some-post', 3, 2, 2011)
             ->withPage('_index')
             ->withPage('_category')
             ->withPage('_tag')
@@ -227,5 +228,124 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
         $pc = new PieCrust(array('root' => $fs->getAppRoot(), 'cache' => false));
         $uriInfo = UriParser::parseUri($pc, '/non-existing-page', UriParser::PAGE_URI_REGULAR);
         $this->assertNull($uriInfo);
+    }
+
+    public function parseAutoFormatUrisDataProvider()
+    {
+        $pagesDir = '%pages_dir%';
+        $postsDir = '%posts_dir%';
+        return array(
+            array(
+                array(),
+                '/',
+                $this->makeUriInfo('', $pagesDir . '_index.md', true)
+            ),
+            array(
+                array(),
+                'markdown/page',
+                $this->makeUriInfo('markdown/page', $pagesDir . 'markdown/page.md', true)
+            ),
+            array(
+                array(),
+                'textile/page',
+                $this->makeUriInfo('textile/page', $pagesDir . 'textile/page.text', true)
+            ),
+            array(
+                array(),
+                'normal/page',
+                $this->makeUriInfo('normal/page', $pagesDir . 'normal/page.html', true)
+            ),
+            array(
+                array(),
+                '/cat/something',
+                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.md', true, 1, Page::TYPE_CATEGORY, 'blog', 'something')
+            ),
+            array(
+                array(),
+                '/cat/something/2',
+                $this->makeUriInfo('cat/something', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.md', true, 2, Page::TYPE_CATEGORY, 'blog', 'something')
+            ),
+            array(
+                array(),
+                '/cat/some-thing_',
+                $this->makeUriInfo('cat/some-thing_', $pagesDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.md', true, 1, Page::TYPE_CATEGORY, 'blog', 'some-thing_')
+            ),
+            array(
+                array(),
+                '/tag/blah',
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.md', true, 1, Page::TYPE_TAG, 'blog', 'blah')
+            ),
+            array(
+                array(),
+                '/tag/blah/2',
+                $this->makeUriInfo('tag/blah', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.md', true, 2, Page::TYPE_TAG, 'blog', 'blah')
+            ),
+            array(
+                array(),
+                '/tag/bl_ah-h',
+                $this->makeUriInfo('tag/bl_ah-h', $pagesDir . PieCrustDefaults::TAG_PAGE_NAME . '.md', true, 1, Page::TYPE_TAG, 'blog', 'bl_ah-h')
+            ),
+            array(
+                array(),
+                '2011/02/03/some-post',
+                $this->makeUriInfo('2011/02/03/some-post', $postsDir . '2011-02-03_some-post.md', false, 1, Page::TYPE_POST, 'blog', null, mktime(0, 0, 0, 2, 3, 2011))
+            ),
+            array(
+                array(),
+                '2011/02/04/other-post',
+                $this->makeUriInfo('2011/02/04/other-post', $postsDir . '2011-02-04_other-post.text', false, 1, Page::TYPE_POST, 'blog', null, mktime(0, 0, 0, 2, 4, 2011))
+            )
+        );
+    }
+
+    /**
+     * @dataProvider parseAutoFormatUrisDataProvider
+     */
+    public function testParseAutoFormatUris($config, $uri, $expectedUriInfo)
+    {
+        if (!isset($config['site']))
+            $config['site'] = array();
+        $config['site']['category_url'] = 'cat/%category%';
+        $config['site']['auto_formats'] = array(
+            'md' => 'markdown',
+            'text' => 'textile'
+        );
+        // We have to use a "real" mock FS (i.e. it will use real files instead
+        // of vfsStream) because that's the place in the PieCrust code where we
+        // need to use `glob()`, which isn't supported with virtual streams.
+        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+            ->withConfig($config)
+            ->withPost('some-post', 3, 2, 2011, array(), 'Blah.', null, 'md')
+            ->withPost('other-post', 4, 2, 2011, array(), 'Blah.', null, 'text')
+            ->withPage('_index.md')
+            ->withPage('_category.md')
+            ->withPage('_tag.md')
+            ->withPage('textile/page.text')
+            ->withPage('markdown/page.md')
+            ->withPage('normal/page.html');
+        $pc = $fs->getApp();
+        $uriInfo = UriParser::parseUri($pc, $uri);
+
+        if ($expectedUriInfo != null && isset($expectedUriInfo['path']))
+        {
+            $pagesDir = $fs->url('kitchen/_content/pages/');
+            $postsDir = $fs->url('kitchen/_content/posts/');
+            $expectedUriInfo['path'] = str_replace(
+                array('%pages_dir%', '%posts_dir%'),
+                array($pagesDir, $postsDir),
+                $expectedUriInfo['path']);
+        }
+
+        $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
+    }
+
+    public function tearDown()
+    {
+        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
+        if (is_dir($mockDir))
+        {
+            PathHelper::deleteDirectoryContents($mockDir);
+            rmdir($mockDir);
+        }
     }
 }

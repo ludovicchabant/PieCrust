@@ -24,16 +24,16 @@ class FileSystemTest extends \PHPUnit_Framework_TestCase
     public function testGetPostFiles($fsType)
     {
         $pc = new MockPieCrust();
-        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType . '/');
+        $pc->setPostsDir(PIECRUST_UNITTESTS_DATA_DIR . 'posts/' . $fsType . '/');
         $pc->getConfig()->setValue('site/posts_fs', $fsType);
         
         $fs = FileSystem::create($pc);
         $this->assertNotNull($fs);
         $postFiles = $fs->getPostFiles();
+        $postFiles = MockFileSystem::sortPostInfos($postFiles);
         $this->assertNotNull($postFiles);
         $this->assertEquals(6, count($postFiles));
-        
-        // FileSystem implementations return posts in reverse-chronological order.
+
         $postFile = $postFiles[5];
         $this->assertEquals('2009', $postFile['year']);
         $this->assertEquals('05', $postFile['month']);
@@ -103,11 +103,12 @@ class FileSystemTest extends \PHPUnit_Framework_TestCase
     public function testGetPostPathInfo($fsType, $wildcardComponent)
     {
         $pc = new MockPieCrust();
-        $pc->setPostsDir(PIECRUST_UNITTESTS_TEST_DATA_DIR . 'posts/' . $fsType . '/');
+        $pc->setPostsDir(PIECRUST_UNITTESTS_DATA_DIR . 'posts/' . $fsType . '/');
         $pc->getConfig()->setValue('site/posts_fs', $fsType);
         
         $fs = FileSystem::create($pc);
         $postFiles = $fs->getPostFiles();
+        $postFiles = MockFileSystem::sortPostInfos($postFiles);
         $this->assertNotNull($postFiles);
         $this->assertEquals(6, count($postFiles));
         

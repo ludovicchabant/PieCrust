@@ -2,7 +2,7 @@
 
 namespace PieCrust\IO;
 
-use DirectoryIterator;
+use \FilesystemIterator;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -12,9 +12,9 @@ use PieCrust\PieCrustException;
  */
 class HierarchicalFileSystem extends FileSystem
 {
-    public function __construct($pagesDir, $postsDir)
+    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
     {
-        FileSystem::__construct($pagesDir, $postsDir);
+        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
     }
     
     public function getPostFiles()
@@ -25,61 +25,62 @@ class HierarchicalFileSystem extends FileSystem
         $result = array();
         
         $years = array();
-        $yearsIterator = new DirectoryIterator($this->postsDir);
+        $yearsIterator = new FilesystemIterator($this->postsDir);
         foreach ($yearsIterator as $year)
         {
-            if (preg_match('/^\d{4}$/', $year->getFilename()) == false)
+            if (!$year->isDir())
+                continue;
+
+            if (preg_match('/^\d{4}$/', $year->getFilename()) === false)
                 continue;
             
             $thisYear = $year->getFilename();
             $years[] = $thisYear;
         }
-        rsort($years);
         
         foreach ($years as $year)
         {
             $months = array();
-            $monthsIterator = new DirectoryIterator($this->postsDir . $year);
+            $monthsIterator = new FilesystemIterator($this->postsDir . $year);
             foreach ($monthsIterator as $month)
             {
-                if (preg_match('/^\d{2}$/', $month->getFilename()) == false)
+                if (!$month->isDir())
+                    continue;
+
+                if (preg_match('/^\d{2}$/', $month->getFilename()) === false)
                     continue;
                 
                 $thisMonth = $month->getFilename();
                 $months[] = $thisMonth;
             }
-            rsort($months);
-                
+            
             foreach ($months as $month)
             {
-                $days = array();
-                $postsIterator = new DirectoryIterator($this->postsDir . $year . '/' . $month);
-                foreach ($postsIterator as $post)
+                $postsIterator = new FilesystemIterator($this->postsDir . $year . '/' . $month);
+                foreach ($postsIterator as $path)
                 {
-                    if ($post->isDot() or $post->isDir())
+                    if ($path->isDir())
+                        continue;
+
+                    $extension = pathinfo($path->getFilename(), PATHINFO_EXTENSION);
+                    if (!in_array($extension, $this->htmlExtensions))
                         continue;
 
                     $matches = array();
-                    if (preg_match('/^(\d{2})_(.*)\.html$/', $post->getFilename(), $matches) == false)
+                    $pathName = $path->getPathname();
+                    if (preg_match(
+                        '/^(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
+                        $path->getFilename(),
+                        $matches) === false)
                         continue;
                     
-                    $thisDay = $matches[1];
-                    $days[$post->getPathname()] = array(
-                        'day' => $thisDay, 
-                        'name' => $matches[2], 
-                        'path' => $post->getPathname()
-                    );
-                }
-                krsort($days);
-                
-                foreach ($days as $day)
-                {
                     $result[] = array(
                         'year' => $year,
                         'month' => $month,
-                        'day' => $day['day'],
-                        'name' => $day['name'],
-                        'path' => $day['path']
+                        'day' => $matches[1],
+                        'name' => $matches[2],
+                        'ext' => $extension,
+                        'path' => $pathName
                     );
                 }
             }
@@ -90,6 +91,6 @@ class HierarchicalFileSystem extends FileSystem
     
     public function getPostPathFormat()
     {
-        return '%year%/%month%/%day%_%slug%.html';
+        return '%year%/%month%/%day%_%slug%.%ext%';
     }
 }
