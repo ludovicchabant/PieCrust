@@ -67,7 +67,7 @@ class PluginsCommand extends ChefCommand
             throw new PieCrustException("Can't find a single plugin named: {$pluginName}");
 
         $plugin = $plugins[0];
-        $log->info("GET {$plugin['source']} [{$plugin['name']}]");
+        $log->info($log->convertColors("%gGET%n %m{$plugin['source']}%n [{$plugin['name']}]"));
         $className = $plugin['repository_class'];
         $repository = new $className;
         $context = new PluginInstallContext($app, $log);

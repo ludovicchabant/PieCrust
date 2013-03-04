@@ -11,15 +11,33 @@ use PieCrust\PieCrustDefaults;
 class ChefLog extends \Log_console
 {
     protected $color;
+    protected $supportsColors;
 
     public function __construct($name, $ident = '', $conf = array(), $level = PEAR_LOG_DEBUG)
     {
         parent::Log_console($name, $ident, $conf, $level);
 
+        $this->color = new \Console_Color2();
+        $this->supportsColors = true;
         if (PieCrustDefaults::IS_WINDOWS())
-            $this->color = null;
-        else
-            $this->color = new \Console_Color2();
+            $this->supportsColors = false;
+    }
+
+    public function supportsColors()
+    {
+        return $this->supportsColors;
+    }
+
+    public function convertColors($str)
+    {
+        if (!$this->supportsColors())
+            return $this->escapeColors($str);
+        return $this->color->convert($str);
+    }
+
+    public function escapeColors($str)
+    {
+        return $this->color->escape($str);
     }
 
     public function log($message, $priority = null)
