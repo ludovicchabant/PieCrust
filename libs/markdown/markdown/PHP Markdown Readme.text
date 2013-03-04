@@ -1,10 +1,10 @@
 PHP Markdown
 ============
 
-Version 1.0.1o - Sun 8 Jan 2012
+Version 1.0.1p - Sun 13 Jan 2013
 
-by Michel Fortin
-<http://michelf.com/>
+by Michel Fortin  
+<http://michelf.ca/>
 
 based on work by John Gruber  
 <http://daringfireball.net/>
@@ -22,9 +22,9 @@ tool, written in Perl, that converts the plain text markup to HTML.
 PHP Markdown is a port to PHP of the original Markdown program by 
 John Gruber.
 
-PHP Markdown can work as a plug-in for WordPress and bBlog, as a 
-modifier for the Smarty templating engine, or as a replacement for
-Textile formatting in any software that supports Textile.
+PHP Markdown can work as a plug-in for WordPress, as a modifier for
+the Smarty templating engine, or as a replacement for Textile
+formatting in any software that supports Textile.
 
 Full documentation of Markdown's syntax is available on John's 
 Markdown page: <http://daringfireball.net/projects/markdown/>
@@ -34,6 +34,10 @@ Installation and Requirement
 ----------------------------
 
 PHP Markdown requires PHP version 4.0.5 or later.
+
+Before PHP 5.3.7, pcre.backtrack_limit defaults to 100 000, which is too small
+in many situations. You might need to set it to higher values. Later PHP 
+releases defaults to 1 000 000, which is usually fine.
 
 
 ### WordPress ###
@@ -67,23 +71,6 @@ are written in HTML (as opposed to another formatting syntax, like
 Textile), they'll probably stay fine after installing Markdown.
 
 
-### bBlog ###
-
-PHP Markdown also works with [bBlog][bb].
-
- [bb]: http://www.bblog.com/
-
-To use PHP Markdown with bBlog, rename "markdown.php" to 
-"modifier.markdown.php" and place the file in the "bBlog_plugins" 
-folder. This folder is located inside the "bblog" directory of 
-your site, like this:
-
-        (site home)/bblog/bBlog_plugins/modifier.markdown.php
-
-Select "Markdown" as the "Entry Modifier" when you post a new 
-entry. This setting will only apply to the entry you are editing.
-
-
 ### Replacing Textile in TextPattern ###
 
 [TextPattern][tp] use [Textile][tx] to format your text. You can 
@@ -110,7 +97,7 @@ can solve this problem by installing the "smartypants.php" file from
 Compatibility Mode function will use SmartyPants automatically without 
 further modification.
 
- [psp]: http://michelf.com/projects/php-smartypants/
+ [psp]: http://michelf.ca/projects/php-smartypants/
 
 
 ### Updating Markdown in Other Programs ###
@@ -191,14 +178,28 @@ Bugs
 ----
 
 To file bug reports please send email to:
-<michel.fortin@michelf.com>
+<michel.fortin@michelf.ca>
 
 Please include with your report: (1) the example input; (2) the output you
 expected; (3) the output PHP Markdown actually produced.
 
+If you have a problem where Markdown gives you an empty result, first check 
+that the backtrack limit is not too low by running `php --info | grep pcre`.
+See Installation and Requirement above for details.
+
 
 Version History
 ---------------
+
+1.0.1p (13 Jan 2013):
+
+*	Fixed an issue where some XML-style empty tags (such as `<br/>`) were not 
+	recognized correctly as such when inserted into Markdown-formatted text.
+
+*	The following HTML 5 elements are treated as block elements when at the 
+	root of an HTML block: `article`, `section`, `nav`, `aside`, `hgroup`, 
+	`header`, `footer`, and `figure`. `svg` too.
+
 
 1.0.1o (8 Jan 2012):
 
@@ -576,7 +577,7 @@ Version History
 *	Major rewrite of the WordPress integration code that should 
 	correct many problems by preventing default WordPress filters from 
 	tampering with Markdown-formatted text. More details here:
-	<http://michelf.com/weblog/2005/wordpress-text-flow-vs-markdown/>
+	<http://michelf.ca/weblog/2005/wordpress-text-flow-vs-markdown/>
 
 
 1.0.1a (15 Apr 2005)
@@ -740,8 +741,8 @@ Copyright and License
 ---------------------
 
 PHP Markdown
-Copyright (c) 2004-2009 Michel Fortin  
-<http://michelf.com/>  
+Copyright (c) 2004-2013 Michel Fortin  
+<http://michelf.ca/>  
 All rights reserved.
 
 Based on Markdown  

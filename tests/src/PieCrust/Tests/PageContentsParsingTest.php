@@ -147,7 +147,7 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
             array(
                 'bar/baz',
                 'textile',
-                "<h1>BAZ!</h1>"
+                "<h1>Baz!</h1>"
             ),
             array(
                 '2012/08/16/some-post',
@@ -177,7 +177,7 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
                 )
             ))
             ->withPage('foo.md', array(), "FOO!\n====\n")
-            ->withPage('bar/baz.text', array(), "h1. BAZ!\n")
+            ->withPage('bar/baz.text', array(), "h1. Baz!\n")
             ->withPost('some-post', 16, 8, 2012, array(), "SOME POST\n=========\n", null, 'md')
             ->withPost('other-post', 17, 8, 2012, array(), "h1. Other Post\n", null, 'text');
         $app = $fs->getApp();

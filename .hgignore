@@ -29,4 +29,5 @@ libs/*/*/phpunit*
 
 # Very specific stuff we don't need.
 libs/mikey179/vfsStream/src/test
+libs/symfony/yaml/Symfony/Component/Yaml/Tests
 

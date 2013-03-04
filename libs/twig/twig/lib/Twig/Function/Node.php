@@ -12,10 +12,13 @@
 /**
  * Represents a template function as a node.
  *
+ * Use Twig_SimpleFunction instead.
+ *
  * @package    twig
  * @author     Fabien Potencier <fabien@symfony.com>
+ * @deprecated since 1.12 (to be removed in 2.0)
  */
-class Twig_Function_Node extends Twig_Filter
+class Twig_Function_Node extends Twig_Function
 {
     protected $class;
 

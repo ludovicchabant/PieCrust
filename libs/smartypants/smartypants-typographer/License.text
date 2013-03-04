@@ -1,6 +1,6 @@
 PHP SmartyPants & Typographer  
-Copyright (c) 2005-2006 Michel Fortin  
-<http://www.michelf.com/>  
+Copyright (c) 2005-2013 Michel Fortin  
+<http://michelf.ca/>  
 All rights reserved.
 
 Original SmartyPants  

@@ -28,7 +28,7 @@ class TextileFormatter implements IFormatter
     
     public function format($text)
     {
-        $textile = new \Textile();
-        return $textile->TextileThis($text);
+        $parser = new \Netcarver\Textile\Parser();
+        return $parser->textileThis($text);
     }
 }

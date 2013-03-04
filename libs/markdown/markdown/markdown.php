@@ -2,17 +2,17 @@
 #
 # Markdown  -  A text-to-HTML conversion tool for web writers
 #
-# PHP Markdown
-# Copyright (c) 2004-2012 Michel Fortin  
-# <http://michelf.com/projects/php-markdown/>
+# PHP Markdown  
+# Copyright (c) 2004-2013 Michel Fortin  
+# <http://michelf.ca/projects/php-markdown/>
 #
-# Original Markdown
+# Original Markdown  
 # Copyright (c) 2004-2006 John Gruber  
 # <http://daringfireball.net/projects/markdown/>
 #
 
 
-define( 'MARKDOWN_VERSION',  "1.0.1o" ); # Sun 8 Jan 2012
+define( 'MARKDOWN_VERSION',  "1.0.1p" ); # Sun 13 Jan 2013
 
 
 #
@@ -60,16 +60,16 @@ function Markdown($text) {
 
 /*
 Plugin Name: Markdown
-Plugin URI: http://michelf.com/projects/php-markdown/
-Description: <a href="http://daringfireball.net/projects/markdown/syntax">Markdown syntax</a> allows you to write using an easy-to-read, easy-to-write plain text format. Based on the original Perl version by <a href="http://daringfireball.net/">John Gruber</a>. <a href="http://michelf.com/projects/php-markdown/">More...</a>
-Version: 1.0.1o
+Plugin URI: http://michelf.ca/projects/php-markdown/
+Description: <a href="http://daringfireball.net/projects/markdown/syntax">Markdown syntax</a> allows you to write using an easy-to-read, easy-to-write plain text format. Based on the original Perl version by <a href="http://daringfireball.net/">John Gruber</a>. <a href="http://michelf.ca/projects/php-markdown/">More...</a>
+Version: 1.0.1p
 Author: Michel Fortin
-Author URI: http://michelf.com/
+Author URI: http://michelf.ca/
 */
 
 if (isset($wp_version)) {
 	# More details about how it works here:
-	# <http://michelf.com/weblog/2005/wordpress-text-flow-vs-markdown/>
+	# <http://michelf.ca/weblog/2005/wordpress-text-flow-vs-markdown/>
 	
 	# Post content and excerpts
 	# - Remove WordPress paragraph generator.
@@ -147,7 +147,7 @@ function identify_modifier_markdown() {
 		'authors'		=> 'Michel Fortin and John Gruber',
 		'licence'		=> 'BSD-like',
 		'version'		=> MARKDOWN_VERSION,
-		'help'			=> '<a href="http://daringfireball.net/projects/markdown/syntax">Markdown syntax</a> allows you to write using an easy-to-read, easy-to-write plain text format. Based on the original Perl version by <a href="http://daringfireball.net/">John Gruber</a>. <a href="http://michelf.com/projects/php-markdown/">More...</a>'
+		'help'			=> '<a href="http://daringfireball.net/projects/markdown/syntax">Markdown syntax</a> allows you to write using an easy-to-read, easy-to-write plain text format. Based on the original Perl version by <a href="http://daringfireball.net/">John Gruber</a>. <a href="http://michelf.ca/projects/php-markdown/">More...</a>'
 	);
 }
 
@@ -190,17 +190,7 @@ if (strcasecmp(substr(__FILE__, -16), "classTextile.php") == 0) {
 
 class Markdown_Parser {
 
-	# Regex to match balanced [brackets].
-	# Needed to insert a maximum bracked depth while converting to PHP.
-	var $nested_brackets_depth = 6;
-	var $nested_brackets_re;
-	
-	var $nested_url_parenthesis_depth = 4;
-	var $nested_url_parenthesis_re;
-
-	# Table of hash values for escaped characters:
-	var $escape_chars = '\`*_{}[]()>#+-.!';
-	var $escape_chars_re;
+	### Configuration Variables ###
 
 	# Change to ">" for HTML output.
 	var $empty_element_suffix = MARKDOWN_EMPTY_ELEMENT_SUFFIX;
@@ -213,6 +203,21 @@ class Markdown_Parser {
 	# Predefined urls and titles for reference links and images.
 	var $predef_urls = array();
 	var $predef_titles = array();
+
+
+	### Parser Implementation ###
+
+	# Regex to match balanced [brackets].
+	# Needed to insert a maximum bracked depth while converting to PHP.
+	var $nested_brackets_depth = 6;
+	var $nested_brackets_re;
+	
+	var $nested_url_parenthesis_depth = 4;
+	var $nested_url_parenthesis_re;
+
+	# Table of hash values for escaped characters:
+	var $escape_chars = '\`*_{}[]()>#+-.!';
+	var $escape_chars_re;
 
 
 	function Markdown_Parser() {
@@ -382,7 +387,9 @@ class Markdown_Parser {
 		#
 		$block_tags_a_re = 'ins|del';
 		$block_tags_b_re = 'p|div|h[1-6]|blockquote|pre|table|dl|ol|ul|address|'.
-						   'script|noscript|form|fieldset|iframe|math';
+						   'script|noscript|form|fieldset|iframe|math|svg|'.
+						   'article|section|nav|aside|hgroup|header|footer|'.
+						   'figure';
 
 		# Regular expression for the content of a block tag.
 		$nested_tags_level = 4;
@@ -1515,12 +1522,16 @@ class Markdown_Parser {
 				|
 					<\?.*?\?> | <%.*?%>		# processing instruction
 				|
-					<[/!$]?[-a-zA-Z0-9:_]+	# regular tags
+					<[!$]?[-a-zA-Z0-9:_]+	# regular tags
 					(?>
 						\s
 						(?>[^"\'>]+|"[^"]*"|\'[^\']*\')*
 					)?
 					>
+				|
+					<[-a-zA-Z0-9:_]+\s*/> # xml-style empty tag
+				|
+					</[-a-zA-Z0-9:_]+\s*> # closing tag
 			').'
 				)
 				}xs';
@@ -1658,7 +1669,7 @@ Perl by John Gruber.
 
 Markdown is a text-to-HTML filter; it translates an easy-to-read /
 easy-to-write structured text format into HTML. Markdown's text format
-is most similar to that of plain text email, and supports features such
+is mostly similar to that of plain text email, and supports features such
 as headers, *emphasis*, code blocks, blockquotes, and links.
 
 Markdown's syntax is designed not as a generic markup language, but
@@ -1676,7 +1687,7 @@ Bugs
 
 To file bug reports please send email to:
 
-<michel.fortin@michelf.com>
+<michel.fortin@michelf.ca>
 
 Please include with your report: (1) the example input; (2) the output you
 expected; (3) the output Markdown actually produced.
@@ -1691,12 +1702,12 @@ See the readme file for detailed release notes for this version.
 Copyright and License
 ---------------------
 
-PHP Markdown
-Copyright (c) 2004-2009 Michel Fortin  
-<http://michelf.com/>  
+PHP Markdown  
+Copyright (c) 2004-2013 Michel Fortin  
+<http://michelf.ca/>  
 All rights reserved.
 
-Based on Markdown
+Based on Markdown  
 Copyright (c) 2003-2006 John Gruber   
 <http://daringfireball.net/>   
 All rights reserved.

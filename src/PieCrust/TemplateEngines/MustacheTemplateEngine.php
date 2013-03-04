@@ -43,7 +43,7 @@ class MustacheTemplateEngine implements ITemplateEngine
     {
         if ($this->mustache === null)
         {
-            $this->mustache = new \Mustache();
+            $this->mustache = new \Mustache_Engine();
         }
     }
 }
