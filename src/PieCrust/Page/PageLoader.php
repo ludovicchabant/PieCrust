@@ -166,14 +166,18 @@ class PageLoader
             // Cache that shit out.
             if ($this->cache != null)
             {
+                $cacheUri = $this->page->getUri();
+                if ($cacheUri == '')
+                    $cacheUri = '_index';
+
                 $yamlMarkup = json_encode($config->get());
-                $this->cache->write($this->page->getUri(), 'json', $yamlMarkup);
+                $this->cache->write($cacheUri, 'json', $yamlMarkup);
                 
                 $keys = $config['segments'];
                 foreach ($keys as $key)
                 {
                     $cacheData = json_encode($contents[$key]);
-                    $this->cache->write($this->page->getUri() . '.' . $key, 'json', $cacheData);
+                    $this->cache->write($cacheUri . '.' . $key, 'json', $cacheData);
                 }
             }
             
