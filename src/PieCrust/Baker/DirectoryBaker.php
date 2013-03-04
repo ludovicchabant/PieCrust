@@ -51,8 +51,8 @@ class DirectoryBaker
     {
         $this->pieCrust = $pieCrust;
         $this->tmpDir = $this->pieCrust->isCachingEnabled() ? 
-            $this->pieCrust->getCacheDir() . 'bake_tmp/' :
-            rtrim(sys_get_temp_dir(), '/\\') . '/piecrust/bake_tmp/';
+            $this->pieCrust->getCacheDir() . 'bake_t/' :
+            rtrim(sys_get_temp_dir(), '/\\') . '/piecrust/bake_t/';
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->parameters = array_merge(
             array(
@@ -244,7 +244,7 @@ class DirectoryBaker
         }
 
         // Get the processing tree for that file.
-        $builder = new ProcessingTreeBuilder($this->getProcessors());
+        $builder = new ProcessingTreeBuilder($this->getProcessors(), $this->logger);
         $treeRoot = $builder->build($relative);
 
         // Add an entry in the baked files' metadata.
@@ -328,7 +328,7 @@ class DirectoryBaker
         // Initialize the processors we have left.
         foreach ($this->processors as $proc)
         {
-            $proc->initialize($this->pieCrust);
+            $proc->initialize($this->pieCrust, $this->logger);
         }
     }
 

@@ -19,7 +19,7 @@ class CopyFileProcessor implements IProcessor
     {
     }
     
-    public function initialize(IPieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust, $logger = null)
     {
         $this->rootDirLength = strlen($pieCrust->getRootDir());
     }
@@ -53,7 +53,7 @@ class CopyFileProcessor implements IProcessor
     {
         $outputPath = $outputDir . basename($inputPath);
         if (@copy($inputPath, $outputPath) == false)
-            throw new PieCrustException("Can't copy '".$inputPath."' to '".$outputPath."'.");
+            throw new PieCrustException("Can't copy '{$inputPath}' to '{$outputPath}'.");
         return true;
     }
 }

@@ -24,7 +24,7 @@ interface IProcessor
     /**
      * Initializes a file processor with the given PieCrust instance.
      */
-    public function initialize(IPieCrust $pieCrust);
+    public function initialize(IPieCrust $pieCrust, $logger = null);
     
     /**
      * Gets the priority of this processor.
