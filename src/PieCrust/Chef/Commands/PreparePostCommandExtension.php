@@ -58,7 +58,8 @@ class PreparePostCommandExtension extends ChefCommandExtension
             '%day%' => date('d'),
             '%month%' => date('m'),
             '%year%' => date('Y'),
-            '%slug%' => $slug
+            '%slug%' => $slug,
+            '%ext%' => 'html'
         );
         $fs = FileSystem::create($app);
         $pathFormat = $fs->getPostPathFormat();
