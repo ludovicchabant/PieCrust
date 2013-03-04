@@ -246,19 +246,11 @@ class PieCrustConfiguration extends Configuration
         {
             $config['site']['plugins_sources'] = array($config['site']['plugins_sources']);
         }
-        if (!in_array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE, $config['site']['plugins_sources']))
-        {
-            $config['site']['plugins_sources'][] = PieCrustDefaults::DEFAULT_PLUGIN_SOURCE;
-        }
 
         // Validate the themes sources.
         if (!is_array($config['site']['themes_sources']))
         {
             $config['site']['themes_sources'] = array($config['site']['themes_sources']);
-        }
-        if (!in_array(PieCrustDefaults::DEFAULT_THEME_SOURCE, $config['site']['themes_sources']))
-        {
-            $config['site']['themes_sources'][] = PieCrustDefaults::DEFAULT_THEME_SOURCE;
         }
         
         // Validate multi-blogs settings.
