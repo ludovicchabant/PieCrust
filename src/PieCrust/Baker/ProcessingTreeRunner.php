@@ -95,6 +95,9 @@ class ProcessingTreeRunner
         $processor = $node->getProcessor();
         if ($processor->isDelegatingDependencyCheck())
         {
+            // Start profiling.
+            $start = microtime(true);
+
             // Get the paths and last modification times for the input file and
             // all its dependencies, if any.
             $nodeRootDir = $this->getNodeRootDir($node);
@@ -147,6 +150,11 @@ class ProcessingTreeRunner
                     }
                 }
             }
+
+            // Print profiling info.
+            $end = microtime(true);
+            $elapsedTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+            $this->printProcessingTreeNode($node, "Computed node dirtiness [{$elapsedTime}]");
         }
         else
         {
@@ -187,16 +195,17 @@ class ProcessingTreeRunner
         {
             $start = microtime(true);
             $processor = $node->getProcessor();
-            if ($processor->process($path, $outputDir) !== false)
+            $processResult = $processor->process($path, $outputDir);
+            $end = microtime(true);
+            $processTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+            if ($processResult !== false)
             {
-                $end = microtime(true);
-                $processTime = sprintf('%8.1f ms', ($end - $start)*1000.0);
                 $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [{$processTime}].");
                 $didBake = true;
             }
             else
             {
-                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean].");
+                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean, {$processTime}].");
             }
         }
         catch (Exception $e)
@@ -208,7 +217,7 @@ class ProcessingTreeRunner
 
     protected function printProcessingTreeNode($node, $message = null, $recursive = false)
     {
-        $indent = str_repeat('  ', $node->getLevel() + 1);
+        $indent = str_repeat('  ', $node->getLevel());
         $processor = $node->getProcessor() ? $node->getProcessor()->getName() : 'n/a';
         $path = PathHelper::getRelativePath(
             $this->rootDir, 
