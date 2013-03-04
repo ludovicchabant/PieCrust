@@ -23,11 +23,20 @@ Fresh changes
 * BREAKING BUG FIX: Monthly blog archives were incorrectly order
   chronologically, instead of reverse-chronologically.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
+* NEW: Added `plugins update` command to update installed plugins. For now, this
+  command is not optimal and will force-update plugins without checking if
+  there's a new version.
+* NEW: Added support for "auto-formats", specified with the `site/auto_formats`
+  configuration setting. This lets the user define a mapping between file
+  extensions and text formats, such as `.md` for Markdown.
+* CHANGE: Updated all 3rd-party libraries to their latest version.
+* CHANGE: The LESS file processor is now using the 3rd-party library caching
+  mechanism.
 * CHANGE: Error handling and reporting has been made more consistent. On Mac and
   Linux, `serve` and `bake` will also print pretty colors!
 * CHANGE: Any place that returns a list of pages or posts should now be a proper
   pagination iterator, with all the sorting and filtering features.
-* CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by 
+* CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by
   `site/trailing_slash`. This setting also now affects the URLs in a preview
   server (`chef serve`) as well as during the bake.
 * CHANGE: It is now possible to specify `posts_filters` on category and tag
