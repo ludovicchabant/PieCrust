@@ -30,7 +30,7 @@ class MockProcessor implements IProcessor
         return $this->name;
     }
 
-    public function initialize(IPieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust, $logger = null)
     {
     }
 
