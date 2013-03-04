@@ -9,6 +9,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
 use PieCrust\Repositories\PluginInstallContext;
+use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 
 
@@ -43,6 +44,15 @@ class PluginsCommand extends ChefCommand
             'description' => "The name of the plugin to install.",
             'help_name'   => 'NAME',
             'optional'    => false
+        ));
+
+        $updateParser = $parser->addCommand('update', array(
+            'description' => "Updates a given plugin, or all installed plugins."
+        ));
+        $updateParser->addArgument('name', array(
+            'description' => "The name of the plugin to update. If omitted, all plugins are updated.",
+            'help_name'   => 'NAME',
+            'optional'    => true
         ));
     }
 
@@ -120,8 +130,52 @@ class PluginsCommand extends ChefCommand
         $log = $context->getLog();
         $result = $context->getResult();
         $pluginName = $result->command->command->args['name'];
-        $plugin = $this->installPlugin($pluginName);
+        $plugin = $this->installPlugin($pluginName, $context);
         $log->info("Plugin {$plugin['name']} is now installed.");
+    }
+
+    protected function updatePlugins(ChefContext $context)
+    {
+        $app = $context->getApp();
+        $log = $context->getLog();
+        $result = $context->getResult();
+        $pluginName = $result->command->command->args['name'];
+
+        // Right now we do it the brute force way: update everything.
+        // TODO: keep some metadata on the installed version so we don't overwrite with the exact same.
+        $pluginLoader = $app->getPluginLoader();
+        foreach ($pluginLoader->getPlugins() as $plugin)
+        {
+            $curName = $plugin->getName();
+            if ($curName != '__builtin__' && ($curName == $pluginName || !$pluginName))
+            {
+                $log->info("Updating {$curName}...");
+
+                // First, rename the existing directory.
+                $pluginMeta = $pluginLoader->getPluginMeta($curName);
+                $pluginDir = $pluginMeta->directory;
+                $pluginDirBackup = $pluginDir . '__backup';
+                if (!rename($pluginDir, $pluginDirBackup))
+                    throw new PieCrustException("Can't rename plugin directory: {$pluginDir}");
+
+                // Then, update.
+                try
+                {
+                    $plugin = $this->installPlugin($curName, $context);
+                }
+                catch (\Exception $e)
+                {
+                    $log->debug("Error encountered, restoring backup directory.");
+                    rename($pluginDirBackup, $pluginDir);
+                    throw new PieCrustException("Error updating plugin '{$curName}'.", 0, $e);
+                }
+
+                // Last, cleanup backup directory.
+                $log->debug("Cleaning up backup directory: {$pluginDirBackup}");
+                PathHelper::deleteDirectoryContents($pluginDirBackup);
+                rmdir($pluginDirBackup);
+            }
+        }
     }
 
     protected function getSources(IPieCrust $pieCrust, $log)
@@ -175,10 +229,7 @@ class PluginsCommand extends ChefCommand
 
                 if ($matches)
                 {
-                    // Get the plugin, and exit if we only want one.
                     $metadata[] = $plugin;
-                    if ($exact)
-                        break;
                 }
             }
         }
