@@ -433,10 +433,12 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
-                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
                     if (is_array($tag))
                     {
-                        $slugifiedTag = array_map(function($t) { return UriBuilder::slugify($t); }, $tag);
+                        $slugifiedTag = array_map(
+                            function($t) { return UriBuilder::slugify($t); },
+                            $tag
+                        );
                         $formattedTag = implode('+', $tag);
                     }
                     else
@@ -445,13 +447,14 @@ class PieCrustBaker
                         $formattedTag = $tag;
                     }
 
+                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
                         IPage::TYPE_TAG,
-                        $blogKey,
-                        $slugifiedTag
+                        $blogKey
                     );
+                    $page->setPageKey($slugifiedTag);
                     $baker = new PageBaker(
                         $this->getBakeDir(), 
                         $this->getPageBakerParameters(),
@@ -460,7 +463,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'tag:' . $slugifiedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
@@ -497,16 +500,16 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 if (count($postInfos) > 0)
                 {
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
                     $slugifiedCategory = UriBuilder::slugify($category);
 
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
                         IPage::TYPE_CATEGORY,
-                        $blogKey,
-                        $slugifiedCategory
+                        $blogKey
                     );
+                    $page->setPageKey($slugifiedCategory);
                     $baker = new PageBaker(
                         $this->getBakeDir(),
                         $this->getPageBakerParameters(),
@@ -515,7 +518,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'category:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'category:' . $slugifiedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }

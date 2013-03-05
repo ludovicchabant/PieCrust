@@ -46,6 +46,16 @@ interface IPage
     public function setPageNumber($pageNumber);
     
     /**
+     * Gets the page key (e.g. the tag or category)
+     */
+    public function getPageKey();
+
+    /**
+     * Sets the page key (e.g. the tag or category)
+     */
+    public function setPageKey($key);
+
+    /**
      * Gets the date this page was created.
      */
     public function getDate();
@@ -59,11 +69,6 @@ interface IPage
      * Gets the page type.
      */
     public function getPageType();
-    
-    /**
-     * Gets the page key (e.g. the tag or category)
-     */
-    public function getPageKey();
     
     /**
      * Gets whether this page's contents were cached.

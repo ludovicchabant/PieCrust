@@ -77,6 +77,27 @@ class Page implements IPage
         }
     }
     
+    protected $key;
+    /**
+     * Gets the page key (e.g. the tag or category)
+     */
+    public function getPageKey()
+    {
+        return $this->key;
+    }
+
+    /**
+     * Sets the page key (e.g. the tag or category)
+     */
+    public function setPageKey($key)
+    {
+        if ($key != $this->key)
+        {
+            $this->key = $key;
+            $this->unload();
+        }
+    }
+    
     protected $date;
     protected $dateIsLocked;
     /**
@@ -114,19 +135,22 @@ class Page implements IPage
      */
     public function setDate($date, $isLocked = false)
     {
-        if (is_int($date))
+        if ($date !==null && $this->date != $date)
         {
-            $this->date = $date;
-            $this->dateIsLocked = $isLocked;
-        }
-        else if (is_string($date))
-        {
-            $this->date = strtotime($date);
-            $this->dateIsLocked = $isLocked;
-        }
-        else
-        {
-            throw new PieCrustException("The date must be an number or a string.");
+            if (is_int($date))
+            {
+                $this->date = $date;
+                $this->dateIsLocked = $isLocked;
+            }
+            else if (is_string($date))
+            {
+                $this->date = strtotime($date);
+                $this->dateIsLocked = $isLocked;
+            }
+            else
+            {
+                throw new PieCrustException("The date must be an number or a string.");
+            }
         }
     }
     
@@ -137,15 +161,6 @@ class Page implements IPage
     public function getPageType()
     {
         return $this->type;
-    }
-    
-    protected $key;
-    /**
-     * Gets the page key (e.g. the tag or category)
-     */
-    public function getPageKey()
-    {
-        return $this->key;
     }
     
     protected $wasCached;
@@ -347,15 +362,16 @@ class Page implements IPage
         if ($useRepository)
         {
             $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-            return $pageRepository->getOrCreatePage(
+            $page = $pageRepository->getOrCreatePage(
                 $uriInfo['uri'],
                 $uriInfo['path'],
                 $uriInfo['type'],
-                $uriInfo['blogKey'],
-                $uriInfo['key'],
-                $uriInfo['page'],
-                $uriInfo['date']
+                $uriInfo['blogKey']
             );
+            $page->setPageKey($uriInfo['key']);
+            $page->setPageNumber($uriInfo['page']);
+            $page->setDate($uriInfo['date']);
+            return $page;
         }
         else
         {

@@ -49,6 +49,18 @@ class MockPage implements IPage
         $this->pageNumber = $pageNumber;
     }
     
+    public $pageKey;
+    
+    public function getPageKey()
+    {
+        return $this->pageKey;
+    }
+
+    public function setPageKey($key)
+    {
+        $this->pageKey = $key;
+    }
+    
     public $date;
     
     public function getDate()
@@ -66,13 +78,6 @@ class MockPage implements IPage
     public function getPageType()
     {
         return $this->pageType;
-    }
-    
-    public $pageKey;
-    
-    public function getPageKey()
-    {
-        return $this->pageKey;
     }
     
     public $wasCached;

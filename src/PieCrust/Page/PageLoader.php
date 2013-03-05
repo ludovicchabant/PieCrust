@@ -120,11 +120,14 @@ class PageLoader
             $contents  = array();
             foreach ($config['segments'] as $key)
             {
-                $contents[$key] = json_decode($this->cache->read($this->page->getUri(), $key . '.json'), true);
+                $segmentText = $this->cache->read($this->page->getUri() . '.' . $key, 'json');
+                $contents[$key] = json_decode($segmentText);
+                // The deserialized JSON object is not of type `ContentSegment` but will
+                // have the same attributes so it should work all fine.
 
                 // Sanity test: if the first content segment is null, it may mean that the
                 // original page file was in a non-supported encoding.
-                if (count($contents[$key]) > 0 && $contents[$key][0]['content'] === null)
+                if (count($contents[$key]) > 0 && $contents[$key]->parts[0]->content === null)
                     throw new PieCrustException("Corrupted cache: is the page not saved in UTF-8 encoding?");
             }
             
@@ -134,10 +137,10 @@ class PageLoader
         {
             // Load the page from disk.
             $rawContents = file_get_contents($this->page->getPath());
-            $parsedContents = Configuration::parseHeader($rawContents);
+            $header = Configuration::parseHeader($rawContents);
 
             // Set the format from the file extension.
-            if (!isset($parsedContents['config']['format']))
+            if (!isset($header->config['format']))
             {
                 $app = $this->page->getApp();
                 $autoFormats = $app->getConfig()->getValueUnchecked('site/auto_formats');
@@ -146,17 +149,16 @@ class PageLoader
                 {
                     $format = $autoFormats[$extension];
                     if ($format)
-                        $parsedContents['config']['format'] = $autoFormats[$extension];
+                        $header->config['format'] = $autoFormats[$extension];
                 }
             }
 
             // Set the configuration.
             $config = $this->page->getConfig();
-            $config->set($parsedContents['config']);
+            $config->set($header->config);
             
             // Set the raw content with the unparsed content segments.
-            $rawSegmentsOffset = $parsedContents['text_offset'];
-            $contents = $this->parseContentSegments($rawContents, $rawSegmentsOffset);
+            $contents = $this->parseContentSegments($rawContents, $header->textOffset);
             // Add the list of known segments to the configuration.
             foreach ($contents as $key => $segment)
             {
@@ -170,14 +172,14 @@ class PageLoader
                 if ($cacheUri == '')
                     $cacheUri = '_index';
 
-                $yamlMarkup = json_encode($config->get());
-                $this->cache->write($cacheUri, 'json', $yamlMarkup);
+                $configText = json_encode($config->get());
+                $this->cache->write($cacheUri, 'json', $configText);
                 
                 $keys = $config['segments'];
                 foreach ($keys as $key)
                 {
-                    $cacheData = json_encode($contents[$key]);
-                    $this->cache->write($cacheUri . '.' . $key, 'json', $cacheData);
+                    $segmentText = json_encode($contents[$key]);
+                    $this->cache->write($cacheUri . '.' . $key, 'json', $segmentText);
                 }
             }
             
@@ -205,19 +207,17 @@ class PageLoader
             if ($matches[0][0][1] > $offset)
             {
                 // There's some default content at the beginning.
-                $contents[$segmentName] = array(
-                    array(
-                        'content' => substr($rawContents, $offset, $matches[0][0][1] - $offset),
-                        'format' => $segmentFormat
-                    )
+                $contents[$segmentName] = new ContentSegment(
+                    substr($rawContents, $offset, $matches[0][0][1] - $offset)
                 );
             }
             
             for ($i = 0; $i < $matchCount; ++$i)
             {
-                // Get each segment as the text that's between the end of the current captured string
-                // and the beginning of the next captured string (or the end of the input text if
-                // the current is the last capture).
+                // Get each segment as the text that's between the end of the 
+                // current captured string and the beginning of the next 
+                // captured string (or the end of the input text if the current
+                // is the last capture).
                 $matchStart = $matches[0][$i][1] + strlen($matches[0][$i][0]);
                 $matchEnd = ($i < $matchCount - 1) ? $matches[0][$i+1][1] : $end;
                 if (!empty($matches[1][$i][0]))
@@ -230,23 +230,25 @@ class PageLoader
                     $segmentFormat = $matches[3][$i][0];
                 }
                 $segmentContent = substr($rawContents, $matchStart, $matchEnd - $matchStart);
-                if (empty($contents[$segmentName]))
-                    $contents[$segmentName] = array();
-                $contents[$segmentName][] = array(
-                    'content' => $segmentContent,
-                    'format' => $segmentFormat
+
+                // Create a new segment, or add that part to an existing one.
+                if (!isset($contents[$segmentName]))
+                {
+                    $contents[$segmentName] = new ContentSegment();
+                }
+                $contents[$segmentName]->parts[] = new ContentSegmentPart(
+                    $segmentContent,
+                    $segmentFormat
                 );
             }
+
             return $contents;
         }
         else
         {
             // No segments, just the content.
-            return array('content' => array(
-                array(
-                    'content' => substr($rawContents, $offset),
-                    'format' => null
-                )
+            return array('content' => new ContentSegment(
+                substr($rawContents, $offset)
             ));
         }
     }
@@ -269,17 +271,15 @@ class PageLoader
 
         // Render each text segment.
         $contents = array();
-        foreach ($rawSegments as $key => $pieces)
+        foreach ($rawSegments as $key => $segment)
         {
             $contents[$key] = '';
-            foreach ($pieces as $piece)
+            foreach ($segment->parts as $part)
             {
-                $content = $piece['content'];
-                $format = $piece['format'];
                 ob_start();
                 try
                 {
-                    $templateEngine->renderString($content, $data);
+                    $templateEngine->renderString($part->content, $data);
                     $renderedContent = ob_get_clean();
                 }
                 catch (Exception $e)
@@ -288,7 +288,9 @@ class PageLoader
                     throw $e;
                 }
 
-                if(!$format) $format = $this->page->getConfig()->getValue('format');
+                $format = $part->format;
+                if(!$format)
+                    $format = $this->page->getConfig()->getValue('format');
                 $renderedAndFormattedContent = PieCrustHelper::formatText(
                     $pieCrust, 
                     $renderedContent, 

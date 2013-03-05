@@ -330,8 +330,8 @@ class JekyllImporter extends ImporterBase
 
         $absolute = $this->rootDir . $relative;
         $contents = file_get_contents($absolute);
-        $parsedContents = Configuration::parseHeader($contents);
-        $text = substr($contents, $parsedContents['text_offset']);
+        $header = Configuration::parseHeader($contents);
+        $text = substr($contents, $header->textOffset);
 
         $pieCrustRelative = PieCrustHelper::getRelativePath($this->pieCrust, $outputPath);
         $this->logger->debug(" -> {$pieCrustRelative}");
@@ -352,13 +352,13 @@ class JekyllImporter extends ImporterBase
         $contents = file_get_contents($absolute);
 
         $wrapContentTag = true;
-        $parsedContents = Configuration::parseHeader($contents);
-        $text = substr($contents, $parsedContents['text_offset']);
+        $header = Configuration::parseHeader($contents);
+        $text = substr($contents, $header->textOffset);
         $textBeforeConversion = $text;
 
         if ($isTemplate)
         {
-            $config = $parsedContents['config'];
+            $config = $header->config;
             if (isset($config['layout']))
             {
                 // Liquid doesn't support template inheritance,
@@ -374,7 +374,7 @@ class JekyllImporter extends ImporterBase
         else
         {
             // Convert the config.
-            $config = $parsedContents['config'];
+            $config = $header->config;
             if (isset($config['layout']))
             {
                 // PieCrust uses 'none' instead of 'nil'.
