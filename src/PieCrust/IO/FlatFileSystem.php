@@ -34,10 +34,9 @@ class FlatFileSystem extends FileSystem
                 continue;
         
             $matches = array();
-            $pathName = $path->getPathname();
             if (preg_match(
-                '/(\d{4})-(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/', 
-                $pathName, 
+                '/^(\d{4})-(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/', 
+                $path->getFilename(), 
                 $matches) === false)
                 continue;
             
@@ -47,7 +46,7 @@ class FlatFileSystem extends FileSystem
                 'day' => $matches[3],
                 'name' => $matches[4],
                 'ext' => $extension,
-                'path' => $pathName
+                'path' => $path->getPathname()
             );
         }
         return $result;

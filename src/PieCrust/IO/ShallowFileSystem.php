@@ -50,20 +50,18 @@ class ShallowFileSystem extends FileSystem
                     continue;
         
                 $matches = array();
-                $pathName = $path->getPathname();
                 if (preg_match(
-                    '/(\d{4})\/(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
-                    $pathName,
+                    '/^(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
+                    $path->getFilename(),
                     $matches) === false)
                     continue;
-                
                 $result[] = array(
-                    'year' => $matches[1],
-                    'month' => $matches[2],
-                    'day' => $matches[3],
-                    'name' => $matches[4],
+                    'year' => $year,
+                    'month' => $matches[1],
+                    'day' => $matches[2],
+                    'name' => $matches[3],
                     'ext' => $extension,
-                    'path' => $pathName
+                    'path' => $path->getPathname()
                 );
             }
         }

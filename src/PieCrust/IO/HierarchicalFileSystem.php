@@ -67,7 +67,6 @@ class HierarchicalFileSystem extends FileSystem
                         continue;
 
                     $matches = array();
-                    $pathName = $path->getPathname();
                     if (preg_match(
                         '/^(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
                         $path->getFilename(),
@@ -80,7 +79,7 @@ class HierarchicalFileSystem extends FileSystem
                         'day' => $matches[1],
                         'name' => $matches[2],
                         'ext' => $extension,
-                        'path' => $pathName
+                        'path' => $path->getPathname()
                     );
                 }
             }
