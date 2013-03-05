@@ -10,6 +10,8 @@ use PieCrust\Mock\MockFileSystem;
 
 class UriParserTest extends \PHPUnit_Framework_TestCase
 {
+    protected $mockDir;
+
     protected function makeUriInfo($uri, $path, $wasPathChecked, $pageNumber = 1, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null)
     {
         return array(
@@ -323,6 +325,7 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
             ->withPage('textile/page.text')
             ->withPage('markdown/page.md')
             ->withPage('normal/page.html');
+        $this->mockDir = $fs->getRootName();
         $pc = $fs->getApp();
         $uriInfo = UriParser::parseUri($pc, $uri);
 
@@ -339,13 +342,31 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
     }
 
+    public function setUp()
+    {
+        $this->mockDir = null;
+    }
+
     public function tearDown()
     {
-        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
-        if (is_dir($mockDir))
+        if ($this->mockDir != null && is_dir($this->mockDir))
         {
-            PathHelper::deleteDirectoryContents($mockDir);
-            rmdir($mockDir);
+            // On Windows, it looks like the file-system is a bit "slow".
+            // And by "slow", I mean "retarded".
+            $tries = 3;
+            while ($tries > 0)
+            {
+                try
+                {
+                    PathHelper::deleteDirectoryContents($this->mockDir);
+                    rmdir($this->mockDir);
+                    $tries = 0;
+                }
+                catch (\Exception $e)
+                {
+                    $tries--;
+                }
+            }
         }
     }
 }
