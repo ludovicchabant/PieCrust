@@ -167,15 +167,15 @@ class Page implements IPage
         return $this->config;
     }
     
-    protected $didFormatContents;
     protected $contents;
+    protected $formattedContents;
     /**
      * Gets the page's formatted content.
      */
     public function getContentSegment($segment = 'content')
     {
-        $this->ensureContentsLoaded();
-        return $this->contents[$segment];
+        $this->ensureContentsFormatted();
+        return $this->formattedContents[$segment];
     }
     
     /**
@@ -183,8 +183,8 @@ class Page implements IPage
      */
     public function hasContentSegment($segment)
     {
-        $this->ensureContentsLoaded();
-        return isset($this->contents[$segment]);
+        $this->ensureContentsFormatted();
+        return isset($this->formattedContents[$segment]);
     }
     
     /**
@@ -192,8 +192,8 @@ class Page implements IPage
      */
     public function getContentSegments()
     {
-        $this->ensureContentsLoaded();
-        return $this->contents;
+        $this->ensureContentsFormatted();
+        return $this->formattedContents;
     }
     
     protected $pageData;
@@ -223,8 +223,7 @@ class Page implements IPage
      */
     public function setExtraPageData(array $data)
     {
-        if ($this->config != null or $this->contents != null)
-            throw new PieCrustException("Extra data on a page must be set before the page's configuration, contents and data are loaded.");
+        $this->unload();
         $this->extraData = $data;
     }
     
@@ -267,9 +266,8 @@ class Page implements IPage
      */
     public function unload()
     {
-        $this->config = null;
-        $this->contents = null;
         $this->pageData = null;
+        $this->formattedContents = null;
     }
 
     /**
@@ -291,7 +289,7 @@ class Page implements IPage
 
         $this->config = null;
         $this->contents = null;
-        $this->didFormatContents = false;
+        $this->formattedContents = null;
     }
     
     /**
@@ -308,22 +306,21 @@ class Page implements IPage
             $loader = new PageLoader($this);
             $this->contents = $loader->load();
             $this->wasCached = $loader->wasCached();
-            $this->didFormatContents = false;
+            $this->formattedContents = null;
         }
     }
     
     /**
-     * Ensures the page has been loaded from disk.
+     * Ensures the page has been formatted completely.
      */
-    protected function ensureContentsLoaded()
+    protected function ensureContentsFormatted()
     {
-        if (!$this->didFormatContents)
+        if ($this->formattedContents == null)
         {
             $this->ensureConfigLoaded();
 
             $loader = new PageLoader($this);
-            $this->contents = $loader->formatContents($this->contents);
-            $this->didFormatContents = true;
+            $this->formattedContents = $loader->formatContents($this->contents);
         }
     }
     
