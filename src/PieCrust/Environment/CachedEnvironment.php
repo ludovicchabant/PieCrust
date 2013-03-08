@@ -174,7 +174,7 @@ class CachedEnvironment extends Environment
             foreach ($pageInfos as $pageInfo)
             {
                 $page = $pageRepository->getOrCreatePage(
-                    UriBuilder::buildUri($pageInfo['relative_path']),
+                    UriBuilder::buildUri($this->pieCrust, $pageInfo['relative_path']),
                     $pageInfo['path']
                 );
 

@@ -161,7 +161,7 @@ class Linker extends BaseIterator implements \RecursiveIterator
                         else
                         {
                             $relativePath = PathHelper::getRelativePath($pieCrust->getPagesDir(), $path);
-                            $uri = UriBuilder::buildUri($relativePath);
+                            $uri = UriBuilder::buildUri($pieCrust, $relativePath);
                             $page = $pageRepository->getOrCreatePage($uri, $path);
                         }
 

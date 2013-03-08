@@ -3,6 +3,7 @@
 namespace PieCrust\Util;
 
 use PieCrust\IPage;
+use PieCrust\IPieCrust;
 
 
 /**
@@ -13,18 +14,19 @@ class UriBuilder
     /**
      * Gets the URI of a page given a relative path.
      */
-    public static function buildUri($relativePath, $stripExtension = '.html', $stripIndex = true)
+    public static function buildUri(IPieCrust $pieCrust, $relativePath)
     {
+        $pregQuoteFunc = function($value) { return preg_quote($value, '/'); };
+        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+        $stripExtensions = array_map($pregQuoteFunc, array_keys($autoFormats));
+        $stripPattern = "/\\.(" . implode('|', $stripExtensions) . ")$/";
+
         $uri = str_replace('\\', '/', $relativePath);
-        if ($stripExtension)
-        {
-            $stripExtension = preg_quote($stripExtension, '/');
-            $uri = preg_replace('/' . $stripExtension . '$/', '', $uri);
-        }
-        if ($stripIndex)
-        {
-            $uri = preg_replace('/^_index/', '', $uri); // strip special name
-        }
+        $uri = preg_replace($stripPattern, "", $uri);
+
+        if ($uri == '_index')
+            $uri = '';
+
         return $uri;
     }
     

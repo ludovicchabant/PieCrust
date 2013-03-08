@@ -399,7 +399,7 @@ class Page implements IPage
             throw new InvalidArgumentException("The given path does not exist: " . $path);
         
         $relativePath = PieCrustHelper::getRelativePath($pieCrust, $path, true);
-        $uri = UriBuilder::buildUri($relativePath);
+        $uri = UriBuilder::buildUri($pieCrust, $relativePath);
         return new Page(
                 $pieCrust,
                 $uri,
