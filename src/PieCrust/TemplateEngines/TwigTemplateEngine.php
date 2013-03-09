@@ -89,10 +89,15 @@ class TwigTemplateEngine implements ITemplateEngine
             // second constructor parameter.
             $this->twigLoader = new ExtendedFilesystem($dirs, $isHosted); 
             
-            $options = array('cache' => false);
+            $options = array('cache' => false, 'debug' => false);
             if ($this->pieCrust->isCachingEnabled())
             {
                 $options['cache'] = $this->pieCrust->getCacheDir() . 'templates_c';
+            }
+            if ($this->pieCrust->isDebuggingEnabled() or
+                $this->pieCrust->getConfig()->getValue('twig/debug') === true)
+            {
+                $options['debug'] = true;
             }
             if ($isHosted or 
                 (
@@ -112,6 +117,10 @@ class TwigTemplateEngine implements ITemplateEngine
             foreach ($this->pieCrust->getPluginLoader()->getTwigExtensions() as $ext)
             {
                 $this->twigEnv->addExtension($ext);
+            }
+            if ($options['debug'])
+            {
+                $this->twigEnv->addExtension(new \Twig_Extension_Debug());
             }
         }
     }
