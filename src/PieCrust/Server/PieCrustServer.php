@@ -256,7 +256,12 @@ class PieCrustServer
         $context->getLog()->debug("Ran PieCrust request in " . $timeSpan * 1000 . "ms.");
         if ($pieCrustException != null)
         {
-            $context->getLog()->error($pieCrustException->getMessage());
+            $e = $pieCrustException;
+            while ($e != null)
+            {
+                $context->getLog()->error($e->getMessage());
+                $e = $e->getPrevious();
+            }
         }
     }
 
