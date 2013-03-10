@@ -93,7 +93,10 @@ class ProcessingTreeRunner
     protected function computeNodeDirtyness($node)
     {
         $processor = $node->getProcessor();
-        if ($processor->isDelegatingDependencyCheck())
+        if (
+            $processor->isDelegatingDependencyCheck() && 
+            !$processor->isBypassingStructuredProcessing()
+        )
         {
             // Start profiling.
             $start = microtime(true);
@@ -175,6 +178,26 @@ class ProcessingTreeRunner
         $nodeRootDir = $this->getNodeRootDir($node);
         $path = $nodeRootDir . $node->getPath();
 
+        // If the processor for this node wants to bypass structured
+        // processing altogether, run it now and exit.
+        $processor = $node->getProcessor();
+        if ($processor->isBypassingStructuredProcessing())
+        {
+            try
+            {
+                $start = microtime(true);
+                $processor->process($path, $this->outDir);
+                $end = microtime(true);
+                $processTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+                $this->printProcessingTreeNode($node, " (bypassing structured processing) [{$processTime}].");
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException("Error processing '{$node->getPath()}'.", 0, $e);
+            }
+            return true;
+        }
+
         // Get the output directory.
         // (all outputs of a node go to the same directory, so we
         //  can just get the directory of the first output node).
@@ -189,12 +212,11 @@ class ProcessingTreeRunner
         $relativeOutputDir = PathHelper::getRelativePath($this->rootDir, $outputDir);
         PathHelper::ensureDirectory($outputDir, true);
 
-        // If we need to, re-process the node!
+        // Now process the node!
         $didBake = false;
         try
         {
             $start = microtime(true);
-            $processor = $node->getProcessor();
             $processResult = $processor->process($path, $outputDir);
             $end = microtime(true);
             $processTime = sprintf('%.1f ms', ($end - $start)*1000.0);

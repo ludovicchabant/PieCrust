@@ -3,7 +3,6 @@
 namespace PieCrust\Baker;
 
 use \Exception;
-use \DirectoryIterator;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
@@ -15,7 +14,7 @@ use PieCrust\Util\PieCrustHelper;
 /**
  * A class responsible for baking non-PieCrust content.
  */
-class DirectoryBaker
+class DirectoryBaker implements IBaker
 {
     protected $pieCrust;
     protected $logger;
@@ -43,6 +42,13 @@ class DirectoryBaker
         $this->ensureProcessors();
         return $this->processors;
     }
+
+    // IBaker members {{{
+    public function getBakeDir()
+    {
+        return $this->bakeDir;
+    }
+    // }}}
     
     /**
      * Creates a new instance of DirectoryBaker.
@@ -111,6 +117,12 @@ class DirectoryBaker
      */
     public function bake($path = null)
     {
+        $baker = $this;
+        $this->triggerBakeEvent(
+            "pre bake process",
+            function ($p) use($baker) { $p->onBakeStart($baker); }
+        );
+
         $this->bakedFiles = array();
         if ($path == null)
         {
@@ -154,18 +166,18 @@ class DirectoryBaker
                 $this->bakeFile($path, $rootDir, $rootDirLength);
             }
         }
+
+        $this->triggerBakeEvent(
+            "post bake process",
+            function ($p) { $p->onBakeEnd(); }
+        );
     }
 
     protected function bakeDirectory($currentDir, $level, $rootDir, $rootDirLength)
     {
-        $it = new DirectoryIterator($currentDir);
+        $it = new \FilesystemIterator($currentDir);
         foreach ($it as $i)
         {
-            if ($i->isDot())
-            {
-                continue;
-            }
-
             // Figure out the root-relative path.
             $absolute = str_replace('\\', '/', $i->getPathname());
             $relative = substr($absolute, $rootDirLength);
@@ -297,6 +309,22 @@ class DirectoryBaker
         {
             $this->bakedFiles[$path]['was_baked'] = true;
             $this->logger->info(PieCrustBaker::formatTimed($start, $relative));
+        }
+    }
+
+    protected function triggerBakeEvent($eventName, $func)
+    {
+        foreach ($this->getProcessors() as $proc)
+        {
+            $start = microtime(true);
+            $func($proc);
+            $end = microtime(true);
+            $elapsed = ($end - $start) * 1000.0;
+            if ($elapsed > 5)
+            {
+                $message = "[{$eventName} for {$proc->getName()}]";
+                $this->logger->info(PieCrustBaker::formatTimed($start, $message));
+            }
         }
     }
 

@@ -3,6 +3,7 @@
 namespace PieCrust\Baker\Processors;
 
 use PieCrust\IPieCrust;
+use PieCrust\Baker\IBaker;
 
 
 /**
@@ -33,12 +34,25 @@ interface IProcessor
      * given an extension.
      */
     public function getPriority();
+
+    /**
+     * Gets called before baking the site.
+     */
+    public function onBakeStart(IBaker $baker);
     
     /**
      * Returns whether this processor should process a file with the given
      * extension.
      */
     public function supportsExtension($extension);
+
+    /**
+     * Returns `true` if this processor wants to bypass the tree-based file
+     * processing and will write output files on its own.
+     * Warning: this means this processor can't be chained with other
+     * processors, and won't benefit from PieCrust's processing optimizations.
+     */
+    public function isBypassingStructuredProcessing();
 
     /**
      * Returns `true` if PieCrust should handle dependency checking with 
@@ -62,4 +76,9 @@ interface IProcessor
      * placed in the given output directory.
      */
     public function process($inputPath, $outputDir);
+
+    /**
+     * Gets called after baking the site.
+     */
+    public function onBakeEnd();
 }

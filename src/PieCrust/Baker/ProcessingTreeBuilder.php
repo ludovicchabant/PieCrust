@@ -47,6 +47,15 @@ class ProcessingTreeBuilder
             if (!$processor)
                 continue;
 
+            // If this processor wants to bypass this while tree-thing,
+            // so be it, but we only accept it on the root node.
+            if ($processor->isBypassingStructuredProcessing())
+            {
+                if ($curNode != $treeRoot)
+                    throw new PieCrustException("Only root processors can bypass structured processing.");
+                break;
+            }
+
             // Get the destination directories.
             $relativeDir = dirname($curNode->getPath());
             $relativeDestinationDir = $relativeDir == '.' ? '' : ($relativeDir . '/');

@@ -4,6 +4,7 @@ namespace PieCrust\Baker\Processors;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Baker\IBaker;
 use PieCrust\IO\Cache;
 
 
@@ -20,6 +21,7 @@ use PieCrust\IO\Cache;
 class SimpleFileProcessor implements IProcessor
 {
     protected $pieCrust;
+    protected $baker;
     protected $logger;
 
     protected $name;
@@ -52,11 +54,21 @@ class SimpleFileProcessor implements IProcessor
     {
         return $this->priority;
     }
+
+    public function onBakeStart(IBaker $baker)
+    {
+        $this->baker = $baker;
+    }
     
     public function supportsExtension($extension)
     {
         if ($extension == null or $extension == '') return false;
         return in_array($extension, $this->inputExtensions);
+    }
+
+    public function isBypassingStructuredProcessing()
+    {
+        return false;
     }
 
     public function isDelegatingDependencyCheck()
@@ -92,6 +104,11 @@ class SimpleFileProcessor implements IProcessor
         $outputPath = $outputDir . $this->getOutputFilenames(pathinfo($inputPath, PATHINFO_BASENAME));
         $this->doProcess($inputPath, $outputPath);
         return true;
+    }
+
+    public function onBakeEnd()
+    {
+        $this->baker = null;
     }
     
     protected function doConstruct($name, $inputExtensions, $outputExtensions, $priority = IProcessor::PRIORITY_DEFAULT)
