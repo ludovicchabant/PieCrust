@@ -38,6 +38,9 @@ class BuiltinPlugin extends PieCrustPlugin
         return array(
             new \PieCrust\Baker\Processors\CopyFileProcessor(),
             new \PieCrust\Baker\Processors\LessProcessor(),
+            new \PieCrust\Baker\Processors\SassProcessor(),
+            new \PieCrust\Baker\Processors\CompassProcessor(),
+            new \PieCrust\Baker\Processors\YUICompressorProcessor(),
             new \PieCrust\Baker\Processors\SitemapProcessor()
         );
     }
