@@ -115,15 +115,19 @@ class DataBuilder
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
+        $recursiveLinker = new RecursiveLinkerIterator($linker);
 
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
 
         $data = array(
             'page' => $page->getConfig()->get(),
-            'asset'=> $assetor,
+            'assets' => $assetor,
             'pagination' => $paginator,
-            'link' => $linker
+            'siblings' => $linker,
+            'family' => $recursiveLinker,
+            'asset'=> $assetor, // TODO: deprecated.
+            'link' => $linker // TODO: deprecated.
         );
 
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
