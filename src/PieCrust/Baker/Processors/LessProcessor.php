@@ -58,8 +58,8 @@ class LessProcessor extends SimpleFileProcessor
             $exe = $this->jsToolOptions['bin'];
             $options = $this->jsToolOptions['options'];
             $cmd = "{$exe} {$options} \"{$inputPath}\" \"{$outputPath}\"";
-            $this->logger->debug($cmd);
-            shell_exec('$> '.$cmd);
+            $this->logger->debug('$> '.$cmd);
+            shell_exec($cmd);
         }
     }
 
@@ -73,7 +73,7 @@ class LessProcessor extends SimpleFileProcessor
         {
             $defaultOptions = array(
                 'bin' => 'lessc',
-                'options' => '-rp "'.$config->getValue('site/root').'"'
+                'options' => '-rp="'.$config->getValue('site/root').'"'
             );
             $this->jsToolOptions = array_merge(
                 $defaultOptions,
