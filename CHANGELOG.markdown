@@ -50,6 +50,10 @@ Fresh changes
 * CHANGE: It is now possible to specify `posts_filters` on category and tag
   listing pages. Those filters will be combined with an `AND` boolean clause.
 * CHANGE: Removed useless banner and `--info-only` option from `chef bake`.
+* CHANGE: Renamed some template data: `asset` is now `assets`, `link` is now
+  `siblings`, and a new `family` gives recursive access to all sibling and
+  children pages (basically a sub-set of `site.pages`). The old names are still
+  usable for backwards compatibility.
 * BUG: Generate unique footnote IDs with Markdown-Extra when those footnotes are
   in posts and the current page lists them.
 * BUG: Fixed some incorrect behaviour when a page/post iterator is iterated
