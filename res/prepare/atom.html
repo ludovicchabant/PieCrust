@@ -35,7 +35,7 @@ content_type: xml
         <updated>{{post.timestamp|atomdate}}</updated>
         <content type="html">{{post.content}}
 		{% if post.has_more and page.read_more_text %}
-		{{ "<a href=\"" ~ post.url ~ "\">" ~ page.read_more_text ~ "</a>"|escape }}
+		{{ ("<a href=\"" ~ post.url ~ "\">" ~ page.read_more_text ~ "</a>")|escape }}
 		{% endif %}
 		</content>
 		{% if author %}
