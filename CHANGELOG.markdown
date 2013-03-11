@@ -29,6 +29,14 @@ Fresh changes
 * NEW: Added support for "auto-formats", specified with the `site/auto_formats`
   configuration setting. This lets the user define a mapping between file
   extensions and text formats, such as `.md` for Markdown.
+* NEW: In debug mode, Twig's debugging functions are available. They can also be
+  enabled with the `twig/debug` config setting.
+* NEW: The LESS processor can optionally run the Javascript command line tool
+  instead of using the LessPHP library. This is done by setting `less/use_lessc`
+  to `true` in the site configuration.
+* NEW: Sass, Compass and YUICompressor processors are now part of the built-in
+  processors, instead of being in plug-ins. They have also been improved, with
+  Compass support being much better.
 * CHANGE: Updated all 3rd-party libraries to their latest version.
 * CHANGE: The LESS file processor is now using the 3rd-party library caching
   mechanism.
@@ -42,6 +50,8 @@ Fresh changes
 * CHANGE: It is now possible to specify `posts_filters` on category and tag
   listing pages. Those filters will be combined with an `AND` boolean clause.
 * CHANGE: Removed useless banner and `--info-only` option from `chef bake`.
+* BUG: Generate unique footnote IDs with Markdown-Extra when those footnotes are
+  in posts and the current page lists them.
 * BUG: Fixed some incorrect behaviour when a page/post iterator is iterated
   several times on a page.
 * BUG: Fixed a crash when using a `has_xxx` filter on a setting that's not an
