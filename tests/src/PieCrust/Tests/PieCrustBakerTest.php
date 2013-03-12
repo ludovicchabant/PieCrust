@@ -3,6 +3,7 @@
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Mock\MockFileSystem;
+use PieCrust\Util\UriBuilder;
 
 
 class PieCrustBakerTest extends \PHPUnit_Framework_TestCase
@@ -512,43 +513,23 @@ EOD
         $this->assertEquals('special', file_get_contents($fs->url('counter/special.css')));
     }
 
-    public function testBakeTagPages()
+    public function bakeTagPagesDataProvider()
     {
-        $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('default_format' => 'none')))
-            ->withTemplate('default', '')
-            ->withTemplate('post', '{{content|raw}}')
-            ->withPage(
-                '_tag', 
-                array('layout' => 'none'),
-                <<<EOD
-{% for post in pagination.posts %}
-{{ post.content|raw }}
-{% endfor %}
-EOD
-            )
-            ->withPost('post1', 1, 1, 2010, array('tags' => array('foo')), 'POST ONE')
-            ->withPost('post2', 2, 1, 2010, array('tags' => array('foo')), 'POST TWO')
-            ->withPost('post3', 3, 1, 2010, array('tags' => array('bar')), 'POST THREE')
-            ->withPost('post4', 4, 1, 2010, array('tags' => array('bar')), 'POST FOUR')
-            ->withPost('post5', 5, 1, 2010, array('tags' => array('foo', 'bar')), 'POST FIVE');
-
-        $app = $fs->getApp();
-        $baker = new PieCrustBaker($app);
-        $baker->setBakeDir($fs->url('counter'));
-        $baker->bake();
-
-        $this->assertEquals(
-            "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/tag/foo.html'))
-        );
-        $this->assertEquals(
-            "POST FIVE\nPOST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/tag/bar.html'))
+        return array(
+            array('foo', 'bar'),
+            array('foo zoo', 'bar'),
+            array('foo zoo', 'bar baz'),
+            array('foo/zoo', 'bar'),
+            array('foo+zoo', 'bar'),
+            array('foo-zoo', 'bar'),
+            array('foo_zoo', 'bar')
         );
     }
 
-    public function testBakeTagPagesForTagsWithSpaces()
+    /**
+     * @dataProvider bakeTagPagesDataProvider
+     */
+    public function testBakeTagPages($tag1, $tag2)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array('site' => array('default_format' => 'none')))
@@ -563,24 +544,26 @@ EOD
 {% endfor %}
 EOD
             )
-            ->withPost('post1', 1, 1, 2010, array('tags' => array('foo bar')), 'POST ONE')
-            ->withPost('post2', 2, 1, 2010, array('tags' => array('foo bar')), 'POST TWO')
-            ->withPost('post3', 3, 1, 2010, array('tags' => array('bar baz')), 'POST THREE')
-            ->withPost('post4', 4, 1, 2010, array('tags' => array('bar baz')), 'POST FOUR')
-            ->withPost('post5', 5, 1, 2010, array('tags' => array('foo bar', 'bar baz')), 'POST FIVE');
+            ->withPost('post1', 1, 1, 2010, array('tags' => array($tag1)), 'POST ONE')
+            ->withPost('post2', 2, 1, 2010, array('tags' => array($tag1)), 'POST TWO')
+            ->withPost('post3', 3, 1, 2010, array('tags' => array($tag2)), 'POST THREE')
+            ->withPost('post4', 4, 1, 2010, array('tags' => array($tag2)), 'POST FOUR')
+            ->withPost('post5', 5, 1, 2010, array('tags' => array($tag1, $tag2)), 'POST FIVE');
 
         $app = $fs->getApp();
         $baker = new PieCrustBaker($app);
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
+        $tag1 = UriBuilder::slugify($tag1);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/tag/foo-bar.html'))
+            file_get_contents($fs->url('counter/tag/'.$tag1.'.html'))
         );
+        $tag2 = UriBuilder::slugify($tag2);
         $this->assertEquals(
             "POST FIVE\nPOST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/tag/bar-baz.html'))
+            file_get_contents($fs->url('counter/tag/'.$tag2.'.html'))
         );
     }
 
@@ -637,43 +620,22 @@ EOD
         );
     }
 
-    public function testBakeCategoryPage()
+    public function bakeCategoryPageDataProvider()
     {
-        $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('default_format' => 'none')))
-            ->withTemplate('default', '')
-            ->withTemplate('post', '{{content|raw}}')
-            ->withPage(
-                '_category', 
-                array('layout' => 'none'),
-                <<<EOD
-{% for post in pagination.posts %}
-{{ post.content|raw }}
-{% endfor %}
-EOD
-            )
-            ->withPost('post1', 1, 1, 2010, array('category' => 'foo'), 'POST ONE')
-            ->withPost('post2', 2, 1, 2010, array('category' => 'foo'), 'POST TWO')
-            ->withPost('post3', 3, 1, 2010, array('category' => 'bar'), 'POST THREE')
-            ->withPost('post4', 4, 1, 2010, array('category' => 'bar'), 'POST FOUR')
-            ->withPost('post5', 5, 1, 2010, array('category' => 'foo'), 'POST FIVE');
-
-        $app = $fs->getApp();
-        $baker = new PieCrustBaker($app);
-        $baker->setBakeDir($fs->url('counter'));
-        $baker->bake();
-
-        $this->assertEquals(
-            "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/foo.html'))
-        );
-        $this->assertEquals(
-            "POST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/bar.html'))
+        return array(
+            array('foo', 'bar'),
+            array('foo zoo', 'bar'),
+            array('foo zoo', 'bar baz'),
+            array('foo/zoo', 'bar'),
+            array('foo-zoo', 'bar'),
+            array('foo_zoo', 'bar')
         );
     }
 
-    public function testBakeCategoryPageForCategoriesWithSpaces()
+    /**
+     * @dataProvider bakeCategoryPageDataProvider
+     */
+    public function testBakeCategoryPage($cat1, $cat2)
     {
         $fs = MockFileSystem::create()
             ->withConfig(array('site' => array('default_format' => 'none')))
@@ -688,24 +650,26 @@ EOD
 {% endfor %}
 EOD
             )
-            ->withPost('post1', 1, 1, 2010, array('category' => 'foo bar'), 'POST ONE')
-            ->withPost('post2', 2, 1, 2010, array('category' => 'foo bar'), 'POST TWO')
-            ->withPost('post3', 3, 1, 2010, array('category' => 'bar baz'), 'POST THREE')
-            ->withPost('post4', 4, 1, 2010, array('category' => 'bar baz'), 'POST FOUR')
-            ->withPost('post5', 5, 1, 2010, array('category' => 'foo bar'), 'POST FIVE');
+            ->withPost('post1', 1, 1, 2010, array('category' => $cat1), 'POST ONE')
+            ->withPost('post2', 2, 1, 2010, array('category' => $cat1), 'POST TWO')
+            ->withPost('post3', 3, 1, 2010, array('category' => $cat2), 'POST THREE')
+            ->withPost('post4', 4, 1, 2010, array('category' => $cat2), 'POST FOUR')
+            ->withPost('post5', 5, 1, 2010, array('category' => $cat1), 'POST FIVE');
 
         $app = $fs->getApp();
         $baker = new PieCrustBaker($app);
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
+        $cat1 = UriBuilder::slugify($cat1);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/foo-bar.html'))
+            file_get_contents($fs->url('counter/'.$cat1.'.html'))
         );
+        $cat2 = UriBuilder::slugify($cat2);
         $this->assertEquals(
             "POST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/bar-baz.html'))
+            file_get_contents($fs->url('counter/'.$cat2.'.html'))
         );
     }
 
