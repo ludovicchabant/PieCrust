@@ -157,6 +157,7 @@ class PageBaker
         {
             $this->bakedFiles = array();
             $this->paginationDataAccessed = false;
+            $this->logger->debug("Baking '{$page->getUri()}'...");
             
             $pageRenderer = new PageRenderer($page);
             
@@ -205,6 +206,7 @@ class PageBaker
 
         // Figure out the output HTML path.
         $bakePath = $this->getOutputPath($page);
+        $this->logger->debug("  p{$page->getPageNumber()} -> {$bakePath}");
 
         // Figure out if we should re-bake this page.
         $doBake = true;
