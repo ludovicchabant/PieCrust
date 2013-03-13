@@ -21,13 +21,14 @@ class HasFilterClause extends FilterClause
     public function postMatches(IPage $post)
     {
         $actualValue = $post->getConfig()->getValue($this->settingName);
+        if ($actualValue == null || !is_array($actualValue))
+            return false;
+        
         if ($this->coerceFunc != null)
         {
             $coerceFunc = $this->coerceFunc;
-            $actualValue = $coerceFunc($actualValue);
+            $actualValue = array_map($coerceFunc, $actualValue);
         }
-        return $actualValue != null && 
-            is_array($actualValue) &&
-            in_array($this->settingValue, $actualValue);
+        return in_array($this->settingValue, $actualValue);
     }
 }
