@@ -17,14 +17,20 @@ class PageRepository
     protected $pieCrust;
     protected $enabled;
     protected $pages;
+    protected $pageUris;
     protected $assetUrlBaseRemap;
+    protected $limit;
+    protected $collectSize;
 
     public function __construct(IPieCrust $pieCrust, $enabled = true)
     {
         $this->pieCrust = $pieCrust;
         $this->enabled = $enabled;
         $this->pages = array();
+        $this->pageUris = array();
         $this->assetUrlBaseRemap = null;
+        $this->limit = 10000;
+        $this->collectSize = ($this->limit / 10);
     }
     
     public function isEnabled()
@@ -40,6 +46,7 @@ class PageRepository
     public function clearPages()
     {
         $this->pages = array();
+        $this->pageUris = array();
     }
     
     public function addPage(IPage $page)
@@ -47,6 +54,19 @@ class PageRepository
         if (!$this->enabled)
             return;
         $this->pages[$page->getUri()] = $page;
+        $this->pageUris[] = $page->getUri();
+
+        $count = count($this->pages);
+        if ($count > $this->limit)
+        {
+            // Garbage collect some of the pages...
+            for ($i = 0; $i < $this->collectSize; ++$i)
+            {
+                $uri = $this->pageUris[0];
+                array_shift($this->pageUris);
+                unset($this->pages[$uri]);
+            }
+        }
     }
 
     public function getPages()
