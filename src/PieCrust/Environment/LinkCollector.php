@@ -46,6 +46,18 @@ class LinkCollector
     {
         if (!is_array($tags))
         {
+            // Temporary warning for a change in how multi-tags
+            // are specified.
+            if (isset($GLOBALS['__CHEF_LOG']) && strpos($tags, '/') !== false)
+            {
+                $log = $GLOBALS['__CHEF_LOG'];
+                $log->warning(
+                    "A link to tag {$tags} was specified in this page. ".
+                    "If this is a tag that contains a slash character ('/') then ignore this warning. ".
+                    "However, if this was intended to be a multi-tags link, you'll need to ".
+                    "now pass an array of tags like so: `{{pctagurl(['tag1', 'tag2'])}}`. ".
+                    "Your current link won't work!");
+            }
             return;
         }
         if ($blogKey == null)
