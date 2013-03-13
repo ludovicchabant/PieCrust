@@ -71,11 +71,6 @@ class PageConfiguration extends Configuration
             {
                 $validatedConfig['tags'] = array($validatedConfig['tags']);
             }
-            foreach ($validatedConfig['tags'] as $t)
-            {
-                if (strpos($t, '/') !== false)
-                    throw new PieCrustException("Tags can't contain slashes (`/`), got: {$t}");
-            }
         }
 
         return $validatedConfig;

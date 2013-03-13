@@ -164,10 +164,36 @@ class DataBuilder
                         $firstPostTags = $firstPost['tags'];
                         if (!is_array($firstPostTags))
                             $firstPostTags = array($firstPostTags);
-                        foreach ($firstPostTags as $t)
+                        
+                        if (is_array($page->getPageKey()))
                         {
-                            if (UriBuilder::slugify($t) == $data['tag'])
-                                $data['tag'] = $t;
+                            $pageKey = $page->getPageKey();
+                            foreach ($firstPostTags as $t)
+                            {
+                                $st = UriBuilder::slugify($t);
+                                foreach ($pageKey as &$pk)
+                                {
+                                    if ($st == $pk)
+                                    {
+                                        $pk = $t;
+                                        break;
+                                    }
+                                }
+                            }
+                            $page->setPageKey($pageKey);
+                            $data['tag'] = implode(' + ', $pageKey);
+                        }
+                        else
+                        {
+                            foreach ($firstPostTags as $t)
+                            {
+                                if (UriBuilder::slugify($t) == $data['tag'])
+                                {
+                                    $page->setPageKey($t);
+                                    $data['tag'] = $t;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

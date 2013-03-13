@@ -4,6 +4,7 @@ namespace PieCrust\Environment;
 
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -43,7 +44,7 @@ class LinkCollector
     
     public function registerTagCombination($blogKey, $tags)
     {
-        if (strpos($tags, '/') === false)
+        if (!is_array($tags))
         {
             return;
         }
@@ -56,10 +57,14 @@ class LinkCollector
             $this->tagCombinations[$blogKey] = array();
         }
         
-        $tags = strtolower($tags);
-        if (!in_array($tags, $this->tagCombinations[$blogKey]))
+        $tags = array_map(
+            function ($t) { return UriBuilder::slugify($t); },
+            $tags
+        );
+        $tagCombination = implode('/', $tags);
+        if (!in_array($tagCombination, $this->tagCombinations[$blogKey]))
         {
-            $this->tagCombinations[$blogKey][] = $tags;
+            $this->tagCombinations[$blogKey][] = $tagCombination;
         }
     }
 }
