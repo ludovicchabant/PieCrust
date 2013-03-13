@@ -31,6 +31,9 @@ class PageRepository
         $this->assetUrlBaseRemap = null;
         $this->limit = 10000;
         $this->collectSize = ($this->limit / 10);
+
+        $log = $pieCrust->getEnvironment()->getLog();
+        $log->debug("Initializing page repository with a limit of {$this->limit} pages.");
     }
     
     public function isEnabled()
@@ -60,6 +63,9 @@ class PageRepository
         if ($count > $this->limit)
         {
             // Garbage collect some of the pages...
+            $log = $this->pieCrust->getEnvironment()->getLog();
+            $log->debug("Page repository reached {$count} pages, limited to {$this->limit}.");
+            $log->debug("Garbage collecting {$this->collectSize} pages...");
             for ($i = 0; $i < $this->collectSize; ++$i)
             {
                 $uri = $this->pageUris[0];
