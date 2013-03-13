@@ -15,6 +15,15 @@ abstract class Environment
 {
     protected $pieCrust;
 
+    protected $logger;
+    /**
+     * Gets the logger, if any.
+     */
+    public function getLog()
+    {
+        return $this->logger;
+    }
+
     /**
      * Gets the environment's page repository.
      */
@@ -108,8 +117,11 @@ abstract class Environment
     /**
      * Creates a new instance of `Environment`.
      */
-    protected function __construct()
+    protected function __construct($logger = null)
     {
+        if ($logger == null)
+            $logger = \Log::singleton('null', '', '');
+        $this->logger = $logger;
     }
 
     /**

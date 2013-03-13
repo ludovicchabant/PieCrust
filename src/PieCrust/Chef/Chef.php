@@ -87,7 +87,7 @@ class Chef
         }
         else
         {
-            $environment = new ChefEnvironment($this);
+            $environment = new ChefEnvironment();
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
                 'cache' => !in_array('--no-cache', $userArgv),
@@ -138,6 +138,9 @@ class Chef
             return 1;
         }
         $log = new ChefLog('Chef', '', array('lineFormat' => '%{message}'));
+        // Make the log available to PieCrust.
+        if ($rootDir != null)
+            $environment->setLog($log);
         // Make the log available for debugging purposes.
         $GLOBALS['__CHEF_LOG'] = $log;
 

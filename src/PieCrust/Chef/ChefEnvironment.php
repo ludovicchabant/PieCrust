@@ -11,6 +11,11 @@ use PieCrust\Environment\CachedEnvironment;
  */
 class ChefEnvironment extends CachedEnvironment
 {
+    public function setLog($logger)
+    {
+        $this->logger = $logger;
+    }
+
     protected $commandExtensions;
     /**
      * Gets the command extensions.
