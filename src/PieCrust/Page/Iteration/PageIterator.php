@@ -121,6 +121,20 @@ class PageIterator extends BaseIterator
         $this->iterator = new SliceIterator($this->iterator, 0, $count);
         return $this;
     }
+    
+    /**
+     * @include
+     * @noCall
+     * @documentation Like calling `skip` and `limit` (in that order).
+     */
+    public function slice($skip, $limit)
+    {
+        $this->ensureUnlocked();
+        $this->unload();
+        $this->ensureSorter();
+        $this->iterator = new SliceIterator($this->iterator, $skip, $limit);
+        return $this;
+    }
 
     /**
      * @include

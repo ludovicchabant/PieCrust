@@ -307,10 +307,9 @@ class Paginator
         $postsPerPage = $this->posts_per_page();
         if (is_int($postsPerPage) && $postsPerPage > 0)
         {
-            // Skip first, limit second.
+            // Limit to posts that should be on this page.
             $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-            $this->postsIterator->skip($offset);
-            $this->postsIterator->limit($postsPerPage);
+            $this->postsIterator->slice($offset, $postsPerPage);
         }
         $this->postsIterator->setLocked();
     }
