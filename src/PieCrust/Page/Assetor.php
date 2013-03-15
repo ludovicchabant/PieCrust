@@ -23,7 +23,7 @@ class Assetor implements \ArrayAccess, \Iterator
     const ASSET_DIR_SUFFIX = '-assets';
     const ASSET_URL_SUFFIX = self::ASSET_DIR_SUFFIX;
     
-    
+    protected $page;
     protected $assetsDir;
     protected $assetsCache;
     
@@ -86,6 +86,7 @@ class Assetor implements \ArrayAccess, \Iterator
             $this->assetsDir = false;
             $this->urlBase = false;
         }
+        $this->page = $page;
     }
     
     // {{{ ArrayAccess members
@@ -154,6 +155,15 @@ class Assetor implements \ArrayAccess, \Iterator
     {
         if ($this->assetsCache === null)
         {
+            // Deprecated access warning.
+            // TODO: Remove this later.
+            if (isset($this->deprecatedWarning) && $this->deprecatedWarning)
+            {
+                $this->page->getApp()->getEnvironment()->getLog()->warning(
+                    "The `asset` template variable is deprecated. Please use `assets`."
+                );
+            }
+
             $this->assetsCache = array();
             
             if ($this->assetsDir !== false)

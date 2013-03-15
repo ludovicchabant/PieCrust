@@ -256,7 +256,7 @@ class PageBaker
 
         // Get some objects we need.
         $data = $page->getPageData();
-        $assetor = $data['asset'];
+        $assetor = $data['assets'];
         $paginator = $data['pagination'];
         
         // Copy the page.

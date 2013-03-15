@@ -112,6 +112,15 @@ class Linker extends BaseIterator implements \RecursiveIterator
             $pieCrust = $this->page->getApp();
             $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
 
+            // Deprecated access warning.
+            // TODO: Remove this later.
+            if (isset($this->deprecatedWarning) && $this->deprecatedWarning)
+            {
+                $pieCrust->getEnvironment()->getLog()->warning(
+                    "The `link` template variable is deprecated. Please use `siblings`."
+                );
+            }
+
             $items = array();
 
             $skipNames = array('Thumbs.db');
