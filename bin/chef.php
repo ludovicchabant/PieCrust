@@ -11,5 +11,6 @@ if (!defined('PHP_VERSION_ID') or PHP_VERSION_ID < 50300)
 }
 
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'piecrust.php';
-piecrust_chef();
+$returnCode = piecrust_chef();
+exit($returnCode);
 
