@@ -15,6 +15,11 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+Frozen changes
+--------------
+
+### 1.0.0-rc1 (2013-03-14)
+
 * BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
 * BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
   modifying it, which could otherwise result in confusing behaviour.
@@ -60,10 +65,6 @@ Fresh changes
   several times on a page.
 * BUG: Fixed a crash when using a `has_xxx` filter on a setting that's not an
   array.
-
-
-Frozen changes
---------------
 
 ### 0.9.2 (2013-02-04)
 

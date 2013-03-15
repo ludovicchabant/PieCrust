@@ -141,5 +141,5 @@ function piecrust_chef($userArgc = null, $userArgv = null, $profile = 'chef')
     piecrust_setup($profile);
     
     $chef = new PieCrust\Chef\Chef();
-    $chef->run($userArgc, $userArgv);
+    return $chef->run($userArgc, $userArgv);
 }
