@@ -50,6 +50,13 @@ class ServeCommand extends ChefCommand
             'default'     => null,
             'help_name'   => 'LOG_FILE'
         ));
+        $serverParser->addOption('config_variant', array(
+            'short_name'  => '-c',
+            'long_name'   => '--config',
+            'description' => "Apply the configuration settings from the named baker configuration variant.",
+            'default'     => null,
+            'help_name'   => 'VARIANT'
+        ));
 
         // Deprecated stuff.
         $serverParser->addOption('run_browser_old', array(
@@ -76,8 +83,9 @@ class ServeCommand extends ChefCommand
         $address = $result->command->options['address'];
         $runBrowser = $result->command->options['run_browser'];
         $logFile = $result->command->options['log_file'];
-        $debug = $result->command->options['debug'];
-        $nocache = $result->command->options['no_cache'];
+        $configVariant = $result->command->options['config_variant'];
+        $nocache = $result->options['no_cache'];
+        $debug = $result->options['debug'];
 
         // Start serving!
         $server = new PieCrustServer($rootDir,
@@ -86,7 +94,8 @@ class ServeCommand extends ChefCommand
                 'address' => $address,
                 'log_file' => $logFile,
                 'debug' => $debug,
-                'cache' => !$nocache
+                'cache' => !$nocache,
+                'config_variant' => $configVariant
             ),
             $context->getLog());
         $server->run(array(

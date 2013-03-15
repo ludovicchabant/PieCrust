@@ -13,6 +13,7 @@ class StupidHttp_MultiLog extends StupidHttp_Log
      */
     public function __construct(array $logs)
     {
+        parent::__construct();
         $this->logs = $logs;
     }
     

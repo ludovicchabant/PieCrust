@@ -140,9 +140,11 @@ class MockPieCrust implements IPieCrust
         $this->templateDirs = array();
         $this->pluginsDirs = array();
         $this->pluginLoader = new MockPluginLoader();
-        $this->environment = new CachedEnvironment($this);
+        $this->environment = new CachedEnvironment();
         $this->addFormatter('none', 'PassThroughFormatter');
         $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
+
+        $this->environment->initialize($this);
     }
 
     public function addFormatter($name, $className)

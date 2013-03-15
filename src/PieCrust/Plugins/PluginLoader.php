@@ -4,6 +4,7 @@ namespace PieCrust\Plugins;
 
 use \ReflectionClass;
 use \FilesystemIterator;
+use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 
@@ -15,6 +16,7 @@ class PluginLoader
 {
     protected $pieCrust;
     protected $plugins;
+    protected $pluginMeta;
     protected $cachedComponents;
 
     /**
@@ -25,6 +27,7 @@ class PluginLoader
     {
         $this->pieCrust = $pieCrust;
         $this->plugins = null;
+        $this->pluginMeta = null;
         $this->cachedComponents = array();
     }
 
@@ -35,6 +38,17 @@ class PluginLoader
     {
         $this->ensureLoaded();
         return $this->plugins;
+    }
+
+    /**
+     * Gets the metadata for the given plugin.
+     */
+    public function getPluginMeta($pluginName)
+    {
+        $this->ensureLoaded();
+        if (!isset($this->pluginMeta[$pluginName]))
+            throw new PieCrustException("No such plugin: {$pluginName}");
+        return $this->pluginMeta[$pluginName];
     }
 
     /**
@@ -120,6 +134,9 @@ class PluginLoader
         $this->plugins = array(
             new BuiltinPlugin()
         );
+        $this->pluginMeta = array(
+            $this->plugins[0]->getName() => false
+        );
 
         // Load custom plugins.
         foreach ($this->pieCrust->getPluginsDirs() as $dir)
@@ -131,7 +148,10 @@ class PluginLoader
                 if (!$pluginDir->isDir())
                     continue;
 
-                $this->loadPlugin($pluginDir->getFilename(), $pluginDir->getPathname());
+                if (strpos($pluginDir->getFilename(), '__backup') !== false)
+                    throw new PieCrustException("Found temporary plugin backup '{$pluginDir->getPathname()}', probably from an interrupted plugins operation.");
+
+                $this->loadPlugin($pluginDir->getPathname());
             }
         }
 
@@ -142,10 +162,19 @@ class PluginLoader
         }
     }
 
-    protected function loadPlugin($pluginName, $pluginDir)
+    protected function loadPlugin($pluginDir)
     {
-        // A plugin should have a '<PluginName>Plugin.php' file
-        // with a similarly-named class in it located at the root.
+        // A plugin should have a `plugin_info.yml` file
+        // with basic information in it.
+        $pluginInfoFile = $pluginDir . '/plugin_info.yml';
+        if (!is_readable($pluginInfoFile))
+            throw new PieCrustException("No `plugin_info.yml` found in '{$pluginDir}'. Please reinstall the plugin.");
+        $pluginInfo = Yaml::parse(file_get_contents($pluginInfoFile));
+        if (!isset($pluginInfo['name']))
+            throw new PieCrustException("No name was defined in '{$pluginInfoFile}'.");
+        $pluginName = $pluginInfo['name'];
+
+        // Now find the main plugin class' source file.
         $pluginClassName = $pluginName . 'Plugin';
         $pluginFile = $pluginDir . DIRECTORY_SEPARATOR . $pluginClassName . '.php';
         if (!is_readable($pluginFile))
@@ -166,6 +195,10 @@ class PluginLoader
             throw new PieCrustException("Class '{$pluginClassName}' doesn't implement interface 'PieCrust\\IPieCrustPlugin'.");
         $plugin = $reflector->newInstance();
         $this->plugins[] = $plugin;
+
+        $pluginMeta = new PluginMetadata();
+        $pluginMeta->directory = $pluginDir;
+        $this->pluginMeta[$plugin->getName()] = $pluginMeta;
     }
 
     protected function getPluginsComponents($getter, $initialize = false, $order = null)

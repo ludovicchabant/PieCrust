@@ -9,6 +9,7 @@ use \StupidHttp_ConsoleLog;
 use \StupidHttp_WebServer;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustCacheInfo;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Baker\DirectoryBaker;
 use PieCrust\Runner\PieCrustErrorHandler;
@@ -46,6 +47,7 @@ class PieCrustServer
                 'mime_types' => array('less' => 'text/css'),
                 'log_file' => null,
                 'debug' => false,
+                'config_variant' => null,
                 'cache' => true
             ),
             $options
@@ -126,8 +128,13 @@ class PieCrustServer
         }
         catch (Exception $e)
         {
-            $this->logger->err($e->getMessage());
             $this->bakeError = $e;
+            $this->logger->crit("Error while pre-processing request '{$request->getUri()}':");
+            while ($e != null)
+            {
+                $this->logger->err('  ' . $e->getMessage());
+                $e = $e->getPrevious();
+            }
         }
     }
     
@@ -149,19 +156,30 @@ class PieCrustServer
             $params = PieCrustRunner::getPieCrustParameters(
                 array(
                     'root' => $this->rootDir,
+                    'debug' => $this->options['debug'],
                     'cache' => $this->options['cache']
                 ),
                 $context->getRequest()->getServerVariables()
             );
             $pieCrust = new PieCrust($params);
-            $pieCrust->getConfig()->setValue('server/is_hosting', true);
-            $pieCrust->getConfig()->setValue('site/cache_time', false);
-            $pieCrust->getConfig()->setValue('site/pretty_urls', true);
             $pieCrust->getConfig()->setValue('site/root', '/');
-            if ($this->options['debug'])
+            $pieCrust->getConfig()->setValue('site/pretty_urls', true);
+            $pieCrust->getConfig()->setValue('site/cache_time', false);
+            $pieCrust->getConfig()->setValue('server/is_hosting', true);
+
+            // Apply the specified configuration variant, if any. Otherwise,
+            // use the default variant.
+            $isDefault = false;
+            $variantName = $this->options['config_variant'];
+            if (!$variantName)
             {
-                $pieCrust->getConfig()->setValue('site/display_errors', true);
+                $isDefault = true;
+                $variantName = 'default';
             }
+            $pieCrust->getConfig()->applyVariant(
+                "server/config_variants/{$variantName}",
+                !$isDefault
+            );
         }
         catch (Exception $e)
         {
@@ -238,7 +256,12 @@ class PieCrustServer
         $context->getLog()->debug("Ran PieCrust request in " . $timeSpan * 1000 . "ms.");
         if ($pieCrustException != null)
         {
-            $context->getLog()->error($pieCrustException->getMessage());
+            $e = $pieCrustException;
+            while ($e != null)
+            {
+                $context->getLog()->error($e->getMessage());
+                $e = $e->getPrevious();
+            }
         }
     }
 
@@ -262,6 +285,14 @@ class PieCrustServer
         else
         {
             $this->server->setLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
+        }
+
+        // Use colorized output on Mac/Linux.
+        if (!PieCrustDefaults::IS_WINDOWS())
+        {
+            $color = new \Console_Color2();
+            $requestFormat = $color->convert("[%%date%%] %m%%client_ip%%%n --> %g%%method%%%n %%path%% --> %c%%status_name%%%n [%%time%%ms]");
+            $this->server->getLog()->setRequestFormat($requestFormat);
         }
         
         foreach ($this->options['mime_types'] as $ext => $mime)

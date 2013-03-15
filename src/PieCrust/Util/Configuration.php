@@ -326,10 +326,7 @@ class Configuration implements \ArrayAccess, \Iterator
             $offset = 0;
         }
         
-        return array(
-            'config' => $config,
-            'text_offset' => $offset
-        );
+        return new ConfigurationHeader($config, $offset);
     }
     
     /**

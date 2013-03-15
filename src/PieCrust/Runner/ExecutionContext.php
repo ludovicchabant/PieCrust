@@ -33,6 +33,11 @@ class ExecutionContext
         return $this->pageStack[$count - 1];
     }
 
+    public function isMainPage()
+    {
+        return count($this->pageStack) == 1;
+    }
+
     public function __construct($startTime = false)
     {
         $this->isCacheValid = false;

@@ -318,7 +318,8 @@ class PieCrust implements IPieCrust
             array(
                 'root' => null,
                 'cache' => true,
-                'debug' => false
+                'debug' => false,
+                'environment' => null
             ),
             $parameters
         );
@@ -330,7 +331,11 @@ class PieCrust implements IPieCrust
         $this->debuggingEnabled = (bool)$parameters['debug'];
         $this->cachingEnabled = (bool)$parameters['cache'];
         $this->pluginLoader = new PluginLoader($this);
-        $this->environment = new CachedEnvironment($this);
+
+        $this->environment = $parameters['environment'];
+        if (!$this->environment)
+            $this->environment = new CachedEnvironment();
+        $this->environment->initialize($this);
     }
     
     /**

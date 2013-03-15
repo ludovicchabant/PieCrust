@@ -5,7 +5,7 @@ use PieCrust\Util\PathHelper;
 /**
  * Useful paths.
  */
-define('PIECRUST_UNITTESTS_TEST_DATA_DIR', dirname(__DIR__) . '/data/');
+define('PIECRUST_UNITTESTS_DATA_DIR', dirname(__DIR__) . '/data/');
 define('PIECRUST_BENCHMARKS_ROOT_DIR', dirname(__DIR__) . '/data/benchmark/');
 define('PIECRUST_BENCHMARKS_CACHE_DIR', dirname(__DIR__) . '/tmp/cache');
  

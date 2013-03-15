@@ -6,18 +6,19 @@ use \OutOfRangeException;
 use PieCrust\PieCrustException;
 
 
+/**
+ * The base class for a lazy-loading iterator.
+ */
 abstract class BaseIterator implements \Iterator, \ArrayAccess, \Countable
 {
+    protected $items;
+    protected $unloadOnRewind;
+
     // {{{ Countable members
-    /**
-     * @include
-     * @noCall
-     * @documentation Return the number of matching posts.
-     */
     public function count()
     {
         $this->ensureLoaded();
-        return count($this->posts);
+        return $this->items->count();
     }
     // }}}
     
@@ -25,26 +26,27 @@ abstract class BaseIterator implements \Iterator, \ArrayAccess, \Countable
     public function current()
     {
         $this->ensureLoaded();
-        return current($this->posts);
+        return $this->items->current();
     }
     
     public function key()
     {
         $this->ensureLoaded();
-        return key($this->posts);
+        return $this->items->key();
     }
     
     public function next()
     {
         $this->ensureLoaded();
-        next($this->posts);
+        $this->items->next();
     }
     
     public function rewind()
     {
-        $this->unload();
+        if ($this->unloadOnRewind)
+            $this->unload();
         $this->ensureLoaded();
-        reset($this->posts);
+        $this->items->rewind();
     }
     
     public function valid()
@@ -52,62 +54,61 @@ abstract class BaseIterator implements \Iterator, \ArrayAccess, \Countable
         if (!$this->isLoaded())
             return false;
         $this->ensureLoaded();
-        return (key($this->posts) !== null);
+        return $this->items->valid();
     }
     // }}}
     
     // {{{ ArrayAccess members
     public function offsetExists($offset)
     {
-        if (!is_int($offset))
-            return false;
-        
         $this->ensureLoaded();
-        return isset($this->posts[$offset]);
+        return $this->items->offsetExists($offset);
     }
     
     public function offsetGet($offset)
     {
-        if (!is_int($offset))
-           throw new OutOfRangeException();
-            
         $this->ensureLoaded();
-        return $this->posts[$offset];
+        return $this->items->offsetGet($offset);
     }
     
     public function offsetSet($offset, $value)
     {
-        throw new PieCrustException("The pagination is read-only.");
+        throw new PieCrustException("'".get_class($this)."' is read-only.");
     }
     
     public function offsetUnset($offset)
     {
-        throw new PieCrustException("The pagination is read-only.");
+        throw new PieCrustException("'".get_class($this)."' is read-only.");
     }
     // }}}
 
     // {{{ Protected members
     protected function __construct()
     {
-        $this->posts = null;
+        $this->items = null;
+        $this->unloadOnRewind = false;
     }
 
     protected function isLoaded()
     {
-        return ($this->posts != null);
+        return ($this->items != null);
     }
 
     protected function unload()
     {
-        $this->posts = null;
+        $this->items = null;
     }
 
     protected function ensureLoaded()
     {
-        if ($this->posts != null)
+        if ($this->items != null)
             return;
 
-        $this->load();
+        $items = $this->load();
+        if (is_array($items))
+            $this->items = new \ArrayIterator($items);
+        else
+            $this->items = $items;
     }
 
     protected abstract function load();

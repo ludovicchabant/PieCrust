@@ -121,33 +121,47 @@ class PathHelper
 
     public static function getUserOrThemeOrResPath(IPieCrust $pieCrust, $relativePath, $themeOrResPath = false)
     {
+        if (!is_array($relativePath))
+            $relativePath = array($relativePath);
+
         $pagesDir = $pieCrust->getPagesDir();
         if ($pagesDir !== false)
         {
-            $path = $pagesDir . $relativePath;
-            if (is_file($path))
+            foreach ($relativePath as $rp)
             {
-                return $path;
+                $path = $pagesDir . $rp;
+                if (is_file($path))
+                {
+                    return $path;
+                }
             }
         }
 
-        if ($themeOrResPath == null)
+        if (!$themeOrResPath)
             $themeOrResPath = $relativePath;
+        elseif (!is_array($themeOrResPath))
+            $themeOrResPath = array($themeOrResPath);
 
         $themeDir = $pieCrust->getThemeDir();
         if ($themeDir !== false)
         {
-            $path = $themeDir . '_content/pages/' . $themeOrResPath;
+            foreach ($themeOrResPath as $rp)
+            {
+                $path = $themeDir . '_content/pages/' . $rp;
+                if (is_file($path))
+                {
+                    return $path;
+                }
+            }
+        }
+
+        foreach ($themeOrResPath as $rp)
+        {
+            $path = PieCrustDefaults::RES_DIR() . 'pages/' . $rp;
             if (is_file($path))
             {
                 return $path;
             }
-        }
-
-        $path = PieCrustDefaults::RES_DIR() . 'pages/' . $themeOrResPath;
-        if (is_file($path))
-        {
-            return $path;
         }
 
         return false;
@@ -273,7 +287,7 @@ class PathHelper
                 );
             }
         }
-    } 
+    }
 
     /**
      * Deletes the contents of a directory, but optionally skips files

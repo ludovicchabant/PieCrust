@@ -5,7 +5,7 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Page\PaginationIterator;
+use PieCrust\Page\Iteration\PageIterator;
 use PieCrust\Util\PageHelper;
 
 
@@ -22,15 +22,13 @@ class PageTimeData implements \Iterator, \ArrayAccess, \Countable
     protected $timeValue;
     protected $timestamp;
     protected $posts;
-    protected $postCount;
 
     public function __construct(IPage $page, $blogKey, $timeValue, $timestamp, array $dataSource)
     {
         $this->timeValue = $timeValue;
         $this->timestamp = $timestamp;
-        $this->posts = new PaginationIterator($page->getApp(), $blogKey, $dataSource);
+        $this->posts = new PageIterator($page->getApp(), $blogKey, $dataSource);
         $this->posts->setCurrentPage($page);
-        $this->postCount = count($dataSource); // Backwards compatibility (should use posts.count)
     }
 
     public function __toString()
@@ -72,7 +70,7 @@ class PageTimeData implements \Iterator, \ArrayAccess, \Countable
      */
     public function post_count()
     {
-        return $this->postCount;
+        return $this->posts->count();
     }
     // }}}
 

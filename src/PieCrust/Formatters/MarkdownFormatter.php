@@ -7,15 +7,18 @@ use PieCrust\IPieCrust;
 
 class MarkdownFormatter implements IFormatter
 {
-    protected $markdownLibDir;
+    protected $pieCrust;
+    protected $libDir;
+    protected $parser;
     
     public function initialize(IPieCrust $pieCrust)
     {
-        $config = $pieCrust->getConfig();
-        $this->markdownLibDir = 'markdown';
+        $this->pieCrust = $pieCrust;
+        $this->parser = null;
+        $this->libDir = 'markdown';
         if ($pieCrust->getConfig()->getValue('markdown/use_markdown_extra') === true)
         {
-            $this->markdownLibDir = 'markdown-extra';
+            $this->libDir = 'markdown-extra';
         }
     }
     
@@ -36,7 +39,24 @@ class MarkdownFormatter implements IFormatter
     
     public function format($text)
     {
-        require_once ('markdown/' . $this->markdownLibDir . '/markdown.php');
-        return Markdown($text);
+        if ($this->parser == null)
+        {
+            require_once ('markdown/' . $this->libDir . '/markdown.php');
+            $parserClass = MARKDOWN_PARSER_CLASS;
+            $this->parser = new $parserClass;
+        }
+
+        $this->parser->fn_id_prefix = '';
+        $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext();
+        if ($executionContext != null)
+        {
+            $page = $executionContext->getPage();
+            if ($page && !$executionContext->isMainPage())
+            {
+                $footNoteId = $page->getUri();
+                $this->parser->fn_id_prefix = $footNoteId . "-";
+            }
+        }
+        return $this->parser->transform($text);
     }
 }

@@ -107,12 +107,19 @@ class UriParser
             $uri = PieCrustDefaults::INDEX_PAGE_NAME;
         }
 
-        $matches = array();
-        $relativePath = $uri . '.html';
-        if (preg_match('/\.[a-zA-Z0-9]+$/', $uri, $matches))
+        if (preg_match('/\.[a-zA-Z0-9]+$/', $uri))
         {
             // There's an extension specified, so no need to append `.html`.
             $relativePath = $uri;
+        }
+        else
+        {
+            $relativePath = array();
+            $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+            foreach ($autoFormats as $ext => $format)
+            {
+                $relativePath[] = $uri . '.' . $ext;
+            }
         }
 
         $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $relativePath);
@@ -154,8 +161,14 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $tagPageName = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-        $themeOrResTagPageName = PieCrustDefaults::TAG_PAGE_NAME . '.html';
+        $tagPageName = array();
+        $themeOrResTagPageName = array();
+        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+        foreach ($autoFormats as $ext => $format)
+        {
+            $tagPageName[] = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
+            $themeOrResTagPageName[] = PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
+        }
         $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $tagPageName, $themeOrResTagPageName);
         if ($path === false)
             return false;
@@ -195,8 +208,14 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $categoryPageName = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-        $themeOrResCategoryPageName = PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+        $tagPageName = array();
+        $themeOrResCategoryPageName = array();
+        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+        foreach ($autoFormats as $ext => $format)
+        {
+            $categoryPageName[] = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
+            $themeOrResCategoryPageName[] = PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
+        }
         $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $categoryPageName, $themeOrResCategoryPageName);
         if ($path === false)
             return false;

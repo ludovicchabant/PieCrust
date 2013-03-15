@@ -2,9 +2,6 @@
 
 {% block footer %}
 {% pcformat textile %}
-p(note). To see your custom error pages, make sure you don't initialize *PieCrust*
-    with the @debug@ parameter, and don't turn on the @site/display_errors@ configuration
-    setting. To see detailed errors, on the other hand, use the @--debug@ parameter
-    in @chef@, append @?!debug@ to the URL, or turn on @site/display_errors@.
+p(note). You're seeing this because something wrong happend. To see detailed errors with callstacks, run chef with the @--debug@ parameter, append @?!debug@ to the URL, or initialize the @PieCrust@ object with @{'debug'=>true}@. On the other hand, to see you custom error pages, set the @site/display_errors@ setting  to @false@.
 {% endpcformat %}
 {% endblock %}

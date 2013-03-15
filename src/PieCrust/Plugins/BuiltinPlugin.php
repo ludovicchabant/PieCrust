@@ -2,7 +2,9 @@
 
 namespace PieCrust\Plugins;
 
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustPlugin;
+use PieCrust\Chef\ChefEnvironment;
 
 
 class BuiltinPlugin extends PieCrustPlugin
@@ -36,6 +38,9 @@ class BuiltinPlugin extends PieCrustPlugin
         return array(
             new \PieCrust\Baker\Processors\CopyFileProcessor(),
             new \PieCrust\Baker\Processors\LessProcessor(),
+            new \PieCrust\Baker\Processors\SassProcessor(),
+            new \PieCrust\Baker\Processors\CompassProcessor(),
+            new \PieCrust\Baker\Processors\YUICompressorProcessor(),
             new \PieCrust\Baker\Processors\SitemapProcessor()
         );
     }
@@ -77,6 +82,26 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Repositories\BitBucketRepository(),
             new \PieCrust\Repositories\FileSystemRepository()
         );
+    }
+
+    public function initialize(IPieCrust $pieCrust)
+    {
+        $environment = $pieCrust->getEnvironment();
+        if ($environment instanceof ChefEnvironment)
+        {
+            $environment->addCommandExtension(
+                'prepare',
+                new \PieCrust\Chef\Commands\PreparePageCommandExtension()
+            );
+            $environment->addCommandExtension(
+                'prepare',
+                new \PieCrust\Chef\Commands\PreparePostCommandExtension()
+            );
+            $environment->addCommandExtension(
+                'prepare',
+                new \PieCrust\Chef\Commands\PrepareFeedCommandExtension()
+            );
+        }
     }
 }
 

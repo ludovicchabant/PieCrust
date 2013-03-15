@@ -44,6 +44,25 @@ class PieCrustConfiguration extends Configuration
         $this->cache = $cache;
         $this->fixupCallback = null;
     }
+
+    /**
+     * Applies a configuration variant stored within the configuration itself.
+     */
+    public function applyVariant($path, $throwIfNotFound = true)
+    {
+        $variant = $this->getValue($path);
+        if ($variant === null)
+        {
+            if ($throwIfNotFound)
+                throw new PieCrustException("No such configuration variant found: {$path}");
+            return false;
+        }
+        if (!is_array($variant))
+        {
+            throw new PieCrustException("Configuration variant '{$path}' is not an array. Check your configuration file.");
+        }
+        $this->merge($variant);
+    }
     
     protected function loadConfig()
     {
@@ -66,6 +85,15 @@ class PieCrustConfiguration extends Configuration
                 throw new PieCrustException("No PieCrust configuration file is readable, or none exists: " . implode(', ', $this->paths));
             }
 
+            // Then compute the cache key that we'll be using to further validate
+            // the cache (if the keys don't match, it means something happened like
+            // PieCrust was updated to a new version and the cache probably needs
+            // to be re-generated).
+            $cacheKey = md5(
+                "version=" . PieCrustDefaults::VERSION .
+                "&cache=" . PieCrustDefaults::CACHE_VERSION
+            );
+
             // Compare the modification times of those configuration files with the
             // cached JSON version.
             $cache = $this->cache ? new Cache($this->cache) : null;
@@ -74,51 +102,59 @@ class PieCrustConfiguration extends Configuration
                 $configText = $cache->read('config', 'json');
                 $this->config = json_decode($configText, true);
 
-                // If the site root URL was automatically defined, we need to re-compute
-                // it in case the website is being run from a different place.
-                $isAutoRoot = $this->getValue('site/is_auto_root');
-                if ($isAutoRoot === true or $isAutoRoot === null)
+                // Check the cache key.
+                if (isset($this->config['__cache_key']) &&
+                    $this->config['__cache_key'] == $cacheKey)
                 {
-                    $this->config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
+                    // If the site root URL was automatically defined, we need to re-compute
+                    // it in case the website is being run from a different place.
+                    $isAutoRoot = $this->getValue('site/is_auto_root');
+                    if ($isAutoRoot === true or $isAutoRoot === null)
+                    {
+                        $this->config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
+                    }
+                    return;
                 }
             }
-            else
+
+            // Either the cache doesn't exist, is out of date, or has an
+            // incorrect cache key. Parse the original config file.
+            $config = array();
+            foreach ($this->paths as $i => $path)
             {
-                $config = array();
-                foreach ($this->paths as $i => $path)
-                {
-                    try
-                    {
-                        $curConfig = Yaml::parse(file_get_contents($path));
-                        if ($curConfig != null) 
-                        {
-                            if ($this->fixupCallback != null)
-                            {
-                                $fixup = $this->fixupCallback;
-                                $fixup($i, $curConfig);
-                            }
-                            $config = self::mergeArrays($config, $curConfig);
-                        }
-                    }
-                    catch (Exception $e)
-                    {
-                        throw new PieCrustException("An error was found in the PieCrust configuration file '{$path}': " . $e->getMessage(), 0, $e);
-                    }
-                }
                 try
                 {
-                    $this->config = $this->validateConfig($config);
+                    $curConfig = Yaml::parse(file_get_contents($path));
+                    if ($curConfig != null) 
+                    {
+                        if ($this->fixupCallback != null)
+                        {
+                            $fixup = $this->fixupCallback;
+                            $fixup($i, $curConfig);
+                        }
+                        $config = self::mergeArrays($config, $curConfig);
+                    }
                 }
                 catch (Exception $e)
                 {
-                    throw new PieCrustException("Error while validating PieCrust configuration: " . $e->getMessage(), 0, $e);
+                    throw new PieCrustException("An error was found in the PieCrust configuration file: {$path}", 0, $e);
                 }
-                
-                $yamlMarkup = json_encode($this->config);
-                if ($cache != null)
-                {
-                    $cache->write('config', 'json', $yamlMarkup);
-                }
+            }
+            try
+            {
+                $this->config = $this->validateConfig($config);
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException("Error while validating PieCrust configuration.", 0, $e);
+            }
+            
+            // Create a validation key and save a JSON version in the cache.
+            $this->config['__cache_key'] = $cacheKey;
+            $yamlMarkup = json_encode($this->config);
+            if ($cache != null)
+            {
+                $cache->write('config', 'json', $yamlMarkup);
             }
         }
         else
@@ -173,8 +209,9 @@ class PieCrustConfiguration extends Configuration
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
                 'themes_sources' => array(PieCrustDefaults::DEFAULT_THEME_SOURCE),
+                'auto_formats' => array('html' => ''),
                 'cache_time' => 28800,
-                'display_errors' => false,
+                'display_errors' => true,
                 'enable_debug_info' => true
             ),
             $config['site']);
@@ -193,24 +230,27 @@ class PieCrustConfiguration extends Configuration
             $config['site']['is_auto_root'] = false;
         }
 
+        // Validate auto-format extensions: make sure the HTML extension is in
+        // there.
+        if (!is_array($config['site']['auto_formats']))
+        {
+            $config['site']['auto_formats'] = array($config['site']['auto_formats']);
+        }
+        if (!isset($config['site']['auto_formats']['html']))
+        {
+            $config['site']['auto_formats']['html'] = '';
+        }
+
         // Validate the plugins sources.
         if (!is_array($config['site']['plugins_sources']))
         {
             $config['site']['plugins_sources'] = array($config['site']['plugins_sources']);
-        }
-        if (!in_array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE, $config['site']['plugins_sources']))
-        {
-            $config['site']['plugins_sources'][] = PieCrustDefaults::DEFAULT_PLUGIN_SOURCE;
         }
 
         // Validate the themes sources.
         if (!is_array($config['site']['themes_sources']))
         {
             $config['site']['themes_sources'] = array($config['site']['themes_sources']);
-        }
-        if (!in_array(PieCrustDefaults::DEFAULT_THEME_SOURCE, $config['site']['themes_sources']))
-        {
-            $config['site']['themes_sources'][] = PieCrustDefaults::DEFAULT_THEME_SOURCE;
         }
         
         // Validate multi-blogs settings.

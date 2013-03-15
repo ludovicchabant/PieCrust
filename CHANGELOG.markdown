@@ -18,6 +18,54 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.0-rc1 (2013-03-14)
+
+* BREAKING CHANGE: Renamed the `xmldate` Twig filter to `atomdate`.
+* BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
+  modifying it, which could otherwise result in confusing behaviour.
+* BREAKING CHANGE: Global `chef` options like `--root`, `--debug` or `--quiet`
+  are not really global, and must be specified before the command name.
+* BREAKING BUG FIX: Monthly blog archives were incorrectly order
+  chronologically, instead of reverse-chronologically.
+* NEW: Added `prepare feed` command to create RSS/Atom feeds.
+* NEW: Added `plugins update` command to update installed plugins. For now, this
+  command is not optimal and will force-update plugins without checking if
+  there's a new version.
+* NEW: Added support for "auto-formats", specified with the `site/auto_formats`
+  configuration setting. This lets the user define a mapping between file
+  extensions and text formats, such as `.md` for Markdown.
+* NEW: In debug mode, Twig's debugging functions are available. They can also be
+  enabled with the `twig/debug` config setting.
+* NEW: The LESS processor can optionally run the Javascript command line tool
+  instead of using the LessPHP library. This is done by setting `less/use_lessc`
+  to `true` in the site configuration.
+* NEW: Sass, Compass and YUICompressor processors are now part of the built-in
+  processors, instead of being in plug-ins. They have also been improved, with
+  Compass support being much better.
+* CHANGE: Updated all 3rd-party libraries to their latest version.
+* CHANGE: The LESS file processor is now using the 3rd-party library caching
+  mechanism.
+* CHANGE: Error handling and reporting has been made more consistent. On Mac and
+  Linux, `serve` and `bake` will also print pretty colors!
+* CHANGE: Any place that returns a list of pages or posts should now be a proper
+  pagination iterator, with all the sorting and filtering features.
+* CHANGE: The `baker/trailing_slash` setting is obsolete, replaced by
+  `site/trailing_slash`. This setting also now affects the URLs in a preview
+  server (`chef serve`) as well as during the bake.
+* CHANGE: It is now possible to specify `posts_filters` on category and tag
+  listing pages. Those filters will be combined with an `AND` boolean clause.
+* CHANGE: Removed useless banner and `--info-only` option from `chef bake`.
+* CHANGE: Renamed some template data: `asset` is now `assets`, `link` is now
+  `siblings`, and a new `family` gives recursive access to all sibling and
+  children pages (basically a sub-set of `site.pages`). The old names are still
+  usable for backwards compatibility.
+* BUG: Generate unique footnote IDs with Markdown-Extra when those footnotes are
+  in posts and the current page lists them.
+* BUG: Fixed some incorrect behaviour when a page/post iterator is iterated
+  several times on a page.
+* BUG: Fixed a crash when using a `has_xxx` filter on a setting that's not an
+  array.
+
 ### 0.9.2 (2013-02-04)
 
 * NEW: Added `site.pages` template data to list all the pages in the website

@@ -151,7 +151,7 @@ class TwigExtensionTest extends \PHPUnit_Framework_TestCase
 {{pcurl('foo')}}
 {{pcurl('foo/bar')}}
 {{pctagurl('tag1')}}
-{{pctagurl('tag1/tag2')}}
+{{pctagurl(['tag1', 'tag2'])}}
 {{pccaturl('cat1')}}
 {{pcposturl(2012, 1, 10, 'post1-test')}}
 {{pcposturl('2012', '01', '10', 'post1-test')}}
@@ -165,7 +165,7 @@ EOD
         $this->assertEquals($expectedOutput, $lines);
     }
 
-    public static function urlFunctionsWithTwoBlogs()
+    public static function urlFunctionsWithTwoBlogsDataProvider()
     {
         return array(
             array(
@@ -231,7 +231,7 @@ EOD
     }
 
     /**
-     * @dataProvider urlFunctionsWithTwoBlogs
+     * @dataProvider urlFunctionsWithTwoBlogsDataProvider
      */
     public function testUrlFunctionsWithTwoBlogs($siteConfig, $expectedOutput)
     {
@@ -262,5 +262,32 @@ EOD
         $output = $pageRenderer->get();
         $lines = explode("\n", $output);
         $this->assertEquals($expectedOutput, $lines);
+    }
+
+    public function urlFunctionsWithUnicodeDataProvider()
+    {
+        return array(
+            array('des espaces', '/tag/des-espaces'),
+            array('épatant', '/tag/epatant'),
+            array('pâte à gateau', '/tag/pate-a-gateau')
+        );
+    }
+
+    /**
+     * @dataProvider urlFunctionsWithUnicodeDataProvider
+     */
+    public function testUrlFunctionsWithUnicode($in, $out)
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('pretty_urls' => true)))
+            ->withPage(
+                'test',
+                array('format' => 'none', 'layout' => 'none'),
+                "{{pctagurl('{$in}')}}"
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, '/test');
+        $actual = $page->getContentSegment();
+        $this->assertEquals($out, $actual);
     }
 }

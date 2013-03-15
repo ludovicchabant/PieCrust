@@ -20,7 +20,7 @@ class PieCrustImporterTest extends \PHPUnit_Framework_TestCase
         ));
         $importer = new PieCrustImporter($app);
 
-        $sampleXml = PIECRUST_UNITTESTS_TEST_DATA_DIR . 
+        $sampleXml = PIECRUST_UNITTESTS_DATA_DIR . 
             'import/wordpress.test-data.2011-01-17.xml';
         $importer->import(
             'wordpress',

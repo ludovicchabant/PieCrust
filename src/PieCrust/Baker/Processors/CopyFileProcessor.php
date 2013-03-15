@@ -4,6 +4,7 @@ namespace PieCrust\Baker\Processors;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Baker\IBaker;
 
 
 class CopyFileProcessor implements IProcessor
@@ -19,7 +20,7 @@ class CopyFileProcessor implements IProcessor
     {
     }
     
-    public function initialize(IPieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust, $logger = null)
     {
         $this->rootDirLength = strlen($pieCrust->getRootDir());
     }
@@ -28,17 +29,26 @@ class CopyFileProcessor implements IProcessor
     {
         return IProcessor::PRIORITY_LOW;
     }
+
+    public function onBakeStart(IBaker $baker)
+    {
+    }
     
     public function supportsExtension($extension)
     {
         return true;
     }
 
+    public function isBypassingStructuredProcessing()
+    {
+        return false;
+    }
+
     public function isDelegatingDependencyCheck()
     {
         return true;
     }
-    
+
     public function getDependencies($path)
     {
         return null;
@@ -53,7 +63,11 @@ class CopyFileProcessor implements IProcessor
     {
         $outputPath = $outputDir . basename($inputPath);
         if (@copy($inputPath, $outputPath) == false)
-            throw new PieCrustException("Can't copy '".$inputPath."' to '".$outputPath."'.");
+            throw new PieCrustException("Can't copy '{$inputPath}' to '{$outputPath}'.");
         return true;
+    }
+
+    public function onBakeEnd()
+    {
     }
 }

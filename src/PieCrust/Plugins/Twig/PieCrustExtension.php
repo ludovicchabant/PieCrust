@@ -2,6 +2,7 @@
 
 namespace PieCrust\Plugins\Twig;
 
+use \Twig_Environment;
 use \Twig_Filter_Method;
 use \Twig_Function_Method;
 use PieCrust\IPieCrust;
@@ -16,11 +17,17 @@ class PieCrustExtension extends \Twig_Extension
 {
     protected $pieCrust;
     protected $linkCollector;
+    protected $twigEnvironment;
     
     public function __construct(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->linkCollector = $pieCrust->getEnvironment()->getLinkCollector();
+    }
+
+    public function initRuntime(Twig_Environment $environment)
+    {
+        $this->twigEnvironment = $environment;
     }
     
     public function getName()
@@ -38,6 +45,7 @@ class PieCrustExtension extends \Twig_Extension
     public function getFunctions()
     {
         return array(
+            'pcfail'   => new Twig_Function_Method($this, 'throwError'),
             'pcurl'    => new Twig_Function_Method($this, 'getUrl'),
             'pcposturl' => new Twig_Function_Method($this, 'getPostUrl'),
             'pctagurl' => new Twig_Function_Method($this, 'getTagUrl'),
@@ -59,8 +67,13 @@ class PieCrustExtension extends \Twig_Extension
             'stripoutertag' => new Twig_Filter_Method($this, 'stripOuterTag'),
             'stripslash' => new Twig_Filter_Method($this, 'stripSlash'),
             'titlecase' => new Twig_Filter_Method($this, 'titleCase'),
-            'xmldate' => new Twig_Filter_Method($this, 'toAtomDate')
+            'atomdate' => new Twig_Filter_Method($this, 'toAtomDate')
         );
+    }
+
+    public function throwError($message)
+    {
+        throw new PieCrustException($message);
     }
     
     public function getUrl($value)
@@ -169,7 +182,7 @@ class PieCrustExtension extends \Twig_Extension
 
     public function toAtomDate($value)
     {
-        return date(\DateTime::ATOM, $value);
+        return twig_date_format_filter($this->twigEnvironment, $value, $format = \DateTime::ATOM);
     }
 
     private function getSafeBlogKey($blogKey)

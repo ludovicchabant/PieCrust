@@ -84,11 +84,11 @@ class CachedEnvironment extends Environment
     }
 
     /**
-     * Creates a new instance of Environment.
+     * Creates a new instance of `CachedEnvironment`.
      */
-    public function __construct(IPieCrust $pieCrust)
+    public function __construct()
     {
-        parent::__construct($pieCrust);
+        parent::__construct();
     }
 
     protected function ensurePageInfosCached()
@@ -174,7 +174,7 @@ class CachedEnvironment extends Environment
             foreach ($pageInfos as $pageInfo)
             {
                 $page = $pageRepository->getOrCreatePage(
-                    UriBuilder::buildUri($pageInfo['relative_path']),
+                    UriBuilder::buildUri($this->pieCrust, $pageInfo['relative_path']),
                     $pageInfo['path']
                 );
 

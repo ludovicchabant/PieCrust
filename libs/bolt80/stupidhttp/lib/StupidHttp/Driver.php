@@ -5,9 +5,6 @@
  */
 class StupidHttp_Driver
 {
-    const REQUEST_DATE_FORMAT = "Y/m/d H:i:s";
-    const REQUEST_LOG_FORMAT = "[%date%] %client_ip% --> %method% %path% --> %status% %status_name% [%time%ms]";
-
     protected $options;
     protected $connections;
 
@@ -455,26 +452,9 @@ class StupidHttp_Driver
         $response = $requestInfo['response'];
         if ($request and $response)
         {
-            $clientInfo = $this->handler->getClientInfo($requestInfo['socket']);
-            $statusName = StupidHttp_WebServer::getHttpStatusHeader($response->getStatus());
-            $replacements = array(
-                '%date%' => date(self::REQUEST_DATE_FORMAT),
-                '%client_ip%' => $clientInfo['address'],
-                '%client_port%' => $clientInfo['port'],
-                '%method%' => $request->getMethod(),
-                '%uri%' => $request->getUri(),
-                '%path%' => $request->getUriPath(),
-                '%status%' => $response->getStatus(),
-                '%status_name%' => $statusName,
-                '%time%' => $totalTime
-            );
-            $this->log->info(
-                str_replace(
-                    array_keys($replacements),
-                    array_values($replacements),
-                    self::REQUEST_LOG_FORMAT
-                )
-            );
+            $requestInfo = $this->handler->getClientInfo($requestInfo['socket']);
+            $requestInfo['time'] = $totalTime;
+            $this->log->logRequest($request, $requestInfo, $response);
         }
     }
     // }}}

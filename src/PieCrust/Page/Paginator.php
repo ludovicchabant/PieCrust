@@ -6,6 +6,7 @@ use PieCrust\IPage;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Page\Filtering\PaginationFilter;
+use PieCrust\Page\Iteration\PageIterator;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
 
@@ -37,6 +38,9 @@ class Paginator
     // {{{ Template members
     /**
      * Gets the posts for this page.
+     *
+     * @noCall
+     * @documentation The list of posts for this page.
      */
     public function posts()
     {
@@ -143,7 +147,7 @@ class Paginator
     public function total_post_count()
     {
         $this->ensurePaginationData();
-        return $this->postsIterator->getTotalPostCount();
+        return $this->postsIterator->count();
     }
 
     /**
@@ -292,7 +296,7 @@ class Paginator
         }
         
         // Create the pagination iterator.
-        $this->postsIterator = new PaginationIterator($this->page->getApp(), $blogKey, $posts);
+        $this->postsIterator = new PageIterator($this->page->getApp(), $blogKey, $posts);
         // Set our current page.
         $this->postsIterator->setCurrentPage($this->page);
         // Add the filters for the current page.
@@ -303,11 +307,11 @@ class Paginator
         $postsPerPage = $this->posts_per_page();
         if (is_int($postsPerPage) && $postsPerPage > 0)
         {
-            // Skip first, limit second.
+            // Limit to posts that should be on this page.
             $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-            $this->postsIterator->skip($offset);
-            $this->postsIterator->limit($postsPerPage);
+            $this->postsIterator->slice($offset, $postsPerPage);
         }
+        $this->postsIterator->setLocked();
     }
     
     protected function getPaginationFilter()
@@ -321,9 +325,7 @@ class Paginator
         {
             // If the current page is a tag/category page, add filtering
             // for that.
-            if ($filterInfo != null)
-                throw new PieCrustException("The `posts_filters` setting cannot be used on a tag or category listing page -- the filter will be automatically set to posts matching the request tag or category.");
-            $filter->addPageClauses($this->page);
+            $filter->addPageClauses($this->page, $filterInfo);
         }
         else if ($filterInfo != null)
         {

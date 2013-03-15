@@ -1,9 +1,10 @@
 <?php
 
+use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
-use PieCrust\Page\PaginationIterator;
+use PieCrust\Page\Iteration\PageIterator;
 use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
@@ -149,6 +150,7 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(1, 17, null, array_reverse(range(0, 16))),
+            array(1, 17, function ($it) { $it->skip(1); }, array_reverse(range(0, 15))),
             array(1, 17, function ($it) { $it->skip(4); }, array_reverse(range(0, 12))),
             array(1, 17, function ($it) { $it->limit(3); }, array_reverse(range(14, 16))),
             array(1, 17, function ($it) { $it->skip(2)->limit(3); }, array_reverse(range(12, 14)))
@@ -166,7 +168,7 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase
         $page = new MockPage($pc);
         
         $dataSource = $this->buildPaginationDataSource($pc, $postCount);
-        $it = new PaginationIterator($pc, 'blog', $dataSource);
+        $it = new PageIterator($pc, 'blog', $dataSource);
         $it->setCurrentPage($page);
         
         if ($filterFunc)
@@ -289,7 +291,7 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase
             $posts[] = $dummyPage;
         }
 
-        $it = new PaginationIterator($pc, 'blog', $posts);
+        $it = new PageIterator($pc, 'blog', $posts);
         if ($sortByName)
             $it->sortBy($sortByName, $sortByReverse);
 
@@ -300,6 +302,161 @@ class PaginatorTest extends \PHPUnit_Framework_TestCase
             $this->assertEquals("test-post-number-$i-name", $post['slug']);
             $this->assertEquals("Test page $i contents.", $post['content']);
         }
+    }
+
+    /**
+     * @expectedException PieCrust\PieCrustException
+     */
+    public function testLockedPageIterator()
+    {
+        $pc = new MockPieCrust();
+        $page = new MockPage($pc);
+        $paginator = new Paginator($page);
+        $paginator->setPaginationDataSource($this->buildPaginationDataSource($pc, 10));
+        $paginator->posts()->limit(4);
+    }
+
+    public function tagPageDataProvider()
+    {
+        return array(
+            array(
+                array(),
+                array(),
+                array()
+            ),
+            array(
+                array(),
+                array(
+                    1 => array('foo'),
+                    2 => array('bar'), 
+                    4 => array('bar'), 
+                    7 => array('bar', 'foo'),
+                    8 => array('foo', 'bar'),
+                    9 => array('foo')
+                ),
+                array(9, 8, 7, 1)
+            ),
+            array(
+                array(
+                    'posts_filters' => array(
+                        'not' => array('has_tags' => 'draft')
+                    )
+                ),
+                array(
+                    1 => array('foo'),
+                    3 => array('draft'),
+                    4 => array('foo', 'draft'),
+                    6 => array('foo'),
+                    8 => array('foo', 'draft')
+                ),
+                array(6, 1)
+            )
+        );
+    }
+
+    /**
+     * @dataProvider tagPageDataProvider
+     */
+    public function testTagPage($pageConfig, $tagging, $expectedIndices)
+    {
+        $pc = new MockPieCrust();
+        $page = new MockPage($pc);
+        $page->pageType = IPage::TYPE_TAG;
+        $page->pageKey = 'foo';
+        foreach ($pageConfig as $key => $value)
+        {
+            $page->getConfig()->setValue($key, $value);
+        }
+
+        $posts = $this->buildPaginationDataSource($pc, 10);
+        // The pagination data source is ordered in reverse
+        // chronological order. Let's reverse it to be able 
+        // to index posts easily.
+        // (the Paginator will reorder them internally)
+        $posts = array_reverse($posts);
+        foreach ($tagging as $i => $tags)
+        {
+            $posts[$i]->getConfig()->setValue('tags', $tags);
+        }
+
+        $paginator = new Paginator($page);
+        $paginator->setPaginationDataSource($posts);
+        $this->assertExpectedPostsData($expectedIndices, $paginator->posts());
+    }
+
+    public function categoryPageDataProvider()
+    {
+        return array(
+            array(
+                array(),
+                array(),
+                array(),
+                array()
+            ),
+            array(
+                array(),
+                array(
+                    2 => 'foo',
+                    3 => 'bar',
+                    6 => 'foo',
+                    8 => 'foo',
+                    9 => 'bar'
+                ),
+                array(),
+                array(8, 6, 2)
+            ),
+            array(
+                array(
+                    'posts_filters' => array(
+                        'not' => array('has_tags' => 'draft')
+                    )
+                ),
+                array(
+                    2 => 'foo',
+                    5 => 'foo',
+                    6 => 'bar',
+                    9 => 'foo'
+                ),
+                array(
+                    5 => array('draft')
+                ),
+                array(9, 2)
+            )
+        );
+    }
+
+    /**
+     * @dataProvider categoryPageDataProvider
+     */
+    public function testCategoryPage($pageConfig, $categorize, $tagging, $expectedIndices)
+    {
+        $pc = new MockPieCrust();
+        $page = new MockPage($pc);
+        $page->pageType = IPage::TYPE_CATEGORY;
+        $page->pageKey = 'foo';
+        foreach ($pageConfig as $key => $value)
+        {
+            $page->getConfig()->setValue($key, $value);
+        }
+
+        $posts = $this->buildPaginationDataSource($pc, 10);
+        // The pagination data source is ordered in reverse
+        // chronological order. Let's reverse it to be able 
+        // to index posts easily.
+        // (the Paginator will reorder them internally)
+        $posts = array_reverse($posts);
+        foreach ($categorize as $i => $category)
+        {
+            $posts[$i]->getConfig()->setValue('category', $category);
+        }
+        foreach ($tagging as $i => $tags)
+        {
+            $posts[$i]->getConfig()->setValue('tags', $tags);
+        }
+
+        $paginator = new Paginator($page);
+        $paginator->setPaginationDataSource($posts);
+        $this->assertExpectedPostsData($expectedIndices, $paginator->posts());
     }
     
     protected function buildPaginationDataSource(IPieCrust $pc, $postCount)

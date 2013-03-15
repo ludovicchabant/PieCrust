@@ -5,9 +5,9 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Linker;
-use PieCrust\Page\RecursiveLinkerIterator;
 use PieCrust\Page\Assetor;
 use PieCrust\Page\Paginator;
+use PieCrust\Page\Iteration\RecursiveLinkerIterator;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -89,12 +89,14 @@ class DataBuilder
             }
             $data[$blogKey] = $blogData;
         }
-        // Add the pages linker.
-        if (!isset($data['site']))
-            $data['site'] = array();
-        $linker = new Linker($page, $pieCrust->getPagesDir());
-        $linkerIterator = new RecursiveLinkerIterator($linker);
-        $data['site']['pages'] = $linkerIterator;
+        // Replace the `site` section with an wrapper object
+        // that adds some built-in stuff.
+        $siteData = new SiteData($page);
+        if (isset($data['site']))
+        {
+            $siteData->mergeUserData($data['site']);
+        }
+        $data['site'] = $siteData;
         // Done!
         return $data;
     }
@@ -113,15 +115,19 @@ class DataBuilder
         $paginator = new Paginator($page);
         $assetor = new Assetor($page);
         $linker = new Linker($page);
+        $recursiveLinker = new RecursiveLinkerIterator($linker);
 
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
 
         $data = array(
             'page' => $page->getConfig()->get(),
-            'asset'=> $assetor,
+            'assets' => $assetor,
             'pagination' => $paginator,
-            'link' => $linker
+            'siblings' => $linker,
+            'family' => $recursiveLinker,
+            'asset'=> $assetor, // TODO: deprecated.
+            'link' => $linker // TODO: deprecated.
         );
 
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
@@ -158,10 +164,36 @@ class DataBuilder
                         $firstPostTags = $firstPost['tags'];
                         if (!is_array($firstPostTags))
                             $firstPostTags = array($firstPostTags);
-                        foreach ($firstPostTags as $t)
+                        
+                        if (is_array($page->getPageKey()))
                         {
-                            if (UriBuilder::slugify($t) == $data['tag'])
-                                $data['tag'] = $t;
+                            $pageKey = $page->getPageKey();
+                            foreach ($firstPostTags as $t)
+                            {
+                                $st = UriBuilder::slugify($t);
+                                foreach ($pageKey as &$pk)
+                                {
+                                    if ($st == $pk)
+                                    {
+                                        $pk = $t;
+                                        break;
+                                    }
+                                }
+                            }
+                            $page->setPageKey($pageKey);
+                            $data['tag'] = implode(' + ', $pageKey);
+                        }
+                        else
+                        {
+                            foreach ($firstPostTags as $t)
+                            {
+                                if (UriBuilder::slugify($t) == $data['tag'])
+                                {
+                                    $page->setPageKey($t);
+                                    $data['tag'] = $t;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

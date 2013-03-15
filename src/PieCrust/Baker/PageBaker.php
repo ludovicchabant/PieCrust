@@ -91,7 +91,10 @@ class PageBaker
             if ($page->getConfig()->getValue('single_page'))
             {
                 if ($isSubPage)
-                    throw new PieCrustException("Page {$page->getUri()} has `single_page` set to `true` but we're baking sub-page {$page->getPageNumber()}. What the hell?");
+                {
+                    $pageRelativePath = PageHelper::getRelativePath($page);
+                    throw new PieCrustException("Page '{$pageRelativePath}' has `single_page` set to `true` but we're baking sub-page {$page->getPageNumber()}. What the hell?");
+                }
 
                 $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
                 if ($extension)
@@ -154,6 +157,7 @@ class PageBaker
         {
             $this->bakedFiles = array();
             $this->paginationDataAccessed = false;
+            $this->logger->debug("Baking '{$page->getUri()}'...");
             
             $pageRenderer = new PageRenderer($page);
             
@@ -180,7 +184,8 @@ class PageBaker
         }
         catch (Exception $e)
         {
-            throw new PieCrustException("Error baking page '{$page->getUri()}' (p{$page->getPageNumber()}): {$e->getMessage()}", 0, $e);
+            $pageRelativePath = PageHelper::getRelativePath($page);
+            throw new PieCrustException("Error baking page '{$pageRelativePath}' (p{$page->getPageNumber()})", 0, $e);
         }
 
         return $didBake;
@@ -201,6 +206,7 @@ class PageBaker
 
         // Figure out the output HTML path.
         $bakePath = $this->getOutputPath($page);
+        $this->logger->debug("  p{$page->getPageNumber()} -> {$bakePath}");
 
         // Figure out if we should re-bake this page.
         $doBake = true;
@@ -293,7 +299,7 @@ class PageBaker
                 {
                     $destinationAssetPath = $bakeAssetDir . basename($assetPath);
                     if (@copy($assetPath, $destinationAssetPath) == false)
-                        throw new PieCrustException("Can't copy '".$assetPath."' to '".$destinationAssetPath."'.");
+                        throw new PieCrustException("Can't copy '{$assetPath}' to '{$destinationAssetPath}'.");
                 }
             }
         }

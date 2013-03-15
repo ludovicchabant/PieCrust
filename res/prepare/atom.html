@@ -1,0 +1,49 @@
+---
+description: 
+read_more_text: "Read more..."
+language: 
+categories:
+ttl:
+layout: none
+format: none
+posts_per_page: 10
+single_page: true
+content_type: xml
+---
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>{{site.title}}</title>
+    {% if page.description %}
+    <subtitle>{{page.description}}</subtitle>
+    {% else %}
+    <subtitle>Latest news from {{site.title}}</subtitle>
+    {% endif %}
+    <link href="{{page.url}}" rel="self" />
+    <link href="{{site.root}}" />
+    <id>{{site.root}}</id>
+    <updated>{{now|atomdate}}</updated>
+    
+    {% for post in pagination.posts %}
+	{% set author = site.author %}
+    {% if post.author %}{% set author = post.author %}{% endif %}
+	{% if not author %}{{pcfail("Atom feeds require an author for each post. You can specify a global author with the 'site.author' config.")}}{% endif %}
+    <entry>
+        <title>{{post.title}}</title>
+        <link href="{{post.url}}" />
+        <link rel="alternate" type="text/html" href="{{post.url}}"/>
+        <id>{{post.url}}</id>
+        <updated>{{post.timestamp|atomdate}}</updated>
+        <content type="html">{{post.content}}
+		{% if post.has_more and page.read_more_text %}
+		{{ ("<a href=\"" ~ post.url ~ "\">" ~ page.read_more_text ~ "</a>")|escape }}
+		{% endif %}
+		</content>
+		{% if author %}
+        <author>
+            <name>{{author}}</name>
+        </author>
+		{% endif %}
+    </entry>
+    {% endfor %}
+
+</feed>

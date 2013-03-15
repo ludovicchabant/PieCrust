@@ -78,7 +78,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
         $pc = $fs->getApp();
         $page = Page::createFromUri($pc, '/', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/', true)
         ));
@@ -93,7 +93,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/', true),
             $this->makeLinkData('foo', '/?/foo', false, array('bar' => '42'))
@@ -101,7 +101,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/foo', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/'),
             $this->makeLinkData('foo', '/?/foo', true, array('bar' => '42'))
@@ -118,7 +118,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/', true),
             $this->makeLinkData('foo', '/?/foo', false, array('bar' => '42')),
@@ -127,7 +127,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/foo', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/'),
             $this->makeLinkData('foo', '/?/foo', true, array('bar' => '42')),
@@ -136,7 +136,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/foo/bar', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('_index', '/?/'),
             $this->makeLinkData('foo', '/?/foo', false, array('bar' => '42')),
@@ -155,7 +155,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/foo', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('foo', '/?/foo', true),
             $this->makeLinkData('something-assets', '/?/something-assets')
@@ -163,7 +163,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
         $page = Page::createFromUri($pc, '/something-assets', false);
         $data = DataBuilder::getSiteData($page);
-        $linker = $data['site']['pages'];
+        $linker = $data['site']->pages();
         $this->assertLinkerIsPagesArray($linker, array(
             $this->makeLinkData('foo', '/?/foo'),
             $this->makeLinkData('something-assets', '/?/something-assets', true)
@@ -194,7 +194,7 @@ class LinkerTest extends \PHPUnit_Framework_TestCase
 
     protected function assertLinkerIsPagesArray($linker, $pages)
     {
-        $this->assertInstanceOf('\PieCrust\Page\RecursiveLinkerIterator', $linker);
+        $this->assertInstanceOf('\PieCrust\Page\Iteration\RecursiveLinkerIterator', $linker);
 
         $count = 0;
         foreach ($linker as $key => $actual)

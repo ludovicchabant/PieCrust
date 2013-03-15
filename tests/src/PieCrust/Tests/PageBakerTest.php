@@ -183,7 +183,7 @@ class PageBakerTest extends \PHPUnit_Framework_TestCase
             );
 
         $app = new PieCrust(array('root' => $fs->url('kitchen')));
-        $page = Page::createFromUri($app, '/' . $name);
+        $page = Page::createFromUri($app, '/' . $name, false);
         
         $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
@@ -198,6 +198,57 @@ class PageBakerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(
             "Some contents.", 
             file_get_contents($fs->url('counter/' . $expectedName))
+        );
+    }
+
+    public function autoFormatPageBakeDataProvider()
+    {
+        return array(
+            array(false, 'blah', 'blah.md', "BLAH\n====\n", 'blah.html', "<h1>BLAH</h1>"),
+            array(false, 'blah.foo', 'blah.foo', "BLAH\n", 'blah.foo', "BLAH"),
+            array(false, 'foo', 'foo.text', "h1. Foo!\n", 'foo.html', "<h1>Foo!</h1>"),
+
+            array(true, 'blah', 'blah.md', "BLAH\n====\n", 'blah/index.html', "<h1>BLAH</h1>"),
+            array(true, 'blah.foo', 'blah.foo', "BLAH\n", 'blah.foo/index.html', "BLAH"),
+            array(true, 'foo', 'foo.text', "h1. Foo!\n", 'foo/index.html', "<h1>Foo!</h1>")
+        );
+    }
+
+    /**
+     * @dataProvider autoFormatPageBakeDataProvider
+     */
+    public function testAutoFormatPageBake($prettyUrls, $uri, $name, $contents, $expectedName, $expectedContents)
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'site' => array(
+                    'pretty_urls' => $prettyUrls,
+                    'default_format' => 'none',
+                    'auto_formats' => array(
+                        'md' => 'markdown',
+                        'text' => 'textile'
+                    )
+                )))
+            ->withPage(
+                $name,
+                array('layout' => 'none'),
+                $contents
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, $uri, false);
+        
+        $baker = new PageBaker($fs->url('counter'));
+        $baker->bake($page);
+
+        $this->assertEquals(1, $baker->getPageCount());
+        $this->assertEquals(
+            array($fs->url('counter/' . $expectedName)), 
+            $baker->getBakedFiles()
+        );
+        $this->assertFileExists($fs->url('counter/' . $expectedName));
+        $this->assertEquals(
+            $expectedContents,
+            trim(file_get_contents($fs->url('counter/' . $expectedName)))
         );
     }
 
@@ -242,7 +293,7 @@ EOD
             'root' => $fs->url('kitchen'),
             'cache' => false
         ));
-        $page = Page::createFromUri($app, '/' . $name);
+        $page = Page::createFromUri($app, '/' . $name, false);
         
         $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
@@ -304,7 +355,7 @@ EOD
             'root' => $fs->url('kitchen'),
             'cache' => false
         ));
-        $page = Page::createFromUri($app, '/' . $name);
+        $page = Page::createFromUri($app, '/' . $name, false);
         
         $baker = new PageBaker($fs->url('counter'));
         $baker->bake($page);
@@ -364,7 +415,7 @@ EOD
             ->withAsset('_content/pages/blah-assets/foo.txt', 'FOO!');
 
         $app = new PieCrust(array('root' => $fs->url('kitchen')));
-        $page = Page::createFromUri($app, '/' . $name);
+        $page = Page::createFromUri($app, '/' . $name, false);
         
         $baker = new PageBaker($fs->url('counter'), array('copy_assets' => true));
         $baker->bake($page);

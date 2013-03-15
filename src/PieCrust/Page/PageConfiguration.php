@@ -4,6 +4,7 @@ namespace PieCrust\Page;
 
 use PieCrust\IPage;
 use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\PageHelper;
 
@@ -55,6 +56,23 @@ class PageConfiguration extends Configuration
                 'segments' => array()
             ),
             $config);
+
+        // Detect common problems.
+        if (isset($validatedConfig['category']))
+        {
+            if (is_array($validatedConfig['category']))
+            {
+                throw new PieCrustException("This page's `category` is an array -- it must be a string. For multiple values, use `tags` instead.");
+            }
+        }
+        if (isset($validatedConfig['tags']))
+        {
+           if (!is_array($validatedConfig['tags']))
+            {
+                $validatedConfig['tags'] = array($validatedConfig['tags']);
+            }
+        }
+
         return $validatedConfig;
     }
 }

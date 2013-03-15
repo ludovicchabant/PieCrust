@@ -11,7 +11,15 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '0.9.2';
+    const VERSION = '1.0.0-rc1';
+
+    /**
+     * The current version of the configuration.
+     *
+     * This is for making it possible to invalidate a cached configuration
+     * even if the PieCrust version didn't change (e.g. on the dev branch).
+     */
+    const CACHE_VERSION = '1';
     
     /**
      * The application's source code directory.
@@ -62,5 +70,13 @@ class PieCrustDefaults
     public static function RES_DIR()
     {
         return dirname(dirname(__DIR__)) . '/res/';
+    }
+
+    /**
+     * Returns whether we're running on Windows. More or less.
+     */
+    public static function IS_WINDOWS()
+    {
+        return DIRECTORY_SEPARATOR == "\\";
     }
 }

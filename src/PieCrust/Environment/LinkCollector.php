@@ -4,6 +4,7 @@ namespace PieCrust\Environment;
 
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -43,8 +44,20 @@ class LinkCollector
     
     public function registerTagCombination($blogKey, $tags)
     {
-        if (strpos($tags, '/') === false)
+        if (!is_array($tags))
         {
+            // Temporary warning for a change in how multi-tags
+            // are specified.
+            if (isset($GLOBALS['__CHEF_LOG']) && strpos($tags, '/') !== false)
+            {
+                $log = $GLOBALS['__CHEF_LOG'];
+                $log->warning(
+                    "A link to tag {$tags} was specified in this page. ".
+                    "If this is a tag that contains a slash character ('/') then ignore this warning. ".
+                    "However, if this was intended to be a multi-tags link, you'll need to ".
+                    "now pass an array of tags like so: `{{pctagurl(['tag1', 'tag2'])}}`. ".
+                    "Your current link won't work!");
+            }
             return;
         }
         if ($blogKey == null)
@@ -56,10 +69,14 @@ class LinkCollector
             $this->tagCombinations[$blogKey] = array();
         }
         
-        $tags = strtolower($tags);
-        if (!in_array($tags, $this->tagCombinations[$blogKey]))
+        $tags = array_map(
+            function ($t) { return UriBuilder::slugify($t); },
+            $tags
+        );
+        $tagCombination = implode('/', $tags);
+        if (!in_array($tagCombination, $this->tagCombinations[$blogKey]))
         {
-            $this->tagCombinations[$blogKey][] = $tags;
+            $this->tagCombinations[$blogKey][] = $tagCombination;
         }
     }
 }

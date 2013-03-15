@@ -5,7 +5,7 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Page\PaginationIterator;
+use PieCrust\Page\Iteration\PageIterator;
 use PieCrust\Util\PageHelper;
 
 
@@ -26,7 +26,7 @@ class PagePropertyData implements \Iterator, \ArrayAccess, \Countable
     public function __construct(IPage $page, $blogKey, $propertyValue, array $dataSource)
     {
         $this->propertyValue = $propertyValue;
-        $this->posts = new PaginationIterator($page->getApp(), $blogKey, $dataSource);
+        $this->posts = new PageIterator($page->getApp(), $blogKey, $dataSource);
         $this->posts->setCurrentPage($page);
         $this->postCount = count($dataSource); // Backwards compatibility (should use posts.count)
     }

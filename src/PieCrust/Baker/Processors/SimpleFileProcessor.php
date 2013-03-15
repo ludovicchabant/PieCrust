@@ -4,6 +4,8 @@ namespace PieCrust\Baker\Processors;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\Baker\IBaker;
+use PieCrust\IO\Cache;
 
 
 /**
@@ -19,14 +21,19 @@ use PieCrust\PieCrustException;
 class SimpleFileProcessor implements IProcessor
 {
     protected $pieCrust;
+    protected $baker;
+    protected $logger;
+
     protected $name;
     protected $priority;
     protected $inputExtensions;
     protected $outputExtensions;
+
+    protected $cache;
     
     public function __construct($name = '__unnamed__', $inputExtensions = array(), $outputExtensions = array(), $priority = IProcessor::PRIORITY_DEFAULT)
     {
-        $this->doInitialize($name, $inputExtensions, $outputExtensions, $priority);
+        $this->doConstruct($name, $inputExtensions, $outputExtensions, $priority);
     }
 
     public function getName()
@@ -34,20 +41,34 @@ class SimpleFileProcessor implements IProcessor
         return $this->name;
     }
     
-    public function initialize(IPieCrust $pieCrust)
+    public function initialize(IPieCrust $pieCrust, $logger = null)
     {
         $this->pieCrust = $pieCrust;
+
+        if ($logger == null)
+            $logger = \Log::singleton('null', '', '');
+        $this->logger = $logger;
     }
     
     public function getPriority()
     {
         return $this->priority;
     }
+
+    public function onBakeStart(IBaker $baker)
+    {
+        $this->baker = $baker;
+    }
     
     public function supportsExtension($extension)
     {
         if ($extension == null or $extension == '') return false;
         return in_array($extension, $this->inputExtensions);
+    }
+
+    public function isBypassingStructuredProcessing()
+    {
+        return false;
     }
 
     public function isDelegatingDependencyCheck()
@@ -84,8 +105,13 @@ class SimpleFileProcessor implements IProcessor
         $this->doProcess($inputPath, $outputPath);
         return true;
     }
+
+    public function onBakeEnd()
+    {
+        $this->baker = null;
+    }
     
-    protected function doInitialize($name, $inputExtensions, $outputExtensions, $priority = IProcessor::PRIORITY_DEFAULT)
+    protected function doConstruct($name, $inputExtensions, $outputExtensions, $priority = IProcessor::PRIORITY_DEFAULT)
     {
         if (is_array($inputExtensions))
         {
@@ -114,5 +140,31 @@ class SimpleFileProcessor implements IProcessor
     
     protected function doProcess($inputPath, $outputPath)
     {
+    }
+
+    protected function readCacheData($cacheUri)
+    {
+        if ($this->ensureCache() === false)
+            return false;
+        if (!$this->cache->has($cacheUri, 'json'))
+            return false;
+        $dataStr = $this->cache->read($cacheUri, 'json');
+        return json_decode($dataStr, true);
+    }
+
+    protected function writeCacheData($cacheUri, $data)
+    {
+        if ($this->ensureCache() === false)
+            return;
+        $dataStr = json_encode($data);
+        $this->cache->write($cacheUri, 'json', $dataStr);
+    }
+
+    protected function ensureCache()
+    {
+        if (!$this->pieCrust->isCachingEnabled())
+            return false;
+        if ($this->cache == null)
+            $this->cache = new Cache($this->pieCrust->getCacheDir() . 'bake_t/procs');
     }
 }

@@ -5,7 +5,7 @@ namespace PieCrust\Data;
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
-use PieCrust\Page\PaginationIterator;
+use PieCrust\Page\Iteration\PageIterator;
 use PieCrust\Util\PageHelper;
 
 
@@ -39,7 +39,7 @@ class BlogData
     /**
      * @noCall
      * @include
-     * @documentation The list of all posts for this blog. See `pagination.posts`.
+     * @documentation The list of all posts for this blog.
      */
     public function posts()
     {
@@ -50,7 +50,7 @@ class BlogData
     /**
      * @noCall
      * @include
-     * @documentation The list of categories for this blog. Each category has a `name` and a list of `posts` (see `pagination.posts`).
+     * @documentation The list of categories for this blog.
      */
     public function categories()
     {
@@ -61,7 +61,7 @@ class BlogData
     /**
      * @noCall
      * @include
-     * @documentation The list of tags for this blog. Each tag has a `name` and a list of `posts` (see `pagination.posts`).
+     * @documentation The list of tags for this blog.
      */
     public function tags()
     {
@@ -72,7 +72,7 @@ class BlogData
     /**
      * @noCall
      * @include
-     * @documentation The list of years with published posts in the blog. Each has a `name`, `timestamp` and list of `posts`.
+     * @documentation The list of years with published posts in the blog.
      */
     public function years()
     {
@@ -83,7 +83,7 @@ class BlogData
     /**
      * @noCall
      * @include
-     * @documentation The list of months with published posts in the blog. Each has a `name`, `timestamp` and list of `posts`.
+     * @documentation The list of months with published posts in the blog.
      */
     public function months()
     {
@@ -117,7 +117,7 @@ class BlogData
             return;
 
         $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
-        $this->posts = new PaginationIterator($this->page->getApp(), $this->blogKey, $blogPosts);
+        $this->posts = new PageIterator($this->page->getApp(), $this->blogKey, $blogPosts);
         $this->posts->setCurrentPage($this->page);
     }
 
@@ -184,27 +184,52 @@ class BlogData
         if ($this->months)
             return;
 
-        $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
-        $this->months = array();
+        // Get all the blog posts.
+        $posts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
+
+        // Sort them by month.
+        $monthsInfos = array();
         $currentMonthAndYear = null;
-        foreach ($blogPosts as $post)
+        foreach ($posts as $post)
         {
             $timestamp = $post->getDate();
-            $pageMonthAndYear = date('Y m', $timestamp);
-            if ($currentMonthAndYear == null or $pageMonthAndYear != $currentMonthAndYear)
+            $pageMonthAndYear = date('F Y', $timestamp);
+            if (!isset($monthsInfos[$pageMonthAndYear]))
             {
                 $pageYear = intval(date('Y', $timestamp));
                 $pageMonth = intval(date('m', $timestamp));
-                $this->months[$pageMonthAndYear] = array(
-                    'name' => date('F Y', $timestamp),
+                $monthsInfos[$pageMonthAndYear] = array(
+                    'name' => $pageMonthAndYear,
                     'timestamp' => mktime(0, 0, 0, $pageMonth, 1, $pageYear),
-                    'posts' => array()
+                    'data_source' => array()
                 );
-                $currentMonthAndYear = $pageMonthAndYear;
             }
-            $this->months[$currentMonthAndYear]['posts'][] = new PaginationData($post);
+            $monthsInfos[$pageMonthAndYear]['data_source'][] = $post;
         }
-        ksort($this->months);
+
+        // For each month, create the data class.
+        $this->months = array();
+        foreach ($monthsInfos as $month => $monthInfo)
+        {
+            $this->months[$month] = new PageTimeData(
+                $this->page,
+                $this->blogKey,
+                $monthInfo['name'],
+                $monthInfo['timestamp'],
+                $monthInfo['data_source']
+            );
+        }
+
+        // Sort the months in inverse chronological order.
+        uasort($this->months, array('PieCrust\Data\BlogData', 'sortByReverseTimestamp'));
+    }
+
+    public static function sortByReverseTimestamp($left, $right)
+    {
+        if ($left->timestamp() == $right->timestamp())
+            return 0;
+
+        return $left->timestamp() > $right->timestamp() ? -1 : 1;
     }
 }
 

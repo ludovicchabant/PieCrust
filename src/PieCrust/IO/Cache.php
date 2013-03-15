@@ -65,6 +65,12 @@ class Cache
             return false;
         return filemtime($cachePath);
     }
+
+    public function has($uri, $extension)
+    {
+        $cachePath = $this->getCachePath($uri, $extension);
+        return is_file($cachePath);
+    }
     
     public function read($uri, $extension)
     {

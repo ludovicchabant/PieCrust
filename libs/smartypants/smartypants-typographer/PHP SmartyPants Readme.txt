@@ -1,10 +1,10 @@
 PHP SmartyPants Typographer
 ===========================
 
-Version 1.0 - Wed 28 Jun 2006
+Version 1.0.1 - Sun 23 Jan 2013
 
-by Michel Fortin
-<http://www.michelf.com/>
+by Michel Fortin  
+<http://michelf.ca/>
 
 Original SmartyPants by John Gruber  
 <http://daringfireball.net/>
@@ -256,6 +256,94 @@ example text to illustrate.
 Version History
 ---------------
 
-1.0 (28 Jun 2006)
+Typographer 1.0 (23 Jan 2013)
+
+1.5.1f (23 Jan 2013):
+
+*	Fixed handling of HTML comments to match latest HTML specs instead of
+	doing it the old SGML way.
+
+*	Lowered WordPress filtering priority to avoid clashing with the 
+	[caption] tag filter. Thanks to Mehdi Kabab for the fix.
+
+
+Typographer 1.0 (28 Jun 2006)
 
 *   First public release of PHP SmartyPants Typographer.
+
+
+1.5.1oo (19 May 2006, unreleased)
+
+*   Converted SmartyPants to a object-oriented design.
+
+
+1.5.1e (9 Dec 2005)
+
+*	Corrected a bug that prevented special characters from being 
+    escaped.
+
+
+1.5.1d (6 Jun 2005)
+
+*	Correct a small bug in `_TokenizeHTML` where a Doctype declaration
+	was not seen as HTML, making curly quotes inside it.
+
+
+1.5.1c (13 Dec 2004)
+
+*	Changed a regular expression in `_TokenizeHTML` that could lead
+	to a segmentation fault with PHP 4.3.8 on Linux.
+
+
+1.5.1b (6 Sep 2004)
+
+*	Corrected a problem with quotes immediately following a dash
+	with no space between: `Text--"quoted text"--text.`
+	
+*	PHP SmartyPants can now be used as a modifier by the Smarty 
+	template engine. Rename the file to "modifier.smartypants.php"
+	and put it in your smarty plugins folder.
+
+*	Replaced a lot of spaces characters by tabs, saving about 4 KB.
+
+
+1.5.1a (30 Jun 2004)
+
+*	PHP Markdown and PHP Smartypants now share the same `_TokenizeHTML` 
+	function when loaded simultanously.
+
+*	Changed the internals of `_TokenizeHTML` to lower the PHP version
+	requirement to PHP 4.0.5.
+
+
+1.5.1 (6 Jun 2004)
+
+*	Initial release of PHP SmartyPants, based on version 1.5.1 of the 
+	original SmartyPants written in Perl.
+
+
+Copyright and License
+---------------------
+
+Copyright (c) 2005-2013 Michel Fortin  
+<http://michelf.ca/>
+All rights reserved.
+
+Copyright (c) 2003-2004 John Gruber   
+<http://daringfireball.net/>   
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+*   Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+*   Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+*   Neither the name "SmartyPants" nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.

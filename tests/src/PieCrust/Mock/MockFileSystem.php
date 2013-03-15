@@ -5,31 +5,72 @@ namespace PieCrust\Mock;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use Symfony\Component\Yaml\Yaml;
+use PieCrust\Util\PathHelper;
 
 
 class MockFileSystem
 {
-    public static function create($withDefaultStructure = true)
+    public static function create($withDefaultStructure = true, $useRealPath = null)
     {
-        return new MockFileSystem($withDefaultStructure);
+        return new MockFileSystem($withDefaultStructure, $useRealPath);
+    }
+
+    public static function sortPostInfos($postInfos, $reverse = true)
+    {
+        usort($postInfos, array('PieCrust\Mock\MockFileSystem', 'postInfoSorter'));
+        if ($reverse)
+            $postInfos = array_reverse($postInfos);
+        return $postInfos;
+    }
+
+    public static function postInfoSorter($a, $b)
+    {
+        $keys = array('year', 'month', 'day', 'name');
+        foreach ($keys as $key)
+        {
+            $val = strcmp($a[$key], $b[$key]);
+            if ($val != 0)
+                return $val;
+        }
+        return 0;
     }
 
     protected $root;
+    protected $isRootReal;
 
-    public function __construct($withDefaultStructure = true)
+    public function __construct($withDefaultStructure = true, $useRealPath = null)
     {
-        $this->root = 'root_' . rand();
-        $structure = array();
-        if ($withDefaultStructure)
+        $this->isRootReal = (bool)$useRealPath;
+        if ($useRealPath)
         {
-            $structure['kitchen'] = array(
-                '_content' => array(
-                    'config.yml' => 'site:\n  title: Mock Website'
-                )
-            );
-            $structure['counter'] = array();
+            $this->root = rtrim($useRealPath, "/\\") . '/' . 'root_' . rand();
+            PathHelper::ensureDirectory($this->root, true);
+            if ($withDefaultStructure)
+            {
+                mkdir($this->root . '/kitchen');
+                mkdir($this->root . '/kitchen/_content');
+                file_put_contents(
+                    $this->root . '/kitchen/_content/config.yml',
+                    "site:\n  title: Mock Website"
+                );
+                mkdir($this->root . '/counter');
+            }
         }
-        vfsStream::setup($this->root, null, $structure);
+        else
+        {
+            $this->root = 'root_' . rand();
+            $structure = array();
+            if ($withDefaultStructure)
+            {
+                $structure['kitchen'] = array(
+                    '_content' => array(
+                        'config.yml' => "site:\n  title: Mock Website"
+                    )
+                );
+                $structure['counter'] = array();
+            }
+            vfsStream::setup($this->root, null, $structure);
+        }
     }
 
     public function getRootName()
@@ -39,6 +80,8 @@ class MockFileSystem
 
     public function url($path)
     {
+        if ($this->isRootReal)
+            return $this->root . '/' . $path;
         return vfsStream::url($this->root . '/' . $path);
     }
 
@@ -150,7 +193,7 @@ class MockFileSystem
         return $this->withAsset("_content/pages/{$dir}/$assetName", $assetContents);
     }
 
-    public function withPost($slug, $day, $month, $year, $config, $contents, $blog = null)
+    public function withPost($slug, $day, $month, $year, $config = array(), $contents = 'A test post.', $blog = null, $extension = 'html')
     {
         $text  = '---' . PHP_EOL;
         $text .= Yaml::dump($config) . PHP_EOL;
@@ -164,7 +207,7 @@ class MockFileSystem
         $blogDir = '';
         if ($blog != null)
             $blogDir = $blog . '/';
-        $path = "_content/posts/{$blogDir}{$year}-{$month}-{$day}_{$slug}.html";
+        $path = "_content/posts/{$blogDir}{$year}-{$month}-{$day}_{$slug}.{$extension}";
         return $this->withAsset($path, $text);
     }
 

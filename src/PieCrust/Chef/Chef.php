@@ -87,9 +87,11 @@ class Chef
         }
         else
         {
+            $environment = new ChefEnvironment();
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
-                'cache' => !in_array('--no-cache', $userArgv)
+                'cache' => !in_array('--no-cache', $userArgv),
+                'environment' => $environment
             ));
         }
 
@@ -99,6 +101,7 @@ class Chef
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
+        $this->addCommonOptionsAndArguments($parser);
         // Sort commands by name.
         $sortedCommands = $pieCrust->getPluginLoader()->getCommands();
         usort($sortedCommands, function ($c1, $c2) { return strcmp($c1->getName(), $c2->getName()); });
@@ -107,7 +110,6 @@ class Chef
         {
             $commandParser = $parser->addCommand($command->getName());
             $command->setupParser($commandParser, $pieCrust);
-            $this->addCommonOptionsAndArguments($commandParser);
         }
 
         // Parse the command line.
@@ -117,7 +119,7 @@ class Chef
         }
         catch (Exception $e)
         {
-            $parser->displayError($e->getMessage());
+            $parser->displayError($e->getMessage(), false);
             return 1;
         }
 
@@ -128,22 +130,25 @@ class Chef
         }
 
         // Create the log.
-        $debugMode = $result->command->options['debug'];
-        $quietMode = $result->command->options['quiet'];
+        $debugMode = $result->options['debug'];
+        $quietMode = $result->options['quiet'];
         if ($debugMode && $quietMode)
         {
-            $parser->displayError("You can't specify both --debug and --quiet.");
+            $parser->displayError("You can't specify both --debug and --quiet.", false);
             return 1;
         }
-        $log = \Log::singleton('console', 'Chef', '', array('lineFormat' => '%{message}'));
+        $log = new ChefLog('Chef', '', array('lineFormat' => '%{message}'));
+        // Make the log available to PieCrust.
+        if ($rootDir != null)
+            $environment->setLog($log);
         // Make the log available for debugging purposes.
         $GLOBALS['__CHEF_LOG'] = $log;
 
         // Handle deprecated stuff.
-        if ($result->command->options['no_cache_old'])
+        if ($result->options['no_cache_old'])
         {
             $log->warning("The `--nocache` option has been renamed `--no-cache`.");
-            $result->command->options['no_cache'] = true;
+            $result->options['no_cache'] = true;
         }
 
         // Run the command.
@@ -159,6 +164,12 @@ class Chef
                         throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
                     }
 
+                    if ($debugMode)
+                    {
+                        $log->debug("PieCrust v." . PieCrustDefaults::VERSION);
+                        $log->debug("  Website: {$rootDir}");
+                    }
+
                     $context = new ChefContext($pieCrust, $result, $log);
                     $context->setVerbosity($debugMode ? 
                         'debug' : 
@@ -169,35 +180,39 @@ class Chef
                 }
                 catch (Exception $e)
                 {
-                    $log->emerg(self::getErrorMessage($e, $debugMode));
+                    $this->logException($log, $e, $debugMode);
                     return 1;
                 }
             }
         }
     }
 
-    /**
-     * Formats an exception into an error message.
-     */
-    public static function getErrorMessage(Exception $e, $debugMode = false)
+    protected function logException($log, $e, $debugMode = false)
     {
-        $message = $e->getMessage();
         if ($debugMode)
         {
-            $message .= PHP_EOL;
-            $message .= PHP_EOL;
-            $message .= "Debug Information" . PHP_EOL;
+            $log->emerg($e->getMessage());
+            $log->debug($e->getTraceAsString());
+            $e = $e->getPrevious();
             while ($e)
             {
-                $message .= "-----------------" . PHP_EOL;
-                $message .= $e->getMessage() . PHP_EOL;
-                $message .= $e->getTraceAsString();
-                $message .= PHP_EOL;
+                $log->err("-----------------");
+                $log->err($e->getMessage());
+                $log->debug($e->getTraceAsString());
                 $e = $e->getPrevious();
             }
-            $message .= "-----------------" . PHP_EOL;
+            $log->err("-----------------");
         }
-        return $message;
+        else
+        {
+            $log->emerg($e->getMessage());
+            $e = $e->getPrevious();
+            while ($e)
+            {
+                $log->err($e->getMessage());
+                $e = $e->getPrevious();
+            }
+        }
     }
 
     protected function addCommonOptionsAndArguments(\Console_CommandLine $parser)

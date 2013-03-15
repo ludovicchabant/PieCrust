@@ -93,8 +93,14 @@ class ProcessingTreeRunner
     protected function computeNodeDirtyness($node)
     {
         $processor = $node->getProcessor();
-        if ($processor->isDelegatingDependencyCheck())
+        if (
+            $processor->isDelegatingDependencyCheck() && 
+            !$processor->isBypassingStructuredProcessing()
+        )
         {
+            // Start profiling.
+            $start = microtime(true);
+
             // Get the paths and last modification times for the input file and
             // all its dependencies, if any.
             $nodeRootDir = $this->getNodeRootDir($node);
@@ -147,6 +153,11 @@ class ProcessingTreeRunner
                     }
                 }
             }
+
+            // Print profiling info.
+            $end = microtime(true);
+            $elapsedTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+            $this->printProcessingTreeNode($node, "Computed node dirtiness [{$elapsedTime}]");
         }
         else
         {
@@ -167,6 +178,26 @@ class ProcessingTreeRunner
         $nodeRootDir = $this->getNodeRootDir($node);
         $path = $nodeRootDir . $node->getPath();
 
+        // If the processor for this node wants to bypass structured
+        // processing altogether, run it now and exit.
+        $processor = $node->getProcessor();
+        if ($processor->isBypassingStructuredProcessing())
+        {
+            try
+            {
+                $start = microtime(true);
+                $processor->process($path, $this->outDir);
+                $end = microtime(true);
+                $processTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+                $this->printProcessingTreeNode($node, " (bypassing structured processing) [{$processTime}].");
+            }
+            catch (Exception $e)
+            {
+                throw new PieCrustException("Error processing '{$node->getPath()}'.", 0, $e);
+            }
+            return true;
+        }
+
         // Get the output directory.
         // (all outputs of a node go to the same directory, so we
         //  can just get the directory of the first output node).
@@ -181,34 +212,34 @@ class ProcessingTreeRunner
         $relativeOutputDir = PathHelper::getRelativePath($this->rootDir, $outputDir);
         PathHelper::ensureDirectory($outputDir, true);
 
-        // If we need to, re-process the node!
+        // Now process the node!
         $didBake = false;
         try
         {
             $start = microtime(true);
-            $processor = $node->getProcessor();
-            if ($processor->process($path, $outputDir) !== false)
+            $processResult = $processor->process($path, $outputDir);
+            $end = microtime(true);
+            $processTime = sprintf('%.1f ms', ($end - $start)*1000.0);
+            if ($processResult !== false)
             {
-                $end = microtime(true);
-                $processTime = sprintf('%8.1f ms', ($end - $start)*1000.0);
                 $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [{$processTime}].");
                 $didBake = true;
             }
             else
             {
-                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean].");
+                $this->printProcessingTreeNode($node, "-> '{$relativeOutputDir}' [clean, {$processTime}].");
             }
         }
         catch (Exception $e)
         {
-            throw new PieCrustException("Error processing '{$node->getPath()}': {$e->getMessage()}", 0, $e);
+            throw new PieCrustException("Error processing '{$node->getPath()}'.", 0, $e);
         }
         return $didBake;
     }
 
     protected function printProcessingTreeNode($node, $message = null, $recursive = false)
     {
-        $indent = str_repeat('  ', $node->getLevel() + 1);
+        $indent = str_repeat('  ', $node->getLevel());
         $processor = $node->getProcessor() ? $node->getProcessor()->getName() : 'n/a';
         $path = PathHelper::getRelativePath(
             $this->rootDir, 

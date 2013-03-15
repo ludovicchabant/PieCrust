@@ -77,6 +77,27 @@ class Page implements IPage
         }
     }
     
+    protected $key;
+    /**
+     * Gets the page key (e.g. the tag or category)
+     */
+    public function getPageKey()
+    {
+        return $this->key;
+    }
+
+    /**
+     * Sets the page key (e.g. the tag or category)
+     */
+    public function setPageKey($key)
+    {
+        if ($key != $this->key)
+        {
+            $this->key = $key;
+            $this->unload();
+        }
+    }
+    
     protected $date;
     protected $dateIsLocked;
     /**
@@ -114,19 +135,22 @@ class Page implements IPage
      */
     public function setDate($date, $isLocked = false)
     {
-        if (is_int($date))
+        if ($date !==null && $this->date != $date)
         {
-            $this->date = $date;
-            $this->dateIsLocked = $isLocked;
-        }
-        else if (is_string($date))
-        {
-            $this->date = strtotime($date);
-            $this->dateIsLocked = $isLocked;
-        }
-        else
-        {
-            throw new PieCrustException("The date must be an number or a string.");
+            if (is_int($date))
+            {
+                $this->date = $date;
+                $this->dateIsLocked = $isLocked;
+            }
+            else if (is_string($date))
+            {
+                $this->date = strtotime($date);
+                $this->dateIsLocked = $isLocked;
+            }
+            else
+            {
+                throw new PieCrustException("The date must be an number or a string.");
+            }
         }
     }
     
@@ -137,15 +161,6 @@ class Page implements IPage
     public function getPageType()
     {
         return $this->type;
-    }
-    
-    protected $key;
-    /**
-     * Gets the page key (e.g. the tag or category)
-     */
-    public function getPageKey()
-    {
-        return $this->key;
     }
     
     protected $wasCached;
@@ -167,15 +182,15 @@ class Page implements IPage
         return $this->config;
     }
     
-    protected $didFormatContents;
     protected $contents;
+    protected $formattedContents;
     /**
      * Gets the page's formatted content.
      */
     public function getContentSegment($segment = 'content')
     {
-        $this->ensureContentsLoaded();
-        return $this->contents[$segment];
+        $this->ensureContentsFormatted();
+        return $this->formattedContents[$segment];
     }
     
     /**
@@ -183,8 +198,8 @@ class Page implements IPage
      */
     public function hasContentSegment($segment)
     {
-        $this->ensureContentsLoaded();
-        return isset($this->contents[$segment]);
+        $this->ensureContentsFormatted();
+        return isset($this->formattedContents[$segment]);
     }
     
     /**
@@ -192,8 +207,8 @@ class Page implements IPage
      */
     public function getContentSegments()
     {
-        $this->ensureContentsLoaded();
-        return $this->contents;
+        $this->ensureContentsFormatted();
+        return $this->formattedContents;
     }
     
     protected $pageData;
@@ -223,8 +238,7 @@ class Page implements IPage
      */
     public function setExtraPageData(array $data)
     {
-        if ($this->config != null or $this->contents != null)
-            throw new PieCrustException("Extra data on a page must be set before the page's configuration, contents and data are loaded.");
+        $this->unload();
         $this->extraData = $data;
     }
     
@@ -267,9 +281,8 @@ class Page implements IPage
      */
     public function unload()
     {
-        $this->config = null;
-        $this->contents = null;
         $this->pageData = null;
+        $this->formattedContents = null;
     }
 
     /**
@@ -291,7 +304,7 @@ class Page implements IPage
 
         $this->config = null;
         $this->contents = null;
-        $this->didFormatContents = false;
+        $this->formattedContents = null;
     }
     
     /**
@@ -308,22 +321,21 @@ class Page implements IPage
             $loader = new PageLoader($this);
             $this->contents = $loader->load();
             $this->wasCached = $loader->wasCached();
-            $this->didFormatContents = false;
+            $this->formattedContents = null;
         }
     }
     
     /**
-     * Ensures the page has been loaded from disk.
+     * Ensures the page has been formatted completely.
      */
-    protected function ensureContentsLoaded()
+    protected function ensureContentsFormatted()
     {
-        if (!$this->didFormatContents)
+        if ($this->formattedContents == null)
         {
             $this->ensureConfigLoaded();
 
             $loader = new PageLoader($this);
-            $this->contents = $loader->formatContents($this->contents);
-            $this->didFormatContents = true;
+            $this->formattedContents = $loader->formatContents($this->contents);
         }
     }
     
@@ -350,15 +362,16 @@ class Page implements IPage
         if ($useRepository)
         {
             $pageRepository = $pieCrust->getEnvironment()->getPageRepository();
-            return $pageRepository->getOrCreatePage(
+            $page = $pageRepository->getOrCreatePage(
                 $uriInfo['uri'],
                 $uriInfo['path'],
                 $uriInfo['type'],
-                $uriInfo['blogKey'],
-                $uriInfo['key'],
-                $uriInfo['page'],
-                $uriInfo['date']
+                $uriInfo['blogKey']
             );
+            $page->setPageKey($uriInfo['key']);
+            $page->setPageNumber($uriInfo['page']);
+            $page->setDate($uriInfo['date']);
+            return $page;
         }
         else
         {
@@ -386,7 +399,7 @@ class Page implements IPage
             throw new InvalidArgumentException("The given path does not exist: " . $path);
         
         $relativePath = PieCrustHelper::getRelativePath($pieCrust, $path, true);
-        $uri = UriBuilder::buildUri($relativePath);
+        $uri = UriBuilder::buildUri($pieCrust, $relativePath);
         return new Page(
                 $pieCrust,
                 $uri,

@@ -143,7 +143,8 @@ class UploadCommand extends ChefCommand
         }
         catch (Exception $e)
         {
-            throw new PieCrustException($e->getMessage());
+            ftp_close($conn);
+            throw $e;
         }
         ftp_close($conn);
     }
