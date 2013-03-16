@@ -204,6 +204,7 @@ class PieCrustConfiguration extends Configuration
                 'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                 'enable_gzip' => false,
                 'pretty_urls' => false,
+                'slugify' => 'transliterate',
                 'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
                 'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),

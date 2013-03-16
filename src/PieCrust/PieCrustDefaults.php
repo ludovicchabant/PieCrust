@@ -19,7 +19,7 @@ class PieCrustDefaults
      * This is for making it possible to invalidate a cached configuration
      * even if the PieCrust version didn't change (e.g. on the dev branch).
      */
-    const CACHE_VERSION = '1';
+    const CACHE_VERSION = '2';
     
     /**
      * The application's source code directory.

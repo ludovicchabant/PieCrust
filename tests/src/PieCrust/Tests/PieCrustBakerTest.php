@@ -3,6 +3,7 @@
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Mock\MockFileSystem;
+use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
@@ -555,12 +556,12 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $tag1 = UriBuilder::slugify($tag1);
+        $tag1 = PieCrustHelper::slugify($app, 'tags', $tag1);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
             file_get_contents($fs->url('counter/tag/'.$tag1.'.html'))
         );
-        $tag2 = UriBuilder::slugify($tag2);
+        $tag2 = PieCrustHelper::slugify($app, 'tags', $tag2);
         $this->assertEquals(
             "POST FIVE\nPOST FOUR\nPOST THREE\n", 
             file_get_contents($fs->url('counter/tag/'.$tag2.'.html'))
@@ -661,12 +662,12 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $cat1 = UriBuilder::slugify($cat1);
+        $cat1 = PieCrustHelper::slugify($app, 'categories', $cat1);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
             file_get_contents($fs->url('counter/'.$cat1.'.html'))
         );
-        $cat2 = UriBuilder::slugify($cat2);
+        $cat2 = PieCrustHelper::slugify($app, 'categories', $cat2);
         $this->assertEquals(
             "POST FOUR\nPOST THREE\n", 
             file_get_contents($fs->url('counter/'.$cat2.'.html'))

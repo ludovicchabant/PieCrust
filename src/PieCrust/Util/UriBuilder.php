@@ -11,6 +11,14 @@ use PieCrust\IPieCrust;
  */
 class UriBuilder
 {
+    // Slugify methods {{{
+    const SLUGIFY_TRANSLITERATE = 1;
+    const SLUGIFY_ENCODE = 2;
+    const SLUGIFY_RESERVED_TO_DASHES = 4;
+    const SLUGIFY_NON_UNRESERVED_TO_DASHES = 8;
+    const SLUGIFY_LOWERCASE = 16;
+    // }}}
+    
     /**
      * Gets the URI of a page given a relative path.
      */
@@ -33,8 +41,9 @@ class UriBuilder
     /**
      * Builds the URL of a post given a URL format.
      */
-    public static function buildPostUri($postUrlFormat, $postInfo)
+    public static function buildPostUri(IPieCrust $pieCrust, $blogKey, $postInfo)
     {
+        $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
         if (is_int($postInfo['month']))
         {
             $postInfo['month'] = sprintf('%02s', $postInfo['month']);
@@ -70,19 +79,20 @@ class UriBuilder
     /**
      * Builds the URL of a tag listing.
      */
-    public static function buildTagUri($tagUrlFormat, $tag)
+    public static function buildTagUri(IPieCrust $pieCrust, $blogKey, $tag)
     {
+        $tagUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/tag_url');
         if (is_array($tag))
         {
             $tag = array_map(
-                function($t) { return UriBuilder::slugify($t); },
+                function($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
                 $tag
             );
             $tag = implode('/', $tag);
         }
         else
         {
-            $tag = self::slugify($tag);
+            $tag = PieCrustHelper::slugify($pieCrust, 'tags', $tag);
         }
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
@@ -98,9 +108,10 @@ class UriBuilder
     /**
      * Builds the URL of a category listing.
      */
-    public static function buildCategoryUri($categoryUrlFormat, $category)
+    public static function buildCategoryUri(IPieCrust $pieCrust, $blogKey, $category)
     {
-        $category = self::slugify($category);
+        $categoryUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/category_url');
+        $category = PieCrustHelper::slugify($pieCrust, 'categories', $category);
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     
@@ -115,16 +126,34 @@ class UriBuilder
     /**
      * Transform a string into something that can be used for an URL.
      */
-    public static function slugify($value)
+    public static function slugify($value, $method)
     {
-        $translitValue = self::unaccent($value);
-        return preg_replace('/[^\w\-\.]+/', '-', strtolower($translitValue));
+        static $reserved = null;
+        if ($reserved == null)
+            $reserved = preg_quote(":/?#[]@!$&'()*+,;=\\ ", '/');
+
+        if ($method & self::SLUGIFY_TRANSLITERATE)
+            $value = self::transliterate($value);
+        
+        if ($method & self::SLUGIFY_NON_UNRESERVED_TO_DASHES)
+            $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
+        
+        if ($method == self::SLUGIFY_RESERVED_TO_DASHES)
+            $value = preg_replace('/['.$reserved.']+/', '-', $value);
+        
+        if ($method & self::SLUGIFY_ENCODE)
+            $value = rawurlencode($value);
+            
+        if ($method & self::SLUGIFY_LOWERCASE)
+            $value = strtolower($value);
+        
+        return rtrim($value, '-');
     }
 
     /**
      * Detect whether the given string is UTF-8-encoded.
      */
-    public static function seemsUtf8($string)
+    private static function seemsUtf8($string)
     {
         for ($i = 0; $i < strlen($string); $i++)
         {
@@ -149,7 +178,7 @@ class UriBuilder
      * Remove any illegal characters, accents, etc. and replace them
      * with their ASCII equivalent.
      */
-    public static function unaccent($string)
+    private static function transliterate($string)
     {
         if (!preg_match('/[\x80-\xff]/', $string))
         {

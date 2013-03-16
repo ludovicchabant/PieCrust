@@ -2,9 +2,11 @@
 
 namespace PieCrust\Environment;
 
+use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -13,6 +15,7 @@ use PieCrust\Util\UriBuilder;
  */
 class LinkCollector
 {
+    protected $pieCrust;
     protected $tagCombinations;
     
     public function getTagCombinations($blogKey)
@@ -37,8 +40,9 @@ class LinkCollector
         $this->tagCombinations = array();
     }
     
-    public function __construct()
+    public function __construct(IPieCrust $pieCrust)
     {
+        $this->pieCrust = $pieCrust;
         $this->tagCombinations = array();
     }
     
@@ -48,9 +52,9 @@ class LinkCollector
         {
             // Temporary warning for a change in how multi-tags
             // are specified.
-            if (isset($GLOBALS['__CHEF_LOG']) && strpos($tags, '/') !== false)
+            $log = $this->pieCrust->getEnvironment()->getLog();
+            if (strpos($tags, '/') !== false)
             {
-                $log = $GLOBALS['__CHEF_LOG'];
                 $log->warning(
                     "A link to tag {$tags} was specified in this page. ".
                     "If this is a tag that contains a slash character ('/') then ignore this warning. ".
@@ -69,8 +73,9 @@ class LinkCollector
             $this->tagCombinations[$blogKey] = array();
         }
         
+        $pieCrust = $this->pieCrust;
         $tags = array_map(
-            function ($t) { return UriBuilder::slugify($t); },
+            function ($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
             $tags
         );
         $tagCombination = implode('/', $tags);

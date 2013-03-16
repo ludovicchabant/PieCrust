@@ -4,6 +4,7 @@ namespace PieCrust\Page\Filtering;
 
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
+use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
@@ -44,6 +45,7 @@ class PaginationFilter
         // If the current page is a tag/category page, add filtering
         // for that.
         $pageClause = null;
+        $pieCrust = $page->getApp();
         switch ($page->getPageType())
         {
         case IPage::TYPE_TAG:
@@ -53,16 +55,36 @@ class PaginationFilter
                 $pageClause = new AndBooleanClause();
                 foreach ($pageKey as $k)
                 {
-                    $pageClause->addClause(new HasFilterClause('tags', $k, function($t) { return UriBuilder::slugify($t); }));
+                    $pageClause->addClause(
+                        new HasFilterClause(
+                            'tags', 
+                            $k, 
+                            function($t) use ($pieCrust) {
+                                return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                            }
+                        )
+                    );
                 }
             }
             else
             {
-                $pageClause = new HasFilterClause('tags', $pageKey, function($t) { return UriBuilder::slugify($t); });
+                $pageClause = new HasFilterClause(
+                    'tags', 
+                    $pageKey, 
+                    function($t) use ($pieCrust) {
+                        return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                    }
+                );
             }
             break;
         case IPage::TYPE_CATEGORY:
-            $pageClause = new IsFilterClause('category', $page->getPageKey(), function($c) { return UriBuilder::slugify($c); });
+            $pageClause = new IsFilterClause(
+                'category', 
+                $page->getPageKey(), 
+                function($c) use ($pieCrust) {
+                    return PieCrustHelper::slugify($pieCrust, 'categories', $c);
+                }
+            );
             break;
         }
 

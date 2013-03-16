@@ -6,6 +6,7 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -113,6 +114,69 @@ class PieCrustHelper
 
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         return $blogKeys[0];
+    }
+    
+    /**
+     * Slugifies a value according to the site configuration.
+     */
+    public static function slugify(IPieCrust $pieCrust, $type, $value)
+    {
+        $slugifyMode = $pieCrust->getConfig()->getValue('site/slugify');
+        if ($slugifyMode === 'transliterate')
+        {
+            // Transliterate, and replace the rest with dashes, lowercase.
+            // (this is the default)
+            return UriBuilder::slugify(
+                $value, 
+                UriBuilder::SLUGIFY_TRANSLITERATE|
+                UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES|
+                UriBuilder::SLUGIFY_LOWERCASE
+            );
+        }
+        if ($slugifyMode == 'encode')
+        {
+            // Percent-encode everything, lowercase.
+            return UriBuilder::slugify(
+                $value, 
+                UriBuilder::SLUGIFY_ENCODE|UriBuilder::SLUGIFY_LOWERCASE
+            );
+        }
+        if ($slugifyMode == 'translate')
+        {
+            // Translate the value to some user-defined value in a dictionary.
+            $dictionary = $pieCrust->getConfig()->getValue('locale/'.$type);
+            if ($dictionary == null)
+                throw new PieCrustException("Slugify setting is set to 'translate', but no 'locale/{$type}' dictionary is defined.");
+            if (isset($dictionary[$value]))
+            {
+                return UriBuilder::slugify(
+                    $dictionary[$value], 
+                    UriBuilder::SLUGIFY_RESERVED_TO_DASHES
+                );
+            }
+            // No entry for this one in the dictionary. Let's slugify it ourselves.
+            // If it's the same, then return that. If it's not, it means it did contain
+            // invalid characters, so we show a warning.
+            $slugified = UriBuilder::slugify(
+                $value,
+                UriBuilder::SLUGIFY_TRANSLITERATE|
+                UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES|
+                UriBuilder::SLUGIFY_LOWERCASE
+            );
+            if ($slugified != $value)
+                $pieCrust->getEnvironment()->getLog()->warning("Slugify setting is set to 'translate', but no translation for {$type} '{$value}'.");
+            return $slugified;
+        }
+        if (!$slugifyMode)
+        {
+            // No slugification. We still need to replace the minimum invalid
+            // characters.
+            return UriBuilder::slugify(
+                $value,
+                UriBuilder::SLUGIFY_RESERVED_TO_DASHES
+            );
+        }
+        throw new PieCrustException("Unsupported slugify setting '{$slugifyMode}'.");
     }
 
     /**

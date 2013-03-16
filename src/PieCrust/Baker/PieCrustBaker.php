@@ -13,6 +13,7 @@ use PieCrust\PieCrustException;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -435,19 +436,20 @@ class PieCrustBaker
                 {
                     if (is_array($tag))
                     {
+                        $pieCrust = $this->pieCrust;
                         $slugifiedTag = array_map(
-                            function($t) { return UriBuilder::slugify($t); },
+                            function($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
                             $tag
                         );
                         $formattedTag = implode('+', $tag);
                     }
                     else
                     {
-                        $slugifiedTag = UriBuilder::slugify($tag);
+                        $slugifiedTag = PieCrustHelper::slugify($this->pieCrust, 'tags', $tag);
                         $formattedTag = $tag;
                     }
 
-                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
@@ -500,9 +502,9 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 if (count($postInfos) > 0)
                 {
-                    $slugifiedCategory = UriBuilder::slugify($category);
+                    $slugifiedCategory = PieCrustHelper::slugify($this->pieCrust, 'categories', $category);
 
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,

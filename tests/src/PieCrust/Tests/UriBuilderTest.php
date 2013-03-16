@@ -61,6 +61,8 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
             array('foo bar', '/foo-bar'),
             array('f o o   b a r', '/f-o-o-b-a-r'),
             array(array('f o o', 'b a r'), '/f-o-o/b-a-r'),
+            array('épatant', '/epatant'),
+            array('El Niño', '/el-nino')
         );
     }
 
@@ -69,7 +71,9 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function testBuildTagUri($tag, $expectedUri)
     {
-        $uri = UriBuilder::buildTagUri('/%tag%', $tag);
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/tag_url', '/%tag%');
+        $uri = UriBuilder::buildTagUri($pc, 'blog', $tag);
         $this->assertEquals($expectedUri, $uri);
     }
 
@@ -87,7 +91,9 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function testBuildCategoryUri($category, $expectedUri)
     {
-        $uri = UriBuilder::buildCategoryUri('/%category%', $category);
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/category_url', '/%category%');
+        $uri = UriBuilder::buildCategoryUri($pc, 'blog', $category);
         $this->assertEquals($expectedUri, $uri);
     }
 }
