@@ -79,20 +79,26 @@ class UriBuilder
     /**
      * Builds the URL of a tag listing.
      */
-    public static function buildTagUri(IPieCrust $pieCrust, $blogKey, $tag)
+    public static function buildTagUri(IPieCrust $pieCrust, $blogKey, $tag, $slugify = true)
     {
         $tagUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/tag_url');
         if (is_array($tag))
         {
-            $tag = array_map(
-                function($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
-                $tag
-            );
+            if ($slugify)
+            {
+                $tag = array_map(
+                    function($t) use ($pieCrust) {
+                        return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                    },
+                    $tag
+                );
+            }
             $tag = implode('/', $tag);
         }
         else
         {
-            $tag = PieCrustHelper::slugify($pieCrust, 'tags', $tag);
+            if ($slugify)
+                $tag = PieCrustHelper::slugify($pieCrust, 'tags', $tag);
         }
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
@@ -108,10 +114,11 @@ class UriBuilder
     /**
      * Builds the URL of a category listing.
      */
-    public static function buildCategoryUri(IPieCrust $pieCrust, $blogKey, $category)
+    public static function buildCategoryUri(IPieCrust $pieCrust, $blogKey, $category, $slugify = true)
     {
         $categoryUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/category_url');
-        $category = PieCrustHelper::slugify($pieCrust, 'categories', $category);
+        if ($slugify)
+            $category = PieCrustHelper::slugify($pieCrust, 'categories', $category);
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     

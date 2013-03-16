@@ -449,7 +449,10 @@ class PieCrustBaker
                         $formattedTag = $tag;
                     }
 
-                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag);
+                    $slugifyUri = true;
+                    if ($this->pieCrust->getConfig()->getValue('site/slugify') == 'encode')
+                        $slugifyUri = false;
+                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag, $slugifyUri);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
@@ -504,7 +507,10 @@ class PieCrustBaker
                 {
                     $slugifiedCategory = PieCrustHelper::slugify($this->pieCrust, 'categories', $category);
 
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category);
+                    $slugifyUri = true;
+                    if ($this->pieCrust->getConfig()->getValue('site/slugify') == 'encode')
+                        $slugifyUri = false;
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category, $slugifyUri);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
