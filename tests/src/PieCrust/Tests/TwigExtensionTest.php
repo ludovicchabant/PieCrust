@@ -267,9 +267,9 @@ EOD
     public function urlFunctionsWithUnicodeDataProvider()
     {
         return array(
-            array('des espaces', '/tag/des%20espaces'),
+            array('des espaces', '/tag/des-espaces'),
             array('épatant', '/tag/%C3%A9patant'),
-            array('pâte à gateau', '/tag/p%C3%A2te%20%C3%A0%20gateau')
+            array('pâte à gateau', '/tag/p%C3%A2te-%C3%A0-gateau')
         );
     }
 

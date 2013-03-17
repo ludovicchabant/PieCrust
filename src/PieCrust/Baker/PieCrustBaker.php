@@ -448,18 +448,16 @@ class PieCrustBaker
                             },
                             $tag
                         );
-                        $formattedTag = implode('+', $slugifiedTag);
+                        $tag = array_map("rawurldecode", $slugifiedTag);
+                        $formattedTag = implode('+', $tag);
                     }
                     else
                     {
                         $slugifiedTag = UriBuilder::slugify($tag, $flags);
-                        $formattedTag = $slugifiedTag;
+                        $tag = $formattedTag = rawurldecode($slugifiedTag);
                     }
 
-                    $slugifyUri = true;
-                    if ($this->pieCrust->getConfig()->getValue('site/slugify') == 'encode')
-                        $slugifyUri = false;
-                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag, $slugifyUri);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
@@ -514,11 +512,9 @@ class PieCrustBaker
                 {
                     $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
                     $slugifiedCategory = UriBuilder::slugify($category, $flags);
-
-                    $slugifyUri = true;
-                    if ($this->pieCrust->getConfig()->getValue('site/slugify') == 'encode')
-                        $slugifyUri = false;
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category, $slugifyUri);
+                    $category = rawurldecode($slugifiedCategory);
+                    
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
@@ -534,7 +530,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'category:' . $slugifiedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'category:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
