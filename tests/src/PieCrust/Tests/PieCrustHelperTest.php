@@ -169,43 +169,5 @@ class PieCrustHelperTest extends \PHPUnit_Framework_TestCase
         $uri = PieCrustHelper::formatUri($pc, $pageUri);
         $this->assertEquals($expectedUri, $uri);
     }
-
-    public function tagSlugifyDataProvider()
-    {
-        return array(
-            array('foo', 'foo'),
-            array('foo bar!', 'foo-bar'),
-            array('foo/bar,oy', 'foo-bar-oy'),
-            array('épatant', 'epatant'),
-            array('foo bar!', 'foo-bar', 'transliterate'),
-            array('foo/bar,oy', 'foo-bar-oy', 'transliterate'),
-            array('épatant', 'epatant', 'transliterate'),
-            array('foo bar!', 'foo%20bar%21', 'encode'),
-            array('foo/bar,oy', 'foo%2fbar%2coy', 'encode'),
-            array('épatant', '%c3%a9patant', 'encode'),
-            array('foo bar!', 'foo-bar', 'translate', 
-                array('something-else' => 'blah')),
-            array('foo bar!', 'foobar', 'translate', 
-                array('foo bar!' => 'foobar')),
-            array('foo bar!', 'foo-bar', false),
-            array('foo/bar,oy', 'foo-bar-oy', false),
-            array('épatant', 'épatant', false)
-        );
-    }
-
-    /**
-     * @dataProvider tagSlugifyDataProvider
-     */
-    public function testTagSlugify($value, $expectedValue, $slugifyMode = null, $locale = null)
-    {
-        $pc = new MockPieCrust();
-        if ($slugifyMode !== null)
-            $pc->getConfig()->setValue('site/slugify', $slugifyMode);
-        if ($locale !== null)
-            $pc->getConfig()->setValue('locale/tags', $locale);
-
-        $actualValue = PieCrustHelper::slugify($pc, 'tags', $value);
-        $this->assertEquals($expectedValue, $actualValue);
-    }
 }
 

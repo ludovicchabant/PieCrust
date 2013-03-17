@@ -13,7 +13,6 @@ use PieCrust\PieCrustException;
 use PieCrust\Util\UriBuilder;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
-use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -390,19 +389,26 @@ class PieCrustBaker
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
+            // Figure out tag combinations to bake. Start with any specified
+            // in the config.
             $combinations = $this->parameters['tag_combinations'];
-            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
+            if (array_key_exists($blogKey, $combinations))
             {
-                if (array_key_exists($blogKey, $combinations))
-                    $combinations = $combinations[$blogKey];
-                else
-                    $combinations = array();
+                $combinations = $combinations[$blogKey];
             }
+            elseif (count($blogKeys > 1))
+            {
+                $combinations = array();
+            }
+            
+            // Look at the known combinations from what was collected in the
+            // site's pages.
             $lastKnownCombinations = $this->bakeRecord->getLast('knownTagCombinations');
             if (array_key_exists($blogKey, $lastKnownCombinations))
             {
-                $combinations = array_merge($combinations, $lastKnownCombinations[$blogKey]);
-                $combinations = array_unique($combinations);
+                $combinations = array_unique(
+                    array_merge($combinations, $lastKnownCombinations[$blogKey])
+                );
             }
             if (count($combinations) > 0)
             {
@@ -410,9 +416,8 @@ class PieCrustBaker
                 $combinationsToBake = array();
                 foreach ($combinations as $comb)
                 {
-                    $explodedComb = explode('/', $comb);
-                    if (count(array_intersect($explodedComb, $tagsToBake)) > 0)
-                        $combinationsToBake[] = $explodedComb;
+                    if (count(array_intersect($comb, $tagsToBake)) > 0)
+                        $combinationsToBake[] = $comb;
                 }
                 $tagsToBake = array_merge($combinationsToBake, $tagsToBake);
             }
@@ -434,18 +439,20 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
+                    $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
                     if (is_array($tag))
                     {
-                        $pieCrust = $this->pieCrust;
                         $slugifiedTag = array_map(
-                            function($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
+                            function($t) use ($flags) {
+                                return UriBuilder::slugify($t, $flags);
+                            },
                             $tag
                         );
                         $formattedTag = implode('+', $tag);
                     }
                     else
                     {
-                        $slugifiedTag = PieCrustHelper::slugify($this->pieCrust, 'tags', $tag);
+                        $slugifiedTag = UriBuilder::slugify($tag, $flags);
                         $formattedTag = $tag;
                     }
 
@@ -505,7 +512,8 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 if (count($postInfos) > 0)
                 {
-                    $slugifiedCategory = PieCrustHelper::slugify($this->pieCrust, 'categories', $category);
+                    $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
+                    $slugifiedCategory = UriBuilder::slugify($category, $flags);
 
                     $slugifyUri = true;
                     if ($this->pieCrust->getConfig()->getValue('site/slugify') == 'encode')

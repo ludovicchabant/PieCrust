@@ -7,6 +7,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IO\Cache;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\ServerHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -204,7 +205,9 @@ class PieCrustConfiguration extends Configuration
                 'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                 'enable_gzip' => false,
                 'pretty_urls' => false,
-                'slugify' => 'transliterate',
+                'slugify' => 'transliterate|dash|lowercase',
+                'timezone' => false,
+                'locale' => false,
                 'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
                 'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
@@ -295,10 +298,41 @@ class PieCrustConfiguration extends Configuration
                         $config[$blogKey]);
         }
 
+        // Validate the slugify mode.
+        $slugifyModes = explode('|', $config['site']['slugify']);
+        $slugifyFlags = array(
+            'transliterate' => UriBuilder::SLUGIFY_TRANSLITERATE,
+            'dash' => UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES,
+            'lowercase' => UriBuilder::SLUGIFY_LOWERCASE,
+            'encode' => UriBuilder::SLUGIFY_ENCODE,
+            'iconv' => UriBuilder::SLUGIFY_ICONV,
+            'none' => 0
+        );
+        $finalSlugifyMode = 0;
+        foreach ($slugifyModes as $m)
+        {
+            if (!isset($slugifyFlags[$m]))
+                throw new PieCrustException("Unsupported slugify flag: {$m}");
+            $finalSlugifyMode |= $slugifyFlags[$m];
+        }
+        if (!($finalSlugifyMode & UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES))
+            $finalSlugifyMode |= UriBuilder::SLUGIFY_RESERVED_TO_DASHES;
+        $config['site']['slugify_flags'] = $finalSlugifyMode;
+
         // Set the timezone if it's specified.
-        if (isset($config['site']['timezone']))
+        if ($config['site']['timezone'])
         {
             date_default_timezone_set($config['site']['timezone']);
+        }
+
+        // Set the locale if it's specified.
+        if ($config['site']['locale'])
+        {
+            setlocale(LC_ALL, $config['site']['locale']);
+        }
+        else
+        {
+            $config['site']['locale'] = setlocale(LC_ALL, '0');
         }
         
         return $config;

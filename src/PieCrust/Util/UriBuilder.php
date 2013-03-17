@@ -17,6 +17,7 @@ class UriBuilder
     const SLUGIFY_RESERVED_TO_DASHES = 4;
     const SLUGIFY_NON_UNRESERVED_TO_DASHES = 8;
     const SLUGIFY_LOWERCASE = 16;
+    const SLUGIFY_ICONV = 32;
     // }}}
     
     /**
@@ -82,13 +83,14 @@ class UriBuilder
     public static function buildTagUri(IPieCrust $pieCrust, $blogKey, $tag, $slugify = true)
     {
         $tagUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/tag_url');
+        $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
         if (is_array($tag))
         {
             if ($slugify)
             {
                 $tag = array_map(
-                    function($t) use ($pieCrust) {
-                        return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                    function($t) use ($flags) {
+                        return UriBuilder::slugify($t, $flags);
                     },
                     $tag
                 );
@@ -98,7 +100,7 @@ class UriBuilder
         else
         {
             if ($slugify)
-                $tag = PieCrustHelper::slugify($pieCrust, 'tags', $tag);
+                $tag = UriBuilder::slugify($tag, $flags);
         }
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
@@ -118,7 +120,10 @@ class UriBuilder
     {
         $categoryUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/category_url');
         if ($slugify)
-            $category = PieCrustHelper::slugify($pieCrust, 'categories', $category);
+        {
+            $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
+            $category = UriBuilder::slugify($category, $flags);
+        }
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     
@@ -141,7 +146,10 @@ class UriBuilder
 
         if ($method & self::SLUGIFY_TRANSLITERATE)
             $value = self::transliterate($value);
-        
+
+        if ($method & self::SLUGIFY_ICONV)
+            $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+
         if ($method & self::SLUGIFY_NON_UNRESERVED_TO_DASHES)
             $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
         
@@ -322,7 +330,7 @@ class UriBuilder
             $doubleChars['out'] = array('OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th');
             $string = str_replace($doubleChars['in'], $doubleChars['out'], $string);
         }
-
+        
         return $string;
-    }    
+    }
 }

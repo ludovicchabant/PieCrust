@@ -5,6 +5,7 @@ use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
@@ -95,6 +96,46 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
         $pc->getConfig()->setValue('blog/category_url', '/%category%');
         $uri = UriBuilder::buildCategoryUri($pc, 'blog', $category);
         $this->assertEquals($expectedUri, $uri);
+    }
+
+    public function tagSlugifyDataProvider()
+    {
+        return array(
+            array('foo', 'foo'),
+            array('foo bar!', 'foo-bar'),
+            array('foo/bar,oy', 'foo-bar-oy'),
+            array('épatant', 'epatant'),
+            array('foo bar!', 'foo bar!', 'transliterate'),
+            array('foo/bar,OY', 'foo/bar,OY', 'transliterate'),
+            array('épatant', 'epatant', 'transliterate'),
+            array('foo bar!', 'foo-bar', 'dash'),
+            array('foo/bar,OY', 'foo-bar-OY', 'dash'),
+            array('épatant', '-patant', 'dash'),
+            array('foo bar!', 'foo%20bar%21', 'encode'),
+            array('foo/bar,OY', 'foo%2Fbar%2COY', 'encode'),
+            array('épatant', '%C3%A9patant', 'encode'),
+            array('foo bar!', 'foo-bar', 'none'),
+            array('foo/bar,oy', 'foo-bar-oy', 'none'),
+            array('épatant', 'épatant', 'none')
+        );
+    }
+
+    /**
+     * @dataProvider tagSlugifyDataProvider
+     */
+    public function testTagSlugify($value, $expectedValue, $slugifyMode = null, $locale = null)
+    {
+        $fs = MockFileSystem::create();
+        if ($slugifyMode)
+        {
+            $fs->withConfig(array('site' => array(
+                'slugify' => $slugifyMode
+            )));
+        }
+        $pc = $fs->getApp();
+        $flags = $pc->getConfig()->getValue('site/slugify_flags');
+        $actualValue = UriBuilder::slugify($value, $flags);
+        $this->assertEquals($expectedValue, $actualValue);
     }
 }
 

@@ -6,7 +6,6 @@ use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\UriBuilder;
-use PieCrust\Util\PieCrustHelper;
 
 
 /**
@@ -73,15 +72,20 @@ class LinkCollector
             $this->tagCombinations[$blogKey] = array();
         }
         
-        $pieCrust = $this->pieCrust;
+        // Slugify tags and sort them alphabetically.
+        $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
         $tags = array_map(
-            function ($t) use ($pieCrust) { return PieCrustHelper::slugify($pieCrust, 'tags', $t); },
+            function ($t) use ($flags) {
+                return UriBuilder::slugify($t, $flags);
+            },
             $tags
         );
-        $tagCombination = implode('/', $tags);
-        if (!in_array($tagCombination, $this->tagCombinations[$blogKey]))
+        sort($tags);
+
+        // Only add combination if it's not already there.
+        if (!in_array($tags, $this->tagCombinations[$blogKey]))
         {
-            $this->tagCombinations[$blogKey][] = $tagCombination;
+            $this->tagCombinations[$blogKey][] = $tags;
         }
     }
 }

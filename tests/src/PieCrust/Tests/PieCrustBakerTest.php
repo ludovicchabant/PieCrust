@@ -3,7 +3,6 @@
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Mock\MockFileSystem;
-use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
@@ -556,12 +555,13 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $tag1 = PieCrustHelper::slugify($app, 'tags', $tag1);
+        $flags = $app->getConfig()->getValue('site/slugify_flags');
+        $tag1 = UriBuilder::slugify($tag1, $flags);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
             file_get_contents($fs->url('counter/tag/'.$tag1.'.html'))
         );
-        $tag2 = PieCrustHelper::slugify($app, 'tags', $tag2);
+        $tag2 = UriBuilder::slugify($tag2, $flags);
         $this->assertEquals(
             "POST FIVE\nPOST FOUR\nPOST THREE\n", 
             file_get_contents($fs->url('counter/tag/'.$tag2.'.html'))
@@ -662,12 +662,13 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $cat1 = PieCrustHelper::slugify($app, 'categories', $cat1);
+        $flags = $app->getConfig()->getValue('site/slugify_flags');
+        $cat1 = UriBuilder::slugify($cat1, $flags);
         $this->assertEquals(
             "POST FIVE\nPOST TWO\nPOST ONE\n", 
             file_get_contents($fs->url('counter/'.$cat1.'.html'))
         );
-        $cat2 = PieCrustHelper::slugify($app, 'categories', $cat2);
+        $cat2 = UriBuilder::slugify($cat2, $flags);
         $this->assertEquals(
             "POST FOUR\nPOST THREE\n", 
             file_get_contents($fs->url('counter/'.$cat2.'.html'))
@@ -932,6 +933,51 @@ EOD
 EOD
             ,
             file_get_contents($fs->url('counter/by_tag.html'))
+        );
+    }
+
+    public function testMultiTagLink()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('default', '{{content|raw}}')
+            ->withTemplate('post', '{{content|raw}}')
+            ->withPost('post1', 1, 1, 2010, array('tags' => array('one')), 'POST ONE')
+            ->withPost('post2', 5, 2, 2010, array('tags' => array('one')), 'POST TWO')
+            ->withPost('post3', 10, 3, 2010, array('tags' => array('two')), 'POST THREE')
+            ->withPost('post4', 1, 1, 2011, array('tags' => array('three')), 'POST FOUR')
+            ->withPost('post5', 5, 2, 2011, array('tags' => array('one', 'two')), 'POST FIVE')
+            ->withPost('post6', 10, 3, 2011, array('tags' => array('two', 'three')), 'POST SIX')
+            ->withPost('post7', 15, 3, 2011, array('tags' => array('one', 'two')), 'POST SEVEN')
+            ->withPost('post8', 1, 1, 2012, array('tags' => array('two', 'three')), 'POST EIGHT')
+            ->withPost('post9', 5, 2, 2012, array('tags' => array('one', 'three')), 'POST NINE')
+            ->withPost('post10', 1, 1, 2013, array('tags' => array('one', 'two')), 'POST TEN')
+            ->withPage('foo', array(), "{{pctagurl(['one','two'])}}")
+            ->withPage('_tag', array(), "{{tag}}\n{% for p in pagination.posts %}\n{{p.content}}\n{% endfor %}");
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $structure = $fs->getStructure();
+        $counterTag = $structure[$fs->getRootName()]['counter']['tag'];
+        $this->assertEquals(
+            array('one.html', 'one', 'three.html', 'two.html', 'two'),
+            array_keys($counterTag)
+        );
+        $this->assertEquals(
+            array('2.html', 'two.html'),
+            array_keys($counterTag['one'])
+        );
+        $this->assertEquals(
+            array('2.html'),
+            array_keys($counterTag['two'])
+        );
+
+        $this->assertEquals(
+            "one + two\nPOST TEN\nPOST SEVEN\nPOST FIVE\n",
+            file_get_contents($fs->url('counter/tag/one/two.html'))
         );
     }
 }

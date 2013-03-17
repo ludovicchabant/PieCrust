@@ -267,9 +267,9 @@ EOD
     public function urlFunctionsWithUnicodeDataProvider()
     {
         return array(
-            array('des espaces', '/tag/des-espaces'),
-            array('épatant', '/tag/epatant'),
-            array('pâte à gateau', '/tag/pate-a-gateau')
+            array('des espaces', '/tag/des%20espaces'),
+            array('épatant', '/tag/%C3%A9patant'),
+            array('pâte à gateau', '/tag/p%C3%A2te%20%C3%A0%20gateau')
         );
     }
 
@@ -279,7 +279,10 @@ EOD
     public function testUrlFunctionsWithUnicode($in, $out)
     {
         $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('pretty_urls' => true)))
+            ->withConfig(array('site' => array(
+                'pretty_urls' => true,
+                'slugify' => 'encode'
+            )))
             ->withPage(
                 'test',
                 array('format' => 'none', 'layout' => 'none'),
@@ -289,5 +292,15 @@ EOD
         $page = Page::createFromUri($app, '/test');
         $actual = $page->getContentSegment();
         $this->assertEquals($out, $actual);
+    }
+
+    protected function setUp()
+    {
+        $this->oldLocale = setlocale(LC_ALL, '0');
+    }
+
+    protected function tearDown()
+    {
+        setlocale(LC_ALL, $this->oldLocale);
     }
 }

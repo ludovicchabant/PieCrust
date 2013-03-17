@@ -4,7 +4,6 @@ namespace PieCrust\Page\Filtering;
 
 use PieCrust\IPage;
 use PieCrust\PieCrustException;
-use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
 
 
@@ -46,6 +45,7 @@ class PaginationFilter
         // for that.
         $pageClause = null;
         $pieCrust = $page->getApp();
+        $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
         switch ($page->getPageType())
         {
         case IPage::TYPE_TAG:
@@ -59,8 +59,8 @@ class PaginationFilter
                         new HasFilterClause(
                             'tags', 
                             $k, 
-                            function($t) use ($pieCrust) {
-                                return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                            function($t) use ($flags) {
+                                return UriBuilder::slugify($t, $flags);
                             }
                         )
                     );
@@ -71,8 +71,8 @@ class PaginationFilter
                 $pageClause = new HasFilterClause(
                     'tags', 
                     $pageKey, 
-                    function($t) use ($pieCrust) {
-                        return PieCrustHelper::slugify($pieCrust, 'tags', $t);
+                    function($t) use ($flags) {
+                        return UriBuilder::slugify($t, $flags);
                     }
                 );
             }
@@ -81,8 +81,8 @@ class PaginationFilter
             $pageClause = new IsFilterClause(
                 'category', 
                 $page->getPageKey(), 
-                function($c) use ($pieCrust) {
-                    return PieCrustHelper::slugify($pieCrust, 'categories', $c);
+                function($c) use ($flags) {
+                    return UriBuilder::slugify($c, $flags);
                 }
             );
             break;
