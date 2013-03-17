@@ -448,12 +448,12 @@ class PieCrustBaker
                             },
                             $tag
                         );
-                        $formattedTag = implode('+', $tag);
+                        $formattedTag = implode('+', $slugifiedTag);
                     }
                     else
                     {
                         $slugifiedTag = UriBuilder::slugify($tag, $flags);
-                        $formattedTag = $tag;
+                        $formattedTag = $slugifiedTag;
                     }
 
                     $slugifyUri = true;
@@ -475,7 +475,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'tag:' . $slugifiedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
