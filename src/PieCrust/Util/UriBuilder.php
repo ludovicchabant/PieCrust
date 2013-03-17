@@ -150,15 +150,15 @@ class UriBuilder
         if ($method & self::SLUGIFY_ICONV)
             $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
 
+        if ($method & self::SLUGIFY_ENCODE)
+            $value = rawurlencode($value);
+
         if ($method & self::SLUGIFY_NON_UNRESERVED_TO_DASHES)
             $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
         
-        if ($method == self::SLUGIFY_RESERVED_TO_DASHES)
+        if ($method & self::SLUGIFY_RESERVED_TO_DASHES)
             $value = preg_replace('/['.$reserved.']+/', '-', $value);
         
-        if ($method & self::SLUGIFY_ENCODE)
-            $value = rawurlencode($value);
-            
         if ($method & self::SLUGIFY_LOWERCASE)
             $value = strtolower($value);
         
