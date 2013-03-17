@@ -301,6 +301,7 @@ class PieCrustConfiguration extends Configuration
         // Validate the slugify mode.
         $slugifyModes = explode('|', $config['site']['slugify']);
         $slugifyFlags = array(
+            'res2dash' => UriBuilder::SLUGIFY_RESERVED_TO_DASHES_FIRST,
             'transliterate' => UriBuilder::SLUGIFY_TRANSLITERATE,
             'dash' => UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES,
             'lowercase' => UriBuilder::SLUGIFY_LOWERCASE,

@@ -18,6 +18,7 @@ class UriBuilder
     const SLUGIFY_NON_UNRESERVED_TO_DASHES = 8;
     const SLUGIFY_LOWERCASE = 16;
     const SLUGIFY_ICONV = 32;
+    const SLUGIFY_RESERVED_TO_DASHES_FIRST = 64;
     // }}}
     
     /**
@@ -143,6 +144,9 @@ class UriBuilder
         static $reserved = null;
         if ($reserved == null)
             $reserved = preg_quote(":/?#[]@!$&'()*+,;=\\ ", '/');
+
+        if ($method & self::SLUGIFY_RESERVED_TO_DASHES_FIRST)
+            $value = preg_replace('/['.$reserved.']+/', '-', $value);
 
         if ($method & self::SLUGIFY_TRANSLITERATE)
             $value = self::transliterate($value);
