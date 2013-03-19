@@ -116,8 +116,7 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
             array('foo bar!', 'foo-bar', 'encode'),
             array('foo/bar,OY', 'foo-bar-OY', 'encode'),
             array('épatant', '%C3%A9patant', 'encode'),
-            array('foo bar!', 'foo-bar', 'lowercase'),
-            array('foo/bar,OY', 'foo-bar-oy', 'lowercase'),
+            array('Это тэг', '%D0%AD%D1%82%D0%BE-%D1%82%D1%8D%D0%B3', 'encode'),
             array('foo bar!', 'foo-bar', 'none'),
             array('foo/bar,oy', 'foo-bar-oy', 'none'),
             array('épatant', 'épatant', 'none')

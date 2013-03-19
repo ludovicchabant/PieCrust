@@ -205,7 +205,7 @@ class PieCrustConfiguration extends Configuration
                 'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                 'enable_gzip' => false,
                 'pretty_urls' => false,
-                'slugify' => 'transliterate|dash|lowercase',
+                'slugify' => 'transliterate|lowercase',
                 'timezone' => false,
                 'locale' => false,
                 'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
@@ -298,26 +298,35 @@ class PieCrustConfiguration extends Configuration
                         $config[$blogKey]);
         }
 
-        // Validate the slugify mode.
-        $slugifyModes = explode('|', $config['site']['slugify']);
-        $slugifyFlags = array(
-            'transliterate' => UriBuilder::SLUGIFY_TRANSLITERATE,
-            'dash' => UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES,
-            'lowercase' => UriBuilder::SLUGIFY_LOWERCASE,
-            'encode' => UriBuilder::SLUGIFY_ENCODE,
-            'iconv' => UriBuilder::SLUGIFY_ICONV,
-            'none' => 0
+        // Validate the slugify mode and optional flags.
+        $slugifySetting = explode('|', $config['site']['slugify']);
+        $slugifyModes = array(
+            'none' => UriBuilder::SLUGIFY_MODE_NONE,
+            'transliterate' => UriBuilder::SLUGIFY_MODE_TRANSLITERATE,
+            'encode' => UriBuilder::SLUGIFY_MODE_ENCODE,
+            'dash' => UriBuilder::SLUGIFY_MODE_DASHES,
+            'iconv' => UriBuilder::SLUGIFY_MODE_ICONV
         );
-        $finalSlugifyMode = 0;
-        foreach ($slugifyModes as $m)
+        $slugifyFlags = array(
+            'lowercase' => UriBuilder::SLUGIFY_FLAG_LOWERCASE
+        );
+        $finalSlugify = 0;
+        foreach ($slugifySetting as $i => $m)
         {
-            if (!isset($slugifyFlags[$m]))
-                throw new PieCrustException("Unsupported slugify flag: {$m}");
-            $finalSlugifyMode |= $slugifyFlags[$m];
+            if ($i == 0)
+            {
+                if (!isset($slugifyModes[$m]))
+                    throw new PieCrustException("Unsupported slugify mode: {$m}");
+                $finalSlugify |= $slugifyModes[$m];
+            }
+            else
+            {
+                if (!isset($slugifyFlags[$m]))
+                    throw new PieCrustException("Unsupported slugify flag: {$m}");
+                $finalSlugify |= $slugifyFlags[$m];
+            }
         }
-        if (!($finalSlugifyMode & UriBuilder::SLUGIFY_NON_UNRESERVED_TO_DASHES))
-            $finalSlugifyMode |= UriBuilder::SLUGIFY_RESERVED_TO_DASHES;
-        $config['site']['slugify_flags'] = $finalSlugifyMode;
+        $config['site']['slugify_flags'] = $finalSlugify;
 
         // Set the timezone if it's specified.
         if ($config['site']['timezone'])

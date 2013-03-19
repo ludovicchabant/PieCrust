@@ -267,22 +267,32 @@ EOD
     public function urlFunctionsWithUnicodeDataProvider()
     {
         return array(
-            array('des espaces', '/tag/des-espaces'),
-            array('épatant', '/tag/%C3%A9patant'),
-            array('pâte à gateau', '/tag/p%C3%A2te-%C3%A0-gateau')
+            array(false, 'des espaces', '/tag/des-espaces'),
+            array(false, 'épatant', '/tag/epatant'),
+            array(false, 'pâte à gateau', '/tag/pate-a-gateau'),
+            array('transliterate', 'des espaces', '/tag/des-espaces'),
+            array('transliterate', 'épatant', '/tag/epatant'),
+            array('transliterate', 'pâte à gateau', '/tag/pate-a-gateau'),
+            array('encode', 'des espaces', '/tag/des-espaces'),
+            array('encode', 'épatant', '/tag/%C3%A9patant'),
+            array('encode', 'pâte à gâteau', '/tag/p%C3%A2te-%C3%A0-g%C3%A2teau'),
+            array('encode', 'Тест', '/tag/%D0%A2%D0%B5%D1%81%D1%82'),
+            array('dash', 'des espaces', '/tag/des-espaces'),
+            array('dash', 'épatant', '/tag/-patant'),
+            array('dash', 'pâte à gâteau', '/tag/p-te-g-teau')
         );
     }
 
     /**
      * @dataProvider urlFunctionsWithUnicodeDataProvider
      */
-    public function testUrlFunctionsWithUnicode($in, $out)
+    public function testUrlFunctionsWithUnicode($slugifyMode, $in, $out)
     {
+        $config = array('site' => array('pretty_urls' => true));
+        if ($slugifyMode !== false)
+            $config['site']['slugify'] = $slugifyMode;
         $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array(
-                'pretty_urls' => true,
-                'slugify' => 'encode'
-            )))
+            ->withConfig($config)
             ->withPage(
                 'test',
                 array('format' => 'none', 'layout' => 'none'),

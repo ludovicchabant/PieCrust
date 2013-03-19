@@ -12,12 +12,15 @@ use PieCrust\IPieCrust;
 class UriBuilder
 {
     // Slugify methods {{{
-    const SLUGIFY_TRANSLITERATE = 1;
-    const SLUGIFY_ENCODE = 2;
-    const SLUGIFY_RESERVED_TO_DASHES = 4;
-    const SLUGIFY_NON_UNRESERVED_TO_DASHES = 8;
-    const SLUGIFY_LOWERCASE = 16;
-    const SLUGIFY_ICONV = 32;
+    const SLUGIFY_MODE_NONE = 0;
+    const SLUGIFY_MODE_TRANSLITERATE = 1;
+    const SLUGIFY_MODE_ENCODE = 2;
+    const SLUGIFY_MODE_DASHES = 4;
+    const SLUGIFY_MODE_ICONV = 8;
+    // }}}
+    
+    // Slugify options {{{
+    const SLUGIFY_FLAG_LOWERCASE = 16;
     // }}}
     
     /**
@@ -110,7 +113,7 @@ class UriBuilder
      */
     public static function buildTagUriPattern($tagUrlFormat)
     {
-        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-\.]+(\/[\w\-\.]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%tag%', '(?P<tag>[^\/]+(\/[^\/]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
     
     /**
@@ -132,7 +135,7 @@ class UriBuilder
      */
     public static function buildCategoryUriPattern($categoryUrlFormat)
     {
-        return '/^' . str_replace('%category%', '(?P<cat>[\w\-\.]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%category%', '(?P<cat>[^\/]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
     }
 
     /**
@@ -144,24 +147,38 @@ class UriBuilder
         if ($reserved == null)
             $reserved = preg_quote(":/?#[]@!$&'()*+,;=\\ ", '/');
 
-        if ($method & self::SLUGIFY_TRANSLITERATE)
+        // Apply the main slugify mode.
+        $mode = ($method & 0x000f);
+        switch ($mode)
+        {
+        case self::SLUGIFY_MODE_TRANSLITERATE:
             $value = self::transliterate($value);
-
-        if ($method & self::SLUGIFY_ICONV)
-            $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
-
-        if ($method & self::SLUGIFY_NON_UNRESERVED_TO_DASHES)
-            $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
-        
-        if ($method & self::SLUGIFY_RESERVED_TO_DASHES)
+            break;
+        case self::SLUGIFY_MODE_ENCODE:
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
             $value = preg_replace('/['.$reserved.']+/', '-', $value);
-        
-        if ($method & self::SLUGIFY_LOWERCASE)
-            $value = strtolower($value);
-
-        if ($method & self::SLUGIFY_ENCODE)
             $value = rawurlencode($value);
-        
+            break;
+        case self::SLUGIFY_MODE_DASHES:
+            $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
+            break;
+        case self::SLUGIFY_MODE_ICONV:
+            $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+            break;
+        }
+
+        // Apply the flags, and make sure we don't have reserved characters
+        // left in the URL.
+        if ($mode != self::SLUGIFY_MODE_ENCODE)
+        {
+            if ($mode != self::SLUGIFY_MODE_DASHES)
+                $value = preg_replace('/['.$reserved.']+/', '-', $value);
+
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
+        }
+
         return rtrim($value, '-');
     }
 

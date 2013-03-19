@@ -43,7 +43,7 @@ class ServerHelper
             {
                 if ($key[0] == '/' and $value == null)
                 {
-                    $requestUri = urldecode($key);
+                    $requestUri = $key;
                     break;
                 }
             }
@@ -86,7 +86,7 @@ class ServerHelper
                 {
                     $requestUri = substr($requestUri, 0, $questionMark);
                 }
-                $requestUri = rawurldecode($requestUri);
+                $requestUri = $requestUri;
             }
         }
         if ($requestUri == null)

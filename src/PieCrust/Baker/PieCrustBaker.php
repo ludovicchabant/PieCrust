@@ -374,6 +374,7 @@ class PieCrustBaker
             throw new PieCrustException("Can't bake tags without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+        $slugifyFlags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
         foreach ($blogKeys as $blogKey)
         {
             // Check that there is a tag listing page to bake.
@@ -439,25 +440,23 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsTagged($blogKey, $tag);
                 if (count($postInfos) > 0)
                 {
-                    $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
                     if (is_array($tag))
                     {
                         $slugifiedTag = array_map(
-                            function($t) use ($flags) {
-                                return UriBuilder::slugify($t, $flags);
+                            function($t) use ($slugifyFlags) {
+                                return UriBuilder::slugify($t, $slugifyFlags);
                             },
                             $tag
                         );
-                        $tag = array_map("rawurldecode", $slugifiedTag);
-                        $formattedTag = implode('+', $tag);
+                        $formattedTag = implode('+', array_map('rawurldecode', $tag));
                     }
                     else
                     {
-                        $slugifiedTag = UriBuilder::slugify($tag, $flags);
-                        $tag = $formattedTag = rawurldecode($slugifiedTag);
+                        $slugifiedTag = UriBuilder::slugify($tag, $slugifyFlags);
+                        $formattedTag = rawurldecode($tag);
                     }
 
-                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $tag, false);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $slugifiedTag, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
@@ -485,6 +484,7 @@ class PieCrustBaker
             throw new PieCrustException("Can't bake categories without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+        $slugifyFlags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
         foreach ($blogKeys as $blogKey)
         {
             // Check that there is a category listing page to bake.
@@ -510,11 +510,10 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 if (count($postInfos) > 0)
                 {
-                    $flags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
-                    $slugifiedCategory = UriBuilder::slugify($category, $flags);
-                    $category = rawurldecode($slugifiedCategory);
+                    $slugifiedCategory = UriBuilder::slugify($category, $slugifyFlags);
+                    $formattedCategory = rawurldecode($slugifiedCategory);
                     
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $category, false);
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $slugifiedCategory, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
@@ -530,7 +529,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'category:' . $category . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'category:' . $formattedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }

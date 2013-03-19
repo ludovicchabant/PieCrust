@@ -516,29 +516,45 @@ EOD
     public function bakeTagPagesDataProvider()
     {
         return array(
-            array('foo', 'bar'),
-            array('foo zoo', 'bar'),
-            array('foo zoo', 'bar baz'),
-            array('foo/zoo', 'bar'),
-            array('foo+zoo', 'bar'),
-            array('foo-zoo', 'bar'),
-            array('foo_zoo', 'bar')
+            array('foo', 'bar', 'foo', 'bar', 'foo', 'bar'),
+            array('foo zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo zoo', 'bar baz', 'foo-zoo', 'bar-baz', 'foo-zoo', 'bar-baz'),
+            array('foo/zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo+zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo-zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo_zoo', 'bar', 'foo_zoo', 'bar', 'foo_zoo', 'bar'),
+            array('épatant', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
+            array('épaTANT', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
+            array('épatant gâteau', 'bar', 'epatant-gateau', 'bar', 'epatant-gateau', 'bar'),
+            array('épatant', 'bar', 'épatant', 'bar', '%C3%A9patant', 'bar', 'encode'),
+            array('épatant gâteau', 'bar', 'épatant-gâteau', 'bar', '%C3%A9patant-g%C3%A2teau', 'bar', 'encode'),
+            array('Разное', 'bar', 'Разное', 'bar', 'Разное', 'bar', 'transliterate'),
+            array('Разное', 'bar', 'Разное', 'bar', '%D0%A0%D0%B0%D0%B7%D0%BD%D0%BE%D0%B5', 'bar', 'encode'),
+            array('Это тэг', 'bar', 'Это-тэг', 'bar', 'Это-тэг', 'bar', 'transliterate'),
+            array('Это тэг', 'bar', 'Это-тэг', 'bar', '%D0%AD%D1%82%D0%BE-%D1%82%D1%8D%D0%B3', 'bar', 'encode'),
+            array('Тест', 'bar', 'Тест', 'bar', 'Тест', 'bar', 'transliterate'),
+            array('Тест', 'bar', 'Тест', 'bar', '%D0%A2%D0%B5%D1%81%D1%82', 'bar', 'encode')
         );
     }
 
     /**
      * @dataProvider bakeTagPagesDataProvider
      */
-    public function testBakeTagPages($tag1, $tag2)
+    public function testBakeTagPages($tag1, $tag2, $fileName1, $fileName2, $slug1, $slug2, $slugify = false)
     {
+        $config = array('site' => array('default_format' => 'none'));
+        if ($slugify !== false)
+            $config['site']['slugify'] = $slugify;
         $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withConfig($config)
             ->withTemplate('default', '')
             ->withTemplate('post', '{{content|raw}}')
             ->withPage(
                 '_tag', 
                 array('layout' => 'none'),
                 <<<EOD
+TAG: {{tag}}
+URI: {{page.url}}
 {% for post in pagination.posts %}
 {{ post.content|raw }}
 {% endfor %}
@@ -555,16 +571,20 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $flags = $app->getConfig()->getValue('site/slugify_flags');
-        $tag1 = UriBuilder::slugify($tag1, $flags);
+        $tagFileNames = array($fileName1.'.html', $fileName2.'.html');
+        sort($tagFileNames);
+        $actual = $fs->getStructure();
+        $actual = array_keys($actual[$fs->getRootName()]['counter']['tag']);
+        sort($actual);
+        $this->assertEquals($tagFileNames, $actual);
+
         $this->assertEquals(
-            "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/tag/'.$tag1.'.html'))
+            "TAG: {$tag1}\nURI: /tag/{$slug1}.html\nPOST FIVE\nPOST TWO\nPOST ONE\n", 
+            file_get_contents($fs->url('counter/tag/'.$fileName1.'.html'))
         );
-        $tag2 = UriBuilder::slugify($tag2, $flags);
         $this->assertEquals(
-            "POST FIVE\nPOST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/tag/'.$tag2.'.html'))
+            "TAG: {$tag2}\nURI: /tag/{$slug2}.html\nPOST FIVE\nPOST FOUR\nPOST THREE\n", 
+            file_get_contents($fs->url('counter/tag/'.$fileName2.'.html'))
         );
     }
 
@@ -624,28 +644,48 @@ EOD
     public function bakeCategoryPageDataProvider()
     {
         return array(
-            array('foo', 'bar'),
-            array('foo zoo', 'bar'),
-            array('foo zoo', 'bar baz'),
-            array('foo/zoo', 'bar'),
-            array('foo-zoo', 'bar'),
-            array('foo_zoo', 'bar')
+            array('foo', 'bar', 'foo', 'bar', 'foo', 'bar'),
+            array('foo zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo zoo', 'bar baz', 'foo-zoo', 'bar-baz', 'foo-zoo', 'bar-baz'),
+            array('foo/zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo+zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo-zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
+            array('foo_zoo', 'bar', 'foo_zoo', 'bar', 'foo_zoo', 'bar'),
+            array('épatant', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
+            array('épaTANT', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
+            array('épatant gâteau', 'bar', 'epatant-gateau', 'bar', 'epatant-gateau', 'bar'),
+            array('épatant', 'bar', 'épatant', 'bar', '%C3%A9patant', 'bar', 'encode'),
+            array('épatant gâteau', 'bar', 'épatant-gâteau', 'bar', '%C3%A9patant-g%C3%A2teau', 'bar', 'encode'),
+            array('Разное', 'bar', 'Разное', 'bar', 'Разное', 'bar', 'transliterate'),
+            array('Разное', 'bar', 'Разное', 'bar', '%D0%A0%D0%B0%D0%B7%D0%BD%D0%BE%D0%B5', 'bar', 'encode'),
+            array('Это тэг', 'bar', 'Это-тэг', 'bar', 'Это-тэг', 'bar', 'transliterate'),
+            array('Это тэг', 'bar', 'Это-тэг', 'bar', '%D0%AD%D1%82%D0%BE-%D1%82%D1%8D%D0%B3', 'bar', 'encode'),
+            array('Тест', 'bar', 'Тест', 'bar', 'Тест', 'bar', 'transliterate'),
+            array('Тест', 'bar', 'Тест', 'bar', '%D0%A2%D0%B5%D1%81%D1%82', 'bar', 'encode')
         );
     }
 
     /**
      * @dataProvider bakeCategoryPageDataProvider
      */
-    public function testBakeCategoryPage($cat1, $cat2)
+    public function testBakeCategoryPage($cat1, $cat2, $fileName1, $fileName2, $slug1, $slug2, $slugify = false)
     {
+        $config = array(
+            'site' => array('default_format' => 'none'),
+            'blog' => array('category_url' => '/category/%category%')
+        );
+        if ($slugify !== false)
+            $config['site']['slugify'] = $slugify;
         $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withConfig($config)
             ->withTemplate('default', '')
             ->withTemplate('post', '{{content|raw}}')
             ->withPage(
                 '_category', 
                 array('layout' => 'none'),
                 <<<EOD
+CATEGORY: {{category}}
+URI: {{page.url}}
 {% for post in pagination.posts %}
 {{ post.content|raw }}
 {% endfor %}
@@ -662,16 +702,20 @@ EOD
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $flags = $app->getConfig()->getValue('site/slugify_flags');
-        $cat1 = UriBuilder::slugify($cat1, $flags);
+        $categoryFileNames = array($fileName1.'.html', $fileName2.'.html');
+        sort($categoryFileNames);
+        $actual = $fs->getStructure();
+        $actual = array_keys($actual[$fs->getRootName()]['counter']['category']);
+        sort($actual);
+        $this->assertEquals($categoryFileNames, $actual);
+
         $this->assertEquals(
-            "POST FIVE\nPOST TWO\nPOST ONE\n", 
-            file_get_contents($fs->url('counter/'.$cat1.'.html'))
+            "CATEGORY: {$cat1}\nURI: /category/{$slug1}\nPOST FIVE\nPOST TWO\nPOST ONE\n", 
+            file_get_contents($fs->url('counter/category/'.$fileName1.'.html'))
         );
-        $cat2 = UriBuilder::slugify($cat2, $flags);
         $this->assertEquals(
-            "POST FOUR\nPOST THREE\n", 
-            file_get_contents($fs->url('counter/'.$cat2.'.html'))
+            "CATEGORY: {$cat2}\nURI: /category/{$slug2}\nPOST FOUR\nPOST THREE\n", 
+            file_get_contents($fs->url('counter/category/'.$fileName2.'.html'))
         );
     }
 
