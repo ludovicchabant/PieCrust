@@ -1,12 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Util\UriBuilder;
 
 
-class PieCrustBakerTest extends \PHPUnit_Framework_TestCase
+class PieCrustBakerTest extends PieCrustTestCase
 {
     public function testPostsWithOverridenDates()
     {

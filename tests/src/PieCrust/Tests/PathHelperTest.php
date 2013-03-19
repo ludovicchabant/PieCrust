@@ -1,10 +1,12 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use org\bovigo\vfs\vfsStream;
 use PieCrust\Util\PathHelper;
 
 
-class PathHelperTest extends \PHPUnit_Framework_TestCase
+class PathHelperTest extends PieCrustTestCase
 {
     public function testGetValidAppRootDir()
     {

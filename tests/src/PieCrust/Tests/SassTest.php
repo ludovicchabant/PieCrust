@@ -7,7 +7,7 @@ use PieCrust\Util\PathHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class SassTest extends \PHPUnit_Framework_TestCase
+class SassTest extends PieCrustTestCase
 {
     public function testSass()
     {
@@ -21,7 +21,7 @@ class SassTest extends \PHPUnit_Framework_TestCase
             return;
         }
 
-        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+        $fs = MockFileSystem::create(true, true)
             ->withTemplate('default', '{{content|raw}}')
             ->withAsset('sass/theme.scss', <<<EOD
 #navbar {
@@ -56,16 +56,6 @@ EOD
             ,
             file_get_contents($fs->url('kitchen/_counter/sass/theme.css'))
         );
-    }
-
-    public function tearDown()
-    {
-        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
-        if (is_dir($mockDir))
-        {
-            PathHelper::deleteDirectoryContents($mockDir);
-            rmdir($mockDir);
-        }
     }
 }
 

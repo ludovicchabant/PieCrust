@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
@@ -9,7 +11,7 @@ use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
-class UriBuilderTest extends \PHPUnit_Framework_TestCase
+class UriBuilderTest extends PieCrustTestCase
 {
     public function buildUriDataProvider()
     {

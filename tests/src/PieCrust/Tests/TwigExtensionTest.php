@@ -1,12 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;
 use PieCrust\Mock\MockFileSystem;
 
 
-class TwigExtensionTest extends \PHPUnit_Framework_TestCase
+class TwigExtensionTest extends PieCrustTestCase
 {
     public static function urlFunctionsDataProvider()
     {

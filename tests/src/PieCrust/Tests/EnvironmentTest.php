@@ -1,12 +1,12 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use PieCrust\PieCrustDefaults;
 use PieCrust\Mock\MockFileSystem;
 
 
-class EnvironmentTest extends \PHPUnit_Framework_TestCase
+class EnvironmentTest extends PieCrustTestCase
 {
     public function testGetEmptySitePageInfos()
     {

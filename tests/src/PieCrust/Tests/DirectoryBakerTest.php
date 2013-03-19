@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
@@ -14,7 +14,7 @@ use PieCrust\Mock\MockPlugin;
 use PieCrust\Mock\MockProcessor;
 
 
-class DirectoryBakerTest extends \PHPUnit_Framework_TestCase
+class DirectoryBakerTest extends PieCrustTestCase
 {
     public function testEmptyBake()
     {

@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Baker\PieCrustBaker;
 use PieCrust\Page\Page;
@@ -7,13 +9,16 @@ use PieCrust\Util\PieCrustHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class TemplateRenderingTest extends \PHPUnit_Framework_TestCase
+class TemplateRenderingTest extends PieCrustTestCase
 {
     public function renderTemplateDataProvider()
     {
         $data = array();
         
-        $files = new GlobIterator(PIECRUST_UNITTESTS_DATA_DIR . 'templates/*', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $files = new \GlobIterator(
+            PIECRUST_UNITTESTS_DATA_DIR . 'templates/*', 
+            \GlobIterator::CURRENT_AS_FILEINFO | \GlobIterator::SKIP_DOTS
+        );
         foreach ($files as $file)
         {
             $info = pathinfo($file);

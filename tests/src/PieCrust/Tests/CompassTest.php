@@ -7,7 +7,7 @@ use PieCrust\Util\PathHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class CompassTest extends \PHPUnit_Framework_TestCase
+class CompassTest extends PieCrustTestCase
 {
     public function testCompass()
     {
@@ -21,7 +21,7 @@ class CompassTest extends \PHPUnit_Framework_TestCase
             return;
         }
 
-        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+        $fs = MockFileSystem::create(true, true)
             ->withConfig(array('compass' => array('use_compass' => true)))
             ->withTemplate('default', '{{content|raw}}')
             ->withAsset('sass/theme.scss', <<<EOD
@@ -66,16 +66,6 @@ EOD
             ,
             file_get_contents($fs->url('kitchen/_counter/stylesheets/theme.css'))
         );
-    }
-
-    public function tearDown()
-    {
-        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
-        if (is_dir($mockDir))
-        {
-            PathHelper::deleteDirectoryContents($mockDir);
-            rmdir($mockDir);
-        }
     }
 }
 
