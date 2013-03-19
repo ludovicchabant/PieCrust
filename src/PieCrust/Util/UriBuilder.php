@@ -21,6 +21,7 @@ class UriBuilder
     
     // Slugify options {{{
     const SLUGIFY_FLAG_LOWERCASE = 16;
+    const SLUGIFY_FLAG_DOT_TO_DASH = 32;
     // }}}
     
     /**
@@ -177,6 +178,11 @@ class UriBuilder
 
             if ($method & self::SLUGIFY_FLAG_LOWERCASE)
                 $value = strtolower($value);
+        }
+        if ($method & self::SLUGIFY_FLAG_DOT_TO_DASH)
+        {
+            $value = preg_replace('/^\.+/', '', $value);
+            $value = preg_replace('/\.+/', '-', $value);
         }
 
         return rtrim($value, '-');

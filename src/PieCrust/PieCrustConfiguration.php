@@ -326,6 +326,10 @@ class PieCrustConfiguration extends Configuration
                 $finalSlugify |= $slugifyFlags[$m];
             }
         }
+        // We always want to slugify the `.` (dot) character, at least for tags
+        // and categories, because it would screw up how we figure out what
+        // extension to use for output files.
+        $finalSlugify |= UriBuilder::SLUGIFY_FLAG_DOT_TO_DASH;
         $config['site']['slugify_flags'] = $finalSlugify;
 
         // Set the timezone if it's specified.

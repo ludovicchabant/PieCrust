@@ -105,6 +105,8 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
             array('foo bar!', 'foo-bar'),
             array('foo/bar,oy', 'foo-bar-oy'),
             array('épatant', 'epatant'),
+            array('.htaccess', 'htaccess'),
+            array('functions.php', 'functions-php'),
             array('foo bar!', 'foo-bar', 'transliterate'),
             array('foo/bar,OY', 'foo-bar-OY', 'transliterate'),
             array('épatant', 'epatant', 'transliterate'),

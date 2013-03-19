@@ -125,7 +125,15 @@ class PageBaker
             $name = $decodedUri;
             $extension = pathinfo($decodedUri, PATHINFO_EXTENSION);
             if ($extension)
-                $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
+            {
+                // If the page is a tag/category listing, we don't want to pick
+                // up any extension from the tag/category name itself! (like if 
+                // the tag's name is `blah.php`)
+                if (!PageHelper::isTag($page) && !PageHelper::isCategory($page))
+                    $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
+                else
+                    $extension = false;
+            }
             if ($decodedUri == '')
             {
                 // For the homepage, we have:

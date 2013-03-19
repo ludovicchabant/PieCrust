@@ -523,6 +523,7 @@ EOD
             array('foo+zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
             array('foo-zoo', 'bar', 'foo-zoo', 'bar', 'foo-zoo', 'bar'),
             array('foo_zoo', 'bar', 'foo_zoo', 'bar', 'foo_zoo', 'bar'),
+            array('.htaccess', 'functions.php', 'htaccess', 'functions-php', 'htaccess', 'functions-php'),
             array('épatant', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
             array('épaTANT', 'bar', 'epatant', 'bar', 'epatant', 'bar'),
             array('épatant gâteau', 'bar', 'epatant-gateau', 'bar', 'epatant-gateau', 'bar'),
