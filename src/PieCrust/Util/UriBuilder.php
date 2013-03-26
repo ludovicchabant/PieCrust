@@ -148,6 +148,10 @@ class UriBuilder
         if ($reserved == null)
             $reserved = preg_quote(":/?#[]@!$&'()*+,;=\\ ", '/');
 
+        // Turn the value into a string, as it could actually be an
+        // instance of `PagePropertyData` or some other thing from the template.
+        $value = (string)$value;
+
         // Apply the main slugify mode.
         $mode = ($method & 0x000f);
         switch ($mode)
