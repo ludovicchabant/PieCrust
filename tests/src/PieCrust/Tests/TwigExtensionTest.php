@@ -306,6 +306,49 @@ EOD
         $this->assertEquals($out, $actual);
     }
 
+    public function testTagUrlFunctionsWithBlogData()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array(
+                'root' => 'localhost', 
+                'pretty_urls' => true,
+                'default_format' => 'none'
+            )))
+            ->withPost('post1', 1, 1, 2012, array('tags' => array('one')))
+            ->withPost('post2', 1, 2, 2012, array('tags' => array('one', 'two')))
+            ->withPost('post3', 1, 3, 2012, array('tags' => array('one')))
+            ->withPost('post4', 1, 4, 2012, array('tags' => array('two')))
+            ->withPage(
+                'test',
+                array('layout' => 'none'),
+                <<<EOD
+{% for t in blog.tags %}
+TAG: {{t}} / {{t.name}}
+LINK: {{pctagurl(t)}}
+{% for p in t.posts %}
+* {{p.slug}}
+{% endfor %}
+{% endfor %}
+EOD
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, '/test');
+        $actual = $page->getContentSegment();
+        $expected = <<<EOD
+TAG: one / one
+LINK: localhost/tag/one
+* 2012/03/01/post3
+* 2012/02/01/post2
+* 2012/01/01/post1
+TAG: two / two
+LINK: localhost/tag/two
+* 2012/04/01/post4
+* 2012/02/01/post2
+
+EOD;
+        $this->assertEquals($expected, $actual);
+    }
+
     protected function setUp()
     {
         $this->oldLocale = setlocale(LC_ALL, '0');
