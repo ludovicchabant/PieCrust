@@ -70,7 +70,7 @@ class JekyllImporter extends ImporterBase
             '  - ',
             $markup
         );
-        $config = Yaml::load($markup);
+        $config = Yaml::parse($markup);
 
         if (!isset($config['site']))
             $config['site'] = array();
