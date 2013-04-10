@@ -37,8 +37,7 @@ class UriBuilder
         $uri = str_replace('\\', '/', $relativePath);
         $uri = preg_replace($stripPattern, "", $uri);
 
-        if ($uri == '_index')
-            $uri = '';
+        $uri = str_replace('_index', '', $uri);
 
         return $uri;
     }
