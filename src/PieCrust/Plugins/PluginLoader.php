@@ -164,21 +164,21 @@ class PluginLoader
 
     protected function loadPlugin($pluginDir)
     {
-        // A plugin should have a `plugin_info.yml` file
-        // with basic information in it.
-        $pluginInfoFile = $pluginDir . '/plugin_info.yml';
-        if (!is_readable($pluginInfoFile))
-            throw new PieCrustException("No `plugin_info.yml` found in '{$pluginDir}'. Please reinstall the plugin.");
-        $pluginInfo = Yaml::parse(file_get_contents($pluginInfoFile));
-        if (!isset($pluginInfo['name']))
-            throw new PieCrustException("No name was defined in '{$pluginInfoFile}'.");
-        $pluginName = $pluginInfo['name'];
-
-        // Now find the main plugin class' source file.
-        $pluginClassName = $pluginName . 'Plugin';
-        $pluginFile = $pluginDir . DIRECTORY_SEPARATOR . $pluginClassName . '.php';
-        if (!is_readable($pluginFile))
-            throw new PieCrustException("No plugin class found for plugin '{$pluginName}'.");
+        // Find the main plugin class' source file.
+        $pluginFile = null;
+        $pluginClassName = null;
+        $srcFiles = new FilesystemIterator($pluginDir);
+        foreach ($srcFiles as $srcFile)
+        {
+            if (preg_match('/Plugin.php$/', $srcFile->getFilename()))
+            {
+                $pluginFile = $srcFile->getPathname();
+                $pluginClassName = $srcFile->getBasename('.php');
+                break;
+            }
+        }
+        if (!$pluginClassName)
+            throw new PieCrustException("No plugin file ('*Plugin.php') found in '{$pluginDir}'.");
 
         // It may also have a `libs` directory. If that's the case, add it to
         // the include paths.
