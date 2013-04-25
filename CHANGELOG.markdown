@@ -15,12 +15,14 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+Frozen changes
+--------------
+
+### 1.0.0-rc2 (2013-04-24)
+
 * BUG/CHANGE: Hopefully the last we hear about handling slufigication of tags
   and categories with non-ASCII characters.
 * NEW: Added Haml formatter.
-
-Frozen changes
---------------
 
 ### 1.0.0-rc1 (2013-03-14)
 
