@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Baker\PageBaker;
 use PieCrust\Baker\Processors\IProcessor;
@@ -9,7 +11,7 @@ use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PageBakerTest extends \PHPUnit_Framework_TestCase
+class PageBakerTest extends PieCrustTestCase
 {
     public function getOutputPathDataProvider()
     {

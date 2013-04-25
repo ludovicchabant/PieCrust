@@ -86,6 +86,7 @@ class ServerHelper
                 {
                     $requestUri = substr($requestUri, 0, $questionMark);
                 }
+                $requestUri = $requestUri;
             }
         }
         if ($requestUri == null)

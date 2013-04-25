@@ -1,10 +1,12 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrustConfiguration;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustConfigurationTest extends \PHPUnit_Framework_TestCase
+class PieCrustConfigurationTest extends PieCrustTestCase
 {
     public function configurationDataProvider()
     {

@@ -10,7 +10,7 @@ use PieCrust\Util\PathHelper;
 
 class MockFileSystem
 {
-    public static function create($withDefaultStructure = true, $useRealPath = null)
+    public static function create($withDefaultStructure = true, $useRealPath = false)
     {
         return new MockFileSystem($withDefaultStructure, $useRealPath);
     }
@@ -38,12 +38,12 @@ class MockFileSystem
     protected $root;
     protected $isRootReal;
 
-    public function __construct($withDefaultStructure = true, $useRealPath = null)
+    public function __construct($withDefaultStructure = true, $useRealPath = false)
     {
         $this->isRootReal = (bool)$useRealPath;
         if ($useRealPath)
         {
-            $this->root = rtrim($useRealPath, "/\\") . '/' . 'root_' . rand();
+            $this->root = PIECRUST_UNITTESTS_MOCK_DIR . 'root_' . rand();
             PathHelper::ensureDirectory($this->root, true);
             if ($withDefaultStructure)
             {

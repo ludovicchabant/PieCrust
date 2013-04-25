@@ -7,6 +7,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IO\Cache;
 use PieCrust\Util\Configuration;
 use PieCrust\Util\ServerHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**
@@ -204,6 +205,9 @@ class PieCrustConfiguration extends Configuration
                 'default_template_engine' => PieCrustDefaults::DEFAULT_TEMPLATE_ENGINE,
                 'enable_gzip' => false,
                 'pretty_urls' => false,
+                'slugify' => 'transliterate|lowercase',
+                'timezone' => false,
+                'locale' => false,
                 'posts_fs' => PieCrustDefaults::DEFAULT_POSTS_FS,
                 'date_format' => PieCrustDefaults::DEFAULT_DATE_FORMAT,
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
@@ -294,10 +298,54 @@ class PieCrustConfiguration extends Configuration
                         $config[$blogKey]);
         }
 
+        // Validate the slugify mode and optional flags.
+        $slugifySetting = explode('|', $config['site']['slugify']);
+        $slugifyModes = array(
+            'none' => UriBuilder::SLUGIFY_MODE_NONE,
+            'transliterate' => UriBuilder::SLUGIFY_MODE_TRANSLITERATE,
+            'encode' => UriBuilder::SLUGIFY_MODE_ENCODE,
+            'dash' => UriBuilder::SLUGIFY_MODE_DASHES,
+            'iconv' => UriBuilder::SLUGIFY_MODE_ICONV
+        );
+        $slugifyFlags = array(
+            'lowercase' => UriBuilder::SLUGIFY_FLAG_LOWERCASE
+        );
+        $finalSlugify = 0;
+        foreach ($slugifySetting as $i => $m)
+        {
+            if ($i == 0)
+            {
+                if (!isset($slugifyModes[$m]))
+                    throw new PieCrustException("Unsupported slugify mode: {$m}");
+                $finalSlugify |= $slugifyModes[$m];
+            }
+            else
+            {
+                if (!isset($slugifyFlags[$m]))
+                    throw new PieCrustException("Unsupported slugify flag: {$m}");
+                $finalSlugify |= $slugifyFlags[$m];
+            }
+        }
+        // We always want to slugify the `.` (dot) character, at least for tags
+        // and categories, because it would screw up how we figure out what
+        // extension to use for output files.
+        $finalSlugify |= UriBuilder::SLUGIFY_FLAG_DOT_TO_DASH;
+        $config['site']['slugify_flags'] = $finalSlugify;
+
         // Set the timezone if it's specified.
-        if (isset($config['site']['timezone']))
+        if ($config['site']['timezone'])
         {
             date_default_timezone_set($config['site']['timezone']);
+        }
+
+        // Set the locale if it's specified.
+        if ($config['site']['locale'])
+        {
+            setlocale(LC_ALL, $config['site']['locale']);
+        }
+        else
+        {
+            $config['site']['locale'] = setlocale(LC_ALL, '0');
         }
         
         return $config;

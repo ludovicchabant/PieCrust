@@ -1,13 +1,13 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use PieCrust\IO\FileSystem;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
-class FileSystemTest extends \PHPUnit_Framework_TestCase
+class FileSystemTest extends PieCrustTestCase
 {
     public function getPostFilesDataProvider()
     {

@@ -374,6 +374,7 @@ class PieCrustBaker
             throw new PieCrustException("Can't bake tags without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+        $slugifyFlags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
         foreach ($blogKeys as $blogKey)
         {
             // Check that there is a tag listing page to bake.
@@ -389,19 +390,26 @@ class PieCrustBaker
             
             // Get single and multi tags to bake.
             $tagsToBake = $this->bakeRecord->getTagsToBake($blogKey);
+            // Figure out tag combinations to bake. Start with any specified
+            // in the config.
             $combinations = $this->parameters['tag_combinations'];
-            if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
+            if (array_key_exists($blogKey, $combinations))
             {
-                if (array_key_exists($blogKey, $combinations))
-                    $combinations = $combinations[$blogKey];
-                else
-                    $combinations = array();
+                $combinations = $combinations[$blogKey];
             }
+            elseif (count($blogKeys > 1))
+            {
+                $combinations = array();
+            }
+            
+            // Look at the known combinations from what was collected in the
+            // site's pages.
             $lastKnownCombinations = $this->bakeRecord->getLast('knownTagCombinations');
             if (array_key_exists($blogKey, $lastKnownCombinations))
             {
-                $combinations = array_merge($combinations, $lastKnownCombinations[$blogKey]);
-                $combinations = array_unique($combinations);
+                $combinations = array_unique(
+                    array_merge($combinations, $lastKnownCombinations[$blogKey])
+                );
             }
             if (count($combinations) > 0)
             {
@@ -409,9 +417,8 @@ class PieCrustBaker
                 $combinationsToBake = array();
                 foreach ($combinations as $comb)
                 {
-                    $explodedComb = explode('/', $comb);
-                    if (count(array_intersect($explodedComb, $tagsToBake)) > 0)
-                        $combinationsToBake[] = $explodedComb;
+                    if (count(array_intersect($comb, $tagsToBake)) > 0)
+                        $combinationsToBake[] = $comb;
                 }
                 $tagsToBake = array_merge($combinationsToBake, $tagsToBake);
             }
@@ -436,18 +443,20 @@ class PieCrustBaker
                     if (is_array($tag))
                     {
                         $slugifiedTag = array_map(
-                            function($t) { return UriBuilder::slugify($t); },
+                            function($t) use ($slugifyFlags) {
+                                return UriBuilder::slugify($t, $slugifyFlags);
+                            },
                             $tag
                         );
-                        $formattedTag = implode('+', $tag);
+                        $formattedTag = implode('+', array_map('rawurldecode', $tag));
                     }
                     else
                     {
-                        $slugifiedTag = UriBuilder::slugify($tag);
-                        $formattedTag = $tag;
+                        $slugifiedTag = UriBuilder::slugify($tag, $slugifyFlags);
+                        $formattedTag = rawurldecode($tag);
                     }
 
-                    $uri = UriBuilder::buildTagUri($this->pieCrust->getConfig()->getValue($blogKey.'/tag_url'), $tag);
+                    $uri = UriBuilder::buildTagUri($this->pieCrust, $blogKey, $slugifiedTag, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri,
                         $tagPagePath,
@@ -463,7 +472,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'tag:' . $slugifiedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }
@@ -475,6 +484,7 @@ class PieCrustBaker
             throw new PieCrustException("Can't bake categories without a bake-record active.");
         
         $blogKeys = $this->pieCrust->getConfig()->getValueUnchecked('site/blogs');
+        $slugifyFlags = $this->pieCrust->getConfig()->getValue('site/slugify_flags');
         foreach ($blogKeys as $blogKey)
         {
             // Check that there is a category listing page to bake.
@@ -500,9 +510,10 @@ class PieCrustBaker
                 $postInfos = $this->bakeRecord->getPostsInCategory($blogKey, $category);
                 if (count($postInfos) > 0)
                 {
-                    $slugifiedCategory = UriBuilder::slugify($category);
-
-                    $uri = UriBuilder::buildCategoryUri($this->pieCrust->getConfig()->getValue($blogKey.'/category_url'), $category);
+                    $slugifiedCategory = UriBuilder::slugify($category, $slugifyFlags);
+                    $formattedCategory = rawurldecode($slugifiedCategory);
+                    
+                    $uri = UriBuilder::buildCategoryUri($this->pieCrust, $blogKey, $slugifiedCategory, false);
                     $page = $pageRepository->getOrCreatePage(
                         $uri, 
                         $categoryPagePath,
@@ -518,7 +529,7 @@ class PieCrustBaker
                     $baker->bake($page);
 
                     $pageCount = $baker->getPageCount();
-                    $this->logger->info(self::formatTimed($start, 'category:' . $slugifiedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
+                    $this->logger->info(self::formatTimed($start, 'category:' . $formattedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
                 }
             }
         }

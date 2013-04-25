@@ -1,12 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Page\Page;
 use PieCrust\Page\PageRenderer;
 use PieCrust\Mock\MockFileSystem;
 
 
-class TwigExtensionTest extends \PHPUnit_Framework_TestCase
+class TwigExtensionTest extends PieCrustTestCase
 {
     public static function urlFunctionsDataProvider()
     {
@@ -267,19 +269,32 @@ EOD
     public function urlFunctionsWithUnicodeDataProvider()
     {
         return array(
-            array('des espaces', '/tag/des-espaces'),
-            array('épatant', '/tag/epatant'),
-            array('pâte à gateau', '/tag/pate-a-gateau')
+            array(false, 'des espaces', '/tag/des-espaces'),
+            array(false, 'épatant', '/tag/epatant'),
+            array(false, 'pâte à gateau', '/tag/pate-a-gateau'),
+            array('transliterate', 'des espaces', '/tag/des-espaces'),
+            array('transliterate', 'épatant', '/tag/epatant'),
+            array('transliterate', 'pâte à gateau', '/tag/pate-a-gateau'),
+            array('encode', 'des espaces', '/tag/des-espaces'),
+            array('encode', 'épatant', '/tag/%C3%A9patant'),
+            array('encode', 'pâte à gâteau', '/tag/p%C3%A2te-%C3%A0-g%C3%A2teau'),
+            array('encode', 'Тест', '/tag/%D0%A2%D0%B5%D1%81%D1%82'),
+            array('dash', 'des espaces', '/tag/des-espaces'),
+            array('dash', 'épatant', '/tag/-patant'),
+            array('dash', 'pâte à gâteau', '/tag/p-te-g-teau')
         );
     }
 
     /**
      * @dataProvider urlFunctionsWithUnicodeDataProvider
      */
-    public function testUrlFunctionsWithUnicode($in, $out)
+    public function testUrlFunctionsWithUnicode($slugifyMode, $in, $out)
     {
+        $config = array('site' => array('pretty_urls' => true));
+        if ($slugifyMode !== false)
+            $config['site']['slugify'] = $slugifyMode;
         $fs = MockFileSystem::create()
-            ->withConfig(array('site' => array('pretty_urls' => true)))
+            ->withConfig($config)
             ->withPage(
                 'test',
                 array('format' => 'none', 'layout' => 'none'),
@@ -289,5 +304,58 @@ EOD
         $page = Page::createFromUri($app, '/test');
         $actual = $page->getContentSegment();
         $this->assertEquals($out, $actual);
+    }
+
+    public function testTagUrlFunctionsWithBlogData()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array(
+                'root' => 'localhost', 
+                'pretty_urls' => true,
+                'default_format' => 'none'
+            )))
+            ->withPost('post1', 1, 1, 2012, array('tags' => array('one')))
+            ->withPost('post2', 1, 2, 2012, array('tags' => array('one', 'two')))
+            ->withPost('post3', 1, 3, 2012, array('tags' => array('one')))
+            ->withPost('post4', 1, 4, 2012, array('tags' => array('two')))
+            ->withPage(
+                'test',
+                array('layout' => 'none'),
+                <<<EOD
+{% for t in blog.tags %}
+TAG: {{t}} / {{t.name}}
+LINK: {{pctagurl(t)}}
+{% for p in t.posts %}
+* {{p.slug}}
+{% endfor %}
+{% endfor %}
+EOD
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, '/test');
+        $actual = $page->getContentSegment();
+        $expected = <<<EOD
+TAG: one / one
+LINK: localhost/tag/one
+* 2012/03/01/post3
+* 2012/02/01/post2
+* 2012/01/01/post1
+TAG: two / two
+LINK: localhost/tag/two
+* 2012/04/01/post4
+* 2012/02/01/post2
+
+EOD;
+        $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp()
+    {
+        $this->oldLocale = setlocale(LC_ALL, '0');
+    }
+
+    protected function tearDown()
+    {
+        setlocale(LC_ALL, $this->oldLocale);
     }
 }

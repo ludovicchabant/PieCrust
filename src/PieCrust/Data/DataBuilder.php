@@ -170,12 +170,13 @@ class DataBuilder
                         if (!is_array($firstPostTags))
                             $firstPostTags = array($firstPostTags);
                         
+                        $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
                         if (is_array($page->getPageKey()))
                         {
                             $pageKey = $page->getPageKey();
                             foreach ($firstPostTags as $t)
                             {
-                                $st = UriBuilder::slugify($t);
+                                $st = UriBuilder::slugify($t, $flags);
                                 foreach ($pageKey as &$pk)
                                 {
                                     if ($st == $pk)
@@ -192,7 +193,7 @@ class DataBuilder
                         {
                             foreach ($firstPostTags as $t)
                             {
-                                if (UriBuilder::slugify($t) == $data['tag'])
+                                if (UriBuilder::slugify($t, $flags) == $data['tag'])
                                 {
                                     $page->setPageKey($t);
                                     $data['tag'] = $t;

@@ -6,6 +6,7 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PathHelper;
+use PieCrust\Util\UriBuilder;
 
 
 /**

@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use PieCrust\PieCrust;
@@ -8,7 +10,7 @@ use PieCrust\Interop\PieCrustImporter;
 use PieCrust\Mock\MockFileSystem;
 
 
-class PieCrustImporterTest extends \PHPUnit_Framework_TestCase
+class PieCrustImporterTest extends PieCrustTestCase
 {
     public function testImportWordpress()
     {

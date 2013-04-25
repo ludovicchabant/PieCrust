@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
@@ -8,10 +10,8 @@ use PieCrust\Util\UriParser;
 use PieCrust\Mock\MockFileSystem;
 
 
-class UriParserTest extends \PHPUnit_Framework_TestCase
+class UriParserTest extends PieCrustTestCase
 {
-    protected $mockDir;
-
     protected function makeUriInfo($uri, $path, $wasPathChecked, $pageNumber = 1, $type = Page::TYPE_REGULAR, $blogKey = null, $key = null, $date = null)
     {
         return array(
@@ -315,7 +315,7 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
         // We have to use a "real" mock FS (i.e. it will use real files instead
         // of vfsStream) because that's the place in the PieCrust code where we
         // need to use `glob()`, which isn't supported with virtual streams.
-        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+        $fs = MockFileSystem::create(true, true)
             ->withConfig($config)
             ->withPost('some-post', 3, 2, 2011, array(), 'Blah.', null, 'md')
             ->withPost('other-post', 4, 2, 2011, array(), 'Blah.', null, 'text')
@@ -325,7 +325,6 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
             ->withPage('textile/page.text')
             ->withPage('markdown/page.md')
             ->withPage('normal/page.html');
-        $this->mockDir = $fs->getRootName();
         $pc = $fs->getApp();
         $uriInfo = UriParser::parseUri($pc, $uri);
 
@@ -340,33 +339,5 @@ class UriParserTest extends \PHPUnit_Framework_TestCase
         }
 
         $this->assertEquals($expectedUriInfo, $uriInfo, 'The URI info was not what was expected.');
-    }
-
-    public function setUp()
-    {
-        $this->mockDir = null;
-    }
-
-    public function tearDown()
-    {
-        if ($this->mockDir != null && is_dir($this->mockDir))
-        {
-            // On Windows, it looks like the file-system is a bit "slow".
-            // And by "slow", I mean "retarded".
-            $tries = 3;
-            while ($tries > 0)
-            {
-                try
-                {
-                    PathHelper::deleteDirectoryContents($this->mockDir);
-                    rmdir($this->mockDir);
-                    $tries = 0;
-                }
-                catch (\Exception $e)
-                {
-                    $tries--;
-                }
-            }
-        }
     }
 }

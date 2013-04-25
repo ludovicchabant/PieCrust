@@ -1,12 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\Data\PaginationData;
 use PieCrust\Page\Page;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PaginationDataTest extends \PHPUnit_Framework_TestCase
+class PaginationDataTest extends PieCrustTestCase
 {
     public function pageMetadataDataProvider()
     {

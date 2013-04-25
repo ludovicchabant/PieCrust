@@ -76,6 +76,7 @@ class PageBaker
     {
         $bakePath = $this->bakeDir;
         $isSubPage = ($page->getPageNumber() > 1);
+        $decodedUri = rawurldecode($page->getUri());
         $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
         if ($prettyUrls)
         {
@@ -96,17 +97,17 @@ class PageBaker
                     throw new PieCrustException("Page '{$pageRelativePath}' has `single_page` set to `true` but we're baking sub-page {$page->getPageNumber()}. What the hell?");
                 }
 
-                $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
+                $extension = pathinfo($decodedUri, PATHINFO_EXTENSION);
                 if ($extension)
-                    $bakePath .= $page->getUri();
+                    $bakePath .= $decodedUri;
                 else
-                    $bakePath .= $page->getUri() . 
-                    (($page->getUri() == '') ? '' : '/') . 
+                    $bakePath .= $decodedUri . 
+                    (($decodedUri == '') ? '' : '/') . 
                     self::BAKE_INDEX_DOCUMENT;
             }
             else
             {
-                $bakePath .= $page->getUri() . (($page->getUri() == '') ? '' : '/');
+                $bakePath .= $decodedUri . (($decodedUri == '') ? '' : '/');
                 if ($isSubPage)
                     $bakePath .= $page->getPageNumber() . '/';
                 $bakePath .= self::BAKE_INDEX_DOCUMENT;
@@ -121,11 +122,19 @@ class PageBaker
             // - `uri/name.ext`
             // - `uri/name/<n>.ext`
             // (So in all examples, `name` refers to the name without the extension)
-            $name = $page->getUri();
-            $extension = pathinfo($page->getUri(), PATHINFO_EXTENSION);
+            $name = $decodedUri;
+            $extension = pathinfo($decodedUri, PATHINFO_EXTENSION);
             if ($extension)
-                $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
-            if ($page->getUri() == '')
+            {
+                // If the page is a tag/category listing, we don't want to pick
+                // up any extension from the tag/category name itself! (like if 
+                // the tag's name is `blah.php`)
+                if (!PageHelper::isTag($page) && !PageHelper::isCategory($page))
+                    $name = substr($name, 0, strlen($name) - strlen($extension) - 1);
+                else
+                    $extension = false;
+            }
+            if ($decodedUri == '')
             {
                 // For the homepage, we have:
                 // - `uri/index.html`

@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\Page\PageConfiguration;
@@ -9,7 +11,7 @@ use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PaginatorTest extends \PHPUnit_Framework_TestCase
+class PaginatorTest extends PieCrustTestCase
 {
     public function paginatorDataProvider()
     {

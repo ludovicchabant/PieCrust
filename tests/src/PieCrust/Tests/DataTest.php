@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
@@ -9,7 +9,7 @@ use PieCrust\Data\PaginationData;
 use PieCrust\Mock\MockFileSystem;
 
 
-class DataTest extends \PHPUnit_Framework_TestCase
+class DataTest extends PieCrustTestCase
 {
     public function testPaginationData()
     {

@@ -10,7 +10,8 @@ Thumbs.db
 _cache/
 _counter/
 tests/tmp/
-piecrust.phar
+build/piecrust.phar
+build/chef
 
 # Libs files we don't need.
 libs/.composer

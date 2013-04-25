@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use PieCrust\IPieCrust;
 use PieCrust\Formatters\IFormatter;
@@ -12,7 +12,7 @@ use PieCrust\Mock\MockPieCrust;
 use PieCrust\Mock\MockPlugin;
 
 
-class FormattingTest extends \PHPUnit_Framework_TestCase
+class FormattingTest extends PieCrustTestCase
 {
     public function testMockFormatter()
     {

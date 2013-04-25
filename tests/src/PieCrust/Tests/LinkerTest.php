@@ -9,7 +9,7 @@ use PieCrust\Page\LinkData;
 use PieCrust\Page\Page;
 use PieCrust\Mock\MockFileSystem;
 
-class LinkerTest extends \PHPUnit_Framework_TestCase
+class LinkerTest extends PieCrustTestCase
 {
     public function testOnePage()
     {

@@ -1,6 +1,6 @@
 <?php
 
-namespace PieCrust\Test;
+namespace PieCrust\Tests;
 
 use PieCrust\PieCrust;
 use PieCrust\Page\Assetor;
@@ -8,7 +8,7 @@ use PieCrust\Page\Page;
 use PieCrust\Mock\MockFileSystem;
 
 
-class AssetorTest extends \PHPUnit_Framework_TestCase
+class AssetorTest extends PieCrustTestCase
 {
     public function assetorDataProvider()
     {

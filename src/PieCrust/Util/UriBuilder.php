@@ -11,6 +11,19 @@ use PieCrust\IPieCrust;
  */
 class UriBuilder
 {
+    // Slugify methods {{{
+    const SLUGIFY_MODE_NONE = 0;
+    const SLUGIFY_MODE_TRANSLITERATE = 1;
+    const SLUGIFY_MODE_ENCODE = 2;
+    const SLUGIFY_MODE_DASHES = 4;
+    const SLUGIFY_MODE_ICONV = 8;
+    // }}}
+    
+    // Slugify options {{{
+    const SLUGIFY_FLAG_LOWERCASE = 16;
+    const SLUGIFY_FLAG_DOT_TO_DASH = 32;
+    // }}}
+    
     /**
      * Gets the URI of a page given a relative path.
      */
@@ -33,8 +46,9 @@ class UriBuilder
     /**
      * Builds the URL of a post given a URL format.
      */
-    public static function buildPostUri($postUrlFormat, $postInfo)
+    public static function buildPostUri(IPieCrust $pieCrust, $blogKey, $postInfo)
     {
+        $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
         if (is_int($postInfo['month']))
         {
             $postInfo['month'] = sprintf('%02s', $postInfo['month']);
@@ -70,19 +84,27 @@ class UriBuilder
     /**
      * Builds the URL of a tag listing.
      */
-    public static function buildTagUri($tagUrlFormat, $tag)
+    public static function buildTagUri(IPieCrust $pieCrust, $blogKey, $tag, $slugify = true)
     {
+        $tagUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/tag_url');
+        $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
         if (is_array($tag))
         {
-            $tag = array_map(
-                function($t) { return UriBuilder::slugify($t); },
-                $tag
-            );
+            if ($slugify)
+            {
+                $tag = array_map(
+                    function($t) use ($flags) {
+                        return UriBuilder::slugify($t, $flags);
+                    },
+                    $tag
+                );
+            }
             $tag = implode('/', $tag);
         }
         else
         {
-            $tag = self::slugify($tag);
+            if ($slugify)
+                $tag = UriBuilder::slugify($tag, $flags);
         }
         return str_replace('%tag%', $tag, $tagUrlFormat);
     }
@@ -92,15 +114,20 @@ class UriBuilder
      */
     public static function buildTagUriPattern($tagUrlFormat)
     {
-        return '/^' . str_replace('%tag%', '(?P<tag>[\w\-\.]+(\/[\w\-\.]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%tag%', '(?P<tag>[^\/]+(\/[^\/]+)*)', preg_quote($tagUrlFormat, '/')) . '\/?$/';
     }
     
     /**
      * Builds the URL of a category listing.
      */
-    public static function buildCategoryUri($categoryUrlFormat, $category)
+    public static function buildCategoryUri(IPieCrust $pieCrust, $blogKey, $category, $slugify = true)
     {
-        $category = self::slugify($category);
+        $categoryUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/category_url');
+        if ($slugify)
+        {
+            $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
+            $category = UriBuilder::slugify($category, $flags);
+        }
         return str_replace('%category%', $category, $categoryUrlFormat);
     }
     
@@ -109,22 +136,66 @@ class UriBuilder
      */
     public static function buildCategoryUriPattern($categoryUrlFormat)
     {
-        return '/^' . str_replace('%category%', '(?P<cat>[\w\-\.]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
+        return '/^' . str_replace('%category%', '(?P<cat>[^\/]+)', preg_quote($categoryUrlFormat, '/')) . '\/?$/';
     }
 
     /**
      * Transform a string into something that can be used for an URL.
      */
-    public static function slugify($value)
+    public static function slugify($value, $method)
     {
-        $translitValue = self::unaccent($value);
-        return preg_replace('/[^\w\-\.]+/', '-', strtolower($translitValue));
+        static $reserved = null;
+        if ($reserved == null)
+            $reserved = preg_quote(":/?#[]@!$&'()*+,;=\\ ", '/');
+
+        // Turn the value into a string, as it could actually be an
+        // instance of `PagePropertyData` or some other thing from the template.
+        $value = (string)$value;
+
+        // Apply the main slugify mode.
+        $mode = ($method & 0x000f);
+        switch ($mode)
+        {
+        case self::SLUGIFY_MODE_TRANSLITERATE:
+            $value = self::transliterate($value);
+            break;
+        case self::SLUGIFY_MODE_ENCODE:
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
+            $value = preg_replace('/['.$reserved.']+/', '-', $value);
+            $value = rawurlencode($value);
+            break;
+        case self::SLUGIFY_MODE_DASHES:
+            $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
+            break;
+        case self::SLUGIFY_MODE_ICONV:
+            $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+            break;
+        }
+
+        // Apply the flags, and make sure we don't have reserved characters
+        // left in the URL.
+        if ($mode != self::SLUGIFY_MODE_ENCODE)
+        {
+            if ($mode != self::SLUGIFY_MODE_DASHES)
+                $value = preg_replace('/['.$reserved.']+/', '-', $value);
+
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
+        }
+        if ($method & self::SLUGIFY_FLAG_DOT_TO_DASH)
+        {
+            $value = preg_replace('/^\.+/', '', $value);
+            $value = preg_replace('/\.+/', '-', $value);
+        }
+
+        return rtrim($value, '-');
     }
 
     /**
      * Detect whether the given string is UTF-8-encoded.
      */
-    public static function seemsUtf8($string)
+    private static function seemsUtf8($string)
     {
         for ($i = 0; $i < strlen($string); $i++)
         {
@@ -149,7 +220,7 @@ class UriBuilder
      * Remove any illegal characters, accents, etc. and replace them
      * with their ASCII equivalent.
      */
-    public static function unaccent($string)
+    private static function transliterate($string)
     {
         if (!preg_match('/[\x80-\xff]/', $string))
         {
@@ -286,7 +357,7 @@ class UriBuilder
             $doubleChars['out'] = array('OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th');
             $string = str_replace($doubleChars['in'], $doubleChars['out'], $string);
         }
-
+        
         return $string;
-    }    
+    }
 }

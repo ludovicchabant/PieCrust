@@ -20,7 +20,8 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Formatters\MarkdownFormatter(),
             new \PieCrust\Formatters\PassThroughFormatter(),
             new \PieCrust\Formatters\SmartyPantsFormatter(),
-            new \PieCrust\Formatters\TextileFormatter()
+            new \PieCrust\Formatters\TextileFormatter(),
+            new \PieCrust\Formatters\HamlFormatter()
         );
     }
 

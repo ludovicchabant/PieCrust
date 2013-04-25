@@ -8,6 +8,7 @@ function unittest_setup()
 
     // Include the global utilities.
     require __DIR__ . '/src/util.php';
+    require __DIR__ . '/src/PieCrustTestCase.php';
 }
 
 unittest_setup();

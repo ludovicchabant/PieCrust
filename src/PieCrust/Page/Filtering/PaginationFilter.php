@@ -44,6 +44,8 @@ class PaginationFilter
         // If the current page is a tag/category page, add filtering
         // for that.
         $pageClause = null;
+        $pieCrust = $page->getApp();
+        $flags = $pieCrust->getConfig()->getValue('site/slugify_flags');
         switch ($page->getPageType())
         {
         case IPage::TYPE_TAG:
@@ -53,16 +55,36 @@ class PaginationFilter
                 $pageClause = new AndBooleanClause();
                 foreach ($pageKey as $k)
                 {
-                    $pageClause->addClause(new HasFilterClause('tags', $k, function($t) { return UriBuilder::slugify($t); }));
+                    $pageClause->addClause(
+                        new HasFilterClause(
+                            'tags', 
+                            $k, 
+                            function($t) use ($flags) {
+                                return UriBuilder::slugify($t, $flags);
+                            }
+                        )
+                    );
                 }
             }
             else
             {
-                $pageClause = new HasFilterClause('tags', $pageKey, function($t) { return UriBuilder::slugify($t); });
+                $pageClause = new HasFilterClause(
+                    'tags', 
+                    $pageKey, 
+                    function($t) use ($flags) {
+                        return UriBuilder::slugify($t, $flags);
+                    }
+                );
             }
             break;
         case IPage::TYPE_CATEGORY:
-            $pageClause = new IsFilterClause('category', $page->getPageKey(), function($c) { return UriBuilder::slugify($c); });
+            $pageClause = new IsFilterClause(
+                'category', 
+                $page->getPageKey(), 
+                function($c) use ($flags) {
+                    return UriBuilder::slugify($c, $flags);
+                }
+            );
             break;
         }
 

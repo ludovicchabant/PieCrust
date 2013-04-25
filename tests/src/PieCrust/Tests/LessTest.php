@@ -7,7 +7,7 @@ use PieCrust\Util\PathHelper;
 use PieCrust\Mock\MockFileSystem;
 
 
-class LessTest extends \PHPUnit_Framework_TestCase
+class LessTest extends PieCrustTestCase
 {
     public function lessDataProvider()
     {
@@ -22,7 +22,7 @@ class LessTest extends \PHPUnit_Framework_TestCase
      */
     public function testLess($usingJsTool)
     {
-        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+        $fs = MockFileSystem::create(true, true)
             ->withTemplate('default', '{{content|raw}}')
             ->withAsset('screen.less', <<<EOD
 @red: #ff0000;
@@ -71,16 +71,6 @@ EOD
             ,
             file_get_contents($fs->url('kitchen/_counter/screen.css'))
         );
-    }
-
-    public function tearDown()
-    {
-        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
-        if (is_dir($mockDir))
-        {
-            PathHelper::deleteDirectoryContents($mockDir);
-            rmdir($mockDir);
-        }
     }
 }
 

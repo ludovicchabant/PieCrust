@@ -1,11 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\PieCrust;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Mock\MockFileSystem;
+use PieCrust\Mock\MockPieCrust;
 
 
-class PieCrustHelperTest extends \PHPUnit_Framework_TestCase
+class PieCrustHelperTest extends PieCrustTestCase
 {
     public function formatUriDataProviderWhenRun()
     {

@@ -1,14 +1,17 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use org\bovigo\vfs\vfsStream;
 use PieCrust\PieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\Page\Page;
 use PieCrust\Util\UriBuilder;
+use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
 
-class UriBuilderTest extends \PHPUnit_Framework_TestCase
+class UriBuilderTest extends PieCrustTestCase
 {
     public function buildUriDataProvider()
     {
@@ -61,6 +64,8 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
             array('foo bar', '/foo-bar'),
             array('f o o   b a r', '/f-o-o-b-a-r'),
             array(array('f o o', 'b a r'), '/f-o-o/b-a-r'),
+            array('épatant', '/epatant'),
+            array('El Niño', '/el-nino')
         );
     }
 
@@ -69,7 +74,9 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function testBuildTagUri($tag, $expectedUri)
     {
-        $uri = UriBuilder::buildTagUri('/%tag%', $tag);
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/tag_url', '/%tag%');
+        $uri = UriBuilder::buildTagUri($pc, 'blog', $tag);
         $this->assertEquals($expectedUri, $uri);
     }
 
@@ -87,8 +94,55 @@ class UriBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function testBuildCategoryUri($category, $expectedUri)
     {
-        $uri = UriBuilder::buildCategoryUri('/%category%', $category);
+        $pc = new MockPieCrust();
+        $pc->getConfig()->setValue('blog/category_url', '/%category%');
+        $uri = UriBuilder::buildCategoryUri($pc, 'blog', $category);
         $this->assertEquals($expectedUri, $uri);
+    }
+
+    public function tagSlugifyDataProvider()
+    {
+        return array(
+            array('foo', 'foo'),
+            array('foo bar!', 'foo-bar'),
+            array('foo/bar,oy', 'foo-bar-oy'),
+            array('épatant', 'epatant'),
+            array('.htaccess', 'htaccess'),
+            array('functions.php', 'functions-php'),
+            array('foo bar!', 'foo-bar', 'transliterate'),
+            array('foo/bar,OY', 'foo-bar-OY', 'transliterate'),
+            array('épatant', 'epatant', 'transliterate'),
+            array('foo/bar,OY', 'foo-bar-oy', 'transliterate|lowercase'),
+            array('épaTANT', 'epatant', 'transliterate|lowercase'),
+            array('foo bar!', 'foo-bar', 'dash'),
+            array('foo/bar,OY', 'foo-bar-OY', 'dash'),
+            array('épatant', '-patant', 'dash'),
+            array('foo bar!', 'foo-bar', 'encode'),
+            array('foo/bar,OY', 'foo-bar-OY', 'encode'),
+            array('épatant', '%C3%A9patant', 'encode'),
+            array('Это тэг', '%D0%AD%D1%82%D0%BE-%D1%82%D1%8D%D0%B3', 'encode'),
+            array('foo bar!', 'foo-bar', 'none'),
+            array('foo/bar,oy', 'foo-bar-oy', 'none'),
+            array('épatant', 'épatant', 'none')
+        );
+    }
+
+    /**
+     * @dataProvider tagSlugifyDataProvider
+     */
+    public function testTagSlugify($value, $expectedValue, $slugifyMode = null, $locale = null)
+    {
+        $fs = MockFileSystem::create();
+        if ($slugifyMode)
+        {
+            $fs->withConfig(array('site' => array(
+                'slugify' => $slugifyMode
+            )));
+        }
+        $pc = $fs->getApp();
+        $flags = $pc->getConfig()->getValue('site/slugify_flags');
+        $actualValue = UriBuilder::slugify($value, $flags);
+        $this->assertEquals($expectedValue, $actualValue);
     }
 }
 

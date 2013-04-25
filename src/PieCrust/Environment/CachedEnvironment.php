@@ -38,7 +38,7 @@ class CachedEnvironment extends Environment
     {
         if ($this->linkCollector == null)
         {
-            $this->linkCollector = new LinkCollector();
+            $this->linkCollector = new LinkCollector($this->pieCrust);
         }
         return $this->linkCollector;
     }
@@ -193,12 +193,11 @@ class CachedEnvironment extends Environment
         {
             $pageRepository = $this->getPageRepository();
             $postInfos = $this->getPostInfos($blogKey);
-            $postUrlFormat = $this->pieCrust->getConfig()->getValue($blogKey.'/post_url');
 
             $posts = array();
             foreach ($postInfos as $postInfo)
             {
-                $uri = UriBuilder::buildPostUri($postUrlFormat, $postInfo);
+                $uri = UriBuilder::buildPostUri($this->pieCrust, $blogKey, $postInfo);
                 $page = $pageRepository->getOrCreatePage(
                     $uri,
                     $postInfo['path'],

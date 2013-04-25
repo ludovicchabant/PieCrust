@@ -75,20 +75,24 @@ class BakeRecord
         {
             foreach ($tags as $tag)
             {
-                if (!isset($this->postTags[$blogKey][$tag])) $this->postTags[$blogKey][$tag] = array();
+                if (!isset($this->postTags[$blogKey][$tag]))
+                    $this->postTags[$blogKey][$tag] = array();
                 $this->postTags[$blogKey][$tag][] = $postIndex;
                 
-                if ($wasBaked) $this->tagsToBake[$blogKey][$tag] = true;
+                if ($wasBaked)
+                    $this->tagsToBake[$blogKey][$tag] = true;
             }
         }
         
         $category = $postInfo['category'];
         if ($category != null)
         {
-            if (!isset($this->postCategories[$blogKey][$category])) $this->postCategories[$blogKey][$category] = array();
+            if (!isset($this->postCategories[$blogKey][$category]))
+                $this->postCategories[$blogKey][$category] = array();
             $this->postCategories[$blogKey][$category][] = $postIndex;
             
-            if ($wasBaked) $this->categoriesToBake[$blogKey][$category] = true;
+            if ($wasBaked)
+                $this->categoriesToBake[$blogKey][$category] = true;
         }
         
         $this->wasAnyPostBaked = ($this->wasAnyPostBaked or $wasBaked);
@@ -111,19 +115,19 @@ class BakeRecord
         if ($collector == null)
             return;
         
-        $combinations = $collector->getAllTagCombinations();
+        $allCombinations = $collector->getAllTagCombinations();
         $collector->clearAllTagCombinations();
         
         $knownCombinations = $this->bakeInfo['knownTagCombinations'];
-        foreach ($combinations as $key => $combs)
+        foreach ($allCombinations as $blogKey => $combinations)
         {
-            if (!array_key_exists($key, $knownCombinations))
+            if (!array_key_exists($blogKey, $knownCombinations))
             {
-                $knownCombinations[$key] = $combs;
+                $knownCombinations[$blogKey] = $combinations;
             }
             else
             {
-                $knownCombinations[$key] = array_unique(array_merge($knownCombinations[$key], $combs));
+                $knownCombinations[$blogKey] = array_unique(array_merge($knownCombinations[$blogKey], $combinations));
             }
         }
         $this->bakeInfo['knownTagCombinations'] = $knownCombinations;
@@ -143,7 +147,8 @@ class BakeRecord
      */
     public function isPageUsingPosts($relativePath)
     {
-        if (!isset($this->bakeInfo['pagesUsingPosts'][$relativePath])) return false;
+        if (!isset($this->bakeInfo['pagesUsingPosts'][$relativePath]))
+            return false;
         return ($this->bakeInfo['pagesUsingPosts'][$relativePath] === true);
     }
     

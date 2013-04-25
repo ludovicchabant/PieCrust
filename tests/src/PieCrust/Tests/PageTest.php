@@ -1,12 +1,14 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\Page\Page;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 use PieCrust\Util\PathHelper;
 
 
-class PageTest extends \PHPUnit_Framework_TestCase
+class PageTest extends PieCrustTestCase
 {
     /**
      * @expectedException \InvalidArgumentException

@@ -1,9 +1,11 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use PieCrust\Util\ServerHelper;
 
 
-class ServerHelperTest extends \PHPUnit_Framework_TestCase
+class ServerHelperTest extends PieCrustTestCase
 {
     public function getRequestUriDataProvider()
     {

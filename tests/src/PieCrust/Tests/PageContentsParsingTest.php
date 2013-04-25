@@ -1,5 +1,7 @@
 <?php
 
+namespace PieCrust\Tests;
+
 use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\Page\Page;
@@ -11,13 +13,16 @@ use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
 
-class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
+class PageContentsParsingTest extends PieCrustTestCase
 {   
     public function parsePageContentsDataProvider()
     {
         $data = array();
         
-        $htmlFiles = new GlobIterator(PIECRUST_UNITTESTS_DATA_DIR . 'pages/*.html', (GlobIterator::CURRENT_AS_FILEINFO | GlobIterator::SKIP_DOTS));
+        $htmlFiles = new \GlobIterator(
+            PIECRUST_UNITTESTS_DATA_DIR . 'pages/*.html', 
+            \GlobIterator::CURRENT_AS_FILEINFO | \GlobIterator::SKIP_DOTS
+        );
         foreach ($htmlFiles as $htmlFile)
         {
             $info = pathinfo($htmlFile);
@@ -167,7 +172,7 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
      */
     public function testAutoFormatExtensions($uri, $expectedFormat, $expectedContents)
     {
-        $fs = MockFileSystem::create(true, PIECRUST_UNITTESTS_DATA_DIR . 'mock')
+        $fs = MockFileSystem::create(true, true)
             ->withConfig(array(
                 'site' => array(
                     'auto_formats' => array(
@@ -185,15 +190,5 @@ class PageContentsParsingTest extends \PHPUnit_Framework_TestCase
         $page = Page::createFromUri($app, $uri, false);
         $this->assertEquals($expectedFormat, $page->getConfig()->getValue('format'));
         $this->assertEquals($expectedContents, trim($page->getContentSegment()));
-    }
-
-    public function tearDown()
-    {
-        $mockDir = PIECRUST_UNITTESTS_DATA_DIR . 'mock';
-        if (is_dir($mockDir))
-        {
-            PathHelper::deleteDirectoryContents($mockDir);
-            rmdir($mockDir);
-        }
     }
 }
