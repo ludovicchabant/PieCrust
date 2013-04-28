@@ -15,6 +15,8 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BUG: Fixed crash in Jekyll importer.
+
 Frozen changes
 --------------
 
