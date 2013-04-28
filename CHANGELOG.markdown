@@ -15,12 +15,16 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* BUG/CHANGE: Hopefully the last we hear about handling slufigication of tags
-  and categories with non-ASCII characters.
-* NEW: Added Haml formatter.
+* BUG: Fixed crash in Jekyll importer.
 
 Frozen changes
 --------------
+
+### 1.0.0-rc2 (2013-04-24)
+
+* BUG/CHANGE: Hopefully the last we hear about handling slufigication of tags
+  and categories with non-ASCII characters.
+* NEW: Added Haml formatter.
 
 ### 1.0.0-rc1 (2013-03-14)
 
