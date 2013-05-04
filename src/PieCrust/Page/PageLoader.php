@@ -137,6 +137,7 @@ class PageLoader
         {
             // Load the page from disk.
             $rawContents = file_get_contents($this->page->getPath());
+            $rawContents = PageLoader::removeUnicodeBOM($rawContents);
             $header = Configuration::parseHeader($rawContents);
 
             // Set the format from the file extension.
@@ -322,5 +323,35 @@ class PageLoader
         $executionContext->popPage();
 
         return $contents;
+    }
+
+    /**
+     * Remove Unicode "byte order mark" (BOM)...
+     * @param string $data
+     * @return string
+     */
+    protected function removeUnicodeBOM($data)
+    {
+        if (substr($data, 0, 3) == pack('CCC', 0xEF, 0xBB, 0xBF)) // UTF-8...
+        {
+            return substr($data, 3);
+        }
+        elseif (substr($data, 0, 2) == pack('CC', 0xFE, 0xFF)) // UTF-16 (BE)...
+        {
+            return substr($data, 2);
+        }
+        elseif (substr($data, 0, 2) == pack('CC', 0xFF, 0xFE)) // UTF-16 (LE)...
+        {
+            return substr($data, 2);
+        }
+        elseif (substr($data, 0, 4) == pack('CCCC', 0x00, 0x00, 0xFE, 0xFF)) // UTF-32 (BE)...
+        {
+            return substr($data, 4);
+        }
+        elseif (substr($data, 0, 4) == pack('CCCC', 0x00, 0x00, 0xFF, 0xFE)) // UTF-32 (LE)...
+        {
+            return substr($data, 4);
+        }
+        return $data;
     }
 }
