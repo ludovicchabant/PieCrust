@@ -15,7 +15,10 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* NEW: Handle files with BOM headers.
 * BUG: Fixed crash in Jekyll importer.
+* BUG: Fixed a bug with baking tag pages with sub-pages when the tag has special
+  or unicode characters.
 
 Frozen changes
 --------------
