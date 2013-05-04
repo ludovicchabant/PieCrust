@@ -545,7 +545,10 @@ EOD
      */
     public function testBakeTagPages($tag1, $tag2, $fileName1, $fileName2, $slug1, $slug2, $slugify = false)
     {
-        $config = array('site' => array('default_format' => 'none'));
+        $config = array('site' => array(
+            'default_format' => 'none',
+            'posts_per_page' => 3
+        ));
         if ($slugify !== false)
             $config['site']['slugify'] = $slugify;
         $fs = MockFileSystem::create()
@@ -567,14 +570,26 @@ EOD
             ->withPost('post2', 2, 1, 2010, array('tags' => array($tag1)), 'POST TWO')
             ->withPost('post3', 3, 1, 2010, array('tags' => array($tag2)), 'POST THREE')
             ->withPost('post4', 4, 1, 2010, array('tags' => array($tag2)), 'POST FOUR')
-            ->withPost('post5', 5, 1, 2010, array('tags' => array($tag1, $tag2)), 'POST FIVE');
+            ->withPost('post5', 5, 1, 2010, array('tags' => array($tag1, $tag2)), 'POST FIVE')
+            ->withPost('post6', 6, 1, 2010, array('tags' => array($tag1, $tag2)), 'POST SIX')
+            ->withPost('post7', 7, 1, 2010, array('tags' => array($tag1)), 'POST SEVEN')
+            ->withPost('post8', 8, 1, 2010, array('tags' => array($tag1)), 'POST EIGHT')
+            ->withPost('post9', 9, 1, 2010, array('tags' => array($tag1)), 'POST NINE')
+            ->withPost('post10', 10, 1, 2010, array('tags' => array($tag1)), 'POST TEN')
+            ->withPost('post11', 11, 1, 2010, array('tags' => array($tag1)), 'POST ELEVEN')
+            ->withPost('post12', 12, 1, 2010, array('tags' => array($tag2)), 'POST TWELVE');
 
         $app = $fs->getApp();
         $baker = new PieCrustBaker($app);
         $baker->setBakeDir($fs->url('counter'));
         $baker->bake();
 
-        $tagFileNames = array($fileName1.'.html', $fileName2.'.html');
+        $tagFileNames = array(
+            $fileName1,
+            $fileName1.'.html',
+            $fileName2,
+            $fileName2.'.html'
+        );
         sort($tagFileNames);
         $actual = $fs->getStructure();
         $actual = array_keys($actual[$fs->getRootName()]['counter']['tag']);
@@ -582,12 +597,25 @@ EOD
         $this->assertEquals($tagFileNames, $actual);
 
         $this->assertEquals(
-            "TAG: {$tag1}\nURI: /tag/{$slug1}.html\nPOST FIVE\nPOST TWO\nPOST ONE\n", 
+            "TAG: {$tag1}\nURI: /tag/{$slug1}.html\nPOST ELEVEN\nPOST TEN\nPOST NINE\n", 
             file_get_contents($fs->url('counter/tag/'.$fileName1.'.html'))
         );
         $this->assertEquals(
-            "TAG: {$tag2}\nURI: /tag/{$slug2}.html\nPOST FIVE\nPOST FOUR\nPOST THREE\n", 
+            "TAG: {$tag1}\nURI: /tag/{$slug1}.html\nPOST EIGHT\nPOST SEVEN\nPOST SIX\n", 
+            file_get_contents($fs->url('counter/tag/'.$fileName1.'/2.html'))
+        );
+        $this->assertEquals(
+            "TAG: {$tag1}\nURI: /tag/{$slug1}.html\nPOST FIVE\nPOST TWO\nPOST ONE\n", 
+            file_get_contents($fs->url('counter/tag/'.$fileName1.'/3.html'))
+        );
+
+        $this->assertEquals(
+            "TAG: {$tag2}\nURI: /tag/{$slug2}.html\nPOST TWELVE\nPOST SIX\nPOST FIVE\n", 
             file_get_contents($fs->url('counter/tag/'.$fileName2.'.html'))
+        );
+        $this->assertEquals(
+            "TAG: {$tag2}\nURI: /tag/{$slug2}.html\nPOST FOUR\nPOST THREE\n", 
+            file_get_contents($fs->url('counter/tag/'.$fileName2.'/2.html'))
         );
     }
 
