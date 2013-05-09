@@ -412,7 +412,7 @@ EOD
             ->withPage(
                 $name,
                 array('layout' => 'none', 'format' => 'none'),
-                "Some contents:\n{{ asset.foo }}"
+                "Some contents:\n{{ assets.foo }}"
             )
             ->withAsset('_content/pages/blah-assets/foo.txt', 'FOO!');
 

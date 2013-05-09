@@ -53,20 +53,6 @@ class CategoriesCommand extends ChefCommand
             'optional'    => true,
             'multiple'    => true
         ));
-
-        // Deprecated stuff.
-        $parser->addOption('order_by_name_old', array(
-            'long_name'   => '--orderbyname',
-            'description' => "Deprecated. Same as `--order-name`.",
-            'default'     => false,
-            'action'      => 'StoreTrue'
-        ));
-        $parser->addOption('order_by_count_old', array(
-            'long_name'   => '--orderbycount',
-            'description' => "Deprecated. Same as `--order-count`.",
-            'default'     => false,
-            'action'      => 'StoreTrue'
-        ));
     }
 
     public function run(ChefContext $context)
@@ -74,18 +60,6 @@ class CategoriesCommand extends ChefCommand
         $logger = $context->getLog();
         $pieCrust = $context->getApp();
         $result = $context->getResult();
-
-        // Warn about deprecated stuff.
-        if ($result->command->options['order_by_name_old'])
-        {
-            $context->getLog()->warning("The `--orderbyname` option has been renamed to `--order-name`.");
-            $result->command->options['order_by_name'] = true;
-        }
-        if ($result->command->options['order_by_count_old'])
-        {
-            $context->getLog()->warning("The `--orderbycount` option has been renamed to `--order-count`.");
-            $result->command->options['order_by_count'] = true;
-        }
 
         // Validate options.
         if ($result->command->options['order_by_name'] &&

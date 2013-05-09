@@ -144,13 +144,6 @@ class Chef
         // Make the log available for debugging purposes.
         $GLOBALS['__CHEF_LOG'] = $log;
 
-        // Handle deprecated stuff.
-        if ($result->options['no_cache_old'])
-        {
-            $log->warning("The `--nocache` option has been renamed `--no-cache`.");
-            $result->options['no_cache'] = true;
-        }
-
         // Run the command.
         foreach ($pieCrust->getPluginLoader()->getCommands() as $command)
         {
@@ -242,15 +235,6 @@ class Chef
             'description' => "Print only important information.",
             'default'     => false,
             'help_name'   => 'QUIET',
-            'action'      => 'StoreTrue'
-        ));
-
-        // Deprecated stuff.
-        $parser->addOption('no_cache_old', array(
-            'long_name'   => '--nocache',
-            'description' => "Deprecated. Use `--no-cache`.",
-            'default'     => false,
-            'help_name'   => 'NOCACHE',
             'action'      => 'StoreTrue'
         ));
     }

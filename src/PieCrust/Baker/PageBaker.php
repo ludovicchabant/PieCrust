@@ -243,19 +243,6 @@ class PageBaker
             return false;
         }
 
-        // Backward compatibility warning and file-copy.
-        // [TODO] Remove in a couple of versions.
-        $copyToOldPath = false;
-        $contentType = $page->getConfig()->getValue('content_type');
-        $nativeExtension = pathinfo($page->getPath(), PATHINFO_EXTENSION);
-        if ($contentType != 'html' && $nativeExtension == 'html')
-        {
-            $copyToOldPath = $this->bakeDir . $page->getUri();
-            if ($page->getPageNumber() > 1)
-                $copyToOldPath .= $page->getPageNumber() . '/';
-            $copyToOldPath .= '.' . $contentType;
-        }
-
         // If we're using portable URLs, change the site root to a relative
         // path from the page's directory.
         $savedSiteRoot = $this->setPortableSiteRoot($page->getApp(), $bakePath);
@@ -272,17 +259,6 @@ class PageBaker
         PathHelper::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
         $this->bakedFiles[] = $bakePath;
-
-        // [TODO] See previous TODO.
-        if ($copyToOldPath)
-        {
-            $this->logger->warning("Page '{$page->getUri()}' has 'content_type' specified but is an HTML file.");
-            $this->logger->warning("Changing a baked file's extension using 'content_type' is deprecated and will be removed in a future version.");
-            $this->logger->warning("For backwards compatibility, the page will also be baked to: " . substr($copyToOldPath, strlen($this->bakeDir)));
-            $this->logger->warning("To fix the problem, change the source file's extension to the desired output extension.");
-            $this->logger->warning("Otherwise, just ignore these messages.");
-            file_put_contents($copyToOldPath, $bakedContents);
-        }
         
         // Copy any used assets for the first sub-page.
         if ($page->getPageNumber() == 1 and

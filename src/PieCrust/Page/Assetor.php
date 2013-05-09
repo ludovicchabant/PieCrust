@@ -155,17 +155,7 @@ class Assetor implements \ArrayAccess, \Iterator
     {
         if ($this->assetsCache === null)
         {
-            // Deprecated access warning.
-            // TODO: Remove this later.
-            if (isset($this->deprecatedWarning) && $this->deprecatedWarning)
-            {
-                $this->page->getApp()->getEnvironment()->getLog()->warning(
-                    "The `asset` template variable is deprecated. Please use `assets`."
-                );
-            }
-
             $this->assetsCache = array();
-            
             if ($this->assetsDir !== false)
             {
                 $paths = new FilesystemIterator($this->assetsDir);
