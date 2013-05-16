@@ -803,6 +803,65 @@ EOD
         );
     }
 
+    public function testBakeMultiLoopPage()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withTemplate('default', '{{content|raw}}')
+            ->withTemplate('post', '{{content|raw}}')
+            ->withPost('post1', 1, 1, 2010, array('category' => 'news'), 'NEWS: POST ONE')
+            ->withPost('post2', 5, 2, 2010, array('category' => 'misc'), 'MISC: POST ONE')
+            ->withPost('post3', 10, 3, 2010, array('category' => 'news'), 'NEWS: POST TWO')
+            ->withPost('post4', 1, 1, 2011, array('category' => 'product'), 'PRODUCT ONE')
+            ->withPost('post5', 5, 2, 2011, array('category' => 'news'), 'NEWS: POST THREE')
+            ->withPost('post6', 10, 3, 2011, array('category' => 'news'), 'NEWS: POST FOUR')
+            ->withPost('post7', 15, 3, 2011, array('category' => 'misc'), 'MISC: POST TWO')
+            ->withPost('post8', 1, 1, 2012, array('category' => 'product'), 'PRODUCT TWO')
+            ->withPost('post9', 5, 2, 2012, array('category' => 'product'), 'PRODUCT THREE')
+            ->withPost('post10', 1, 1, 2013, array('category' => 'news'), 'NEWS: POST FIVE')
+            ->withPage('foo', array(), <<<EOD
+NEWS:
+{% for p in blog.posts.in_category('news').limit(3) %}
+{{p.content}}
+{% endfor %}
+MISC:
+{% for p in blog.posts.in_category('misc').limit(3) %}
+{{p.content}}
+{% endfor %}
+PRODUCTS:
+{% for p in blog.posts.in_category('product').limit(3) %}
+{{p.content}}
+{% endfor %}
+EOD
+            );
+
+        $app = $fs->getApp();
+        $baker = new PieCrustBaker($app);
+        $baker->setBakeDir($fs->url('counter'));
+        $baker->bake();
+
+        $expected = <<<EOD
+NEWS:
+NEWS: POST FIVE
+NEWS: POST FOUR
+NEWS: POST THREE
+MISC:
+MISC: POST TWO
+MISC: POST ONE
+PRODUCTS:
+PRODUCT THREE
+PRODUCT TWO
+PRODUCT ONE
+
+EOD
+        ;
+
+        $this->assertEquals(
+            $expected,
+            file_get_contents($fs->url('counter/foo.html'))
+        );
+    }
+
     public function testBakeBlogArchive()
     {
         $fs = MockFileSystem::create()

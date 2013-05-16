@@ -20,10 +20,6 @@ class BlogData
     protected $page;
     protected $blogKey;
 
-    protected $posts;
-    protected $categories;
-    protected $tags;
-
     protected $years;
     protected $months;
 
@@ -43,8 +39,10 @@ class BlogData
      */
     public function posts()
     {
-        $this->ensurePosts();
-        return $this->posts;
+        $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
+        $posts = new PageIterator($this->page->getApp(), $this->blogKey, $blogPosts);
+        $posts->setCurrentPage($this->page);
+        return $posts;
     }
 
     /**
@@ -54,8 +52,7 @@ class BlogData
      */
     public function categories()
     {
-        $this->ensureCategories();
-        return $this->categories;
+        return new PagePropertyArrayData($this->page, $this->blogKey, 'category');
     }
 
     /**
@@ -65,8 +62,7 @@ class BlogData
      */
     public function tags()
     {
-        $this->ensureTags();
-        return $this->tags;
+        return new PagePropertyArrayData($this->page, $this->blogKey, 'tags');
     }
 
     /**
@@ -110,32 +106,6 @@ class BlogData
         return $this->userData[$name];
     }
     // }}}
-
-    protected function ensurePosts()
-    {
-        if ($this->posts)
-            return;
-
-        $blogPosts = PageHelper::getPosts($this->page->getApp(), $this->blogKey);
-        $this->posts = new PageIterator($this->page->getApp(), $this->blogKey, $blogPosts);
-        $this->posts->setCurrentPage($this->page);
-    }
-
-    protected function ensureCategories()
-    {
-        if ($this->categories)
-            return;
-
-        $this->categories = new PagePropertyArrayData($this->page, $this->blogKey, 'category');
-    }
-
-    protected function ensureTags()
-    {
-        if ($this->tags)
-            return;
-
-        $this->tags = new PagePropertyArrayData($this->page, $this->blogKey, 'tags');
-    }
 
     protected function ensureYears()
     {
