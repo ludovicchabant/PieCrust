@@ -34,6 +34,8 @@ class PageIterator extends BaseIterator
     protected $nextPost;
     protected $hasMorePosts;
     
+    protected $dataSource;
+    
     public function __construct(IPieCrust $pieCrust, $blogKey, array $dataSource)
     {
         parent::__construct();
@@ -41,6 +43,7 @@ class PageIterator extends BaseIterator
         $this->pieCrust = $pieCrust;
         $this->blogKey = $blogKey;
         
+        $this->dataSource = $dataSource;
         $this->iterator = new WrapperIterator($dataSource);
         $this->gotSorter = false;
         $this->isLocked = false;
@@ -335,6 +338,13 @@ class PageIterator extends BaseIterator
             $postsData[] = new PaginationData($post);
         }
         return $postsData;
+    }
+    
+    public function rewind() {
+    	parent::rewind();
+    	$this->iterator = new WrapperIterator($this->dataSource);
+    	$this->gotSorter = false;
+    	$this->ensureSorter();
     }
     // }}}
 }
