@@ -186,7 +186,8 @@ class DataBuilder
                                     }
                                 }
                             }
-                            $page->setPageKey($pageKey);
+                            if ($page->getPageKey() == null)
+                                $page->setPageKey($pageKey);
                             $data['tag'] = implode(' + ', $pageKey);
                         }
                         else
@@ -195,7 +196,8 @@ class DataBuilder
                             {
                                 if (UriBuilder::slugify($t, $flags) == $data['tag'])
                                 {
-                                    $page->setPageKey($t);
+                                    if ($page->getPageKey() == null)
+                                        $page->setPageKey($t);
                                     $data['tag'] = $t;
                                     break;
                                 }
@@ -213,6 +215,8 @@ class DataBuilder
                     if (count($paginationPosts) > 0)
                     {
                         $firstPost = $paginationPosts[0];
+                        if ($page->getPageKey() == null)
+                            $page->setPageKey($firstPost['category']);
                         $data['category'] = $firstPost['category'];
                     }
                 }
