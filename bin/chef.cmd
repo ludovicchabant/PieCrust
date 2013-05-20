@@ -47,4 +47,5 @@ exit /b 1
 goto :eof
 
 :RunChef
-%PHPEXE% %~dp0chef.php %*
+%PHPEXE% "%~dp0chef.php" %*
+

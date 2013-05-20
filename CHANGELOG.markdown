@@ -15,13 +15,16 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
-* NEW: Handle files with BOM headers.
+Frozen changes
+--------------
+
+### 1.0.0-rc3 (2013-05-19)
+
+* BUG: Handle files with BOM headers.
 * BUG: Fixed crash in Jekyll importer.
 * BUG: Fixed a bug with baking tag pages with sub-pages when the tag has special
   or unicode characters.
-
-Frozen changes
---------------
+* BUG: Fixed a problem with having multiple post loops on a single page.
 
 ### 1.0.0-rc2 (2013-04-24)
 
