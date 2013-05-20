@@ -15,6 +15,9 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Removed all options and features that were marked as
+  deprecated (_i.e._ they previously triggered a warning message).
+
 Frozen changes
 --------------
 
