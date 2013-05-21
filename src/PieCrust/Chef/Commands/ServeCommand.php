@@ -85,8 +85,7 @@ class ServeCommand extends ChefCommand
             $context->getLog());
         $server->run(array(
             'list_directories' => false,
-            'run_browser' => $runBrowser,
-            'poll_interval' => 0
+            'run_browser' => $runBrowser
         ));
     }
 }
