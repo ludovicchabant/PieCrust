@@ -17,6 +17,7 @@ Fresh changes
 
 * BREAKING CHANGE: Removed all options and features that were marked as
   deprecated (_i.e._ they previously triggered a warning message).
+* CHANGE: Removed the sample website (it's being turned into a theme).
 
 Frozen changes
 --------------
