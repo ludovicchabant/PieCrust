@@ -67,9 +67,10 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
     public function connect(array $connections, $options)
     {
         $dummy = array();
-        $connections[] = $this->sock;
+        $read = $connections;
+        $read[] = $this->sock;
         $ready = @socket_select(
-            $connections,
+            $read,
             $dummy,
             $dummy,
             $options['poll_interval']
@@ -84,12 +85,12 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
         }
 
         // Check for a new connection.
-        $i = array_search($this->sock, $connections);
+        $i = array_search($this->sock, $read);
         if ($i !== false)
         {
             // Remove our socket from the connections and replace it
             // with the file-descriptor for the new client.
-            unset($connections[$i]);
+            unset($read[$i]);
 
             if (($msgsock = @socket_accept($this->sock)) === false)
             {
@@ -116,10 +117,10 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
                 );
             }
 
-            $connections[] = $msgsock;
+            $read[] = $msgsock;
         }
 
-        return $connections;
+        return $read;
     }
 
     /**
@@ -129,8 +130,7 @@ class StupidHttp_SocketNetworkHandler extends StupidHttp_NetworkHandler
     {
         $address = '';
         $port = 0;
-        if (socket_getpeername($connection, $address, $port) === false)
-            return null;
+        @socket_getpeername($connection, $address, $port);
         return array(
             'address' => $address,
             'port' => $port
