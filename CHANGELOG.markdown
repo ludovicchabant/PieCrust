@@ -18,6 +18,16 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.0-rc4 (2013-05-31)
+
+* ADDED: Ability to enable `keep-alive` in StupidHttp for `chef serve`. This
+  seems to fix some occasional problems.
+* BUG: Fixed the install script that wasn't making the `chef` bootstrap
+  executable.
+* BUG: Fixed a bug in the `flat` file-system that was matching incorrect post
+  files.
+* BUG: Make sure the debug window doesn't inherit text variant properties.
+
 ### 1.0.0-rc3 (2013-05-19)
 
 * BUG: Handle files with BOM headers.
