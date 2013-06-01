@@ -46,6 +46,8 @@ class PieCrustServer
                 'address' => 'localhost',
                 'mime_types' => array('less' => 'text/css'),
                 'log_file' => null,
+                'debug_server' => false,
+                'keep_alive' => false,
                 'debug' => false,
                 'config_variant' => null,
                 'cache' => true
@@ -278,13 +280,16 @@ class PieCrustServer
         {
             $this->server->setLog(StupidHttp_PearLog::fromSingleton('file', $this->options['log_file']));
         }
-        elseif ($this->logger != null && !($this->logger instanceof \Log_null))
+        elseif (!$this->options['debug_server'] && $this->logger != null && !($this->logger instanceof \Log_null))
         {
             $this->server->setLog(new StupidHttp_PearLog($this->logger));
         }
         else
         {
-            $this->server->setLog(new StupidHttp_ConsoleLog(StupidHttp_Log::TYPE_INFO));
+            $level = StupidHttp_Log::TYPE_INFO;
+            if ($this->options['debug_server'])
+                $level = StupidHttp_Log::TYPE_DEBUG;
+            $this->server->setLog(new StupidHttp_ConsoleLog($level));
         }
 
         // Use colorized output on Mac/Linux.

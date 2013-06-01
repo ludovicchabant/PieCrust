@@ -181,7 +181,12 @@ class StupidHttp_Driver
             if (!in_array($c, $this->connections))
                 $this->connections[] = $c;
         }
-        $this->log->debug(count($ready) . "/" . count($this->connections) . " active connections.");
+        $this->log->debug(count($this->connections) . " active connections:");
+        foreach ($this->connections as $conn)
+        {
+            $connInfo = $this->handler->getClientInfo($conn);
+            $this->log->debug(" - " . $connInfo['address'] . ":" . $connInfo['port']);
+        }
 
         // Read from each active connection.
         foreach ($ready as $c)
@@ -202,7 +207,8 @@ class StupidHttp_Driver
                 // Close the connection if it's OK to do so, or if the request was invalid.
                 if ($requestInfo['close_socket'] or $requestInfo['error'])
                 {
-                    $this->log->debug("Closing connection.");
+                    $cInfo = $this->handler->getClientInfo($c);
+                    $this->log->debug("Closing connection to {$cInfo['address']}:{$cInfo['port']}");
                     $this->handler->disconnect($c);
                     $i = array_search($c, $this->connections);
                     unset($this->connections[$i]);

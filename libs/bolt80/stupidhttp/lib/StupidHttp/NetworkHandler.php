@@ -71,7 +71,7 @@ class StupidHttp_NetworkHandler
      */
     public function connect(array $connections, $options)
     {
-        return -1;
+        return null;
     }
 
     /**

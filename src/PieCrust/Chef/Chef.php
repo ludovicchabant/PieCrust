@@ -36,6 +36,15 @@ class Chef
             echo "Fatal Error: " . $e->getMessage() . PHP_EOL;
             echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
             echo $e->getTraceAsString() . PHP_EOL;
+            $e = $e->getPrevious();
+            while ($e)
+            {
+                echo PHP_EOL;
+                echo $e->getMessage() . PHP_EOL;
+                echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
+                echo $e->getTraceAsString() . PHP_EOL;
+                $e = $e->getPrevious();
+            }
             return 2;
         }
     }
@@ -120,7 +129,7 @@ class Chef
         catch (Exception $e)
         {
             $parser->displayError($e->getMessage(), false);
-            return 1;
+            return 3;
         }
 
         // If no command was given, use `help`.

@@ -9,17 +9,18 @@ class DataStyles
      * The debug DIV itself.
      */
     const CSS_DEBUGINFO = <<<CSSCODE
-        text-align: left;
-        padding: 1em;
-        background: #a42;
-        color: #fff;
-        position: fixed;
-        width: 50%;
-        bottom: 0;
-        right: 0;
-        overflow: auto;
-        max-height: 50%;
-        box-shadow: 0 0 10px #633;
+text-align: left;
+font-style: normal;
+padding: 1em;
+background: #a42;
+color: #fff;
+position: fixed;
+width: 50%;
+bottom: 0;
+right: 0;
+overflow: auto;
+max-height: 50%;
+box-shadow: 0 0 10px #633;
 CSSCODE;
 
     /**

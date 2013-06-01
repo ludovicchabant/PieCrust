@@ -293,6 +293,7 @@ function installPieCrust($version, $installDir, $quiet)
             $logger->error("Could not create the bootstrap script at: {$chefPath}");
             return 5;
         }
+        chmod($chefPath, 0755);
     }
     else
     {
@@ -302,6 +303,7 @@ function installPieCrust($version, $installDir, $quiet)
             $logger->error("Could not create the bootstrap script at: {$chefPath}");
             return 5;
         }
+        chmod($chefPath, 0755);
     }
 
     // Done!
