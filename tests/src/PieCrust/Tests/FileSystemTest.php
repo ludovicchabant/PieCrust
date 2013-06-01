@@ -130,6 +130,33 @@ class FileSystemTest extends PieCrustTestCase
         }
     }
 
+    public function testIgnoreFile()
+    {
+        $fs = MockFileSystem::create()
+            ->withAsset('_content/posts/no-date.html', '')
+            ->withAsset('_content/posts/2013-01-12_foo-bar.html', '');
+
+        $pc = new MockPieCrust(array('root' => $fs->getAppRoot()));
+        $pc->setPostsDir($fs->url('kitchen/_content/posts'));
+        $pc->getConfig()->setValue('site/posts_fs', 'flat');
+
+        $pcFs = FileSystem::create($pc);
+        $postFiles = $pcFs->getPostFiles();
+        $this->assertEquals(
+            array(
+                array(
+                    'year' => '2013',
+                    'month' => '01',
+                    'day' => '12',
+                    'name' => 'foo-bar',
+                    'ext' => 'html',
+                    'path' => $fs->url('kitchen/_content/posts/2013-01-12_foo-bar.html')
+                )
+            ),
+            $postFiles
+        );
+    }
+
     public function testGetPageFiles()
     {
         $fs = MockFileSystem::create()

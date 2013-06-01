@@ -34,10 +34,12 @@ class FlatFileSystem extends FileSystem
                 continue;
         
             $matches = array();
-            if (preg_match(
+            $res = preg_match(
                 '/^(\d{4})-(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/', 
                 $path->getFilename(), 
-                $matches) === false)
+                $matches
+            );
+            if (!$res)
                 continue;
             
             $result[] = array(
