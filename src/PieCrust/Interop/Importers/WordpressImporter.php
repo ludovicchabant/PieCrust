@@ -138,10 +138,10 @@ EOD;
 
             mysql_set_charset($db_character_set);
         }
-		else
-		{
-			mysql_set_charset('utf8');
-		}
+        else
+        {
+            mysql_set_charset('utf8');
+        }
 
         // Gather the authors' names.
         $this->authors = array();
