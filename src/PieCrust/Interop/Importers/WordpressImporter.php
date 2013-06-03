@@ -131,7 +131,17 @@ EOD;
         $this->tablePrefix = $tablePrefix;
 
         // Use UTF8 encoding.
-        mysql_set_charset('utf8');
+        $query = mysql_query('SHOW VARIABLES LIKE  "character_set_database"');
+        if ($row = mysql_fetch_assoc($query))
+        {
+            $db_character_set = $row['Value'];
+
+            mysql_set_charset($db_character_set);
+        }
+		else
+		{
+			mysql_set_charset('utf8');
+		}
 
         // Gather the authors' names.
         $this->authors = array();
