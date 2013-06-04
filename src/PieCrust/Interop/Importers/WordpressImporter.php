@@ -176,7 +176,7 @@ EOD;
 
         // Gather the tags.
         $this->tags = array();
-        $query = mysql_query("SELECT a.id, c.name FROM {$this->tablePrefix}posts a JOIN {$this->tablePrefix}term_relationships b ON a.id = b.object_id JOIN {$this->tablePrefix}terms c ON b.term_taxonomy_id = c.term_id WHERE post_status = 'publish' AND post_type IN ('post', 'page');");
+        $query = mysql_query("SELECT a.id, d.name FROM {$this->tablePrefix}posts a JOIN {$this->tablePrefix}term_relationships b ON a.id = b.object_id JOIN {$this->tablePrefix}term_taxonomy c ON b.term_taxonomy_id = c.term_taxonomy_id JOIN {$this->tablePrefix}terms d ON c.term_id = d.term_id WHERE post_status = 'publish' AND post_type IN ('post', 'page') AND c.taxonomy = 'post_tag' ORDER BY a.id");
         if (!$query)
             throw new PieCrustException("Error querying tags from the database: " . mysql_error());
         while ($row = mysql_fetch_assoc($query))
