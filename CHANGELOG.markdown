@@ -26,6 +26,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.0 (2013-06-03)
+
+* BUG: Fixed missing new line after a Geshi node.
+* BUG: Fixed crash in Geshi with "Go" language.
+
 ### 1.0.0-rc4 (2013-05-31)
 
 * ADDED: Ability to enable `keep-alive` in StupidHttp for `chef serve`. This

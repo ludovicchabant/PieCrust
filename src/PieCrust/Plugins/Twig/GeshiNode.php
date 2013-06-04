@@ -27,6 +27,6 @@ class GeshiNode extends \Twig_Node
         {
             $compiler->write('$geshi->enable_line_numbers(GESHI_NORMAL_LINE_NUMBERS);' . PHP_EOL);
         }
-        $compiler->write('echo $geshi->parse_code();' . PHP_EOL);
+        $compiler->write('echo $geshi->parse_code() . PHP_EOL;' . PHP_EOL);
     }
 }
