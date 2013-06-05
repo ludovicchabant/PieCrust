@@ -28,6 +28,8 @@ EOD;
     protected $tablePrefix;
     protected $defaultPostLayout;
     protected $defaultPageLayout;
+    protected $defaultPostCategory;
+    protected $defaultPageCategory;
 
     public function __construct()
     {
@@ -57,6 +59,18 @@ EOD;
             'description' => "For the WordPress importer: specify the default layout for each page (default: none specified).",
             'help_name'   => 'LAYOUT'
         ));
+
+        $parser->addOption('default_post_category', array(
+            'long_name'   => '--default-post-category',
+            'description' => "For the WordPress importer: specify the default category for each post (default: none specified).",
+            'help_name'   => 'CATEGORY'
+        ));
+
+        $parser->addOption('default_page_category', array(
+            'long_name'   => '--default-page-category',
+            'description' => "For the WordPress importer: specify the default category for each page (default: none specified).",
+            'help_name'   => 'CATEGORY'
+        ));
     }
     
     protected function open($connection)
@@ -78,6 +92,12 @@ EOD;
 
             if (isset($this->options['default_page_layout']))
                 $this->defaultPageLayout = $this->options['default_page_layout'];
+
+            if (isset($this->options['default_post_category']))
+                $this->defaultPostCategory = $this->options['default_post_category'];
+
+            if (isset($this->options['default_page_category']))
+                $this->defaultPageCategory = $this->options['default_page_category'];
 
             if (isset($matches[5]))
             {
@@ -240,10 +260,20 @@ EOD;
             if (array_key_exists($row['ID'], $this->tags))
                 $metadata['tags'] = $this->tags[$row['ID']];
 
-            if ($postType == 'post' && $this->defaultPostLayout)
-                $metadata['layout'] = $this->defaultPostLayout;
-            if ($postType == 'page' && $this->defaultPageLayout)
-                $metadata['layout'] = $this->defaultPageLayout;
+            if ($postType == 'post')
+            {
+                if ($this->defaultPostLayout)
+                    $metadata['layout'] = $this->defaultPostLayout;
+                if ($this->defaultPostCategory)
+                    $metadata['category'] = $this->defaultPostCategory;
+            }
+            elseif ($postType == 'page')
+            {
+                if ($this->defaultPageLayout)
+                    $metadata['layout'] = $this->defaultPageLayout;
+                if ($this->defaultPageCategory)
+                    $metadata['category'] = $this->defaultPageCategory;
+            }
 
             $content = $row['post_content'];
 
