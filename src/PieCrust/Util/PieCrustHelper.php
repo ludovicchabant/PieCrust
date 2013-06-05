@@ -4,6 +4,7 @@ namespace PieCrust\Util;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\UriBuilder;
@@ -19,7 +20,22 @@ class PieCrustHelper
      */
     public static function getRelativePath(IPieCrust $pieCrust, $path, $stripExtension = false)
     {
-        $relativePath = PathHelper::getRelativePath($pieCrust->getRootDir(), $path);
+        $basePath = null;
+        $themeDir = $pieCrust->getThemeDir();
+        if ($themeDir and strncmp($path, $themeDir, strlen($themeDir)) == 0)
+        {
+            // Theme path.
+            $basePath = $themeDir;
+        }
+        else
+        {
+            // Normal website path.
+            $basePath = $pieCrust->getRootDir();
+        }
+        if (!$basePath)
+            throw new PieCrustException("Can't get a relative path for '$path': it doesn't seem to be either a website, theme or resource path.");
+
+        $relativePath = PathHelper::getRelativePath($basePath, $path);
         if ($stripExtension)
             $relativePath = preg_replace('/\.[a-zA-Z0-9]+$/', '', $relativePath);
         return $relativePath;

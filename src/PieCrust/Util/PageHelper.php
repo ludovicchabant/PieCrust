@@ -38,11 +38,6 @@ class PageHelper
                     throw new InvalidArgumentException("Unknown page type given: " . $page->getPageType());
             }
         }
-        else if (strncmp($page->getPath(), PieCrustDefaults::RES_DIR(), strlen(PieCrustDefaults::RES_DIR())) == 0)
-        {
-            // This is a `res` page.
-            $basePath = PieCrustDefaults::RES_DIR() . 'pages/';
-        }
         else
         {
             // This is a website page.

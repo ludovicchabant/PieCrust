@@ -383,8 +383,8 @@ class PieCrustBaker
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
 
             $tagPageName = $prefix . PieCrustDefaults::TAG_PAGE_NAME . '.html';
-            $themeOrResTagPageName = PieCrustDefaults::TAG_PAGE_NAME . '.html';
-            $tagPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $tagPageName, $themeOrResTagPageName);
+            $themeTagPageName = PieCrustDefaults::TAG_PAGE_NAME . '.html';
+            $tagPagePath = PathHelper::getUserOrThemePath($this->pieCrust, $tagPageName, $themeTagPageName);
             if ($tagPagePath === false)
                 continue;
             
@@ -493,8 +493,8 @@ class PieCrustBaker
                 $prefix = $blogKey . DIRECTORY_SEPARATOR;
 
             $categoryPageName = $prefix . PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-            $themeOrResCategoryPageName = PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
-            $categoryPagePath = PathHelper::getUserOrThemeOrResPath($this->pieCrust, $categoryPageName, $themeOrResCategoryPageName);
+            $themeCategoryPageName = PieCrustDefaults::CATEGORY_PAGE_NAME . '.html';
+            $categoryPagePath = PathHelper::getUserOrThemePath($this->pieCrust, $categoryPageName, $themeCategoryPageName);
             if ($categoryPagePath === false)
                 continue;
 

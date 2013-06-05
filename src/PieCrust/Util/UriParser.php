@@ -122,7 +122,7 @@ class UriParser
             }
         }
 
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $relativePath);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $relativePath);
         if ($path !== false)
         {
             $pageInfo['path'] = $path;
@@ -162,14 +162,14 @@ class UriParser
             $blogKeyDir = $blogKey . '/';
             
         $tagPageName = array();
-        $themeOrResTagPageName = array();
+        $themeTagPageName = array();
         $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
         foreach ($autoFormats as $ext => $format)
         {
             $tagPageName[] = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
-            $themeOrResTagPageName[] = PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
+            $themeTagPageName[] = PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
         }
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $tagPageName, $themeOrResTagPageName);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $tagPageName, $themeTagPageName);
         if ($path === false)
             return false;
 
@@ -209,14 +209,14 @@ class UriParser
             $blogKeyDir = $blogKey . '/';
             
         $tagPageName = array();
-        $themeOrResCategoryPageName = array();
+        $themeCategoryPageName = array();
         $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
         foreach ($autoFormats as $ext => $format)
         {
             $categoryPageName[] = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
-            $themeOrResCategoryPageName[] = PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
+            $themeCategoryPageName[] = PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
         }
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $categoryPageName, $themeOrResCategoryPageName);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $categoryPageName, $themeCategoryPageName);
         if ($path === false)
             return false;
 

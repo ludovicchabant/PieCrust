@@ -56,7 +56,7 @@ class PageTest extends PieCrustTestCase
             ))
             ->getApp();
         $page = Page::createFromUri($app, '/tag/foo');
-        $expected = PathHelper::getUserOrThemeOrResPath($app, '_tag.html');
+        $expected = PathHelper::getUserOrThemePath($app, '_tag.html');
         $this->assertEquals($expected, $page->getPath());
     }
 
@@ -70,7 +70,7 @@ class PageTest extends PieCrustTestCase
             ))
             ->getApp();
         $page = Page::createFromUri($app, '/cat/foo');
-        $expected = PathHelper::getUserOrThemeOrResPath($app, '_category.html');
+        $expected = PathHelper::getUserOrThemePath($app, '_category.html');
         $this->assertEquals($expected, $page->getPath());
     }
 

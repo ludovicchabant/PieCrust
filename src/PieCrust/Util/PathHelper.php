@@ -119,7 +119,7 @@ class PathHelper
         throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
     }
 
-    public static function getUserOrThemeOrResPath(IPieCrust $pieCrust, $relativePath, $themeOrResPath = false)
+    public static function getUserOrThemePath(IPieCrust $pieCrust, $relativePath, $themePath = false)
     {
         if (!is_array($relativePath))
             $relativePath = array($relativePath);
@@ -137,30 +137,21 @@ class PathHelper
             }
         }
 
-        if (!$themeOrResPath)
-            $themeOrResPath = $relativePath;
-        elseif (!is_array($themeOrResPath))
-            $themeOrResPath = array($themeOrResPath);
+        if (!$themePath)
+            $themePath = $relativePath;
+        elseif (!is_array($themePath))
+            $themePath = array($themePath);
 
         $themeDir = $pieCrust->getThemeDir();
         if ($themeDir !== false)
         {
-            foreach ($themeOrResPath as $rp)
+            foreach ($themePath as $rp)
             {
                 $path = $themeDir . '_content/pages/' . $rp;
                 if (is_file($path))
                 {
                     return $path;
                 }
-            }
-        }
-
-        foreach ($themeOrResPath as $rp)
-        {
-            $path = PieCrustDefaults::RES_DIR() . 'pages/' . $rp;
-            if (is_file($path))
-            {
-                return $path;
             }
         }
 

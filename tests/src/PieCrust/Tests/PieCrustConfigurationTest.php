@@ -2,6 +2,7 @@
 
 namespace PieCrust\Tests;
 
+use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustConfiguration;
 use PieCrust\Mock\MockFileSystem;
 
@@ -145,6 +146,8 @@ class PieCrustConfigurationTest extends PieCrustTestCase
             if (!is_dir($dir))
                 mkdir($dir);
         }
+        $expectedDirs[] = PieCrustDefaults::RES_DIR() . 'theme/_content/templates/';
+
         $this->assertEquals(
             $expectedDirs,
             $app->getTemplatesDirs()

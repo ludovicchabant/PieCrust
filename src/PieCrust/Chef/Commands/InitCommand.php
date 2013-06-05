@@ -59,9 +59,13 @@ class InitCommand extends ChefCommand
         if (!$rootDir)
             $rootDir = getcwd();
 
-        $apache = $result->command->options['apache'];
-        $iis = $result->command->options['iis'];
-        $this->initializeWebsite($rootDir, array('apache' => $apache, 'iis' => $iis));
+        $this->initializeWebsite(
+            $rootDir, 
+            array(
+                'apache' => $result->command->options['apache'],
+                'iis' => $result->command->options['iis']
+            )
+        );
     }
 
     protected function initializeWebsite($rootDir, $options = array())
@@ -88,7 +92,6 @@ class InitCommand extends ChefCommand
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_PAGES_DIR);
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_POSTS_DIR);
         $this->createDirectory($rootDir, PieCrustDefaults::CONTENT_TEMPLATES_DIR);
-        $this->createDirectory($rootDir, 'css');
         
         // Create the basic files:
         // - config.yml
@@ -103,26 +106,7 @@ class InitCommand extends ChefCommand
                 'enable' => true
             )
         ));
-        // - templates/default.html
-        $this->createSystemFile(
-            'default_template.html', 
-            $rootDir, 
-            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'default.html'
-        );
-        // - templates/post.html
-        $this->createSystemFile(
-            'default_post_template.html',
-            $rootDir,
-            PieCrustDefaults::CONTENT_TEMPLATES_DIR . 'post.html'
-        );
 
-        // Create assets.
-        $this->createSystemFile(
-            'simple.css',
-            $rootDir,
-            'css/simple.css'
-        );
-        
         // Create web-server files, if needed.
         if ($options['apache'])
         {
@@ -137,6 +121,7 @@ class InitCommand extends ChefCommand
             $this->createBootstraper($rootDir);
         }
         
+        // All done!
         $this->log->info("PieCrust website created in: " . $rootDir);
         $this->log->info("");
 

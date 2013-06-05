@@ -95,46 +95,27 @@ class CachedEnvironment extends Environment
     {
         if ($this->pageInfos == null)
         {
-            // TODO: optimize this, it's quite stupid.
-
-            // Start with the built-in pages.
-            $resPagesDir = PieCrustDefaults::RES_DIR() . 'pages/';
-            $fs = new FlatFileSystem($resPagesDir, null);
-            $this->pageInfos = $fs->getPageFiles();
-
-            // Override with the theme pages.
+            // Start with the theme pages, if any.
             if ($this->pieCrust->getThemeDir())
             {
                 $fs = FileSystem::create($this->pieCrust, null, true);
-                $themePageInfos = $fs->getPageFiles();
-                foreach ($themePageInfos as $themePageInfo)
-                {
-                    $isOverridden = false;
-                    foreach ($this->pageInfos as &$pageInfo)
-                    {
-                        if ($pageInfo['relative_path'] == $themePageInfo['relative_path'])
-                        {
-                            $isOverridden = true;
-                            $pageInfo['path'] = $themePageInfo['path'];
-                            break;
-                        }
-                    }
-                    if (!$isOverridden)
-                    {
-                        $this->pageInfos[] = $themePageInfo;
-                    }
-                }
+                $this->pageInfos = $fs->getPageFiles();
+            }
+            else
+            {
+                $this->pageInfos = array();
             }
 
-            // And finally override with the user pages.
+            // Override with the user pages.
             $fs = FileSystem::create($this->pieCrust, null);
             $userPageInfos = $fs->getPageFiles();
             foreach ($userPageInfos as $userPageInfo)
             {
                 $isOverridden = false;
+                $curRelativePath = $userPageInfo['relative_path'];
                 foreach ($this->pageInfos as &$pageInfo)
                 {
-                    if ($pageInfo['relative_path'] == $userPageInfo['relative_path'])
+                    if ($pageInfo['relative_path'] == $curRelativePath)
                     {
                         $isOverridden = true;
                         $pageInfo['path'] = $userPageInfo['path'];

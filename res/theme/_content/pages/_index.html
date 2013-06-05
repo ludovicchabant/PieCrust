@@ -1,0 +1,59 @@
+---
+title: 
+format: none
+---
+
+{% if pagination.has_posts %}
+<section>
+    {% for post in pagination.posts %}
+    {% include 'partial_post.html' %}
+    {% endfor %}
+</section>
+<section>
+    {% if pagination.prev_page %}<div class="prev"><a href="{{ pagination.prev_page }}">Next Posts</a></div>{% endif %}
+    {% if pagination.next_page %}<div class="next"><a href="{{ pagination.next_page }}">Previous Posts</a></div>{% endif %}
+</section>
+{% endif %}
+
+
+<--markdown-->
+
+{% if not pagination.has_posts or not site.hide_quickstart %}
+
+## Quick Start
+
+Welcome to your new [PieCrust][] website!
+
+Since you don't seem to have any blog post or home page created yet, here's a
+quick reference of things you probably want to do next. All `chef` commands need
+to be run from inside your website's directory.
+
+For more information, refer to the [documentation][doc].
+
+
+### Create a new blog post
+
+Run `chef prepare post my-new-post-slug`, where `my-new-post-slug` is the [URL slug][slug] you want for your new post.
+
+
+### Change this page
+
+To override this default home page, you can do one of the following:
+
+* Just hide this "quick start" section by setting the `hide_quickstart` property
+  to `true` in your site configuration. To do this, edit `_content/config.yml`
+  and `hide_quickstart: true` under the `site` section.
+
+* Manually rewrite this page by creating `_content/pages/_index.md` or running
+  `chef prepare page _index`.
+
+* Install a theme with `chef themes install theme-name`, where `theme-name` is
+  the name of a theme. You can list existing official themes with `chef themes
+  find`.
+
+
+[piecrust]: {{ piecrust.url }}
+[doc]: http://bolt80.com/piecrust/doc/
+[slug]: http://en.wikipedia.org/wiki/Clean_URL#Slug
+{% endif %}
+
