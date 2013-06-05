@@ -24,12 +24,14 @@ EOD;
     protected $db;
     protected $authors;
     protected $tags;
+    protected $categories;
 
     protected $tablePrefix;
     protected $defaultPostLayout;
     protected $defaultPageLayout;
     protected $defaultPostCategory;
     protected $defaultPageCategory;
+    protected $categorySearchList;
 
     public function __construct()
     {
@@ -71,6 +73,12 @@ EOD;
             'description' => "For the WordPress importer: specify the default category for each page (default: none specified).",
             'help_name'   => 'CATEGORY'
         ));
+
+        $parser->addOption('category_search_list', array(
+            'long_name'   => '--category-search-list',
+            'description' => "For the WordPress importer: specify the categories in order that will be imported, separated by commas (default: none specified). The first matching category is the one that will be used.",
+            'help_name'   => 'CATEGORYLIST'
+        ));
     }
     
     protected function open($connection)
@@ -98,6 +106,17 @@ EOD;
 
             if (isset($this->options['default_page_category']))
                 $this->defaultPageCategory = $this->options['default_page_category'];
+
+            if (isset($this->options['category_search_list']))
+            {
+                $func = function($cat)
+                {
+                    return trim(strtolower($cat));
+                };
+
+                // Gather the category search list into an array pre-trimmed and pre-exploded for comparison
+                $this->categorySearchList = array_map($func, explode(',', $this->options['category_search_list']));
+            }
 
             if (isset($matches[5]))
             {
@@ -194,14 +213,18 @@ EOD;
             $this->authors[] = $row['display_name'];
         }
 
-        // Gather the tags.
+        // Gather the tags and categories.
         $this->tags = array();
-        $query = mysql_query("SELECT a.id, d.name FROM {$this->tablePrefix}posts a JOIN {$this->tablePrefix}term_relationships b ON a.id = b.object_id JOIN {$this->tablePrefix}term_taxonomy c ON b.term_taxonomy_id = c.term_taxonomy_id JOIN {$this->tablePrefix}terms d ON c.term_id = d.term_id WHERE post_status = 'publish' AND post_type IN ('post', 'page') AND c.taxonomy = 'post_tag' ORDER BY a.id");
+        $this->categories = array();
+        $query = mysql_query("SELECT a.id, d.name, c.taxonomy FROM {$this->tablePrefix}posts a JOIN {$this->tablePrefix}term_relationships b ON a.id = b.object_id JOIN {$this->tablePrefix}term_taxonomy c ON b.term_taxonomy_id = c.term_taxonomy_id JOIN {$this->tablePrefix}terms d ON c.term_id = d.term_id WHERE post_status = 'publish' AND post_type IN ('post', 'page') AND c.taxonomy IN ('post_tag', 'category') ORDER BY a.id");
         if (!$query)
             throw new PieCrustException("Error querying tags from the database: " . mysql_error());
         while ($row = mysql_fetch_assoc($query))
         {
-            $this->tags[$row['id']][] = $row['name'];
+            if ($row['taxonomy'] == 'post_tag')
+                $this->tags[$row['id']][] = $row['name'];
+            elseif ($row['taxonomy'] == 'category')
+                $this->categories[$row['id']][] = $row['name'];
         }
     }
 
@@ -260,18 +283,22 @@ EOD;
             if (array_key_exists($row['ID'], $this->tags))
                 $metadata['tags'] = $this->tags[$row['ID']];
 
+            $category = $this->getMatchedCategory($row['ID']);
+            if ($category)
+                $metadata['category'] = $category;
+
             if ($postType == 'post')
             {
                 if ($this->defaultPostLayout)
                     $metadata['layout'] = $this->defaultPostLayout;
-                if ($this->defaultPostCategory)
+                if ($this->defaultPostCategory && !array_key_exists('category', $metadata))
                     $metadata['category'] = $this->defaultPostCategory;
             }
             elseif ($postType == 'page')
             {
                 if ($this->defaultPageLayout)
                     $metadata['layout'] = $this->defaultPageLayout;
-                if ($this->defaultPageCategory)
+                if ($this->defaultPageCategory && !array_key_exists('category', $metadata))
                     $metadata['category'] = $this->defaultPageCategory;
             }
 
@@ -286,6 +313,26 @@ EOD;
         }
 
         return $result;
+    }
+
+    // Get the first matched category from the search list for a given post/page
+    protected function getMatchedCategory($id)
+    {
+        if (array_key_exists($id, $this->categories) && $this->categorySearchList)
+        {
+            foreach ($this->categorySearchList as $desiredCategory)
+            {
+                foreach ($this->categories[$id] as $currentCategory)
+                {
+                    if (strcasecmp($desiredCategory, trim($currentCategory)) == 0)
+                    {
+                        return trim($currentCategory);
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     // }}}
