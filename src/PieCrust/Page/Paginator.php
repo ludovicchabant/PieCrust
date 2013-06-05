@@ -47,6 +47,17 @@ class Paginator
         $this->ensurePaginationData();
         return $this->postsIterator;
     }
+
+    /**
+     * Gets whether there are any posts for this page.
+     *
+     * @noCall
+     * @documentation Whether there are any posts for this page.
+     */
+    public function has_posts()
+    {
+        return $this->posts_this_page() > 0;
+    }
  
     /**
      * Gets the maximum number of posts to be displayed on the page.
