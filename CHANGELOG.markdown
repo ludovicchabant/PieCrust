@@ -18,6 +18,8 @@ Fresh changes
 * BREAKING CHANGE: Removed all options and features that were marked as
   deprecated (_i.e._ they previously triggered a warning message).
 * CHANGE: Removed the sample website (it's being turned into a theme).
+* CHANGE: Added `.md` and `.textile` as default auto-format extensions
+  (respectively for Markdown and Textile formatting).
 * NEW: Added support for tags when importing content from a Wordpress SQL
   database.
 * BUG: Fixed a issue with encoding when importing content from a Wordpress SQL

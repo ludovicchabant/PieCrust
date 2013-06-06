@@ -213,7 +213,7 @@ class PieCrustConfiguration extends Configuration
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
                 'themes_sources' => array(PieCrustDefaults::DEFAULT_THEME_SOURCE),
-                'auto_formats' => array('html' => ''),
+                'auto_formats' => array('html' => '', 'md' => 'markdown', 'textile' => 'textile'),
                 'cache_time' => 28800,
                 'display_errors' => true,
                 'enable_debug_info' => true
