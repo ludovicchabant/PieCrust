@@ -1,6 +1,7 @@
 ---
 title: 
 ---
+{% if pagination.posts|length == 0 %}
 Welcome to your new PieCrust website! When in doubt, check the [documentation][1].
 
   [1]: http://bolt80.com/piecrust/doc/
@@ -12,6 +13,7 @@ To create a new blog post:
 To create a new page:
 
 > `chef prepare page my-new-page-title`
+{% endif %}
 
 <--none-->
 
