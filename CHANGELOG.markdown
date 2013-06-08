@@ -63,8 +63,8 @@ Frozen changes
 * BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
   modifying it, which could otherwise result in confusing behaviour.
 * BREAKING CHANGE: Global `chef` options like `--root`, `--debug` or `--quiet`
-  are not really global, and must be specified before the command name.
-* BREAKING BUG FIX: Monthly blog archives were incorrectly order
+  are now really global, and must be specified before the command name.
+* BREAKING BUG FIX: Monthly blog archives were incorrectly ordered
   chronologically, instead of reverse-chronologically.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
 * NEW: Added `plugins update` command to update installed plugins. For now, this
