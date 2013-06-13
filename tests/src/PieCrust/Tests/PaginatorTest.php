@@ -126,6 +126,12 @@ class PaginatorTest extends PieCrustTestCase
                 );
             }
         }
+
+        $this->assertEquals($postCount, $paginator->total_post_count());
+
+        $pageCount = (int)ceil((float)$postCount / 5.0);
+        $this->assertEquals($pageCount, $paginator->total_page_count());
+        $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
         
         $expectedCount = $postCount;
         if ($postCount > 5)

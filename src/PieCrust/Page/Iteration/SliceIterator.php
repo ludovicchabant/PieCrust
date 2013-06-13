@@ -13,14 +13,17 @@ class SliceIterator extends BaseIterator implements \OuterIterator
     protected $iterator;
     protected $offset;
     protected $limit;
+
     protected $hadMore;
+    protected $innerCount;
 
     public function __construct($iterator, $offset = 0, $limit = null)
     {
         $this->iterator = $iterator;
         $this->offset = $offset;
         $this->limit = $limit;
-        $this->hadMore= false;
+        $this->hadMore = false;
+        $this->innerCount = 0;
     }
 
     public function getInnerIterator()
@@ -33,11 +36,17 @@ class SliceIterator extends BaseIterator implements \OuterIterator
         return $this->hadMore;
     }
 
+    public function getInnerCount()
+    {
+        return $this->innerCount;
+    }
+
     protected function load()
     {
         $items = iterator_to_array($this->iterator);
 
-        $this->hadMore = ($this->limit !== null && ($this->limit + $this->offset < count($items)));
+        $this->innerCount = count($items);
+        $this->hadMore = ($this->limit !== null && ($this->limit + $this->offset < $this->innerCount));
         if ($this->offset > 0 || $this->hadMore)
         {
             $items = array_slice($items, $this->offset, $this->limit);

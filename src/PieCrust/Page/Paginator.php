@@ -92,7 +92,7 @@ class Paginator
             return null;
 
         $this->ensurePaginationData();
-        if ($this->postsIterator->hasMorePosts())
+        if ($this->postsIterator->hasMorePaginationPosts())
         {
             return $this->page->getPageNumber() + 1;
         }
@@ -147,7 +147,7 @@ class Paginator
     public function total_post_count()
     {
         $this->ensurePaginationData();
-        return $this->postsIterator->count();
+        return $this->postsIterator->getPaginationTotalCount();
     }
 
     /**
@@ -309,7 +309,7 @@ class Paginator
         {
             // Limit to posts that should be on this page.
             $offset = ($this->page->getPageNumber() - 1) * $postsPerPage;
-            $this->postsIterator->slice($offset, $postsPerPage);
+            $this->postsIterator->setPagination($offset, $postsPerPage);
         }
         $this->postsIterator->setLocked();
     }

@@ -32,7 +32,7 @@ class PageIterator extends BaseIterator
     protected $page;
     protected $previousPost;
     protected $nextPost;
-    protected $hasMorePosts;
+    protected $paginationSlicer;
     
     public function __construct(IPieCrust $pieCrust, $blogKey, array $dataSource)
     {
@@ -48,7 +48,7 @@ class PageIterator extends BaseIterator
         $this->page = null;
         $this->previousPost = null;
         $this->nextPost = null;
-        $this->hasMorePosts = false;
+        $this->paginationSlicer = null;
     }
 
     // {{{ Internal members
@@ -68,11 +68,27 @@ class PageIterator extends BaseIterator
         $this->unload();
         $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
     }
+    
+    public function setPagination($skip, $limit)
+    {
+        $this->slice($skip, $limit);
+        $this->paginationSlicer = $this->iterator;
+    }
 
-    public function hasMorePosts()
+    public function getPaginationTotalCount()
     {
         $this->ensureLoaded();
-        return $this->hasMorePosts;
+        if ($this->paginationSlicer != null)
+            return $this->paginationSlicer->getInnerCount();
+        return $this->count();
+    }
+
+    public function hasMorePaginationPosts()
+    {
+        $this->ensureLoaded();
+        if ($this->paginationSlicer != null)
+            return $this->paginationSlicer->hadMoreItems();
+        return false;
     }
 
     public function getNextPost()
@@ -301,20 +317,6 @@ class PageIterator extends BaseIterator
         
         // Get the posts data, and use that as the items we'll return.
         $items = $this->getPostsData($posts);
-
-        // See whether there's more than what we got.
-        $this->hasMorePosts = false;
-        $currentIterator = $this->iterator;
-        while ($currentIterator != null)
-        {
-            if ($currentIterator instanceof SliceIterator)
-            {
-                $this->hasMorePosts |= $currentIterator->hadMoreItems();
-                if ($this->hasMorePosts)
-                    break;
-            }
-            $currentIterator = $currentIterator->getInnerIterator();
-        }
 
         return $items;
     }
