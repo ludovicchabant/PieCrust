@@ -33,6 +33,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.1 (2013-06-13)
+
+* BUG: Fixed a bug with the `pagination` object returning the wrong values for
+  `total_post_count`, `total_page_count` and `all_page_numbers`.
+
 ### 1.0.0 (2013-06-03)
 
 * BUG: Fixed missing new line after a Geshi node.
