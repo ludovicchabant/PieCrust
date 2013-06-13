@@ -20,8 +20,13 @@ Fresh changes
 * CHANGE: Removed the sample website (it's being turned into a theme).
 * CHANGE: Added `.md` and `.textile` as default auto-format extensions
   (respectively for Markdown and Textile formatting).
+* CHANGE: The `sortBy` function on page and post iterators has been renamed to
+  just `sort`.
 * NEW: Added support for tags when importing content from a Wordpress SQL
   database.
+* NEW: Page and post iterators can be filtered with "magic" functions like
+  `is_foo('value')` or `has_bar('value')`, to prevent having to write a
+  full-blown filter in the page config header.
 * BUG: Fixed a issue with encoding when importing content from a Wordpress SQL
   database.
 
