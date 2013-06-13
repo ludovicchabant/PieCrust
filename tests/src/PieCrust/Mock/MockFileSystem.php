@@ -211,6 +211,30 @@ class MockFileSystem
         return $this->withAsset($path, $text);
     }
 
+    public function withSimpleDummyPosts($count, $commonConfig = array())
+    {
+        $dates = array();
+        $year = 2001;
+        $month = 1;
+        $day = 1;
+        for ($i = 0; $i < $count; $i++)
+        {
+            $dates[] = "{$year}/" . sprintf("%02d", $month) . "/" . sprintf("%02d", $day);
+            $day++;
+            if ($day > 28)
+            {
+                $day = 1;
+                $month++;
+            }
+            if ($month > 12)
+            {
+                $month = 1;
+                $year++;
+            }
+        }
+        return $this->withDummyPosts($dates, $commonConfig);
+    }
+
     public function withDummyPosts(array $dates, array $commonConfig = array())
     {
         $i = 0;
