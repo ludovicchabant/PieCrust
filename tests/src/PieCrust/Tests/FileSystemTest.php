@@ -142,6 +142,11 @@ class FileSystemTest extends PieCrustTestCase
 
         $pcFs = FileSystem::create($pc);
         $postFiles = $pcFs->getPostFiles();
+        foreach ($postFiles as &$pf)
+        {
+            // Fix backslashes when running tests on Windows.
+            $pf['path'] = str_replace('\\', '/', $pf['path']);
+        }
         $this->assertEquals(
             array(
                 array(
