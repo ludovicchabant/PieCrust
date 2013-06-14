@@ -29,6 +29,7 @@ Fresh changes
   full-blown filter in the page config header.
 * NEW: Ability to override the default page or post layout when import a blog
   from Wordpress.
+* NEW: Added `pccache` tag to Twig for caching parts of markup during the bake.
 * BUG: Fixed a issue with encoding when importing content from a Wordpress SQL
   database.
 

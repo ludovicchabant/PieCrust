@@ -208,7 +208,14 @@ class PieCrustBaker
                 $executionContext->wasCacheCleaned = true;
                 $this->parameters['__smart_content'] = false;
             }
+            else
+            {
+                // If we didn't clean the cache, at least clean the level 0 bake cache,
+                // where bake-only plugins can cache things.
+                $this->cleanLevel0Cache();
+            }
         }
+        $this->ensureLevel0Cache();
 
         // Bake!
         $this->bakePosts();
@@ -239,6 +246,18 @@ class PieCrustBaker
         
         $this->logger->info('-------------------------');
         $this->logger->notice(self::formatTimed($overallStart, 'done baking'));
+    }
+
+    protected function cleanLevel0Cache()
+    {
+        $start = microtime(true);
+        PathHelper::deleteDirectoryContents($this->pieCrust->getCacheDir() . 'bake_t/0');
+        $this->logger->debug(self::formatTimed($start, 'cleaned level 0 cache'));
+    }
+
+    protected function ensureLevel0Cache()
+    {
+        PathHelper::ensureDirectory($this->pieCrust->getCacheDir() . 'bake_t/0', true);
     }
 
     protected function cleanCacheIfNeeded(array $cacheValidity)

@@ -39,6 +39,7 @@ class PieCrustExtension extends \Twig_Extension
     {
         return array(
             new PieCrustFormatterTokenParser(),
+            new PieCrustCacheTokenParser()
         );
     }
     
