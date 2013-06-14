@@ -27,6 +27,8 @@ Fresh changes
 * NEW: Page and post iterators can be filtered with "magic" functions like
   `is_foo('value')` or `has_bar('value')`, to prevent having to write a
   full-blown filter in the page config header.
+* NEW: Ability to override the default page or post layout when import a blog
+  from Wordpress.
 * BUG: Fixed a issue with encoding when importing content from a Wordpress SQL
   database.
 
