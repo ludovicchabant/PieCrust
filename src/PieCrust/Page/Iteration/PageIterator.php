@@ -71,8 +71,12 @@ class PageIterator extends BaseIterator
     
     public function setPagination($skip, $limit)
     {
+        if ($this->page == null)
+            throw new PieCrustException("The current pagination page must be set before the pagination limits can be specified.");
+
         $this->slice($skip, $limit);
         $this->paginationSlicer = $this->iterator;
+        $this->paginationSlicer->setCurrentPage($this->page);
     }
 
     public function getPaginationTotalCount()
@@ -300,35 +304,17 @@ class PageIterator extends BaseIterator
         $this->ensureSorter();
         $posts = iterator_to_array($this->iterator);
 
-        // Find the previous and next posts, if the parent page is in there.
-        if ($this->page != null)
+        // Get the previous and next posts, if the parent page is in there,
+        // and store their template data.
+        if ($this->page != null && $this->paginationSlicer != null)
         {
-            $pageIndex = -1;
-            foreach ($posts as $i => $post)
-            {
-                if ($post === $this->page)
-                {
-                    $pageIndex = $i;
-                    break;
-                }
-            }
-            if ($pageIndex >= 0)
-            {
-                // Get the previous and next posts.
-                $prevAndNextPost = array(null, null);
-                if ($pageIndex > 0)
-                    $prevAndNextPost[0] = $posts[$pageIndex - 1];
-                if ($pageIndex < count($posts) - 1)
-                    $prevAndNextPost[1] = $posts[$pageIndex + 1];
-
-                // Get their template data.
-                $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
-
-                // Posts are sorted by reverse time, so watch out for what's
-                // "previous" and what's "next"!
-                $this->previousPost = $prevAndNextPostData[1];
-                $this->nextPost = $prevAndNextPostData[0];
-            }
+            $prevAndNextPost = array(
+                $this->paginationSlicer->getPreviousPage(),
+                $this->paginationSlicer->getNextPage()
+            );
+            $prevAndNextPostData = $this->getPostsData($prevAndNextPost);
+            $this->previousPost = $prevAndNextPostData[0];
+            $this->nextPost = $prevAndNextPostData[1];
         }
         
         // Get the posts data, and use that as the items we'll return.
