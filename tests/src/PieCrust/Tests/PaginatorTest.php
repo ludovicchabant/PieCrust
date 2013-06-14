@@ -7,6 +7,7 @@ use PieCrust\IPieCrust;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
 use PieCrust\Page\Iteration\PageIterator;
+use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPage;
 use PieCrust\Mock\MockPieCrust;
 
@@ -206,7 +207,7 @@ class PaginatorTest extends PieCrustTestCase
     public function testPreviousAndNextPosts($postCount, $currentPostIndex)
     {
         $pc = new MockPieCrust();
-        $pc->getConfig()->setValue('blog/posts_per_page', 20);
+        $pc->getConfig()->setValue('blog/posts_per_page', 5);
         $pc->getConfig()->setValue('blog/date_format', 'F j, Y');
 
         $posts = $this->buildPaginationDataSource($pc, $postCount);

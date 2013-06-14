@@ -18,6 +18,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.2 (2013-06-13)
+
+* BUG: Fixed a bug with the `pagination` object returning empty `next_post` and
+  `prev_post` if the current post is not part of the latest posts.
+
 ### 1.0.1 (2013-06-13)
 
 * BUG: Fixed a bug with the `pagination` object returning the wrong values for
