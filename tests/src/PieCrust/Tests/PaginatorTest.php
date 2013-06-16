@@ -132,7 +132,59 @@ class PaginatorTest extends PieCrustTestCase
 
         $pageCount = (int)ceil((float)$postCount / 5.0);
         $this->assertEquals($pageCount, $paginator->total_page_count());
-        $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
+
+        if ($pageCount == 0)
+            $this->assertEquals(array(), $paginator->all_page_numbers());
+        else
+            $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
+
+        foreach (range(0, 7) as $sideLimit)
+        {
+            $numberCount = $sideLimit * 2 + 1;
+
+            if ($pageCount == 0)
+            {
+                $pageNumbers = array();
+            }
+            else
+            {
+                $pageNumbers = range($pageNumber - $sideLimit, $pageNumber + $sideLimit);
+                $pageNumbers = array_filter(
+                    $pageNumbers,
+                    function ($i) use ($pageCount) { return $i >= 1 && $i <= $pageCount; }
+                );
+                $pageNumbers = array_values($pageNumbers);
+                if (count($pageNumbers) < $numberCount)
+                {
+                    $toAdd = $numberCount - count($pageNumbers);
+                    if ($pageNumbers[0] > 1)
+                    {
+                        $cur = $pageNumbers[0] - 1;
+                        foreach (range(1, $toAdd) as $i)
+                        {
+                            array_unshift($pageNumbers, $cur);
+                            if (--$cur <= 1)
+                                break;
+                        }
+                    }
+                    else if ($pageNumbers[count($pageNumbers) - 1] < $pageCount)
+                    {
+                        $cur = $pageNumbers[count($pageNumbers) - 1] + 1;
+                        foreach (range(1, $toAdd) as $i)
+                        {
+                            $pageNumbers[] = $cur;
+                            if (++$cur >= $pageCount)
+                                break;
+                        }
+                    }
+                }
+            }
+
+            $this->assertEquals(
+                $pageNumbers, 
+                $paginator->all_page_numbers($numberCount),
+                "Wrong result for {$numberCount} page numbers around page {$pageNumber} out of {$pageCount} total pages.");
+        }
         
         $expectedCount = $postCount;
         if ($postCount > 5)

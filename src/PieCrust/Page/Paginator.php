@@ -184,22 +184,31 @@ class Paginator
      *
      * This method is meant to be called from the layouts via the template engine.
      */
-    public function all_page_numbers($beforeEllipsis = false, $afterEllipsis = false)
+    public function all_page_numbers($numberCount = false)
     {
-        if (!$afterEllipsis)
-            $afterEllipsis = $beforeEllipsis;
-
         $totalPageCount = $this->total_page_count();
-        if (!$beforeEllipsis and !$afterEllipsis)
+
+        if ($totalPageCount == 0)
+            return array();
+
+        if (!$numberCount or $totalPageCount <= $numberCount or $this->page == null)
             return range(1, $totalPageCount);
-        elseif ($totalPageCount <= ($beforeEllipsis + $afterEllipsis))
-            return range(1, $totalPageCount);
-        else
-            return array_merge(
-                range(1, $beforeEllipsis),
-                array(false),
-                range($totalPageCount - $afterEllipsis + 1, $totalPageCount)
-            );
+
+        $firstNumber = $this->page->getPageNumber() - (int)($numberCount / 2);
+        $lastNumber = $this->page->getPageNumber() + (int)($numberCount / 2);
+        if ($firstNumber <= 0)
+        {
+            $lastNumber += (1 - $firstNumber);
+            $firstNumber = 1;
+        }
+        if ($lastNumber > $totalPageCount)
+        {
+            $firstNumber -= ($lastNumber - $totalPageCount);
+            $lastNumber = $totalPageCount;
+        }
+        $firstNumber = max(1, $firstNumber);
+        $lastNumber = min ($totalPageCount, $lastNumber);
+        return range($firstNumber, $lastNumber);
     }
 
     /**
