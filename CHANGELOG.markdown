@@ -32,6 +32,8 @@ Fresh changes
 * NEW: Added `pccache` tag to Twig for caching parts of markup during the bake.
 * NEW: You can pass a parameter to `all_page_numbers` to limit the number of
   page numbers you get back.
+* NEW: Ability to specify an overall `class` and/or `id` for Geshi blocks
+  (syntax highlighting).
 * BUG: Fixed a issue with encoding when importing content from a Wordpress SQL
   database.
 
