@@ -180,7 +180,7 @@ class UriParserTest extends PieCrustTestCase
         // Prevent the URI parser from having to re-capture the file extension
         // to get a proper path, since this calls `glob`, which will fail against
         // a virtual file-system.
-        $config['site']['auto_formats'] = array('html' => '');
+        $config['site']['auto_formats'] = array('html' => '', 'md' => false, 'textile' => false);
 
         $fs = MockFileSystem::create()
             ->withConfig($config)

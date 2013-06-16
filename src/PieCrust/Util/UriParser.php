@@ -59,7 +59,7 @@ class UriParser
         
         // Try first with a regular page path.
         if (($uriTypes & self::PAGE_URI_REGULAR) != 0 and
-            UriParser::tryParsePageUri($pieCrust, $uri, $pageInfo))
+            self::tryParsePageUri($pieCrust, $uri, $pageInfo))
         {
             return $pageInfo;
         }
@@ -71,7 +71,7 @@ class UriParser
         {
             foreach ($blogKeys as $blogKey)
             {
-                if (UriParser::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
+                if (self::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
@@ -84,12 +84,12 @@ class UriParser
             foreach ($blogKeys as $blogKey)
             {
                 if (($uriTypes & self::PAGE_URI_TAG) != 0 and
-                    UriParser::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
+                    self::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
                 if (($uriTypes & self::PAGE_URI_CATEGORY) != 0 and
-                    UriParser::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
+                    self::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
@@ -208,7 +208,7 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $tagPageName = array();
+        $categoryPageName = array();
         $themeCategoryPageName = array();
         $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
         foreach ($autoFormats as $ext => $format)

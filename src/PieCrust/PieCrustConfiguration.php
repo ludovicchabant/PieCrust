@@ -213,53 +213,62 @@ class PieCrustConfiguration extends Configuration
                 'blogs' => array(PieCrustDefaults::DEFAULT_BLOG_KEY),
                 'plugins_sources' => array(PieCrustDefaults::DEFAULT_PLUGIN_SOURCE),
                 'themes_sources' => array(PieCrustDefaults::DEFAULT_THEME_SOURCE),
-                'auto_formats' => array('html' => '', 'md' => 'markdown', 'textile' => 'textile'),
+                'auto_formats' => array(),
                 'cache_time' => 28800,
                 'display_errors' => true,
                 'enable_debug_info' => true
             ),
             $config['site']);
 
+        $siteConfig = &$config['site'];
+
         // Validate the site root URL, and remember if it was specified in the
         // source config.yml, because we won't be able to tell the difference from
         // the completely validated cache version.
-        if ($config['site']['root'] == null)
+        if ($siteConfig['root'] == null)
         {
-            $config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
-            $config['site']['is_auto_root'] = true;
+            $siteConfig['root'] = ServerHelper::getSiteRoot($_SERVER);
+            $siteConfig['is_auto_root'] = true;
         }
         else
         {
-            $config['site']['root'] = rtrim($config['site']['root'], '/') . '/';
-            $config['site']['is_auto_root'] = false;
+            $siteConfig['root'] = rtrim($siteConfig['root'], '/') . '/';
+            $siteConfig['is_auto_root'] = false;
         }
 
         // Validate auto-format extensions: make sure the HTML extension is in
         // there.
-        if (!is_array($config['site']['auto_formats']))
+        if (!is_array($siteConfig['auto_formats']))
         {
-            $config['site']['auto_formats'] = array($config['site']['auto_formats']);
+            throw new PieCrustException("The 'site/auto_formats' configuration setting must be an array.");
         }
-        if (!isset($config['site']['auto_formats']['html']))
-        {
-            $config['site']['auto_formats']['html'] = '';
-        }
+        $siteConfig['auto_formats'] = array_filter(
+            array_merge(
+                array(
+                    'html' => '', 
+                    'md' => 'markdown', 
+                    'textile' => 'textile'
+                ),
+                $siteConfig['auto_formats']
+            ),
+            function ($item) { return $item !== false; }
+        );
 
         // Validate the plugins sources.
-        if (!is_array($config['site']['plugins_sources']))
+        if (!is_array($siteConfig['plugins_sources']))
         {
-            $config['site']['plugins_sources'] = array($config['site']['plugins_sources']);
+            $siteConfig['plugins_sources'] = array($siteConfig['plugins_sources']);
         }
 
         // Validate the themes sources.
-        if (!is_array($config['site']['themes_sources']))
+        if (!is_array($siteConfig['themes_sources']))
         {
-            $config['site']['themes_sources'] = array($config['site']['themes_sources']);
+            $siteConfig['themes_sources'] = array($siteConfig['themes_sources']);
         }
         
         // Validate multi-blogs settings.
-        if (in_array(PieCrustDefaults::DEFAULT_BLOG_KEY, $config['site']['blogs']) and 
-            count($config['site']['blogs']) > 1)
+        if (in_array(PieCrustDefaults::DEFAULT_BLOG_KEY, $siteConfig['blogs']) and 
+            count($siteConfig['blogs']) > 1)
         {
             throw new PieCrustException("'".PieCrustDefaults::DEFAULT_BLOG_KEY."' cannot be specified as a blog key for multi-blog configurations. Please pick custom keys.");
         }
@@ -274,10 +283,10 @@ class PieCrustConfiguration extends Configuration
         );
         foreach (array_keys($defaultValues) as $key)
         {
-            if (isset($config['site'][$key]))
-                $defaultValues[$key] = $config['site'][$key];
+            if (isset($siteConfig[$key]))
+                $defaultValues[$key] = $siteConfig[$key];
         }
-        foreach ($config['site']['blogs'] as $blogKey)
+        foreach ($siteConfig['blogs'] as $blogKey)
         {
             $prefix = '';
             if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
@@ -293,13 +302,13 @@ class PieCrustConfiguration extends Configuration
                             'tag_url' => $prefix . $defaultValues['tag_url'],
                             'category_url' => $prefix . $defaultValues['category_url'],
                             'posts_per_page' => $defaultValues['posts_per_page'],
-                            'date_format' => $config['site']['date_format']
+                            'date_format' => $siteConfig['date_format']
                         ),
                         $config[$blogKey]);
         }
 
         // Validate the slugify mode and optional flags.
-        $slugifySetting = explode('|', $config['site']['slugify']);
+        $slugifySetting = explode('|', $siteConfig['slugify']);
         $slugifyModes = array(
             'none' => UriBuilder::SLUGIFY_MODE_NONE,
             'transliterate' => UriBuilder::SLUGIFY_MODE_TRANSLITERATE,
@@ -330,22 +339,22 @@ class PieCrustConfiguration extends Configuration
         // and categories, because it would screw up how we figure out what
         // extension to use for output files.
         $finalSlugify |= UriBuilder::SLUGIFY_FLAG_DOT_TO_DASH;
-        $config['site']['slugify_flags'] = $finalSlugify;
+        $siteConfig['slugify_flags'] = $finalSlugify;
 
         // Set the timezone if it's specified.
-        if ($config['site']['timezone'])
+        if ($siteConfig['timezone'])
         {
-            date_default_timezone_set($config['site']['timezone']);
+            date_default_timezone_set($siteConfig['timezone']);
         }
 
         // Set the locale if it's specified.
-        if ($config['site']['locale'])
+        if ($siteConfig['locale'])
         {
-            setlocale(LC_ALL, $config['site']['locale']);
+            setlocale(LC_ALL, $siteConfig['locale']);
         }
         else
         {
-            $config['site']['locale'] = setlocale(LC_ALL, '0');
+            $siteConfig['locale'] = setlocale(LC_ALL, '0');
         }
         
         return $config;
