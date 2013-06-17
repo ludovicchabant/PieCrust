@@ -14,6 +14,7 @@ class GeshiTest extends PieCrustTestCase
             ->withPage('/foo', array(), <<<EOD
 {% geshi 'python' %}
 foo = 42
+bar = 0
 {% endgeshi %}
 EOD
             );
@@ -22,7 +23,7 @@ EOD
         $this->assertEquals(
             <<<EOD
 <pre class="python" style="font-family:monospace;">foo <span style="color: #66cc66;">=</span> <span style="color: #ff4500;">42</span>
-&nbsp;</pre>
+bar <span style="color: #66cc66;">=</span> <span style="color: #ff4500;">0</span></pre>
 
 EOD
             ,
@@ -43,8 +44,7 @@ EOD
         $page = Page::createFromUri($pc, '/foo', false);
         $this->assertEquals(
             <<<EOD
-<pre class="python">foo <span class="sy0">=</span> <span class="nu0">42</span>
-&nbsp;</pre>
+<pre class="python">foo <span class="sy0">=</span> <span class="nu0">42</span></pre>
 
 EOD
             ,
@@ -65,7 +65,7 @@ EOD
         $page = Page::createFromUri($pc, '/foo', false);
         $this->assertEquals(
             <<<EOD
-<pre class="python"><ol><li class="li1"><div class="de1">foo <span class="sy0">=</span> <span class="nu0">42</span></div></li><li class="li1"><div class="de1">&nbsp;</div></li></ol></pre>
+<pre class="python"><ol><li class="li1"><div class="de1">foo <span class="sy0">=</span> <span class="nu0">42</span></div></li></ol></pre>
 
 EOD
             ,
@@ -86,8 +86,7 @@ EOD
         $page = Page::createFromUri($pc, '/foo', false);
         $this->assertEquals(
             <<<EOD
-<pre class="python my-code">foo <span class="sy0">=</span> <span class="nu0">42</span>
-&nbsp;</pre>
+<pre class="python my-code">foo <span class="sy0">=</span> <span class="nu0">42</span></pre>
 
 EOD
             ,
@@ -108,8 +107,7 @@ EOD
         $page = Page::createFromUri($pc, '/foo', false);
         $this->assertEquals(
             <<<EOD
-<pre class="python" id="my-code">foo <span class="sy0">=</span> <span class="nu0">42</span>
-&nbsp;</pre>
+<pre class="python" id="my-code">foo <span class="sy0">=</span> <span class="nu0">42</span></pre>
 
 EOD
             ,

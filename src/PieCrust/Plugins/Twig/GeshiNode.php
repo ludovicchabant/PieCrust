@@ -16,7 +16,7 @@ class GeshiNode extends \Twig_Node
             ->addDebugInfo($this)
             ->write('ob_start();' . PHP_EOL)
             ->subcompile($this->getNode('body'))
-            ->write('$source = ob_get_clean();' . PHP_EOL)
+            ->write('$source = rtrim(ob_get_clean());' . PHP_EOL)
             ->write('$geshi = new GeSHi($source, \'' . $this->getAttribute('language') . '\');' . PHP_EOL)
         ;
         if ($this->getAttribute('use_classes'))
