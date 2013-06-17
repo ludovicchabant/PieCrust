@@ -138,9 +138,9 @@ class PaginatorTest extends PieCrustTestCase
         else
             $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
 
-        foreach (range(0, 7) as $sideLimit)
+        foreach (range(1, 7) as $radius)
         {
-            $numberCount = $sideLimit * 2 + 1;
+            $numberCount = $radius * 2 + 1;
 
             if ($pageCount == 0)
             {
@@ -148,7 +148,7 @@ class PaginatorTest extends PieCrustTestCase
             }
             else
             {
-                $pageNumbers = range($pageNumber - $sideLimit, $pageNumber + $sideLimit);
+                $pageNumbers = range($pageNumber - $radius, $pageNumber + $radius);
                 $pageNumbers = array_filter(
                     $pageNumbers,
                     function ($i) use ($pageCount) { return $i >= 1 && $i <= $pageCount; }
@@ -182,7 +182,7 @@ class PaginatorTest extends PieCrustTestCase
 
             $this->assertEquals(
                 $pageNumbers, 
-                $paginator->all_page_numbers($numberCount),
+                $paginator->all_page_numbers($radius),
                 "Wrong result for {$numberCount} page numbers around page {$pageNumber} out of {$pageCount} total pages.");
         }
         

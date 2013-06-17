@@ -184,18 +184,19 @@ class Paginator
      *
      * This method is meant to be called from the layouts via the template engine.
      */
-    public function all_page_numbers($numberCount = false)
+    public function all_page_numbers($radius = false)
     {
         $totalPageCount = $this->total_page_count();
 
         if ($totalPageCount == 0)
             return array();
 
-        if (!$numberCount or $totalPageCount <= $numberCount or $this->page == null)
+        if (!$radius or $totalPageCount <= (2 * (int)$radius + 1) or $this->page == null)
             return range(1, $totalPageCount);
 
-        $firstNumber = $this->page->getPageNumber() - (int)($numberCount / 2);
-        $lastNumber = $this->page->getPageNumber() + (int)($numberCount / 2);
+        $radius = (int)$radius;
+        $firstNumber = $this->page->getPageNumber() - $radius;
+        $lastNumber = $this->page->getPageNumber() + $radius;
         if ($firstNumber <= 0)
         {
             $lastNumber += (1 - $firstNumber);
