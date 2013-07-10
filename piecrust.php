@@ -103,6 +103,7 @@ function piecrust_setup($profile = 'web')
     default:
         {
             ini_set('display_errors', true);
+            ini_set("memory_limit", "-1");
             error_reporting(E_ALL);
             set_error_handler('piecrust_error_handler');
             register_shutdown_function('chef_shutdown_function');
