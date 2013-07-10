@@ -5,6 +5,7 @@ namespace PieCrust\Page;
 use \Exception;
 use \InvalidArgumentException;
 use PieCrust\IPage;
+use PieCrust\IPageObserver;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Data\DataBuilder;
@@ -107,9 +108,9 @@ class Page implements IPage
      * specifically set with `setDate` (which is the case for blog posts
      * for example).
      */
-    public function getDate()
+    public function getDate($withTime = false)
     {
-        if ($this->date === null or !$this->dateIsLocked)
+        if ($this->date === null or ($withTime && !$this->dateIsLocked))
         {
             // Get the date from the file on disk if it was never set.
             // Override with the date from the config if authorized to do so.
@@ -137,15 +138,15 @@ class Page implements IPage
     {
         if ($date !==null && $this->date != $date)
         {
+            $this->dateIsLocked = $isLocked;
+
             if (is_int($date))
             {
                 $this->date = $date;
-                $this->dateIsLocked = $isLocked;
             }
             else if (is_string($date))
             {
                 $this->date = strtotime($date);
-                $this->dateIsLocked = $isLocked;
             }
             else
             {
@@ -281,8 +282,35 @@ class Page implements IPage
      */
     public function unload()
     {
+        $this->config = null;
+        $this->contents = null;
         $this->pageData = null;
         $this->formattedContents = null;
+
+        foreach ($this->observers as $observer)
+        {
+            $observer->onPageUnloaded($this);
+        }
+    }
+
+    /**
+     * Returns whether the page is currently loaded.
+     */
+    public function isLoaded()
+    {
+        return $this->config != null ||
+            $this->contents != null ||
+            $this->pageData != null || 
+            $this->formattedContents != null;
+    }
+
+    protected $observers;
+    /**
+     * Adds a page observer.
+     */
+    public function addObserver(IPageObserver $observer)
+    {
+        $this->observers[] = $observer;
     }
 
     /**
@@ -305,6 +333,8 @@ class Page implements IPage
         $this->config = null;
         $this->contents = null;
         $this->formattedContents = null;
+
+        $this->observers = array();
     }
     
     /**
@@ -322,6 +352,11 @@ class Page implements IPage
             $this->contents = $loader->load();
             $this->wasCached = $loader->wasCached();
             $this->formattedContents = null;
+
+            foreach ($this->observers as $observer)
+            {
+                $observer->onPageLoaded($this);
+            }
         }
     }
     
@@ -336,6 +371,11 @@ class Page implements IPage
 
             $loader = new PageLoader($this);
             $this->formattedContents = $loader->formatContents($this->contents);
+
+            foreach ($this->observers as $observer)
+            {
+                $observer->onPageFormatted($this);
+            }
         }
     }
     

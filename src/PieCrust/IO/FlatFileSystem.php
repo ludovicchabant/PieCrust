@@ -42,13 +42,13 @@ class FlatFileSystem extends FileSystem
             if (!$res)
                 continue;
             
-            $result[] = array(
-                'year' => $matches[1],
-                'month' => $matches[2],
-                'day' => $matches[3],
-                'name' => $matches[4],
-                'ext' => $extension,
-                'path' => $path->getPathname()
+            $result[] = PostInfo::fromStrings(
+                $matches[1],
+                $matches[2],
+                $matches[3],
+                $matches[4],
+                $extension,
+                $path->getPathname()
             );
         }
         return $result;

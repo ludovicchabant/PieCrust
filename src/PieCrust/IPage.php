@@ -58,7 +58,7 @@ interface IPage
     /**
      * Gets the date this page was created.
      */
-    public function getDate();
+    public function getDate($withTime = false);
     
     /**
      * Sets the date this page was created.
@@ -134,4 +134,14 @@ interface IPage
      * Unloads the page.
      */
     public function unload();
+
+    /**
+     * Returns whether the page is currently loaded.
+     */
+    public function isLoaded();
+
+    /**
+     * Adds a page observer.
+     */
+    public function addObserver(IPageObserver $observer);
 }

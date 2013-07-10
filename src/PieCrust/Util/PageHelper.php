@@ -89,9 +89,9 @@ class PageHelper
     /**
      * Gets a timestamp/date from a post info array.
      */
-    public static function getPostDate(array $postInfo)
+    public static function getPostDate($postInfo)
     {
-        return mktime(0, 0, 0, intval($postInfo['month']), intval($postInfo['day']), intval($postInfo['year']));
+        return mktime(0, 0, 0, $postInfo->monthValue, $postInfo->dayValue, $postInfo->yearValue);
     }
     
     /**

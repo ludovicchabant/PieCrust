@@ -28,7 +28,7 @@ class MockFileSystem
         $keys = array('year', 'month', 'day', 'name');
         foreach ($keys as $key)
         {
-            $val = strcmp($a[$key], $b[$key]);
+            $val = strcmp($a->$key, $b->$key);
             if ($val != 0)
                 return $val;
         }

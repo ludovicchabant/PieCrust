@@ -131,13 +131,13 @@ class DataBuilder
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
 
-        $data['page']['timestamp'] = $page->getDate();
+        $data['page']['timestamp'] = $page->getDate(true);
         $dateFormat = PageHelper::getConfigValueUnchecked(
             $page,
             'date_format',
             $page->getConfig()->getValueUnchecked('blog')
         );
-        $data['page']['date'] = date($dateFormat, $page->getDate());
+        $data['page']['date'] = date($dateFormat, $page->getDate(true));
 
         switch ($page->getPageType())
         {

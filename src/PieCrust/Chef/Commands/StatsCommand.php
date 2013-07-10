@@ -48,7 +48,7 @@ class StatsCommand extends ChefCommand
         $blogKeys = $pieCrust->getConfig()->getValueUnchecked('site/blogs');
         foreach ($blogKeys as $blogKey)
         {
-            $postCounts[$blogKey] = count($pieCrust->getEnvironment()->getPostInfos($blogKey));
+            $postCounts[$blogKey] = count($pieCrust->getEnvironment()->getPosts($blogKey));
         }
 
         $logger->info("Stats for '{$title}':");

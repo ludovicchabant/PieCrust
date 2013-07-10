@@ -73,13 +73,13 @@ class HierarchicalFileSystem extends FileSystem
                         $matches) === false)
                         continue;
                     
-                    $result[] = array(
-                        'year' => $year,
-                        'month' => $month,
-                        'day' => $matches[1],
-                        'name' => $matches[2],
-                        'ext' => $extension,
-                        'path' => $path->getPathname()
+                    $result[] = PostInfo::fromStrings(
+                        $year,
+                        $month,
+                        $matches[1],
+                        $matches[2],
+                        $extension,
+                        $path->getPathname()
                     );
                 }
             }

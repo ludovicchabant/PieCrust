@@ -55,11 +55,7 @@ abstract class FileSystem
             if (preg_match('#\-assets[/\\\\]#', $pagePath))
                 continue;
 
-            $relativePath = PathHelper::getRelativePath($this->pagesDir, $pagePath);
-            $pages[] = array(
-                'path' => $pagePath, 
-                'relative_path' => $relativePath
-            );
+            $pages[] = new PageInfo($this->pagesDir, $pagePath);
         }
 
         return $pages;

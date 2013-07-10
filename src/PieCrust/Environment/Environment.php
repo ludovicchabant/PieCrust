@@ -35,16 +35,6 @@ abstract class Environment
     public abstract function getLinkCollector();
 
     /**
-     * Gets the page infos.
-     */
-    public abstract function getPageInfos();
-
-    /**
-     * Gets the post infos.
-     */
-    public abstract function getPostInfos($blogKey);
-
-    /**
      * Gets the pages.
      */
     public abstract function getPages();

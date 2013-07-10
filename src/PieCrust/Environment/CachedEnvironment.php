@@ -43,26 +43,6 @@ class CachedEnvironment extends Environment
         return $this->linkCollector;
     }
 
-    protected $pageInfos;
-    /**
-     * Gets the page infos.
-     */
-    public function getPageInfos()
-    {
-        $this->ensurePageInfosCached();
-        return $this->pageInfos;
-    }
-
-    protected $postInfos;
-    /**
-     * Gets the post infos.
-     */
-    public function getPostInfos($blogKey)
-    {
-        $this->ensurePostInfosCached($blogKey);
-        return $this->postInfos[$blogKey];
-    }
-
     protected $pages;
     /**
      * Gets the pages.
@@ -91,19 +71,22 @@ class CachedEnvironment extends Environment
         parent::__construct();
     }
 
-    protected function ensurePageInfosCached()
+    protected function ensurePagesCached()
     {
-        if ($this->pageInfos == null)
+        if ($this->pages == null)
         {
+            $this->getLog()->debug("Indexing pages...");
+
             // Start with the theme pages, if any.
+            $pageInfos = array();
             if ($this->pieCrust->getThemeDir())
             {
                 $fs = FileSystem::create($this->pieCrust, null, true);
-                $this->pageInfos = $fs->getPageFiles();
-            }
-            else
-            {
-                $this->pageInfos = array();
+                $themePageInfos = $fs->getPageFiles();
+                foreach ($themePageInfos as $pageInfo)
+                {
+                    $pageInfos[$pageInfo->relativePath] = $pageInfo;
+                }
             }
 
             // Override with the user pages.
@@ -111,52 +94,18 @@ class CachedEnvironment extends Environment
             $userPageInfos = $fs->getPageFiles();
             foreach ($userPageInfos as $userPageInfo)
             {
-                $isOverridden = false;
-                $curRelativePath = $userPageInfo['relative_path'];
-                foreach ($this->pageInfos as &$pageInfo)
-                {
-                    if ($pageInfo['relative_path'] == $curRelativePath)
-                    {
-                        $isOverridden = true;
-                        $pageInfo['path'] = $userPageInfo['path'];
-                        break;
-                    }
-                }
-                if (!$isOverridden)
-                {
-                    $this->pageInfos[] = $userPageInfo;
-                }
+                $pageInfos[$userPageInfo->relativePath] = $userPageInfo;
             }
-        }
-    }
 
-    protected function ensurePostInfosCached($blogKey)
-    {
-        if ($this->postInfos == null)
-        {
-            $this->postInfos = array();
-        }
-        if (!isset($this->postInfos[$blogKey]))
-        {
-            $fs = FileSystem::create($this->pieCrust, $blogKey);
-            $postInfos = $fs->getPostFiles();
-            $this->postInfos[$blogKey] = $postInfos;
-        }
-    }
-
-    protected function ensurePagesCached()
-    {
-        if ($this->pages == null)
-        {
+            $this->getLog()->debug("Creating pages...");
             $pageRepository = $this->getPageRepository();
-            $pageInfos = $this->getPageInfos();
 
             $this->pages = array();
             foreach ($pageInfos as $pageInfo)
             {
                 $page = $pageRepository->getOrCreatePage(
-                    UriBuilder::buildUri($this->pieCrust, $pageInfo['relative_path']),
-                    $pageInfo['path']
+                    UriBuilder::buildUri($this->pieCrust, $pageInfo->relativePath),
+                    $pageInfo->path
                 );
 
                 $this->pages[] = $page;
@@ -172,8 +121,12 @@ class CachedEnvironment extends Environment
         }
         if (!isset($this->posts[$blogKey]))
         {
+            $this->getLog()->debug("Indexing '{$blogKey}' posts...");
+            $fs = FileSystem::create($this->pieCrust, $blogKey);
+            $postInfos = $fs->getPostFiles();
+
+            $this->getLog()->debug("Creating '{$blogKey}' posts...");
             $pageRepository = $this->getPageRepository();
-            $postInfos = $this->getPostInfos($blogKey);
 
             $posts = array();
             foreach ($postInfos as $postInfo)
@@ -181,7 +134,7 @@ class CachedEnvironment extends Environment
                 $uri = UriBuilder::buildPostUri($this->pieCrust, $blogKey, $postInfo);
                 $page = $pageRepository->getOrCreatePage(
                     $uri,
-                    $postInfo['path'],
+                    $postInfo->path,
                     IPage::TYPE_POST,
                     $blogKey
                 );

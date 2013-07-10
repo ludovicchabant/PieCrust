@@ -3,6 +3,8 @@
 namespace PieCrust\Tests;
 
 use PieCrust\IO\FileSystem;
+use PieCrust\IO\PageInfo;
+use PieCrust\IO\PostInfo;
 use PieCrust\Mock\MockFileSystem;
 use PieCrust\Mock\MockPieCrust;
 
@@ -35,48 +37,48 @@ class FileSystemTest extends PieCrustTestCase
         $this->assertEquals(6, count($postFiles));
 
         $postFile = $postFiles[5];
-        $this->assertEquals('2009', $postFile['year']);
-        $this->assertEquals('05', $postFile['month']);
-        $this->assertEquals('16', $postFile['day']);
-        $this->assertEquals('first-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2009', $postFile->year);
+        $this->assertEquals('05', $postFile->month);
+        $this->assertEquals('16', $postFile->day);
+        $this->assertEquals('first-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
         
         $postFile = $postFiles[4];
-        $this->assertEquals('2010', $postFile['year']);
-        $this->assertEquals('01', $postFile['month']);
-        $this->assertEquals('08', $postFile['day']);
-        $this->assertEquals('second-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2010', $postFile->year);
+        $this->assertEquals('01', $postFile->month);
+        $this->assertEquals('08', $postFile->day);
+        $this->assertEquals('second-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
         
         $postFile = $postFiles[3];
-        $this->assertEquals('2010', $postFile['year']);
-        $this->assertEquals('11', $postFile['month']);
-        $this->assertEquals('02', $postFile['day']);
-        $this->assertEquals('third-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2010', $postFile->year);
+        $this->assertEquals('11', $postFile->month);
+        $this->assertEquals('02', $postFile->day);
+        $this->assertEquals('third-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
         
         $postFile = $postFiles[2];
-        $this->assertEquals('2011', $postFile['year']);
-        $this->assertEquals('09', $postFile['month']);
-        $this->assertEquals('23', $postFile['day']);
-        $this->assertEquals('fourth-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2011', $postFile->year);
+        $this->assertEquals('09', $postFile->month);
+        $this->assertEquals('23', $postFile->day);
+        $this->assertEquals('fourth-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
         
         // FileSystems don't load the post so they don't know about
         // the time... here, they will return the 6th post before the 5th.
         $postFile = $postFiles[1];
-        $this->assertEquals('2011', $postFile['year']);
-        $this->assertEquals('09', $postFile['month']);
-        $this->assertEquals('24', $postFile['day']);
-        $this->assertEquals('a-sixth-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2011', $postFile->year);
+        $this->assertEquals('09', $postFile->month);
+        $this->assertEquals('24', $postFile->day);
+        $this->assertEquals('a-sixth-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
         
         $postFile = $postFiles[0];
-        $this->assertEquals('2011', $postFile['year']);
-        $this->assertEquals('09', $postFile['month']);
-        $this->assertEquals('24', $postFile['day']);
-        $this->assertEquals('b-fifth-post', $postFile['name']);
-        $this->assertTrue(is_file($postFile['path']));
+        $this->assertEquals('2011', $postFile->year);
+        $this->assertEquals('09', $postFile->month);
+        $this->assertEquals('24', $postFile->day);
+        $this->assertEquals('b-fifth-post', $postFile->name);
+        $this->assertTrue(is_file($postFile->path));
     }
     
     public function getPostPathInfoDataProvider()
@@ -126,7 +128,7 @@ class FileSystemTest extends PieCrustTestCase
             $this->assertEquals($months[$i], $pathInfo['month']);
             $this->assertEquals($days[$i], $pathInfo['day']);
             $this->assertEquals($slugs[$i], $pathInfo['slug']);
-            $this->assertEquals(str_replace('\\', '/', $postFiles[5 - $i]['path']), str_replace('\\', '/', $pathInfo['path']));
+            $this->assertEquals(str_replace('\\', '/', $postFiles[5 - $i]->path), str_replace('\\', '/', $pathInfo['path']));
         }
     }
 
@@ -145,18 +147,11 @@ class FileSystemTest extends PieCrustTestCase
         foreach ($postFiles as &$pf)
         {
             // Fix backslashes when running tests on Windows.
-            $pf['path'] = str_replace('\\', '/', $pf['path']);
+            $pf->path = str_replace('\\', '/', $pf->path);
         }
         $this->assertEquals(
             array(
-                array(
-                    'year' => '2013',
-                    'month' => '01',
-                    'day' => '12',
-                    'name' => 'foo-bar',
-                    'ext' => 'html',
-                    'path' => $fs->url('kitchen/_content/posts/2013-01-12_foo-bar.html')
-                )
+                PostInfo::fromStrings('2013', '01', '12', 'foo-bar', 'html', $fs->url('kitchen/_content/posts/2013-01-12_foo-bar.html'))
             ),
             $postFiles
         );
@@ -196,38 +191,39 @@ class FileSystemTest extends PieCrustTestCase
             // Fix slash/backslash problems on Windows that make
             // the test fail (PHP won't care about it so it's
             // functionally the same AFAIK).
-            $pf['path'] = str_replace('\\', '/', $pf['path']);
-            $pf['relative_path'] = str_replace('\\', '/', $pf['relative_path']);
+            $pf->path = str_replace('\\', '/', $pf->path);
+            $pf->relativePath = str_replace('\\', '/', $pf->relativePath);
         }
 
+        $rootDir = $fs->url('kitchen/_content/pages');
         $expected = array(
-            array(
-                'path' => $fs->url('kitchen/_content/pages/test1.html'),
-                'relative_path' => 'test1.html'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/test1.html')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/testxml.xml'),
-                'relative_path' => 'testxml.xml'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/testxml.xml')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/foo/test2.html'),
-                'relative_path' => 'foo/test2.html'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/foo/test2.html')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/foo/testtxt.txt'),
-                'relative_path' => 'foo/testtxt.txt'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/foo/testtxt.txt')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/foo/bar/test3.html'),
-                'relative_path' => 'foo/bar/test3.html'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/foo/bar/test3.html')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/foo/test-stuff.html'),
-                'relative_path' => 'foo/test-stuff.html'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/foo/test-stuff.html')
             ),
-            array(
-                'path' => $fs->url('kitchen/_content/pages/bar/blah.html'),
-                'relative_path' => 'bar/blah.html'
+            new PageInfo(
+                $rootDir,
+                $fs->url('kitchen/_content/pages/bar/blah.html')
             )
         );
         $this->assertEquals($expected, $pageFiles);

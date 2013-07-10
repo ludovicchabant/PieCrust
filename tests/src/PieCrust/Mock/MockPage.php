@@ -3,6 +3,7 @@
 namespace PieCrust\Mock;
 
 use PieCrust\IPage;
+use PieCrust\IPageObserver;
 use PieCrust\IPieCrust;
 use PieCrust\Page\PageConfiguration;
 
@@ -63,7 +64,7 @@ class MockPage implements IPage
     
     public $date;
     
-    public function getDate()
+    public function getDate($withTime = false)
     {
         return $this->date;
     }
@@ -155,6 +156,15 @@ class MockPage implements IPage
     }
 
     public function unload()
+    {
+    }
+
+    public function isLoaded()
+    {
+        return true;
+    }
+
+    public function addObserver(IPageObserver $observer)
     {
     }
 

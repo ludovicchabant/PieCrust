@@ -55,13 +55,13 @@ class ShallowFileSystem extends FileSystem
                     $path->getFilename(),
                     $matches) === false)
                     continue;
-                $result[] = array(
-                    'year' => $year,
-                    'month' => $matches[1],
-                    'day' => $matches[2],
-                    'name' => $matches[3],
-                    'ext' => $extension,
-                    'path' => $path->getPathname()
+                $result[] = PostInfo::fromStrings(
+                    $year,
+                    $matches[1],
+                    $matches[2],
+                    $matches[3],
+                    $extension,
+                    $path->getPathname()
                 );
             }
         }
