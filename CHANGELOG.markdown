@@ -17,6 +17,8 @@ Fresh changes
 
 * BREAKING CHANGE: Removed all options and features that were marked as
   deprecated (_i.e._ they previously triggered a warning message).
+* BREAKING CHANGE: The `all_page_numbers` template method now takes a
+  *radius* for the number of page numbers to return.
 * CHANGE: Removed the sample website (it's being turned into a theme).
 * CHANGE: Added `.md` and `.textile` as default auto-format extensions
   (respectively for Markdown and Textile formatting).
@@ -34,8 +36,14 @@ Fresh changes
   page numbers you get back.
 * NEW: Ability to specify an overall `class` and/or `id` for Geshi blocks
   (syntax highlighting).
-* BUG: Fixed a issue with encoding when importing content from a Wordpress SQL
+* NEW: Added the `IBakerAssistant` API for plugins that want to do extra
+  processing during the bake.
+* BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
+* BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
+* IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
+  stable during a bake. Also removed PHP's default memory limit when running
+  PieCrust with `chef`.
 
 Frozen changes
 --------------
