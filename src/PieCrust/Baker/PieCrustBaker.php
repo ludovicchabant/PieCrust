@@ -18,7 +18,7 @@ use PieCrust\Util\PathHelper;
 /**
  * A class that 'bakes' a PieCrust website into a bunch of static HTML files.
  */
-class PieCrustBaker
+class PieCrustBaker implements IBaker
 {
     /**
      * Default directories and files.
@@ -28,6 +28,7 @@ class PieCrustBaker
 
     protected $bakeRecord;
     protected $logger;
+    protected $assistants;
     
     protected $pieCrust;
     /**
@@ -166,6 +167,9 @@ class PieCrustBaker
             "baker/config_variants/{$variantName}",
             !$isDefault
         );
+
+        // Load the baking assistants.
+        $this->cacheAssistants();
     }
     
     /**
@@ -174,6 +178,9 @@ class PieCrustBaker
     public function bake()
     {
         $overallStart = microtime(true);
+
+        // Pre-bake notification.
+        $this->callAssistants('onBakeStart', array($this));
         
         // Display debug information.
         $this->logger->debug("  Bake Output: " . $this->getBakeDir());
@@ -236,6 +243,9 @@ class PieCrustBaker
             $this->logger
         );
         $dirBaker->bake();
+
+        // Post-bake notification.
+        $this->callAssistants('onBakeEnd');
         
         // Save the bake record and clean up.
         if ($bakeInfoPath)
@@ -331,12 +341,14 @@ class PieCrustBaker
     protected function bakePage(IPage $page)
     {
         $start = microtime(true);
+        $this->callAssistants('onPageBakeStart', array($page));
         $baker = new PageBaker(
             $this->getBakeDir(), 
             $this->getPageBakerParameters(), 
             $this->logger
         );
         $didBake = $baker->bake($page);
+        $this->callAssistants('onPageBakeEnd', array($didBake));
         if (!$didBake)
             return;
 
@@ -370,12 +382,14 @@ class PieCrustBaker
     protected function bakePost(IPage $post)
     {
         $start = microtime(true);
+        $this->callAssistants('onPageBakeStart', array($post));
         $baker = new PageBaker(
             $this->getBakeDir(), 
             $this->getPageBakerParameters(),
             $this->logger
         );
         $didBake = $baker->bake($post);
+        $this->callAssistants('onPageBakeEnd', array($didBake));
         if ($didBake)
             $this->logger->info(self::formatTimed($start, $post->getUri()));
 
@@ -483,12 +497,14 @@ class PieCrustBaker
                         $blogKey
                     );
                     $page->setPageKey($slugifiedTag);
+                    $this->callAssistants('onPageBakeStart', array($page));
                     $baker = new PageBaker(
                         $this->getBakeDir(), 
                         $this->getPageBakerParameters(),
                         $this->logger
                     );
                     $baker->bake($page);
+                    $this->callAssistants('onPageBakeEnd', array(true));
 
                     $pageCount = $baker->getPageCount();
                     $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
@@ -540,12 +556,14 @@ class PieCrustBaker
                         $blogKey
                     );
                     $page->setPageKey($slugifiedCategory);
+                    $this->callAssistants('onPageBakeStart', array($page));
                     $baker = new PageBaker(
                         $this->getBakeDir(),
                         $this->getPageBakerParameters(),
                         $this->logger
                     );
                     $baker->bake($page);
+                    $this->callAssistants('onPageBakeEnd', array(true));
 
                     $pageCount = $baker->getPageCount();
                     $this->logger->info(self::formatTimed($start, 'category:' . $formattedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
@@ -571,6 +589,24 @@ class PieCrustBaker
             'copy_assets' => $this->parameters['copy_assets'],
             'bake_record' => $this->bakeRecord
         );
+    }
+
+    protected function cacheAssistants()
+    {
+        $this->assistants = array();
+        foreach ($this->pieCrust->getPluginLoader()->getBakerAssistants() as $ass)
+        {
+            $ass->initialize($this->pieCrust, $this->logger);
+            $this->assistants[] = $ass;
+        }
+    }
+
+    protected function callAssistants($method, array $args = array())
+    {
+        foreach ($this->assistants as $ass)
+        {
+            call_user_func_array(array(&$ass, $method), $args);
+        }
     }
     
     public static function formatTimed($startTime, $message)

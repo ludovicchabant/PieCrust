@@ -125,6 +125,14 @@ class PluginLoader
         return $this->getPluginsComponents('getRepositories', true);
     }
 
+    /**
+     * Gets all the baking assistants from the loaded plugins.
+     */
+    public function getBakerAssistants()
+    {
+        return $this->getPluginsComponents('getBakerAssistants');
+    }
+
     protected function ensureLoaded()
     {
         if ($this->plugins != null)

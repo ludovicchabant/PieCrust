@@ -70,6 +70,14 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the baker assistants in this plugin.
+     */
+    public function getBakerAssistants()
+    {
+        return array();
+    }
+
+    /**
      * Runs custom initialization code.
      */
     public function initialize(IPieCrust $pieCrust)
