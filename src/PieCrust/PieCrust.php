@@ -366,7 +366,7 @@ class PieCrust implements IPieCrust
                 // We'll need to patch the templates directories to be relative
                 // to the site's root, as opposed to the theme root.
                 $relativeThemeDir = PathHelper::getRelativePath($this->rootDir, $themeDir);
-                $this->config->setFixup(function ($i, &$c) use ($relativeThemeDir) {
+                $this->config->addFixup(function ($i, &$c) use ($relativeThemeDir) {
                     if ($i == 0)
                     {
                         if (!isset($c['site']))

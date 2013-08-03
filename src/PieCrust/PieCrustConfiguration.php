@@ -17,7 +17,7 @@ class PieCrustConfiguration extends Configuration
 {
     protected $paths;
     protected $cache;
-    protected $fixupCallback;
+    protected $fixupCallbacks;
     
     /**
      * Gets the paths to the composite configuration file.
@@ -28,12 +28,12 @@ class PieCrustConfiguration extends Configuration
     }
 
     /**
-     * Sets a callback to fixup configuration data before it is merged
+     * Adds a callback to fixup configuration data before it is merged
      * into the composite configuration.
      */
-    public function setFixup($fixupCallback)
+    public function addFixup($fixupCallback)
     {
-        $this->fixupCallback = $fixupCallback;
+        $this->fixupCallbacks[] = $fixupCallback;
     }
     
     /**
@@ -43,7 +43,7 @@ class PieCrustConfiguration extends Configuration
     {
         $this->paths = $paths;
         $this->cache = $cache;
-        $this->fixupCallback = null;
+        $this->fixupCallbacks = array();
     }
 
     /**
@@ -128,9 +128,8 @@ class PieCrustConfiguration extends Configuration
                     $curConfig = Yaml::parse(file_get_contents($path));
                     if ($curConfig != null) 
                     {
-                        if ($this->fixupCallback != null)
+                        foreach ($this->fixupCallbacks as $fixup)
                         {
-                            $fixup = $this->fixupCallback;
                             $fixup($i, $curConfig);
                         }
                         $config = self::mergeArrays($config, $curConfig);
@@ -141,6 +140,14 @@ class PieCrustConfiguration extends Configuration
                     throw new PieCrustException("An error was found in the PieCrust configuration file: {$path}", 0, $e);
                 }
             }
+
+            // Call the final fixup callback.
+            foreach ($this->fixupCallbacks as $fixup)
+            {
+                $fixup(count($this->paths), $config);
+            }
+
+            // Validate the configuration.
             try
             {
                 $this->config = $this->validateConfig($config);
