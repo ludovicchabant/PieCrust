@@ -77,6 +77,14 @@ class PluginLoader
     }
 
     /**
+     * Gets all the custom template data providers from the loaded plugins.
+     */
+    public function getDataProviders()
+    {
+        return $this->getPluginsComponents('getDataProviders');
+    }
+
+    /**
      * Gets all the processors from the loaded plugins.
      */
     public function getProcessors()

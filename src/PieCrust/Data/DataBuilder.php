@@ -33,6 +33,8 @@ class DataBuilder
             $siteData,
             $appData
         );
+        self::mergeProviderData($page, $renderData);
+        
         return $renderData;
     }
 
@@ -52,12 +54,15 @@ class DataBuilder
             $pageContentSegments,
             $page->wasCached()
         );
+
         $renderData = Configuration::mergeArrays(
             $appData,
             $siteData,
             $pageData,
             $pageContentSegments
         );
+        self::mergeProviderData($page, $renderData);
+
         return $renderData;
     }
 
@@ -233,5 +238,20 @@ class DataBuilder
         }
 
         return $data;
+    }
+
+    public static function mergeProviderData(IPage $page, array &$data)
+    {
+        foreach ($page->getApp()->getPluginLoader()->getDataProviders() as $provider)
+        {
+            $providerData = $provider->getPageData($page);
+            if ($providerData !== null)
+            {
+                $endPoint = $provider->getName();
+                if (isset($data[$endPoint]))
+                    throw new PieCrustException("Can't load data provider: the page configuration already has a value at'{$endPoint}'.");
+                $data[$endPoint] = $providerData;
+            }
+        }
     }
 }

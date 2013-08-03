@@ -30,6 +30,14 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the custom template data providers in this plugin.
+     */
+    public function getDataProviders()
+    {
+        return array();
+    }
+
+    /**
      * Gets the file processors in this plugin.
      */
     public function getProcessors()
