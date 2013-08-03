@@ -38,6 +38,8 @@ Fresh changes
   (syntax highlighting).
 * NEW: Added the `IBakerAssistant` API for plugins that want to do extra
   processing during the bake.
+* NEW: Added the `IDataProvider` API for plugins that want to expose custom
+  template data to pages.
 * BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
 * BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
