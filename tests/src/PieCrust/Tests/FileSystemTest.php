@@ -138,7 +138,7 @@ class FileSystemTest extends PieCrustTestCase
             ->withAsset('_content/posts/no-date.html', '')
             ->withAsset('_content/posts/2013-01-12_foo-bar.html', '');
 
-        $pc = new MockPieCrust(array('root' => $fs->getAppRoot()));
+        $pc = new MockPieCrust();
         $pc->setPostsDir($fs->url('kitchen/_content/posts'));
         $pc->getConfig()->setValue('site/posts_fs', 'flat');
 
