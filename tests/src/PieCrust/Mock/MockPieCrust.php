@@ -134,7 +134,7 @@ class MockPieCrust implements IPieCrust
         return $this->environment;
     }
     
-    public function __construct()
+    public function __construct($rootDir = null)
     {
         $this->config = new PieCrustConfiguration();
         $this->templateDirs = array();
@@ -143,6 +143,14 @@ class MockPieCrust implements IPieCrust
         $this->environment = new CachedEnvironment();
         $this->addFormatter('none', 'PassThroughFormatter');
         $this->addTemplateEngine('none', 'PassThroughTemplateEngine');
+
+        if ($rootDir != null)
+        {
+            $this->rootDir = $rootDir;
+            $this->pagesDir = $rootDir . '_content/pages/';
+            $this->postsDir = $rootDir . '_content/posts/';
+            $this->templateDirs[] = $rootDir . '_content/templates';
+        }
 
         $this->environment->initialize($this);
     }

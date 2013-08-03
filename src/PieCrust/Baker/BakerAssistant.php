@@ -63,14 +63,14 @@ class BakerAssistant implements IBakerAssistant
     /**
      * Gets called after a page is baked.
      */
-    public function onPageBakeEnd($didBake)
+    public function onPageBakeEnd(IPage $page, BakeResult $result)
     {
     }
 
     /**
      * Gets called after baking the site.
      */
-    public function onBakeEnd()
+    public function onBakeEnd(IBaker $baker)
     {
     }
     // }}}

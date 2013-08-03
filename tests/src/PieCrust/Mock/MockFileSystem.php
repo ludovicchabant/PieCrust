@@ -101,6 +101,12 @@ class MockFileSystem
         return new \PieCrust\PieCrust($params);
     }
 
+    public function getMockApp()
+    {
+        $app = new MockPieCrust($this->getAppRoot() . '/');
+        return $app;
+    }
+
     public function withDir($path)
     {
         mkdir($this->url($path), 0777, true);

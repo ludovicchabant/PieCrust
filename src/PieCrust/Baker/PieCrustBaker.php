@@ -245,7 +245,7 @@ class PieCrustBaker implements IBaker
         $dirBaker->bake();
 
         // Post-bake notification.
-        $this->callAssistants('onBakeEnd');
+        $this->callAssistants('onBakeEnd', array($this));
         
         // Save the bake record and clean up.
         if ($bakeInfoPath)
@@ -348,7 +348,7 @@ class PieCrustBaker implements IBaker
             $this->logger
         );
         $didBake = $baker->bake($page);
-        $this->callAssistants('onPageBakeEnd', array($didBake));
+        $this->callAssistants('onPageBakeEnd', array($page, new BakeResult($didBake)));
         if (!$didBake)
             return;
 
@@ -389,7 +389,7 @@ class PieCrustBaker implements IBaker
             $this->logger
         );
         $didBake = $baker->bake($post);
-        $this->callAssistants('onPageBakeEnd', array($didBake));
+        $this->callAssistants('onPageBakeEnd', array($post, new BakeResult($didBake)));
         if ($didBake)
             $this->logger->info(self::formatTimed($start, $post->getUri()));
 
@@ -504,7 +504,7 @@ class PieCrustBaker implements IBaker
                         $this->logger
                     );
                     $baker->bake($page);
-                    $this->callAssistants('onPageBakeEnd', array(true));
+                    $this->callAssistants('onPageBakeEnd', array($page, new BakeResult(true)));
 
                     $pageCount = $baker->getPageCount();
                     $this->logger->info(self::formatTimed($start, 'tag:' . $formattedTag . (($pageCount > 1) ? " [{$pageCount}]" : "")));
@@ -563,7 +563,7 @@ class PieCrustBaker implements IBaker
                         $this->logger
                     );
                     $baker->bake($page);
-                    $this->callAssistants('onPageBakeEnd', array(true));
+                    $this->callAssistants('onPageBakeEnd', array($page, new BakeResult(true)));
 
                     $pageCount = $baker->getPageCount();
                     $this->logger->info(self::formatTimed($start, 'category:' . $formattedCategory . (($pageCount > 1) ? " [{$pageCount}]" : "")));
