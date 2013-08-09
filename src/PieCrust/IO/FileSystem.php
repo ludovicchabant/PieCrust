@@ -13,72 +13,53 @@ use PieCrust\Util\PathHelper;
  * Base class for a  PieCrust file-system that provides
  * the list of blog posts in descending date order, and
  * the list of pages.
- *
- * It also has a couple helper functions.
  */
 abstract class FileSystem
 {
-    protected $pagesDir;
-    protected $postsDir;
     protected $htmlExtensions;
-    
+
     /**
-     * Builds a new instance of FileSystem.
+     * Initializes this file system with the given application.
      */
-    protected function __construct($pagesDir, $postsDir, $htmlExtensions = null)
+    public function initialize(IPieCrust $pieCrust)
     {
-        $this->pagesDir = $pagesDir;
-        $this->postsDir = $postsDir;
-        if ($htmlExtensions == null)
+        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
+        $htmlExtensions = array_keys($autoFormats);
+        if (count($htmlExtensions) == 0)
             $htmlExtensions = array('html');
         $this->htmlExtensions = $htmlExtensions;
     }
 
     /**
-     * Gets the info about all the page files in the website.
+     * Gets the name of the file system.
      */
-    public function getPageFiles()
-    {
-        if (!$this->pagesDir)
-            return array();
+    public abstract function getName();
 
-        $pages = array();
-        $iterator = new \RecursiveIteratorIterator(
-            new PagesRecursiveFilterIterator(
-                new \RecursiveDirectoryIterator($this->pagesDir)
-            )
-        );
-        foreach ($iterator as $path)
-        {
-            $pagePath = $path->getPathname();
-            // Skip files in page asset folders.
-            if (preg_match('#\-assets[/\\\\]#', $pagePath))
-                continue;
-
-            $pages[] = new PageInfo($this->pagesDir, $pagePath);
-        }
-
-        return $pages;
-    }
+    /**
+     * Gets the info about all the page files in the website.
+     *
+     * This should return an array of `PageInfo` instances.
+     */
+    public abstract function getPageFiles();
     
     /**
-     * Gets the info about all the post files in the website.
+     * Gets the info about all the post files in the website for the
+     * given blog key.
+     *
+     * This should return an array of `PostInfo` instances.
      *
      * File infos are expected to be sorted in reverse chronological
      * order based on the day of the post.
      */
-    public abstract function getPostFiles();
+    public abstract function getPostFiles($blogKey);
     
     /**
      * Gets the complete info for a post file based on an incomplete
      * one (e.g. when the URL to a post doesn't contain all the
      * information to locate it on disk).
      */
-    public function getPostPathInfo($captureGroups)
+    public function getPostPathInfo($blogKey, $captureGroups)
     {
-        if (!$this->postsDir)
-            throw new PieCrustException("Can't get the path info for a captured post URL when no post directory exists in the website.");
-
         $needsRecapture = false;
         if (array_key_exists('year', $captureGroups))
         {
@@ -126,13 +107,12 @@ abstract class FileSystem
         }
         $slug = $captureGroups['slug']; // 'slug' is required.
         
-        $path = $this->getPostPathFormat();
+        $path = $this->getPostPathFormat($blogKey);
         $path = str_replace(
             array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
             array($year, $month, $day, $slug, $ext),
             $path
         );
-        $path = $this->postsDir . $path;
         
         $pathInfo = array(
             'year' => $year,
@@ -155,7 +135,7 @@ abstract class FileSystem
             
             $pathInfo['path'] = $possiblePaths[0];
             
-            $pathComponentsRegex = preg_quote($this->getPostPathFormat(), '/');
+            $pathComponentsRegex = preg_quote($this->getPostPathFormat($blogKey), '/');
             $pathComponentsRegex = str_replace(
                 array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
                 array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)', '(\w+)'),
@@ -180,47 +160,9 @@ abstract class FileSystem
     
     /**
      * Gets the posts path format.
+     *
+     * This should return a string like `/path/to/posts/%year%/%month%/%slug%.%ext%`.
      */
-    public abstract function getPostPathFormat();
-    
-    /**
-     * Creates the appropriate implementation of `FileSystem` based
-     * on the configuration of the website.
-     */
-    public static function create(IPieCrust $pieCrust, $postsSubDir = null, $themeFs = false)
-    {
-        $postsFs = $pieCrust->getConfig()->getValueUnchecked('site/posts_fs');
-        $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
-        $htmlExtensions = array_keys($autoFormats);
-
-        if ($themeFs)
-        {
-            $themeDir = $pieCrust->getThemeDir();
-            if (!$themeDir)
-                throw new PieCrustException("Can't create a theme file-system because there's no theme in the current website.");
-            $pagesDir = $themeDir . PieCrustDefaults::CONTENT_PAGES_DIR;
-            $postsDir = $themeDir . PieCrustDefaults::CONTENT_POSTS_DIR;
-        }
-        else
-        {
-            $pagesDir = $pieCrust->getPagesDir();
-            $postsDir = $pieCrust->getPostsDir();
-            if ($postsSubDir == PieCrustDefaults::DEFAULT_BLOG_KEY)
-                $postsSubDir = null;
-            if ($postsSubDir != null)
-                $postsDir .= trim($postsSubDir, '\\/') . '/';
-        }
-
-        switch ($postsFs)
-        {
-        case 'hierarchy':
-            return new HierarchicalFileSystem($pagesDir, $postsDir, $htmlExtensions);
-        case 'shallow':
-            return new ShallowFileSystem($pagesDir, $postsDir, $htmlExtensions);
-        case 'flat':
-            return new FlatFileSystem($pagesDir, $postsDir, $htmlExtensions);
-        default:
-            throw new PieCrustException("Unknown posts_fs: " . $postsFs);
-        }
-    }
+    protected abstract function getPostPathFormat($blogKey);
 }
+

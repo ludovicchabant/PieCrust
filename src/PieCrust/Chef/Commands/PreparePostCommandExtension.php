@@ -61,12 +61,13 @@ class PreparePostCommandExtension extends ChefCommandExtension
             '%slug%' => $slug,
             '%ext%' => 'html'
         );
-        $fs = FileSystem::create($app);
-        $pathFormat = $fs->getPostPathFormat();
+        $fs = $app->getEnvironment()->getFileSystem();
+        $postPathFormat = $fs->getPostPathFormat(PieCrustDefaults::DEFAULT_BLOG_KEY);
+        $postFilenameFormat = pathinfo($postPathFormat, PATHINFO_BASENAME);
         $path = str_replace(
             array_keys($replacements),
             array_values($replacements),
-            $pathFormat
+            $postFilenameFormat
         );
 
         // Figure out which blog to create this post for (if the website

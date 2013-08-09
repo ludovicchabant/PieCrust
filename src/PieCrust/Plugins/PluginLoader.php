@@ -85,6 +85,14 @@ class PluginLoader
     }
 
     /**
+     * Gets all the custom file systems from the loaded plugins.
+     */
+    public function getFileSystems()
+    {
+        return $this->getPluginsComponents('getFileSystems');
+    }
+
+    /**
      * Gets all the processors from the loaded plugins.
      */
     public function getProcessors()

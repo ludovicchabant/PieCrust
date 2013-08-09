@@ -2,7 +2,7 @@
 
 namespace PieCrust\Tests;
 
-use PieCrust\IO\FileSystem;
+use PieCrust\IO\FileSystemFactory;
 use PieCrust\IO\PageInfo;
 use PieCrust\IO\PostInfo;
 use PieCrust\Mock\MockFileSystem;
@@ -28,10 +28,15 @@ class FileSystemTest extends PieCrustTestCase
         $pc = new MockPieCrust();
         $pc->setPostsDir(PIECRUST_UNITTESTS_DATA_DIR . 'posts/' . $fsType . '/');
         $pc->getConfig()->setValue('site/posts_fs', $fsType);
+        $pc->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
         
-        $fs = FileSystem::create($pc);
+        $fs = FileSystemFactory::create($pc);
         $this->assertNotNull($fs);
-        $postFiles = $fs->getPostFiles();
+        $postFiles = $fs->getPostFiles('blog');
         $postFiles = MockFileSystem::sortPostInfos($postFiles);
         $this->assertNotNull($postFiles);
         $this->assertEquals(6, count($postFiles));
@@ -107,9 +112,14 @@ class FileSystemTest extends PieCrustTestCase
         $pc = new MockPieCrust();
         $pc->setPostsDir(PIECRUST_UNITTESTS_DATA_DIR . 'posts/' . $fsType . '/');
         $pc->getConfig()->setValue('site/posts_fs', $fsType);
+        $pc->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
         
-        $fs = FileSystem::create($pc);
-        $postFiles = $fs->getPostFiles();
+        $fs = FileSystemFactory::create($pc);
+        $postFiles = $fs->getPostFiles('blog');
         $postFiles = MockFileSystem::sortPostInfos($postFiles);
         $this->assertNotNull($postFiles);
         $this->assertEquals(6, count($postFiles));
@@ -123,7 +133,7 @@ class FileSystemTest extends PieCrustTestCase
             $groups = array('year' => $years[$i], 'month' => $months[$i], 'day' => $days[$i], 'slug' => $slugs[$i]);
             if ($wildcardComponent != null)
                 unset($groups[$wildcardComponent]);
-            $pathInfo = $fs->getPostPathInfo($groups);
+            $pathInfo = $fs->getPostPathInfo('blog', $groups);
             $this->assertEquals($years[$i], $pathInfo['year']);
             $this->assertEquals($months[$i], $pathInfo['month']);
             $this->assertEquals($days[$i], $pathInfo['day']);
@@ -141,9 +151,14 @@ class FileSystemTest extends PieCrustTestCase
         $pc = new MockPieCrust();
         $pc->setPostsDir($fs->url('kitchen/_content/posts'));
         $pc->getConfig()->setValue('site/posts_fs', 'flat');
+        $pc->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
 
-        $pcFs = FileSystem::create($pc);
-        $postFiles = $pcFs->getPostFiles();
+        $pcFs = FileSystemFactory::create($pc);
+        $postFiles = $pcFs->getPostFiles('blog');
         foreach ($postFiles as &$pf)
         {
             // Fix backslashes when running tests on Windows.
@@ -183,8 +198,13 @@ class FileSystemTest extends PieCrustTestCase
         $pc = new MockPieCrust();
         $pc->setPagesDir($fs->url('kitchen/_content/pages'));
         $pc->getConfig()->setValue('site/posts_fs', 'flat');
+        $pc->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
         
-        $pcFs = FileSystem::create($pc);
+        $pcFs = FileSystemFactory::create($pc);
         $pageFiles = $pcFs->getPageFiles();
         foreach ($pageFiles as &$pf)
         {

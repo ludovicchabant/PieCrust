@@ -34,6 +34,15 @@ class BuiltinPlugin extends PieCrustPlugin
         );
     }
 
+    public function getFileSystems()
+    {
+        return array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
+    }
+
     public function getProcessors()
     {
         return array(

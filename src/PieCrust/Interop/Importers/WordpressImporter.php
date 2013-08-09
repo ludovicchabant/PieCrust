@@ -140,15 +140,15 @@ EOD;
     {
     }
     
-    protected function importPosts($postsDir, $mode)
+    protected function importPosts($postsDir)
     {
         switch ($this->type)
         {
         case 'xml':
-            $this->importPostsFromXml($postsDir, $mode);
+            $this->importPostsFromXml($postsDir);
             break;
         case 'mysql':
-            $this->importPostsFromMySql($postsDir, $mode);
+            $this->importPostsFromMySql($postsDir);
             break;
         }
     }
@@ -220,14 +220,13 @@ EOD;
         }
     }
 
-    protected function importPostsFromMySql($postsDir, $mode)
+    protected function importPostsFromMySql($postsDir)
     {
         $posts = $this->getPostsFromMySql('post');
         foreach ($posts as $post)
         {
             $this->createPost(
                 $postsDir, 
-                $mode,
                 $post['name'], 
                 $post['timestamp'], 
                 $post['metadata'], 
@@ -328,14 +327,13 @@ EOD;
         }
     }
 
-    protected function importPostsFromXml($postsDir, $mode)
+    protected function importPostsFromXml($postsDir)
     {
         $posts = $this->getPostsFromXml('post');
         foreach ($posts as $post)
         {
             $this->createPost(
                 $postsDir, 
-                $mode, 
                 $post['name'], 
                 $post['timestamp'], 
                 $post['metadata'], 

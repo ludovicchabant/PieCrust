@@ -6,7 +6,6 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
-use PieCrust\IO\FileSystem;
 use PieCrust\IO\FlatFileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\UriBuilder;
@@ -79,9 +78,11 @@ class CachedEnvironment extends Environment
 
             // Start with the theme pages, if any.
             $pageInfos = array();
-            if ($this->pieCrust->getThemeDir())
+            $themeDir = $this->pieCrust->getThemeDir();
+            if ($themeDir)
             {
-                $fs = FileSystem::create($this->pieCrust, null, true);
+                $fs = new FlatFileSystem();
+                $fs->initializeForTheme($this->pieCrust);
                 $themePageInfos = $fs->getPageFiles();
                 foreach ($themePageInfos as $pageInfo)
                 {
@@ -90,7 +91,7 @@ class CachedEnvironment extends Environment
             }
 
             // Override with the user pages.
-            $fs = FileSystem::create($this->pieCrust, null);
+            $fs = $this->getFileSystem();
             $userPageInfos = $fs->getPageFiles();
             foreach ($userPageInfos as $userPageInfo)
             {
@@ -122,8 +123,8 @@ class CachedEnvironment extends Environment
         if (!isset($this->posts[$blogKey]))
         {
             $this->getLog()->debug("Indexing '{$blogKey}' posts...");
-            $fs = FileSystem::create($this->pieCrust, $blogKey);
-            $postInfos = $fs->getPostFiles();
+            $fs = $this->getFileSystem();
+            $postInfos = $fs->getPostFiles($blogKey);
 
             $this->getLog()->debug("Creating '{$blogKey}' posts...");
             $pageRepository = $this->getPageRepository();

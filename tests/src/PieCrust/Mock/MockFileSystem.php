@@ -104,6 +104,11 @@ class MockFileSystem
     public function getMockApp()
     {
         $app = new MockPieCrust($this->getAppRoot() . '/');
+        $app->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
         return $app;
     }
 

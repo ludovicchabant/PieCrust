@@ -133,8 +133,10 @@ class FindCommand extends ChefCommand
         $returnComponents = $result->command->options['page_components'];
 
         // Get a regex for the posts file-naming convention.
-        $fs = FileSystem::create($pieCrust);
-        $pathComponentsRegex = preg_quote($fs->getPostPathFormat(), '/');
+        $fs = $pieCrust->getEnvironment()->getFileSystem();
+        $postPathFormat = $fs->getPostPathFormat(PieCrustDefaults::DEFAULT_BLOG_KEY);
+        $postFilenameFormat = pathinfo($postPathFormat, PATHINFO_BASENAME);
+        $pathComponentsRegex = preg_quote($postFilenameFormat, '/');
         $pathComponentsRegex = str_replace(
             array('%year%', '%month%', '%day%', '%slug%'),
             array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)'),

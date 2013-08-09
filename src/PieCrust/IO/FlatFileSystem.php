@@ -10,20 +10,21 @@ use PieCrust\PieCrustException;
 /**
  * Describes a flat PieCrust blog file-system.
  */
-class FlatFileSystem extends FileSystem
+class FlatFileSystem extends SimpleFileSystem
 {
-    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
+    public function getName()
     {
-        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
+        return 'flat';
     }
-    
-    public function getPostFiles()
+
+    public function getPostFiles($blogKey)
     {
-        if (!$this->postsDir)
+        $postsDir = $this->getPostsDir($blogKey);
+        if (!$postsDir)
             return array();
 
         $result = array();
-        $pathsIterator = new FilesystemIterator($this->postsDir);
+        $pathsIterator = new FilesystemIterator($postsDir);
         foreach ($pathsIterator as $path)
         {
             if ($path->isDir())
@@ -54,7 +55,7 @@ class FlatFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPostPathFormat()
+    public function getPostFilenameFormat()
     {
         return '%year%-%month%-%day%_%slug%.%ext%';
     }

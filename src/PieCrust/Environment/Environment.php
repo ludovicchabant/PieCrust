@@ -4,6 +4,7 @@ namespace PieCrust\Environment;
 
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
+use PieCrust\IO\FileSystemFactory;
 use PieCrust\Runner\ExecutionContext;
 
 
@@ -43,6 +44,19 @@ abstract class Environment
      * Gets the posts.
      */
     public abstract function getPosts($blogKey);
+
+    protected $fileSystem;
+    /**
+     * Gets the file system for the current app.
+     */
+    public function getFileSystem()
+    {
+        if ($this->fileSystem == null)
+        {
+            $this->fileSystem = FileSystemFactory::create($this->pieCrust);
+        }
+        return $this->fileSystem;
+    }
 
     protected $executionContext;
     /**
@@ -112,6 +126,8 @@ abstract class Environment
         if ($logger == null)
             $logger = \Log::singleton('null', '', '');
         $this->logger = $logger;
+
+        $this->fileSystem = null;
     }
 
     /**

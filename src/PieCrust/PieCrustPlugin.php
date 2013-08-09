@@ -38,6 +38,14 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the file-systems.
+     */
+    public function getFileSystems()
+    {
+        return array();
+    }
+
+    /**
      * Gets the file processors in this plugin.
      */
     public function getProcessors()

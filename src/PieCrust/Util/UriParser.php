@@ -142,8 +142,8 @@ class UriParser
         $postsPattern = UriBuilder::buildPostUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url'));
         if (preg_match($postsPattern, $uri, $matches))
         {
-            $fs = FileSystem::create($pieCrust, $blogKey);
-            $pathInfo = $fs->getPostPathInfo($matches);
+            $fs = $pieCrust->getEnvironment()->getFileSystem();
+            $pathInfo = $fs->getPostPathInfo($blogKey, $matches);
             $date = mktime(0, 0, 0, intval($pathInfo['month']), intval($pathInfo['day']), intval($pathInfo['year']));
             
             $pageInfo['type'] = IPage::TYPE_POST;

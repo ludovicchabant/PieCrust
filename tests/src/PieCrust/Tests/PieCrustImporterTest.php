@@ -5,7 +5,7 @@ namespace PieCrust\Tests;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;
 use PieCrust\PieCrust;
-use PieCrust\IO\FileSystem;
+use PieCrust\IO\FileSystemFactory;
 use PieCrust\Interop\PieCrustImporter;
 use PieCrust\Mock\MockFileSystem;
 
@@ -36,10 +36,10 @@ class PieCrustImporterTest extends PieCrustTestCase
         ));
 
         // Check the content.
-        $pcFs = FileSystem::create($app);
+        $pcFs = FileSystemFactory::create($app);
         $pageFiles = $pcFs->getPageFiles();
         $this->assertCount(11, $pageFiles);
-        $postFiles = $pcFs->getPostFiles();
+        $postFiles = $pcFs->getPostFiles('blog');
         $this->assertCount(22, $postFiles);
     }
 }

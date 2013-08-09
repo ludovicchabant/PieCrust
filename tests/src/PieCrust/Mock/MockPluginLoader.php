@@ -12,6 +12,7 @@ class MockPluginLoader
     public $formatters;
     public $templateEngines;
     public $dataProviders;
+    public $fileSystems;
     public $processors;
     public $importers;
     public $commands;
@@ -24,6 +25,7 @@ class MockPluginLoader
         $this->formatters = array();
         $this->templateEngines = array();
         $this->dataProviders = array();
+        $this->fileSystems = array();
         $this->processors = array();
         $this->importers = array();
         $this->commands = array();
@@ -49,6 +51,11 @@ class MockPluginLoader
     public function getDataProviders()
     {
         return $this->dataProviders;
+    }
+
+    public function getFileSystems()
+    {
+        return $this->fileSystems;
     }
 
     public function getProcessors()

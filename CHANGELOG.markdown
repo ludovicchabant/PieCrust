@@ -40,6 +40,9 @@ Fresh changes
   processing during the bake.
 * NEW: Added the `IDataProvider` API for plugins that want to expose custom
   template data to pages.
+* NEW: File-systems (`flat`, etc.) are now extensible through plugins, and
+  several of them can be combined by using comma-separated names in the
+  `site/posts_fs` configuration setting.
 * BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
 * BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.

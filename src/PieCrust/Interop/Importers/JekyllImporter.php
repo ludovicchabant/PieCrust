@@ -193,7 +193,7 @@ class JekyllImporter extends ImporterBase
         }
     }
 
-    protected function importPosts($postsDir, $mode)
+    protected function importPosts($postsDir)
     {
         foreach ($this->posts as $post)
         {
