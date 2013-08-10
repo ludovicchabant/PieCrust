@@ -135,6 +135,38 @@ EOD
         );
     }
 
+    public function testSortSubProperty()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withPage('foo/aaa', array('nav' => array('order' => 3)), 'AAA')
+            ->withPage('foo/bbb', array('nav' => array('order' => 1)), 'BBB')
+            ->withPage('foo/ccc', array('nav' => array('order' => 2)), 'CCC')
+            ->withPage('foo/test', array(), <<<EOD
+{% for p in siblings.sort('nav.order') %}
+{% if p.is_self %}
+MYSELF
+{% else %}
+{{p.nav.order}}: {{p.content}}
+{% endif %}
+{% endfor %}
+EOD
+            );
+        $pc = $fs->getApp();
+        $page = Page::createFromUri($pc, '/foo/test', false);
+        $this->assertEquals(
+            <<<EOD
+MYSELF
+1: BBB
+2: CCC
+3: AAA
+
+EOD
+            ,
+            $page->getContentSegment()
+        );
+    }
+
     public function testFilter()
     {
         $fs = MockFileSystem::create()

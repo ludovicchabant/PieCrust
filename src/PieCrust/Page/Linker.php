@@ -80,6 +80,14 @@ class Linker extends BaseIterator implements \RecursiveIterator
      */
     public function sortBy($name, $reverse = false)
     {
+        return $this->sort($name, $reverse);
+    }
+
+    /**
+     * @noCall
+     */
+    public function sort($name, $reverse = false)
+    {
         $this->sortByName = $name;
         $this->sortByReverse = $reverse;
         return $this;
@@ -217,19 +225,18 @@ class Linker extends BaseIterator implements \RecursiveIterator
         if ($link2IsLinker)
             return $this->sortByReverse ? -1 : 1;
 
+        $propertyPath = str_replace('.', '/', $this->sortByName);
         $page1 = $link1->getPage();
-        $value1 = $page1->getConfig()->getValue($this->sortByName);
+        $value1 = $page1->getConfig()->getValue($propertyPath);
         $page2 = $link2->getPage();
-        $value2 = $page2->getConfig()->getValue($this->sortByName);
+        $value2 = $page2->getConfig()->getValue($propertyPath);
 
-        if ($value1 == null && $value2 == null)
+        if ($value1 == $value2)
             return 0;
         if ($value1 == null && $value2 != null)
             return $this->sortByReverse ? 1 : -1;
         if ($value1 != null && $value2 == null)
             return $this->sortByReverse ? -1 : 1;
-        if ($value1 == $value2)
-            return 0;
         if ($this->sortByReverse)
             return ($value1 < $value2) ? 1 : -1;
         else
