@@ -46,6 +46,7 @@ Fresh changes
 * BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
 * BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
+* BUG: Fixed a bug with sorting siblings/family pages with a sub-property.
 * IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
   stable during a bake. Also removed PHP's default memory limit when running
   PieCrust with `chef`.
