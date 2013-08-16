@@ -84,7 +84,7 @@ class Chef
         else
         {
             // The root was given.
-            $rootDir = PathHelper::getAbsolutePath($rootDir);
+            $rootDir = trim($rootDir, " \"");
             if (!is_dir($rootDir))
                 throw new PieCrustException("The given root directory doesn't exist: " . $rootDir);
         }
