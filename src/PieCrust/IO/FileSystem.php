@@ -16,6 +16,11 @@ use PieCrust\Util\PathHelper;
  */
 abstract class FileSystem
 {
+    // Path info request modes {{{
+    const PATHINFO_PARSING = 0;
+    const PATHINFO_CREATING = 1;
+    // }}}
+    
     protected $htmlExtensions;
 
     /**
@@ -58,7 +63,7 @@ abstract class FileSystem
      * one (e.g. when the URL to a post doesn't contain all the
      * information to locate it on disk).
      */
-    public function getPostPathInfo($blogKey, $captureGroups)
+    public function getPostPathInfo($blogKey, $captureGroups, $mode)
     {
         $needsRecapture = false;
         if (array_key_exists('year', $captureGroups))
@@ -124,6 +129,9 @@ abstract class FileSystem
         );
         if ($needsRecapture)
         {
+            if ($mode == self::PATHINFO_CREATING)
+                throw new PieCrustException("No enough information to provide a path info for creation.");
+
             // Not all path components were specified in the URL (e.g. because the
             // post URL format doesn't capture all of them).
             // We need to find a physical file that matches everything we have,

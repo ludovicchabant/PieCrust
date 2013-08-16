@@ -143,7 +143,7 @@ class UriParser
         if (preg_match($postsPattern, $uri, $matches))
         {
             $fs = $pieCrust->getEnvironment()->getFileSystem();
-            $pathInfo = $fs->getPostPathInfo($blogKey, $matches);
+            $pathInfo = $fs->getPostPathInfo($blogKey, $matches, FileSystem::PATHINFO_PARSING);
             $date = mktime(0, 0, 0, intval($pathInfo['month']), intval($pathInfo['day']), intval($pathInfo['year']));
             
             $pageInfo['type'] = IPage::TYPE_POST;

@@ -54,20 +54,12 @@ class PreparePostCommandExtension extends ChefCommandExtension
         // Create the relative path of the new post by using the
         // path format of the website's post file-system.
         $slug = $result->command->command->args['slug'];
-        $replacements = array(
-            '%day%' => date('d'),
-            '%month%' => date('m'),
-            '%year%' => date('Y'),
-            '%slug%' => $slug,
-            '%ext%' => 'html'
-        );
-        $fs = $app->getEnvironment()->getFileSystem();
-        $postPathFormat = $fs->getPostPathFormat(PieCrustDefaults::DEFAULT_BLOG_KEY);
-        $postFilenameFormat = pathinfo($postPathFormat, PATHINFO_BASENAME);
-        $path = str_replace(
-            array_keys($replacements),
-            array_values($replacements),
-            $postFilenameFormat
+        $captureGroups = array(
+            'day' => date('d'),
+            'month' => date('m'),
+            'year' => date('Y'),
+            'slug' => $slug,
+            'ext' => 'html'
         );
 
         // Figure out which blog to create this post for (if the website
@@ -83,15 +75,14 @@ class PreparePostCommandExtension extends ChefCommandExtension
             throw new PieCrustException("Specified blog '{$blogKey}' is not one of the known blogs in this website: " . implode(', ', $blogKeys));
         }
 
-        // Get the blog subdir for the post.
-        $blogSubDir = $blogKey . '/';
-        if ($blogKey == PieCrustDefaults::DEFAULT_BLOG_KEY)
-        {
-            $blogSubDir = '';
-        }
-
         // Create the full path.
-        $fullPath = $app->getPostsDir() . $blogSubDir . $path;
+        $fs = $app->getEnvironment()->getFileSystem();
+        $pathInfo = $fs->getPostPathInfo(
+            $blogKey,
+            $captureGroups,
+            FileSystem::PATHINFO_CREATING
+        );
+        $fullPath = $pathInfo['path'];
         $relativePath = PieCrustHelper::getRelativePath($app, $fullPath);
         if (file_exists($fullPath))
             throw new PieCrustException("Post already exists: {$relativePath}");

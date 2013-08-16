@@ -155,8 +155,12 @@ abstract class ImporterBase implements IImporter
             'slug' => $name,
             'ext' => 'html'
         );
-        $pathInfo = $fs->getPostPathInfo(PieCrustDefaults::DEFAULT_BLOG_KEY, $captureGroups);
-        $postPath = $postsDir . pathinfo($pathInfo['path'], PATHINFO_BASENAME);
+        $pathInfo = $fs->getPostPathInfo(
+            PieCrustDefaults::DEFAULT_BLOG_KEY, 
+            $captureGroups,
+            FileSystem::PATHINFO_CREATING
+        );
+        $postPath = $pathInfo['path'];
 
         // Build the config data that goes in the header.
         $configData = $metadata;

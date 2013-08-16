@@ -54,18 +54,20 @@ class CompositeFileSystem extends FileSystem
         return $postInfos;
     }
 
-    public function getPostPathInfo($blogKey, $captureGroups)
+    public function getPostPathInfo($blogKey, $captureGroups, $mode)
     {
         foreach ($this->fileSystems as $fs)
         {
             try
             {
-                $pathInfo = $fs->getPostPathInfo($blogKey, $captureGroups);
+                $pathInfo = $fs->getPostPathInfo($blogKey, $captureGroups, $mode);
                 if (is_file($pathInfo['path']))
                     return $pathInfo;
             }
             catch (PieCrustException $e)
             {
+                // Silently ignore failure, hoping the next file-system
+                // will manage to get us something.
             }
         }
         throw new PieCrustException("Can't find valid path info in any child file-system.");

@@ -2,6 +2,7 @@
 
 namespace PieCrust\Tests;
 
+use PieCrust\IO\FileSystem;
 use PieCrust\IO\FileSystemFactory;
 use PieCrust\IO\PageInfo;
 use PieCrust\IO\PostInfo;
@@ -133,7 +134,7 @@ class FileSystemTest extends PieCrustTestCase
             $groups = array('year' => $years[$i], 'month' => $months[$i], 'day' => $days[$i], 'slug' => $slugs[$i]);
             if ($wildcardComponent != null)
                 unset($groups[$wildcardComponent]);
-            $pathInfo = $fs->getPostPathInfo('blog', $groups);
+            $pathInfo = $fs->getPostPathInfo('blog', $groups, FileSystem::PATHINFO_PARSING);
             $this->assertEquals($years[$i], $pathInfo['year']);
             $this->assertEquals($months[$i], $pathInfo['month']);
             $this->assertEquals($days[$i], $pathInfo['day']);
