@@ -68,7 +68,7 @@ class ChefContext
             $this->debuggingEnabled = true;
             break;
         case 'quiet':
-            $this->log->setMask(Log::MAX(PEAR_LOG_NOTICE));
+            $this->log->setMask(Log::MAX(PEAR_LOG_WARNING));
             break;
         default:
             $this->log->setMask(Log::MAX(PEAR_LOG_INFO));
