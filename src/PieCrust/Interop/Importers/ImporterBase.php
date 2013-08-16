@@ -6,6 +6,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\IO\FileSystem;
 
 
 /**
