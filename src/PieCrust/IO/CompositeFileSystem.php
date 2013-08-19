@@ -61,8 +61,7 @@ class CompositeFileSystem extends FileSystem
             try
             {
                 $pathInfo = $fs->getPostPathInfo($blogKey, $captureGroups, $mode);
-                if (is_file($pathInfo['path']))
-                    return $pathInfo;
+                return $pathInfo;
             }
             catch (PieCrustException $e)
             {
