@@ -146,7 +146,7 @@ abstract class FileSystem
             $pathComponentsRegex = preg_quote($this->getPostPathFormat($blogKey), '/');
             $pathComponentsRegex = str_replace(
                 array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
-                array('(\d{4})', '(\d{2})', '(\d{2})', '(.+)', '(\w+)'),
+                array('(?P<year>\d{4})', '(?P<month>\d{2})', '(?P<day>\d{2})', '(?P<slug>.+)', '(?P<ext>\w+)'),
                 $pathComponentsRegex
             );
             $pathComponentsRegex = '/' . $pathComponentsRegex . '/';
@@ -157,11 +157,16 @@ abstract class FileSystem
                 $pathComponentsMatches) !== 1)
                 throw new PieCrustException("Can't extract path components from path: " . $possiblePaths[0]);
             
-            $pathInfo['year'] = $pathComponentsMatches[1];
-            $pathInfo['month'] = $pathComponentsMatches[2];
-            $pathInfo['day'] = $pathComponentsMatches[3];
-            $pathInfo['slug'] = $pathComponentsMatches[4];
-            $pathInfo['ext'] = $pathComponentsMatches[5];
+            if (isset($pathComponentsMatches['year']))
+                $pathInfo['year'] = $pathComponentsMatches['year'];
+            if (isset($pathComponentsMatches['month']))
+                $pathInfo['month'] = $pathComponentsMatches['month'];
+            if (isset($pathComponentsMatches['day']))
+                $pathInfo['day'] = $pathComponentsMatches['day'];
+            if (isset($pathComponentsMatches['slug']))
+                $pathInfo['slug'] = $pathComponentsMatches['slug'];
+            if (isset($pathComponentsMatches['ext']))
+                $pathInfo['ext'] = $pathComponentsMatches['ext'];
         }
         return $pathInfo;
     }
