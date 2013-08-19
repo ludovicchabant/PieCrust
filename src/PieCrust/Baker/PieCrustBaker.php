@@ -154,19 +154,27 @@ class PieCrustBaker implements IBaker
             $this->parameters['tag_combinations'] = $combinationsExploded;
         }
         
-        // Apply the specified configuration variant, if any. Otherwise,
-        // use the default variant if it exists.
-        $isDefault = false;
+        // New way: apply the `baker` variant.
+        // Old way: apply the specified variant, or the default one. Warn about deprecation.
         $variantName = $this->parameters['config_variant'];
-        if (!$variantName)
+        if ($variantName)
         {
-            $isDefault = true;
-            $variantName = 'default';
+            $this->logger->warning("The `--config` parameter has been moved to a global parameter (specified before the command).");
+            $this->pieCrust->getConfig()->applyVariant("baker/config_variants/{$variantName}");
+            $this->logger->warning("Variant '{$variantName}' has been applied, but will need to be moved to the new `variants` section of the site configuration.");
         }
-        $this->pieCrust->getConfig()->applyVariant(
-            "baker/config_variants/{$variantName}",
-            !$isDefault
-        );
+        else
+        {
+            if ($this->pieCrust->getConfig()->hasValue("baker/config_variants/default"))
+            {
+                $this->pieCrust->getConfig()->applyVariant("baker/config_variants/default");
+                $this->logger->warning("The default baker configuration variant has been applied, but will need to be moved into the new `variants/baker` section of the site configuration.");
+            }
+            else
+            {
+                $this->pieCrust->getConfig()->applyVariant("variants/baker", false);
+            }
+        }
 
         // Load the baking assistants.
         $this->cacheAssistants();

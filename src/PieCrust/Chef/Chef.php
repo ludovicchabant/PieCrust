@@ -66,15 +66,34 @@ class Chef
             $userArgc = count($userArgv);
         }
 
-        // Find whether the '--root' parameter was given.
+        // Find whether the `--root` or `--config` parameters was given.
         $rootDir = null;
-        foreach ($userArgv as $arg)
+        $configVariant = null;
+        for ($i = 0; $i < count($userArgv); ++$i)
         {
+            $arg = $userArgv[$i];
+
             if (substr($arg, 0, strlen('--root=')) == '--root=')
             {
                 $rootDir = substr($arg, strlen('--root='));
-                break;
             }
+            elseif ($arg == '--root')
+            {
+                $rootDir = $userArgv[$i + 1];
+                ++$i;
+            }
+            elseif (substr($arg, 0, strlen('--config=')) == '--config=')
+            {
+                $configVariant = substr($arg, strlen('--config='));
+            }
+            elseif ($arg == '--config')
+            {
+                $configVariant = $userArgv[$i + 1];
+                ++$i;
+            }
+
+            if ($rootDir && $configVariant)
+                break;
         }
         if ($rootDir == null)
         {
@@ -102,6 +121,17 @@ class Chef
                 'cache' => !in_array('--no-cache', $userArgv),
                 'environment' => $environment
             ));
+        }
+
+        // Pre-load the correct config variant if any was specified.
+        if ($configVariant != null)
+        {
+            // You can't apply a config variant if there's no website.
+            if ($rootDir == null)
+                throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
+
+            $configVariant = trim($configVariant, " \"");
+            $pieCrust->getConfig()->applyVariant('variants/' . $configVariant);
         }
 
         // Set up the command line parser.
@@ -224,6 +254,12 @@ class Chef
             'description' => "The root directory of the website (defaults to the first parent of the current directory that contains a '_content' directory).",
             'default'     => null,
             'help_name'   => 'ROOT_DIR'
+        ));
+        $parser->addOption('config_variant', array(
+            'long_name'   => '--config',
+            'description' => "The configuration variant to use for this command.",
+            'default'     => null,
+            'help_name'   => 'VARIANT'
         ));
         $parser->addOption('debug', array(
             'long_name'   => '--debug',

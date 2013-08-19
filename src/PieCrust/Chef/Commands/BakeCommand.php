@@ -24,7 +24,7 @@ class BakeCommand extends ChefCommand
         $bakerParser->addOption('config_variant', array(
             'short_name'  => '-c',
             'long_name'   => '--config',
-            'description' => "Apply the configuration settings from the named baker configuration variant.",
+            'description' => "[Deprecated, use the global option] Apply the configuration settings from the named baker configuration variant.",
             'default'     => null,
             'help_name'   => 'VARIANT'
         ));

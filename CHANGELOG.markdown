@@ -24,6 +24,18 @@ Fresh changes
   (respectively for Markdown and Textile formatting).
 * CHANGE: The `sortBy` function on page and post iterators has been renamed to
   just `sort`.
+* CHANGE: You can now specify the website's root for `chef` by using either
+  `--root=/path/to/root` or `--root /path/to/root`.
+* CHANGE: You can now specify configuration variants to apply for `chef` by
+  using `--config=variant` or `--config variant`. Configuration variants are
+  found in the `variants` section of the site configuration. The `bake` and
+  `serve` commands will apply variants `variants/server` and `variants/baker`,
+  respectively, if found.
+* CHANGES: As a result of the previous change, you will get a warning if you use
+  the old `--config` option on those commands, or if the old
+  `baker/config_variants/default` or `server/config_variants/default`
+  variants are found. It should all work as before, however, except for the
+  added warning.
 * NEW: Added support for tags when importing content from a Wordpress SQL
   database.
 * NEW: Page and post iterators can be filtered with "magic" functions like
