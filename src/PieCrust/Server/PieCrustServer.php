@@ -175,19 +175,19 @@ class PieCrustServer
             if ($variantName)
             {
                 $this->logger->warning("The `--config` parameter has been moved to a global parameter (specified before the command).");
-                $this->pieCrust->getConfig()->applyVariant("server/config_variants/{$variantName}");
+                $pieCrust->getConfig()->applyVariant("server/config_variants/{$variantName}");
                 $this->logger->warning("Variant '{$variantName}' has been applied, but will need to be moved to the new `variants` section of the site configuration.");
             }
             else
             {
-                if ($this->pieCrust->getConfig()->hasValue("server/config_variants/default"))
+                if ($pieCrust->getConfig()->hasValue("server/config_variants/default"))
                 {
-                    $this->pieCrust->getConfig()->applyVariant("server/config_variants/default");
+                    $pieCrust->getConfig()->applyVariant("server/config_variants/default");
                     $this->logger->warning("The default server configuration variant has been applied, but will need to be moved into the new `variants/server` section of the site configuration.");
                 }
                 else
                 {
-                    $this->pieCrust->getConfig()->applyVariant("variants/server", false);
+                    $pieCrust->getConfig()->applyVariant("variants/server", false);
                 }
             }
         }
