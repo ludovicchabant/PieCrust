@@ -212,37 +212,9 @@ class Chef
                 }
                 catch (Exception $e)
                 {
-                    $this->logException($log, $e, $debugMode);
+                    $log->exception($e, $debugMode);
                     return 1;
                 }
-            }
-        }
-    }
-
-    protected function logException($log, $e, $debugMode = false)
-    {
-        if ($debugMode)
-        {
-            $log->emerg($e->getMessage());
-            $log->debug($e->getTraceAsString());
-            $e = $e->getPrevious();
-            while ($e)
-            {
-                $log->err("-----------------");
-                $log->err($e->getMessage());
-                $log->debug($e->getTraceAsString());
-                $e = $e->getPrevious();
-            }
-            $log->err("-----------------");
-        }
-        else
-        {
-            $log->emerg($e->getMessage());
-            $e = $e->getPrevious();
-            while ($e)
-            {
-                $log->err($e->getMessage());
-                $e = $e->getPrevious();
             }
         }
     }

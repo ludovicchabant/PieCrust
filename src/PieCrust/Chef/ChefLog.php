@@ -72,4 +72,32 @@ class ChefLog extends \Log_console
 
         return parent::log($message, $priority);
     }
+
+    public function exception($e, $debugMode = false)
+    {
+        if ($debugMode)
+        {
+            $this->emerg($e->getMessage());
+            $this->debug($e->getTraceAsString());
+            $e = $e->getPrevious();
+            while ($e)
+            {
+                $this->err("-----------------");
+                $this->err($e->getMessage());
+                $this->debug($e->getTraceAsString());
+                $e = $e->getPrevious();
+            }
+            $this->err("-----------------");
+        }
+        else
+        {
+            $this->emerg($e->getMessage());
+            $e = $e->getPrevious();
+            while ($e)
+            {
+                $this->err($e->getMessage());
+                $e = $e->getPrevious();
+            }
+        }
+    }
 }
