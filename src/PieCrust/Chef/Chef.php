@@ -176,10 +176,17 @@ class Chef
             $parser->displayError("You can't specify both --debug and --quiet.", false);
             return 1;
         }
-        $log = new ChefLog('Chef', '', array('lineFormat' => '%{message}'));
+        $log = new ChefLog('Chef');
+        // Log to a file.
+        if ($result->options['log'])
+        {
+            $log->addFileLog($result->options['log']);
+        }
         // Make the log available to PieCrust.
         if ($rootDir != null)
+        {
             $environment->setLog($log);
+        }
         // Make the log available for debugging purposes.
         $GLOBALS['__CHEF_LOG'] = $log;
 
@@ -244,7 +251,6 @@ class Chef
             'long_name'   => '--no-cache',
             'description' => "When applicable, disable caching.",
             'default'     => false,
-            'help_name'   => 'NOCACHE',
             'action'      => 'StoreTrue'
         ));
         $parser->addOption('quiet', array(
@@ -253,6 +259,12 @@ class Chef
             'default'     => false,
             'help_name'   => 'QUIET',
             'action'      => 'StoreTrue'
+        ));
+        $parser->addOption('log', array(
+            'long_name'   => '--log',
+            'description' => "Send log messages to the specified file.",
+            'default'     => null,
+            'help_name'   => 'LOG_FILE'
         ));
     }
 }

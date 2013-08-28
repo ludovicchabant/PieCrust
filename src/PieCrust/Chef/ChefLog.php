@@ -2,100 +2,75 @@
 
 namespace PieCrust\Chef;
 
+use \Log;
 use PieCrust\PieCrustDefaults;
+use PieCrust\PieCrustException;
 
 
 /**
  * A PEAR log with pretty colors, at least on Mac/Linux.
  */
-class ChefLog extends \Log_console
+class ChefLog extends \Log_composite
 {
-    protected $color;
-    protected $hasColorSupport;
+    const LOG_CONSOLE = 0;
+    const LOG_FILE = 1;
+
+    protected $consoleLog;
+    protected $fileLog;
 
     public function __construct($name, $ident = '', $conf = array(), $level = PEAR_LOG_DEBUG)
     {
-        parent::Log_console($name, $ident, $conf, $level);
-
-        $this->color = new \Console_Color2();
-        $this->hasColorSupport = true;
-        if (PieCrustDefaults::IS_WINDOWS())
-            $this->hasColorSupport = false;
+        parent::__construct($name, $ident, $conf, $level);
+        
+        $this->consoleLog = new ChefLogConsole('ChefConsole');
+        $this->addChild($this->consoleLog);
     }
 
-    public function supportsColors()
+    public function setChildMask($which, $mask)
     {
-        return $this->hasColorSupport;
-    }
-
-    public function convertColors($str)
-    {
-        if (!$this->hasColorSupport)
-            return $this->color->strip($str);
-        return $this->color->convert($str);
-    }
-
-    public function log($message, $priority = null)
-    {
-        if ($this->hasColorSupport)
+        switch ($which)
         {
-            if ($priority === null)
-                $priority = $this->_priority;
-
-            $colorCode = false;
-            switch ($priority)
-            {
-            case PEAR_LOG_EMERG:
-            case PEAR_LOG_ALERT:
-            case PEAR_LOG_CRIT:
-                $colorCode = "%R";
-                break;
-            case PEAR_LOG_ERR:
-                $colorCode = "%r";
-                break;
-            case PEAR_LOG_WARNING:
-                $colorCode = "%y";
-                break;
-            case PEAR_LOG_DEBUG:
-                $colorCode = "%K";
-                break;
-            }
-            if ($colorCode)
-            {
-                $message = $this->color->convert(
-                    $colorCode . 
-                    $this->color->escape($message) .
-                    "%n"
-				);
-            }
+        case self::LOG_CONSOLE:
+            $this->consoleLog->setMask($mask);
+            break;
+        case self::LOG_FILE:
+            $this->logFile->setMask($mask);
+            break;
+        default:
+            throw new PieCrustException("No such child for the Chef log: {$which}");
         }
+    }
 
-        return parent::log($message, $priority);
+    public function addFileLog($path)
+    {
+        $this->fileLog = Log::factory('file', $path, 'ChefFile');
+        $this->addChild($this->fileLog);
     }
 
     public function exception($e, $debugMode = false)
     {
+        $log = $this;
         if ($debugMode)
         {
-            $this->emerg($e->getMessage());
-            $this->debug($e->getTraceAsString());
+            $log->emerg($e->getMessage());
+            $log->debug($e->getTraceAsString());
             $e = $e->getPrevious();
             while ($e)
             {
-                $this->err("-----------------");
-                $this->err($e->getMessage());
-                $this->debug($e->getTraceAsString());
+                $log->err("-----------------");
+                $log->err($e->getMessage());
+                $log->debug($e->getTraceAsString());
                 $e = $e->getPrevious();
             }
-            $this->err("-----------------");
+            $log->err("-----------------");
         }
         else
         {
-            $this->emerg($e->getMessage());
+            $log->emerg($e->getMessage());
             $e = $e->getPrevious();
             while ($e)
             {
-                $this->err($e->getMessage());
+                $log->err($e->getMessage());
                 $e = $e->getPrevious();
             }
         }
