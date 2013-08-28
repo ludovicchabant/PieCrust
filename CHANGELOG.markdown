@@ -55,6 +55,7 @@ Fresh changes
 * NEW: File-systems (`flat`, etc.) are now extensible through plugins, and
   several of them can be combined by using comma-separated names in the
   `site/posts_fs` configuration setting.
+* NEW: Added `--log` option to log `chef` output to a file.
 * BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
 * BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
