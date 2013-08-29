@@ -39,7 +39,8 @@ class BuiltinPlugin extends PieCrustPlugin
         return array(
             new \PieCrust\IO\FlatFileSystem(),
             new \PieCrust\IO\ShallowFileSystem(),
-            new \PieCrust\IO\HierarchicalFileSystem()
+            new \PieCrust\IO\HierarchicalFileSystem(),
+            new \PieCrust\IO\DropboxFileSystem()
         );
     }
 
