@@ -194,6 +194,7 @@ class FileSystemTest extends PieCrustTestCase
             ->withAsset('_content/pages/Thumbs.db', 'fake')
             ->withAsset('_content/pages/foo/.DS_Store', 'fake')
             ->withAsset('_content/pages/foo/Thumbs.db', 'fake')
+            ->withAsset('_content/pages/foo/test-stuff.html~', 'fake')
             ->withAsset('_content/pages/foo/.svn/blah', 'fake');
 
         $pc = new MockPieCrust();

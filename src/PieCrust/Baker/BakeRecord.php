@@ -127,7 +127,10 @@ class BakeRecord
             }
             else
             {
-                $knownCombinations[$blogKey] = array_unique(array_merge($knownCombinations[$blogKey], $combinations));
+                $combinedCombinations = array_merge($knownCombinations[$blogKey], $combinations);
+                // `array_unique` does not work well with multi-arrays, so we have to use
+                // this workaround.... sigh.
+                $knownCombinations[$blogKey] = array_map("unserialize", array_unique(array_map("serialize", $combinedCombinations)));
             }
         }
         $this->bakeInfo['knownTagCombinations'] = $knownCombinations;
