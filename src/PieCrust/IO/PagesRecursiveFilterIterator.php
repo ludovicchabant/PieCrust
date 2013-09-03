@@ -20,6 +20,8 @@ class PagesRecursiveFilterIterator extends \RecursiveFilterIterator
             return false;
         if (in_array($current, $filter))
             return false;
+        if ($current[strlen($current) - 1] == '~')
+            return false;
         return true;
     }
 

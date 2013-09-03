@@ -18,6 +18,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.0.3 (2013-09-02)
+
+* BUG: Fixed some problems, under some versions of PHP, with baking multi-tags.
+* BUG: Skip page files that end with `~`.
+
 ### 1.0.2 (2013-06-13)
 
 * BUG: Fixed a bug with the `pagination` object returning empty `next_post` and
