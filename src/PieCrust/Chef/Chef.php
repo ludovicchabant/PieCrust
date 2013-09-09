@@ -140,6 +140,7 @@ class Chef
             'description' => 'The PieCrust chef manages your website.',
             'version' => PieCrustDefaults::VERSION
         ));
+        $parser->renderer = new ChefCommandLineRenderer($parser);
         $this->addCommonOptionsAndArguments($parser);
         // Sort commands by name.
         $sortedCommands = $pieCrust->getPluginLoader()->getCommands();

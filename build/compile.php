@@ -8,9 +8,21 @@ if (!Phar::canWrite())
     die("Can't create Phar file because 'phar.readonly' is enabled in 'php.ini'." . PHP_EOL);
 
 $pharFile = 'piecrust.phar';
-if ($argc > 1)
-    $pharFile = $argv[1];
+$options = array();
+for ($i = 1; $i < $argc; ++$i)
+{
+    $name = $argv[$i];
+    if ($name[0] == '-')
+    {
+        if ($name == '--core-libs')
+            $options['core_libs_only'] = true;
+    }
+    else
+    {
+        $pharFile = $name;
+    }
+}
 
 $compiler = new PieCrust\Compiler();
-$compiler->compile($pharFile);
+$compiler->compile($pharFile, $options);
 
