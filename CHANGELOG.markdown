@@ -36,6 +36,8 @@ Fresh changes
   `baker/config_variants/default` or `server/config_variants/default`
   variants are found. It should all work as before, however, except for the
   added warning.
+* NEW: Added `selfupdate` command to update an installed (Phar) version of
+  PieCrust.
 * NEW: Added support for tags when importing content from a Wordpress SQL
   database.
 * NEW: Page and post iterators can be filtered with "magic" functions like
