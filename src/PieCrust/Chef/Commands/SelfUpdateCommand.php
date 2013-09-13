@@ -203,7 +203,7 @@ class SelfUpdateCommand extends ChefCommand
             }
 
             $lastDevChangeUrl = "http://backend.bolt80.com/piecrust/default/version";
-            $lastDevChange = file_get_contents($lastDevChangeUrl);
+            $lastDevChange = trim(file_get_contents($lastDevChangeUrl));
             if (!$lastDevChange)
                 throw new PieCrustException("Couldn't get the latest dev version from the PieCrust website. Please try again, or specify a version to upgrade to.");
             if ($lastDevChange != $thisChange)
