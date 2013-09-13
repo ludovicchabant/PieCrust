@@ -165,7 +165,8 @@ class SelfUpdateCommand extends ChefCommand
         {
             // Upgrade to the latest build on the main (dev) branch, if it is
             // not the same already.
-            if ($requirePhar and !Phar::running())
+            $thisPath = Phar::running(false);
+            if ($requirePhar and !$thisPath)
             {
                 throw new PieCrustException("You're not running PieCrust from an installed version. You can either update your Git or Mercurial repository, or download a new tarball.");
             }
@@ -174,7 +175,8 @@ class SelfUpdateCommand extends ChefCommand
             {
                 // We're running inside a Phar archive. Find the commit
                 // from the metadata.
-                $metadata = Phar::getMetadata();
+                $phar = new \Phar($thisPath);
+                $metadata = $phar->getMetadata();
                 if (!$metadata or
                     !isset($metadata['version']) or
                     !$metadata['version'])
@@ -186,6 +188,8 @@ class SelfUpdateCommand extends ChefCommand
                 {
                     throw new PieCrustException("Your current PieCrust executable was built from a locally modified repository. Please specify a version to upgrade to.");
                 }
+                // Free the variable to unlock the file.
+                unset($phar);
             }
             else
             {
