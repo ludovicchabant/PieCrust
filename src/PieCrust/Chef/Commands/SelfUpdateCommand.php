@@ -50,7 +50,8 @@ class SelfUpdateCommand extends ChefCommand
         $requirePhar = true;
         $fromVersion = PieCrustDefaults::VERSION;
         $targetVersion = $result->command->args['target'];
-        if (preg_match(
+        if (substr($targetVersion, 0, 1) == ':' &&
+            preg_match(
             "#".
             "(\\:from\\:([^:]+))?".
             "(\\:to\\:([^:]+))?".
@@ -213,7 +214,7 @@ class SelfUpdateCommand extends ChefCommand
         {
             // Upgrade to the latest version on the stable branch.
             $lastStableVersionUrl = "http://backend.bolt80.com/piecrust/stable/version";
-            $lastStableVersion = file_get_contents($lastStableVersionUrl);
+            $lastStableVersion = trim(file_get_contents($lastStableVersionUrl));
             if (!$lastStableVersion)
                 throw new PieCrustException("Couldn't get the latest stable version from the PieCrust website. Please try again, or specify a version to upgrade to.");
             if ($lastStableVersion != $version)
