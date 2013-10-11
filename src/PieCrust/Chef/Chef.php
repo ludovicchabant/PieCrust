@@ -66,7 +66,7 @@ class Chef
             $userArgc = count($userArgv);
         }
 
-        // Find whether the `--root` or `--config` parameters was given.
+        // Find if whether the `--root` or `--config` parameters were given.
         $rootDir = null;
         $configVariant = null;
         for ($i = 0; $i < count($userArgv); ++$i)
