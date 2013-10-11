@@ -23,6 +23,7 @@ class PageBaker
     
     protected $logger;
     protected $bakeDir;
+    protected $bakeRecord;
     protected $parameters;
     
     protected $paginationDataAccessed;
@@ -44,7 +45,7 @@ class PageBaker
     
     protected $bakedFiles;
     /**
-     * Gets the files that were baked by the last call to 'bake()'.
+     * Gets the files that were baked by the last call to `bake()`.
      */
     public function getBakedFiles()
     {
@@ -54,13 +55,13 @@ class PageBaker
     /**
      * Creates a new instance of PageBaker.
      */
-    public function __construct($bakeDir, array $parameters = array(), $logger = null)
+    public function __construct($bakeDir, $bakeRecord = null, array $parameters = array(), $logger = null)
     {
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
+        $this->bakeRecord = $bakeRecord;
         $this->parameters = array_merge(
             array(
-                'copy_assets' => false,
-                'bake_record' => null
+                'copy_assets' => false
             ), 
             $parameters
         );
@@ -197,6 +198,12 @@ class PageBaker
             throw new PieCrustException("Error baking page '{$pageRelativePath}' (p{$page->getPageNumber()})", 0, $e);
         }
 
+        // Record our work.
+        if ($this->bakeRecord)
+        {
+            $this->bakeRecord->addPageEntry($page, $didBake ? $this : null);
+        }
+
         return $didBake;
     }
     
@@ -225,16 +232,8 @@ class PageBaker
             // the page isn't known to be using posts.
             if (filemtime($page->getPath()) < filemtime($bakePath))
             {
-                $bakeRecord = $this->parameters['bake_record'];
-                if ($bakeRecord)
-                {
-                    $relativePath = PageHelper::getRelativePath($page);
-                    if (!$bakeRecord->wasAnyPostBaked() ||
-                        !$bakeRecord->isPageUsingPosts($relativePath))
-                    {
-                        $doBake = false;
-                    }
-                }
+                // TODO: rebake if the page is using pagination and pages/posts were baked this time.
+                $doBake = false;
             }
         }
         if (!$doBake)

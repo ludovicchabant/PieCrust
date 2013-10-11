@@ -419,7 +419,7 @@ EOD
         $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/' . $name, false);
         
-        $baker = new PageBaker($fs->url('counter'), array('copy_assets' => true));
+        $baker = new PageBaker($fs->url('counter'), null, array('copy_assets' => true));
         $baker->bake($page);
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
