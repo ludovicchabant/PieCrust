@@ -559,9 +559,12 @@ class PieCrustBaker implements IBaker
             $this->logger->debug("'{$path}' is missing from the bake record:");
             foreach ($outputs as $output)
             {
-                $this->logger->debug("  Deleting {$output}");
-                unlink($output);
-                ++$count;
+                if (is_file($output))
+                {
+                    $this->logger->debug("  Deleting {$output}");
+                    unlink($output);
+                    ++$count;
+                }
             }
         }
         foreach ($this->bakeRecord->getAssetsToDelete() as $path => $outputs)
@@ -569,9 +572,12 @@ class PieCrustBaker implements IBaker
             $this->logger->debug("'{$path}' is missing from the bake record:");
             foreach ($outputs as $output)
             {
-                $this->logger->debug("  Deleting {$output}");
-                unlink($output);
-                ++$count;
+                if (is_file($output))
+                {
+                    $this->logger->debug("  Deleting {$output}");
+                    unlink($output);
+                    ++$count;
+                }
             }
         }
         if ($count > 0)
@@ -584,16 +590,6 @@ class PieCrustBaker implements IBaker
         }
     }
 
-    protected function hasPages()
-    { 
-        return ($this->pieCrust->getPagesDir() !== false);
-    }
-
-    protected function hasPosts()
-    {
-        return ($this->pieCrust->getPostsDir() !== false);
-    }
-    
     protected function getPageBaker()
     {
         $parameters = array(
