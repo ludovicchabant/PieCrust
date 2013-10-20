@@ -10,6 +10,7 @@ class MarkdownFormatter implements IFormatter
     protected $pieCrust;
     protected $libDir;
     protected $parser;
+    protected $markdown_config;
     
     public function initialize(IPieCrust $pieCrust)
     {
@@ -19,6 +20,10 @@ class MarkdownFormatter implements IFormatter
         if ($pieCrust->getConfig()->getValue('markdown/use_markdown_extra') === true)
         {
             $this->libDir = 'markdown-extra';
+        }
+        if ($markdown_config = $pieCrust->getConfig()->getValue('markdown/config'))
+        {
+            $this->markdown_config = $markdown_config;
         }
     }
     
@@ -47,6 +52,13 @@ class MarkdownFormatter implements IFormatter
         }
 
         $this->parser->fn_id_prefix = '';
+        if (isset($this->markdown_config))
+        {
+            foreach ($this->markdown_config as $param=>$value)
+            {
+                $this->parser->$param = $value;
+            }
+        }
         $executionContext = $this->pieCrust->getEnvironment()->getExecutionContext();
         if ($executionContext != null)
         {
