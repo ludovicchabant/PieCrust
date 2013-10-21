@@ -152,9 +152,11 @@ class UriBuilder
             break;
         case self::SLUGIFY_MODE_ENCODE:
             if ($method & self::SLUGIFY_FLAG_LOWERCASE)
-                $value = strtolower($value);
+                $value = mb_strtolower($value, 'UTF-8');
             $value = preg_replace('/['.$reserved.']+/', '-', $value);
             $value = rawurlencode($value);
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
             break;
         case self::SLUGIFY_MODE_DASHES:
             $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
@@ -172,7 +174,7 @@ class UriBuilder
                 $value = preg_replace('/['.$reserved.']+/', '-', $value);
 
             if ($method & self::SLUGIFY_FLAG_LOWERCASE)
-                $value = strtolower($value);
+                $value = mb_strtolower($value, 'UTF-8');
         }
         if ($method & self::SLUGIFY_FLAG_DOT_TO_DASH)
         {

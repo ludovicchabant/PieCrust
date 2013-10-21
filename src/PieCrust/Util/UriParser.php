@@ -174,6 +174,7 @@ class UriParser
             return false;
 
         $matches = array();
+        $flags = $pieCrust->getConfig()->getValueUnchecked('site/slugify_flags');
         $tagsPattern = UriBuilder::buildTagUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url'));
         if (preg_match($tagsPattern, $uri, $matches))
         {
@@ -185,10 +186,15 @@ class UriParser
                 sort($tags);
                 if (implode('/', $tags) != $matches['tag'])
                     throw new PieCrustException("Multi-tags must be specified in alphabetical order, sorry.");
+                $tags = array_filter($tags, function($t) use ($flags) {
+                    $t = rawurldecode($t);
+                    return UriBuilder::slugify($t, $flags);
+                });
             }
             else
             {
-                $tags = $matches['tag'];
+                $tags = rawurldecode($matches['tag']);
+                $tags = UriBuilder::slugify($tags, $flags);
             }
             
             $pageInfo['type'] = IPage::TYPE_TAG;
@@ -220,12 +226,15 @@ class UriParser
         if ($path === false)
             return false;
 
+        $flags = $pieCrust->getConfig()->getValueUnchecked('site/slugify_flags');
         $categoryPattern = UriBuilder::buildCategoryUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url'));
         if (preg_match($categoryPattern, $uri, $matches))
         {
+            $cat = rawurldecode($matches['cat']);
+            $cat = UriBuilder::slugify($cat, $flags);
             $pageInfo['type'] = IPage::TYPE_CATEGORY;
             $pageInfo['blogKey'] = $blogKey;
-            $pageInfo['key'] = $matches['cat'];
+            $pageInfo['key'] = $cat;
             $pageInfo['path'] = $path;
             $pageInfo['was_path_checked'] = true;
             return true;

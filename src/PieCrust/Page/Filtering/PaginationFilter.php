@@ -57,8 +57,8 @@ class PaginationFilter
                 {
                     $pageClause->addClause(
                         new HasFilterClause(
-                            'tags', 
-                            $k, 
+                            'tags',
+                            $k,
                             function($t) use ($flags) {
                                 return UriBuilder::slugify($t, $flags);
                             }
@@ -69,8 +69,8 @@ class PaginationFilter
             else
             {
                 $pageClause = new HasFilterClause(
-                    'tags', 
-                    $pageKey, 
+                    'tags',
+                    $pageKey,
                     function($t) use ($flags) {
                         return UriBuilder::slugify($t, $flags);
                     }
@@ -79,8 +79,8 @@ class PaginationFilter
             break;
         case IPage::TYPE_CATEGORY:
             $pageClause = new IsFilterClause(
-                'category', 
-                $page->getPageKey(), 
+                'category',
+                $page->getPageKey(),
                 function($c) use ($flags) {
                     return UriBuilder::slugify($c, $flags);
                 }
