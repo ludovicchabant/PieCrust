@@ -76,6 +76,8 @@ class Chef
             if (substr($arg, 0, strlen('--root=')) == '--root=')
             {
                 $rootDir = substr($arg, strlen('--root='));
+                if (substr($rootDir, 0, 1) == '~')
+                    $rootDir = getenv("HOME") . substr($rootDir, 1);
             }
             elseif ($arg == '--root')
             {
