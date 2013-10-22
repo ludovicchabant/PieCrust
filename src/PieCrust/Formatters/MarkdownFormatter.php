@@ -10,7 +10,8 @@ class MarkdownFormatter implements IFormatter
     protected $pieCrust;
     protected $libDir;
     protected $parser;
-    
+    protected $markdownConfig;
+
     public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
@@ -20,8 +21,10 @@ class MarkdownFormatter implements IFormatter
         {
             $this->libDir = 'markdown-extra';
         }
+
+        $this->markdownConfig = $pieCrust->getConfig()->getValue('markdown/config');
     }
-    
+
     public function getPriority()
     {
         return IFormatter::PRIORITY_DEFAULT;
@@ -31,12 +34,12 @@ class MarkdownFormatter implements IFormatter
     {
         return true;
     }
-    
+
     public function supportsFormat($format)
     {
         return preg_match('/markdown|mdown|mkdn?|md/i', $format);
     }
-    
+
     public function format($text)
     {
         if ($this->parser == null)
@@ -44,6 +47,14 @@ class MarkdownFormatter implements IFormatter
             require_once ('markdown/' . $this->libDir . '/markdown.php');
             $parserClass = MARKDOWN_PARSER_CLASS;
             $this->parser = new $parserClass;
+
+            if ($this->markdownConfig)
+            {
+                foreach ($this->markdownConfig as $param => $value)
+                {
+                    $this->parser->$param = $value;
+                }
+            }
         }
 
         $this->parser->fn_id_prefix = '';
@@ -57,6 +68,7 @@ class MarkdownFormatter implements IFormatter
                 $this->parser->fn_id_prefix = $footNoteId . "-";
             }
         }
+
         return $this->parser->transform($text);
     }
 }
