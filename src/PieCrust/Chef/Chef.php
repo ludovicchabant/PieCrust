@@ -34,16 +34,38 @@ class Chef
         catch (Exception $e)
         {
             echo "Fatal Error: " . $e->getMessage() . PHP_EOL;
-            echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
-            echo $e->getTraceAsString() . PHP_EOL;
-            $e = $e->getPrevious();
-            while ($e)
+
+            // Do some poor man's parsing, because at this point, anything
+            // could be fucked up.
+            if (!$userArgv)
             {
-                echo PHP_EOL;
-                echo $e->getMessage() . PHP_EOL;
+                $userArgv = $_SERVER['argv'];
+            }
+            if (in_array('--debug', $userArgv))
+            {
                 echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
                 echo $e->getTraceAsString() . PHP_EOL;
                 $e = $e->getPrevious();
+                while ($e)
+                {
+                    echo PHP_EOL;
+                    echo $e->getMessage() . PHP_EOL;
+                    echo $e->getFile() . ":" . $e->getLine() . PHP_EOL;
+                    echo $e->getTraceAsString() . PHP_EOL;
+                    $e = $e->getPrevious();
+                }
+            }
+            else
+            {
+                echo PHP_EOL;
+                echo "More error details follow:" . PHP_EOL;
+                $e = $e->getPrevious();
+                while ($e)
+                {
+                    echo PHP_EOL;
+                    echo $e->getMessage() . PHP_EOL;
+                    $e = $e->getPrevious();
+                }
             }
             return 2;
         }
