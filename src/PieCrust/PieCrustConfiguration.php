@@ -114,6 +114,11 @@ class PieCrustConfiguration extends Configuration
                     {
                         $this->config['site']['root'] = ServerHelper::getSiteRoot($_SERVER);
                     }
+
+                    // Some things in the config change the PHP envrionment.
+                    // Do that now before we do the early return.
+                    $this->applyEnvironmentChanges();
+
                     return;
                 }
             }
@@ -170,6 +175,9 @@ class PieCrustConfiguration extends Configuration
             // No path given. Just create a default configuration.
             $this->config = $this->validateConfig(array());
         }
+
+        // Some things in the config change the PHP envrionment.
+        $this->applyEnvironmentChanges();
     }
     
     protected function validateConfig(array $config)
@@ -348,10 +356,33 @@ class PieCrustConfiguration extends Configuration
         $finalSlugify |= UriBuilder::SLUGIFY_FLAG_DOT_TO_DASH;
         $siteConfig['slugify_flags'] = $finalSlugify;
 
-        // Set the timezone if it's specified.
+        return $config;
+    }
+
+    private function applyEnvironmentChanges()
+    {
+        $siteConfig = &$this->config['site'];
+
+        // Set the timezone if it's specified. Otherwise, check that we have
+        // a valid timezone.
         if ($siteConfig['timezone'])
         {
             date_default_timezone_set($siteConfig['timezone']);
+        }
+        else
+        {
+            try
+            {
+                date_default_timezone_get();
+            }
+            catch (\ErrorException $ex)
+            {
+                throw new PieCrustException(
+                    "Your PHP installation is incomplete: you need to specify the `date.timezone` setting in your `php.ini` file. You can alternatively specify a `site/timezone` setting in your site configuration.",
+                    0,
+                    $ex
+                );
+            }
         }
 
         // Set the locale if it's specified.
@@ -363,7 +394,5 @@ class PieCrustConfiguration extends Configuration
         {
             $siteConfig['locale'] = setlocale(LC_ALL, '0');
         }
-        
-        return $config;
     }
 }
