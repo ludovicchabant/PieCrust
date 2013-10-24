@@ -68,6 +68,7 @@ BuildHeadBinary() {
     fi
 }
 BuildHeadBinary default
+BuildHeadBinary stable
 
 # Save a file stating the latest version.
 LATEST_VERSION=`hg parents --rev stable --template '{latesttag}'`
