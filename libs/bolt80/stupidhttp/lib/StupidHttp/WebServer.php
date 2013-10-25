@@ -275,7 +275,7 @@ foreach ($shady_functions as $name)
 {
     if (!is_callable($name))
     {
-        die("StupidHttp: Function '" . $name. "' is not available on your system.");
+        die("StupidHttp: Function '" . $name. "' is not available on your system. You may need to enable the 'php_sockets' extension in your php.ini file.");
     }
 }
 unset($shady_functions);
