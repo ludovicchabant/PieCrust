@@ -554,9 +554,16 @@ class PieCrustBaker implements IBaker
     {
         $count = 0;
         $start = microtime(true);
-        foreach ($this->bakeRecord->getPagesToDelete() as $path => $outputs)
+        foreach ($this->bakeRecord->getPagesToDelete() as $path => $deleteInfo)
         {
-            $this->logger->debug("'{$path}' is missing from the bake record:");
+            $reason = $deleteInfo['type'];
+            $outputs = $deleteInfo['files'];
+
+            if ($reason == TransitionalBakeRecord::DELETION_MISSING)
+                $this->logger->debug("'{$path}' is missing from the bake record:");
+            elseif ($reason == TransitionalBakeRecord::DELETION_CHANGED)
+                $this->logger->debug("'{$path}' has different outputs than last time:");
+
             foreach ($outputs as $output)
             {
                 if (is_file($output))

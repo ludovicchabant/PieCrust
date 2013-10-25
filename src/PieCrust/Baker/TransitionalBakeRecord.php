@@ -12,6 +12,11 @@ use PieCrust\PieCrustDefaults;
  */
 class TransitionalBakeRecord
 {
+    // Deletion types {{{
+    const DELETION_MISSING = 1;
+    const DELETION_CHANGED = 2;
+    // }}}
+
     protected $pageTransitions;
     protected $assetTransitions;
 
@@ -246,7 +251,24 @@ class TransitionalBakeRecord
 
             if ($prev && !$cur)
             {
-                $deletedPaths[$prev->path] = $prev->outputs;
+                $deletedPaths[$prev->path] = array(
+                    'type' => self::DELETION_MISSING,
+                    'files' => $prev->outputs
+                );
+            }
+            else if ($prev && $cur)
+            {
+                $garbageOutputs = array_diff(
+                    $prev->outputs,
+                    $cur->outputs
+                );
+                if ($garbageOutputs)
+                {
+                    $deletedPaths[$prev->path] = array(
+                        'type' => self::DELETION_CHANGED,
+                        'files' => $garbageOutputs
+                    );
+                }
             }
         }
         return $deletedPaths;
