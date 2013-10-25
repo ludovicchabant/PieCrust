@@ -4,6 +4,7 @@ namespace PieCrust\Tests;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
 use PieCrust\Page\Iteration\PageIterator;
@@ -518,6 +519,37 @@ class PaginatorTest extends PieCrustTestCase
         $paginator = new Paginator($page);
         $paginator->setPaginationDataSource($posts);
         $this->assertExpectedPostsData($expectedIndices, $paginator->posts());
+    }
+
+    public function testAssetsInPagination()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withPost('foo1', 1, 10, 2013, array('title' => 'Foo 1'))
+            ->withAsset('_content/posts/2013-10-01_foo1-assets/thumbnail.jpg', 'Thumb 1')
+            ->withPost('foo2', 2, 10, 2013, array('title' => 'Foo 2'))
+            ->withAsset('_content/posts/2013-10-02_foo2-assets/thumbnail.jpg', 'Thumb 2')
+            ->withPost('foo3', 3, 10, 2013, array('title' => 'Foo 3'))
+            ->withAsset('_content/posts/2013-10-03_foo3-assets/thumbnail.jpg', 'Thumb 3')
+            ->withPost('foo4', 4, 10, 2013, array('title' => 'Foo 4'))
+            ->withAsset('_content/posts/2013-10-04_foo4-assets/thumbnail.jpg', 'Thumb 4')
+            ->withPage('whatever', array(), <<<EOD
+{% for p in pagination.posts %}
+{{ p.title }}: {{ p.assets.thumbnail }}
+{% endfor %}
+EOD
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, '/whatever', false);
+        $actual = $page->getContentSegment();
+        $expected = <<<EOD
+Foo 4: /_content/posts/2013-10-04_foo4-assets/thumbnail.jpg
+Foo 3: /_content/posts/2013-10-03_foo3-assets/thumbnail.jpg
+Foo 2: /_content/posts/2013-10-02_foo2-assets/thumbnail.jpg
+Foo 1: /_content/posts/2013-10-01_foo1-assets/thumbnail.jpg
+
+EOD;
+        $this->assertEquals($expected, $actual);
     }
     
     protected function buildPaginationDataSource(IPieCrust $pc, $postCount)
