@@ -2,27 +2,24 @@
 
 namespace PieCrust\Formatters;
 
+use Michelf\Markdown;
+use Michelf\MarkdownExtra;
 use PieCrust\IPieCrust;
 
 
 class MarkdownFormatter implements IFormatter
 {
     protected $pieCrust;
-    protected $libDir;
+    protected $useExtra;
     protected $parser;
-    protected $markdownConfig;
+    protected $parserConfig;
 
     public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->parser = null;
-        $this->libDir = 'markdown';
-        if ($pieCrust->getConfig()->getValue('markdown/use_markdown_extra') === true)
-        {
-            $this->libDir = 'markdown-extra';
-        }
-
-        $this->markdownConfig = $pieCrust->getConfig()->getValue('markdown/config');
+        $this->useExtra = $pieCrust->getConfig()->getValue('markdown/use_markdown_extra');
+        $this->parserConfig = $pieCrust->getConfig()->getValue('markdown/config');
     }
 
     public function getPriority()
@@ -44,13 +41,14 @@ class MarkdownFormatter implements IFormatter
     {
         if ($this->parser == null)
         {
-            require_once ('markdown/' . $this->libDir . '/markdown.php');
-            $parserClass = MARKDOWN_PARSER_CLASS;
-            $this->parser = new $parserClass;
+            if ($this->useExtra)
+                $this->parser = new MarkdownExtra();
+            else
+                $this->parser = new Markdown();
 
-            if ($this->markdownConfig)
+            if ($this->parserConfig)
             {
-                foreach ($this->markdownConfig as $param => $value)
+                foreach ($this->parserConfig as $param => $value)
                 {
                     $this->parser->$param = $value;
                 }
