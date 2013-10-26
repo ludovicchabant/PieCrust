@@ -31,11 +31,14 @@ Fresh changes
   found in the `variants` section of the site configuration. The `bake` and
   `serve` commands will apply variants `variants/server` and `variants/baker`,
   respectively, if found.
-* CHANGES: As a result of the previous change, you will get a warning if you use
+* CHANGE: As a result of the previous change, you will get a warning if you use
   the old `--config` option on those commands, or if the old
   `baker/config_variants/default` or `server/config_variants/default`
   variants are found. It should all work as before, however, except for the
   added warning.
+* CHANGE: For multi-blogs, a post will try to get its layout from the
+  `<blogname>/post` template first, and then the global default `post` template
+  if it doesn't exist.
 * NEW: Added `selfupdate` command to update an installed (Phar) version of
   PieCrust.
 * NEW: Added support for tags when importing content from a Wordpress SQL
@@ -59,10 +62,19 @@ Fresh changes
   `site/posts_fs` configuration setting.
 * NEW: Added `--log` option to log `chef` output to a file.
 * NEW: Added `dropbox` file-system.
+* NEW: Added support for setting parameters on the Markdown formatter.
+* NEW: Added access to the `assets` from the pagination data, or any other page
+  object from a page iterator.
 * BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
   database.
 * BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
 * BUG: Fixed a bug with sorting siblings/family pages with a sub-property.
+* BUG: Baking a website will now delete files from a previous bake that are not
+  valid anymore. This fix required a pretty big refactor of the baking process,
+  so it may itself introduce a few other bugs :)
+* BUG: When `lowercase` is part of the slufigy flags (which is the case by
+  default), PieCrust now correctly matches tags/categories in the URL regardless
+  of the casing.
 * IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
   stable during a bake. Also removed PHP's default memory limit when running
   PieCrust with `chef`.
