@@ -45,9 +45,24 @@ class PageConfiguration extends Configuration
         // Add the default page config values.
         $pieCrustConfig = $page->getApp()->getConfig();
         $blogKeys = $pieCrustConfig->getValueUnchecked('site/blogs');
+        $layoutName = PieCrustDefaults::DEFAULT_PAGE_TEMPLATE_NAME;
+        if (PageHelper::isPost($page))
+        {
+            $layoutName = PieCrustDefaults::DEFAULT_POST_TEMPLATE_NAME;
+            if ($page->getBlogKey())
+            {
+                // If this is a post in a multi-blog environment, make it use
+                // the `<blogname>/post.html` layout first by default, and
+                // then fallback on `post.html` if that doesn't exist.
+                $layoutName = 
+                    $page->getBlogKey() . '/' . PieCrustDefaults::DEFAULT_POST_TEMPLATE_NAME .
+                    ',' .
+                    $layoutName;
+            }
+        }
         $validatedConfig = array_merge(
             array(
-                'layout' => PageHelper::isPost($page) ? PieCrustDefaults::DEFAULT_POST_TEMPLATE_NAME : PieCrustDefaults::DEFAULT_PAGE_TEMPLATE_NAME,
+                'layout' => $layoutName,
                 'format' => $pieCrustConfig->getValueUnchecked('site/default_format'),
                 'template_engine' => $pieCrustConfig->getValueUnchecked('site/default_template_engine'),
                 'content_type' => 'html',

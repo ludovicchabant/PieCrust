@@ -116,7 +116,7 @@ class PathHelper
                 return $path;
             }
         }
-        throw new PieCrustException("Couldn't find template '" . $templateName . "' in: " . implode(', ', $pieCrust->getTemplatesDirs()));
+        return false;
     }
 
     public static function getUserOrThemePath(IPieCrust $pieCrust, $relativePath, $themePath = false)

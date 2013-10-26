@@ -46,28 +46,32 @@ class PageRenderer
         $executionContext->pushPage($this->page);
         
         // Get the template name.
-        $templateName = $this->page->getConfig()->getValue('layout');
-        if ($templateName == null or $templateName == '' or $templateName == 'none')
+        $templateNames = $this->page->getConfig()->getValue('layout');
+        if ($templateNames == null or $templateNames == '' or $templateNames == 'none')
         {
-            $templateName = false;
+            $templateNames = false;
         }
         else
         {
-            if (!preg_match('/\.[a-zA-Z0-9]+$/', $templateName))
+            $templateNames = explode(',', $templateNames);
+            foreach ($templateNames as &$name)
             {
-                $templateName .= '.html';
+                if (!preg_match('/\.[a-zA-Z0-9]+$/', $name))
+                {
+                    $name .= '.html';
+                }
             }
         }
         
-        if ($templateName !== false)
+        if ($templateNames !== false)
         {
             // Get the template engine and the page data.
-            $extension = pathinfo($templateName, PATHINFO_EXTENSION);
+            $extension = pathinfo($templateNames[0], PATHINFO_EXTENSION);
             $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $extension);
             
             // Render the page.
             $data = DataBuilder::getTemplateRenderingData($this->page);
-            $templateEngine->renderFile($templateName, $data);
+            $templateEngine->renderFile($templateNames, $data);
         }
         else
         {

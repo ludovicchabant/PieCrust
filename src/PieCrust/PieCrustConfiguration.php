@@ -323,7 +323,7 @@ class PieCrustConfiguration extends Configuration
         }
 
         // Validate the slugify mode and optional flags.
-        $slugifySetting = explode('|', $siteConfig['slugify']);
+        $slugifySetting = preg_split("/[\\s\\|,]+/", $siteConfig['slugify']);
         $slugifyModes = array(
             'none' => UriBuilder::SLUGIFY_MODE_NONE,
             'transliterate' => UriBuilder::SLUGIFY_MODE_TRANSLITERATE,

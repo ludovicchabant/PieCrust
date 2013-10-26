@@ -57,7 +57,7 @@ class TemplateRenderingTest extends PieCrustTestCase
             $data['page'] = array(
                     'title' => 'The title of the page'
                 );
-            $engine->renderFile($testInfo['basename'], $data);
+            $engine->renderFile(array($testInfo['basename']), $data);
         }
         catch (Exception $e)
         {
