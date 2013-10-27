@@ -49,20 +49,11 @@ class UriBuilder
     public static function buildPostUri(IPieCrust $pieCrust, $blogKey, $postInfo)
     {
         $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
-        if (is_int($postInfo['month']))
-        {
-            $postInfo['month'] = sprintf('%02s', $postInfo['month']);
-        }
-        if (is_int($postInfo['day']))
-        {
-            $postInfo['day'] = sprintf('%02s', $postInfo['day']);
-        }
-        
         $replacements = array(
-            '%year%' => $postInfo['year'],
-            '%month%' => $postInfo['month'],
-            '%day%' => $postInfo['day'],
-            '%slug%' => $postInfo['name']
+            '%year%' => $postInfo->year,
+            '%month%' => $postInfo->month,
+            '%day%' => $postInfo->day,
+            '%slug%' => $postInfo->name
         );
         return str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat);
     }
@@ -161,9 +152,11 @@ class UriBuilder
             break;
         case self::SLUGIFY_MODE_ENCODE:
             if ($method & self::SLUGIFY_FLAG_LOWERCASE)
-                $value = strtolower($value);
+                $value = mb_strtolower($value, 'UTF-8');
             $value = preg_replace('/['.$reserved.']+/', '-', $value);
             $value = rawurlencode($value);
+            if ($method & self::SLUGIFY_FLAG_LOWERCASE)
+                $value = strtolower($value);
             break;
         case self::SLUGIFY_MODE_DASHES:
             $value = preg_replace("/[^a-zA-Z0-9\\-\\._~]+/", '-', $value);
@@ -181,7 +174,7 @@ class UriBuilder
                 $value = preg_replace('/['.$reserved.']+/', '-', $value);
 
             if ($method & self::SLUGIFY_FLAG_LOWERCASE)
-                $value = strtolower($value);
+                $value = mb_strtolower($value, 'UTF-8');
         }
         if ($method & self::SLUGIFY_FLAG_DOT_TO_DASH)
         {

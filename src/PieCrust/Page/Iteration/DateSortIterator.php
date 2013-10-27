@@ -35,13 +35,23 @@ class DateSortIterator extends BaseIterator implements \OuterIterator
 
     protected function sortByReverseTimestamp($post1, $post2)
     {
-        $timestamp1 = $post1->getDate();
-        $timestamp2 = $post2->getDate();
+        $timestamp1 = $post1->getDate(false);
+        $timestamp2 = $post2->getDate(false);
 
         if ($timestamp1 == $timestamp2)
-            return 0;
+        {
+            $timestamp1 = $post1->getDate(true);
+            $timestamp2 = $post2->getDate(true);
+            if ($timestamp1 == $timestamp2)
+                return 0;
+            if ($timestamp1 < $timestamp2)
+                return 1;
+            return -1;
+        }
         if ($timestamp1 < $timestamp2)
+        {
             return 1;
+        }
         return -1;
     }
 }

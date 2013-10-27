@@ -18,22 +18,36 @@ class GeshiTokenParser extends \Twig_TokenParser
         $params = array(
             "language" => false,
             "line_numbers" => false,
-            "use_classes" => false
+            "use_classes" => false,
+            "class" => false,
+            "id" => false
         );
+        $needsValue = array("class", "id");
+
         $lineno = $token->getLine();
-        $params["language"] = $this->parser->getStream()->expect(Twig_Token::STRING_TYPE)->getValue();
-        while ($this->parser->getStream()->test(Twig_Token::BLOCK_END_TYPE) == false)
+        $stream = $this->parser->getStream();
+        $params["language"] = $stream->expect(Twig_Token::STRING_TYPE)->getValue();
+        while ($stream->test(Twig_Token::BLOCK_END_TYPE) == false)
         {
-            $argName = $this->parser->getStream()->expect(Twig_Token::NAME_TYPE)->getValue();
+            $argName = $stream->expect(Twig_Token::NAME_TYPE)->getValue();
             if (!isset($params[$argName]))
+                throw new Twig_Error_Syntax("'{$argName}' is not a valid argument for the GeSHi tag.", $lineno);
+            if (in_array($argName, $needsValue))
             {
-                throw new Twig_Error_Syntax('"' . $argName . '" is not a valid argument for the GeSHi tag.', $lineno);
+                $operator = $stream->expect(Twig_Token::OPERATOR_TYPE)->getValue();
+                if ($operator != '=')
+                    throw new Twig_Error_Syntax("'{$argName}' must be followed by an equal sign and a value.", $lineno);
+                $argValue = $stream->expect(Twig_Token::STRING_TYPE)->getValue();
+                $params[$argName] = $argValue;
             }
-            $params[$argName] = true;
+            else
+            {
+                $params[$argName] = true;
+            }
         }
-        $this->parser->getStream()->expect(Twig_Token::BLOCK_END_TYPE);
+        $stream->expect(Twig_Token::BLOCK_END_TYPE);
         $body = $this->parser->subparse(array($this, 'decideBlockEnd'), true);
-        $this->parser->getStream()->expect(Twig_Token::BLOCK_END_TYPE);
+        $stream->expect(Twig_Token::BLOCK_END_TYPE);
 
         return new GeshiNode($params, $body, $lineno, $this->getTag());
     }

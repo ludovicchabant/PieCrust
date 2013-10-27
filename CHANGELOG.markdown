@@ -15,6 +15,70 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* BREAKING CHANGE: Removed all options and features that were marked as
+  deprecated (_i.e._ they previously triggered a warning message).
+* BREAKING CHANGE: The `all_page_numbers` template method now takes a
+  *radius* for the number of page numbers to return.
+* CHANGE: Removed the sample website (it's being turned into a theme).
+* CHANGE: Added `.md` and `.textile` as default auto-format extensions
+  (respectively for Markdown and Textile formatting).
+* CHANGE: The `sortBy` function on page and post iterators has been renamed to
+  just `sort`.
+* CHANGE: You can now specify the website's root for `chef` by using either
+  `--root=/path/to/root` or `--root /path/to/root`.
+* CHANGE: You can now specify configuration variants to apply for `chef` by
+  using `--config=variant` or `--config variant`. Configuration variants are
+  found in the `variants` section of the site configuration. The `bake` and
+  `serve` commands will apply variants `variants/server` and `variants/baker`,
+  respectively, if found.
+* CHANGE: As a result of the previous change, you will get a warning if you use
+  the old `--config` option on those commands, or if the old
+  `baker/config_variants/default` or `server/config_variants/default`
+  variants are found. It should all work as before, however, except for the
+  added warning.
+* CHANGE: For multi-blogs, a post will try to get its layout from the
+  `<blogname>/post` template first, and then the global default `post` template
+  if it doesn't exist.
+* NEW: Added `selfupdate` command to update an installed (Phar) version of
+  PieCrust.
+* NEW: Added support for tags when importing content from a Wordpress SQL
+  database.
+* NEW: Page and post iterators can be filtered with "magic" functions like
+  `is_foo('value')` or `has_bar('value')`, to prevent having to write a
+  full-blown filter in the page config header.
+* NEW: Ability to override the default page or post layout when import a blog
+  from Wordpress.
+* NEW: Added `pccache` tag to Twig for caching parts of markup during the bake.
+* NEW: You can pass a parameter to `all_page_numbers` to limit the number of
+  page numbers you get back.
+* NEW: Ability to specify an overall `class` and/or `id` for Geshi blocks
+  (syntax highlighting).
+* NEW: Added the `IBakerAssistant` API for plugins that want to do extra
+  processing during the bake.
+* NEW: Added the `IDataProvider` API for plugins that want to expose custom
+  template data to pages.
+* NEW: File-systems (`flat`, etc.) are now extensible through plugins, and
+  several of them can be combined by using comma-separated names in the
+  `site/posts_fs` configuration setting.
+* NEW: Added `--log` option to log `chef` output to a file.
+* NEW: Added `dropbox` file-system.
+* NEW: Added support for setting parameters on the Markdown formatter.
+* NEW: Added access to the `assets` from the pagination data, or any other page
+  object from a page iterator.
+* BUG: Fixed an issue with encoding when importing content from a Wordpress SQL
+  database.
+* BUG: Fixed an issue with the `geshi` node in Twig adding extra empty lines.
+* BUG: Fixed a bug with sorting siblings/family pages with a sub-property.
+* BUG: Baking a website will now delete files from a previous bake that are not
+  valid anymore. This fix required a pretty big refactor of the baking process,
+  so it may itself introduce a few other bugs :)
+* BUG: When `lowercase` is part of the slufigy flags (which is the case by
+  default), PieCrust now correctly matches tags/categories in the URL regardless
+  of the casing.
+* IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
+  stable during a bake. Also removed PHP's default memory limit when running
+  PieCrust with `chef`.
+
 Frozen changes
 --------------
 
@@ -68,8 +132,8 @@ Frozen changes
 * BREAKING CHANGE: The `pagination.posts` iterator now prevents the user from
   modifying it, which could otherwise result in confusing behaviour.
 * BREAKING CHANGE: Global `chef` options like `--root`, `--debug` or `--quiet`
-  are not really global, and must be specified before the command name.
-* BREAKING BUG FIX: Monthly blog archives were incorrectly order
+  are now really global, and must be specified before the command name.
+* BREAKING BUG FIX: Monthly blog archives were incorrectly ordered
   chronologically, instead of reverse-chronologically.
 * NEW: Added `prepare feed` command to create RSS/Atom feeds.
 * NEW: Added `plugins update` command to update installed plugins. For now, this

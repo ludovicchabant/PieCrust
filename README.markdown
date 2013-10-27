@@ -14,14 +14,16 @@ Quickstart
 
 If you want to quickly give it a spin:
 
-    cd website
+    bin/chef init mywebsite
+    cd mywebsite
     ../bin/chef serve
 
-It should start your default browser and show you the sample website. You can
-then edit files and see what changes.
+It should create a new empty site in a `mywebsite` folder, and then start your
+default browser to show it to you. Use `chef prepare page` and `chef prepare
+post` to create pages and posts, and edit those in your favorite text editor.
 
 When you're happy, run `../bin/chef bake` to generate the final static website,
-which you'll find in `website/_counter`.
+which you'll find in `_counter`.
 
 
 Branches

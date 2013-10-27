@@ -7,7 +7,7 @@ EXE_DIR=`pwd`
 CLONE_DIR=$EXE_DIR/piecrust-src
 OUT_DIR=$EXE_DIR/piecrust-bin
 BUILD_SCRIPT=build/compile.php
-REPO_URL="$EXE_DIR"
+REPO_URL=`hg root`
 PHAR_FILE=piecrust.phar
 VERSION_FILE=version
 BUILDLOG_FILE=buildlog
@@ -39,7 +39,7 @@ fi
 # Clone the PieCrust source if needed.
 if [ ! -d "$CLONE_DIR" ]; then
     echo "Cloning PieCrust repository into: $CLONE_DIR"
-    hg clone $REPO_URL $CLONE_DIR
+    hg clone "$REPO_URL" "$CLONE_DIR"
 fi
 
 # Create the output directory if needed.
@@ -51,7 +51,7 @@ fi
 cd "$CLONE_DIR"
 
 # Bring the clone up to date.
-hg pull $REPO_URL -u
+hg pull "$REPO_URL" -u
 
 # Create binaries for default and stable branches.
 BuildHeadBinary() {
@@ -70,6 +70,10 @@ BuildHeadBinary() {
 BuildHeadBinary default
 BuildHeadBinary stable
 
+# Save a file stating the latest version.
+LATEST_VERSION=`hg parents --rev stable --template '{latesttag}'`
+mkdir -p "$OUT_DIR/stable/"
+echo $LATEST_VERSION > "$OUT_DIR/stable/$VERSION_FILE"
 
 # Create binaries for tagged releases.
 BuildTaggedBinary() {
@@ -112,4 +116,6 @@ BuildTaggedBinaries() {
 }
 BuildTaggedBinaries
 
+echo "Done building."
+return 0
 

@@ -34,6 +34,16 @@ class BuiltinPlugin extends PieCrustPlugin
         );
     }
 
+    public function getFileSystems()
+    {
+        return array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem(),
+            new \PieCrust\IO\DropboxFileSystem()
+        );
+    }
+
     public function getProcessors()
     {
         return array(
@@ -73,7 +83,8 @@ class BuiltinPlugin extends PieCrustPlugin
             new \PieCrust\Chef\Commands\PurgeCommand(),
             new \PieCrust\Chef\Commands\PrepareCommand(),
             new \PieCrust\Chef\Commands\FindCommand(),
-            new \PieCrust\Chef\Commands\ShowConfigCommand()
+            new \PieCrust\Chef\Commands\ShowConfigCommand(),
+            new \PieCrust\Chef\Commands\SelfUpdateCommand()
         );
     }
 

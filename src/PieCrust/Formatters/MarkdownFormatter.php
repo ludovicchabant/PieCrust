@@ -2,26 +2,26 @@
 
 namespace PieCrust\Formatters;
 
+use Michelf\Markdown;
+use Michelf\MarkdownExtra;
 use PieCrust\IPieCrust;
 
 
 class MarkdownFormatter implements IFormatter
 {
     protected $pieCrust;
-    protected $libDir;
+    protected $useExtra;
     protected $parser;
-    
+    protected $parserConfig;
+
     public function initialize(IPieCrust $pieCrust)
     {
         $this->pieCrust = $pieCrust;
         $this->parser = null;
-        $this->libDir = 'markdown';
-        if ($pieCrust->getConfig()->getValue('markdown/use_markdown_extra') === true)
-        {
-            $this->libDir = 'markdown-extra';
-        }
+        $this->useExtra = $pieCrust->getConfig()->getValue('markdown/use_markdown_extra');
+        $this->parserConfig = $pieCrust->getConfig()->getValue('markdown/config');
     }
-    
+
     public function getPriority()
     {
         return IFormatter::PRIORITY_DEFAULT;
@@ -31,19 +31,28 @@ class MarkdownFormatter implements IFormatter
     {
         return true;
     }
-    
+
     public function supportsFormat($format)
     {
         return preg_match('/markdown|mdown|mkdn?|md/i', $format);
     }
-    
+
     public function format($text)
     {
         if ($this->parser == null)
         {
-            require_once ('markdown/' . $this->libDir . '/markdown.php');
-            $parserClass = MARKDOWN_PARSER_CLASS;
-            $this->parser = new $parserClass;
+            if ($this->useExtra)
+                $this->parser = new MarkdownExtra();
+            else
+                $this->parser = new Markdown();
+
+            if ($this->parserConfig)
+            {
+                foreach ($this->parserConfig as $param => $value)
+                {
+                    $this->parser->$param = $value;
+                }
+            }
         }
 
         $this->parser->fn_id_prefix = '';
@@ -57,6 +66,7 @@ class MarkdownFormatter implements IFormatter
                 $this->parser->fn_id_prefix = $footNoteId . "-";
             }
         }
+
         return $this->parser->transform($text);
     }
 }

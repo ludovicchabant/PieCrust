@@ -1,0 +1,34 @@
+# Temp files from Windows/MacOSX/etc.
+*~
+*.swp
+.DS_Store
+Thumbs.db
+
+# IDE Directories
+.idea
+
+# Caches and temp folders.
+_cache/
+_counter/
+tests/tmp/
+build/piecrust.phar
+build/chef
+
+# Libs files we don't need.
+libs/.composer
+libs/*/*/.hg*
+libs/*/*/.git*
+libs/*/*/.travis.yml
+libs/*/*/bin/
+libs/*/*/ext/
+libs/*/*/doc/
+libs/*/*/docs/
+libs/*/*/example/
+libs/*/*/examples/
+libs/*/*/test/
+libs/*/*/tests/
+libs/*/*/phpunit*
+
+# Very specific stuff we don't need.
+libs/mikey179/vfsStream/src/test
+libs/symfony/yaml/Symfony/Component/Yaml/Tests

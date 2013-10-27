@@ -6,6 +6,7 @@ use Symfony\Component\Yaml\Yaml;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
+use PieCrust\IO\FileSystem;
 
 
 /**
@@ -84,7 +85,7 @@ abstract class ImporterBase implements IImporter
             $this->setupConfig($this->pieCrust->getRootDir() . PieCrustDefaults::CONFIG_PATH);
             $this->importPages($this->pieCrust->getPagesDir());
             $this->importTemplates($this->pieCrust->getTemplatesDirs());
-            $this->importPosts($this->pieCrust->getPostsDir(), $this->pieCrust->getConfig()->getValue('site/posts_fs'));
+            $this->importPosts($this->pieCrust->getPostsDir());
             $this->importStatic($this->pieCrust->getRootDir());
 
             $didClose = true;
@@ -103,7 +104,7 @@ abstract class ImporterBase implements IImporter
     protected abstract function open($connection);
     protected abstract function importPages($pagesDir);
     protected abstract function importTemplates($templatesDirs);
-    protected abstract function importPosts($postsDir, $mode);
+    protected abstract function importPosts($postsDir);
     protected abstract function importStatic($rootDir);
     protected abstract function close();
     
@@ -141,27 +142,26 @@ abstract class ImporterBase implements IImporter
         $this->writePageFile($configData, $content, $filename);
     }
 
-    protected function createPost($postsDir, $mode, $name, $timestamp, $metadata, $content)
+    protected function createPost($postsDir, $name, $timestamp, $metadata, $content)
     {
         // Get a clean name.
         $name = $this->getCleanSlug($name);
 
         // Come up with the filename.
-        if ($mode == 'hierarchy')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR 
-                . date('m', $timestamp) . DIRECTORY_SEPARATOR
-                . date('d', $timestamp) . '_' . $name . '.html';
-        }
-        else if ($mode == 'shallow')
-        {
-            $filename = $postsDir . date('Y', $timestamp) . DIRECTORY_SEPARATOR
-                . date('m-d', $timestamp) . '_' . $name . '.html';
-        }
-        else
-        {
-            $filename = $postsDir . date('Y-m-d', $timestamp) . '_' . $name . '.html';
-        }
+        $fs = $this->pieCrust->getEnvironment()->getFileSystem();
+        $captureGroups = array(
+            'year' => date('Y', $timestamp),
+            'month' => date('m', $timestamp),
+            'day' => date('d', $timestamp),
+            'slug' => $name,
+            'ext' => 'html'
+        );
+        $pathInfo = $fs->getPostPathInfo(
+            PieCrustDefaults::DEFAULT_BLOG_KEY, 
+            $captureGroups,
+            FileSystem::PATHINFO_CREATING
+        );
+        $postPath = $pathInfo['path'];
 
         // Build the config data that goes in the header.
         $configData = $metadata;
@@ -169,7 +169,7 @@ abstract class ImporterBase implements IImporter
             $configData['time'] = date('H:i:s', $timestamp);
 
         // Write it!
-        $this->writePageFile($configData, $content, $filename);
+        $this->writePageFile($configData, $content, $postPath);
     }
 
     protected function writePageFile($configData, $content, $filename)

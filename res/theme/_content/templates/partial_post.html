@@ -1,0 +1,19 @@
+<article>
+    <header>
+        <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+        <small>{{ post.date }}
+            {% if post.tags %}
+            in 
+            {% for t in post.tags %}
+            <a href="{{ pctagurl(t) }}">{{ t }}</a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% if post.category %}
+            | <a href="{{ pccaturl(post.category) }}">{{ post.category }}</a>
+            {% endif %}
+        </small>
+    </header>
+    <section>
+        {{ post.content|raw }}
+    </section>
+</article>

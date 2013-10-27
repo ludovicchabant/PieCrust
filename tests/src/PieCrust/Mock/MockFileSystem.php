@@ -28,7 +28,7 @@ class MockFileSystem
         $keys = array('year', 'month', 'day', 'name');
         foreach ($keys as $key)
         {
-            $val = strcmp($a[$key], $b[$key]);
+            $val = strcmp($a->$key, $b->$key);
             if ($val != 0)
                 return $val;
         }
@@ -99,6 +99,17 @@ class MockFileSystem
     {
         $params['root'] = $this->getAppRoot();
         return new \PieCrust\PieCrust($params);
+    }
+
+    public function getMockApp()
+    {
+        $app = new MockPieCrust($this->getAppRoot() . '/');
+        $app->getPluginLoader()->fileSystems = array(
+            new \PieCrust\IO\FlatFileSystem(),
+            new \PieCrust\IO\ShallowFileSystem(),
+            new \PieCrust\IO\HierarchicalFileSystem()
+        );
+        return $app;
     }
 
     public function withDir($path)
@@ -209,6 +220,30 @@ class MockFileSystem
             $blogDir = $blog . '/';
         $path = "_content/posts/{$blogDir}{$year}-{$month}-{$day}_{$slug}.{$extension}";
         return $this->withAsset($path, $text);
+    }
+
+    public function withSimpleDummyPosts($count, $commonConfig = array())
+    {
+        $dates = array();
+        $year = 2001;
+        $month = 1;
+        $day = 1;
+        for ($i = 0; $i < $count; $i++)
+        {
+            $dates[] = "{$year}/" . sprintf("%02d", $month) . "/" . sprintf("%02d", $day);
+            $day++;
+            if ($day > 28)
+            {
+                $day = 1;
+                $month++;
+            }
+            if ($month > 12)
+            {
+                $month = 1;
+                $year++;
+            }
+        }
+        return $this->withDummyPosts($dates, $commonConfig);
     }
 
     public function withDummyPosts(array $dates, array $commonConfig = array())

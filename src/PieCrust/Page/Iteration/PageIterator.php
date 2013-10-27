@@ -163,9 +163,6 @@ class PageIterator extends BaseIterator
      */
     public function filter($filterName)
     {
-        $this->ensureUnlocked();
-        $this->unload();
-
         if ($this->page == null)
             throw new PieCrustException("Can't use 'filter()' because no parent page was set for the pagination iterator.");
         
@@ -173,66 +170,7 @@ class PageIterator extends BaseIterator
         if ($filterDefinition == null)
             throw new PieCrustException("Couldn't find filter '{$filterName}' in the configuration header for page: {$this->page->getPath()}");
 
-        $filter = new PaginationFilter();
-        $filter->addClauses($filterDefinition);
-        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
-        return $this;
-    }
-
-    /**
-     * @include
-     * @noCall
-     * @documentation Only return posts in given category.
-     */
-    public function in_category($category)
-    {
-        $this->ensureUnlocked();
-        $this->unload();
-
-        $filter = new PaginationFilter();
-        $filter->addClauses(array('is_category' => $category));
-        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
-        return $this;
-    }
-
-    /**
-     * @include
-     * @noCall
-     * @documentation Only return posts with given tag.
-     */
-    public function with_tag($tag)
-    {
-        $this->ensureUnlocked();
-        $this->unload();
-
-        $filter = new PaginationFilter();
-        $filter->addClauses(array('has_tags' => $tag));
-        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
-        return $this;
-    }
-
-    /**
-     * @include
-     * @noCall
-     * @documentation Only return posts with given tags.
-     */
-    public function with_tags($tag1, $tag2 /*, $tag3, ... */)
-    {
-        $this->ensureUnlocked();
-        $this->unload();
-
-        $tagClauses = array();
-        $argCount = func_num_args();
-        for ($i = 0; $i < $argCount; ++$i)
-        {
-            $tag = func_get_arg($i);
-            $tagClauses['has_tags'] = $tag;
-        }
-
-        $filter = new PaginationFilter();
-        $filter->addClauses(array('and' => $tagClauses));
-        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
-        return $this;
+        return $this->filterClauses($filterDefinition);
     }
 
     /**
@@ -240,13 +178,76 @@ class PageIterator extends BaseIterator
      * @noCall
      * @documentation Sort posts by a page setting.
      */
-    public function sortBy($name, $reverse = false)
+    public function sort($name, $reverse = false)
     {
         $this->ensureUnlocked();
         $this->unload();
 
         $this->iterator = new ConfigSortIterator($this->iterator, $name, $reverse);
         $this->gotSorter = true;
+        return $this;
+    }
+
+    /**
+     * Magic function to trap any `in_xxx`, `has_xxx`, etc.
+     */
+    public function __call($name, $arguments)
+    {
+        if (strncmp('is_', $name, 3) === 0 or strncmp('in_', $name, 3) === 0)
+        {
+            if (count($arguments) > 1)
+                throw new PieCrustException("Page iterator method '{$name}' only accepts one argument (".count($arguments)." provided)");
+            return $this->filterPropertyValue(substr($name, 3), $arguments[0]);
+        }
+
+        if (strncmp('has_', $name, 4) === 0)
+        {
+            return $this->filterPropertyArray(substr($name, 4), $arguments);
+        }
+       
+        if (strncmp('with_', $name, 5) === 0)
+        {
+            return $this->filterPropertyArray(substr($name, 5), $arguments);
+        }
+
+        throw new PieCrustException("Page iterator has no such method: {$name}");
+    }
+
+    protected function filterPropertyValue($name, $value)
+    {
+        $name = 'is_' . $name;
+        $clauses = array($name => $value);
+        return $this->filterClauses($clauses);
+    }
+
+    protected function filterPropertyArray($name, $values)
+    {
+        $name = 'has_' . $name;
+        if (count($values) == 1)
+        {
+            $clauses = array($name => $values[0]);
+        }
+        else
+        {
+            $compound = array();
+            foreach ($values as $val)
+            {
+                $compound[] = array($name => $val);
+            }
+            $clauses = array('and' => $compound);
+        }
+        return $this->filterClauses($clauses);
+    }
+
+    protected function filterClauses($clauses)
+    {
+        $this->ensureUnlocked();
+        $this->unload();
+
+        $filter = new PaginationFilter();
+        $filter->addClauses($clauses);
+        $this->iterator = new ConfigFilterIterator($this->iterator, $filter);
+
         return $this;
     }
     // }}}
@@ -263,6 +264,21 @@ class PageIterator extends BaseIterator
         if ($this->items->count() == 0)
             return null;
         return $this->items[0];
+    }
+    // }}}
+    
+    // {{{ Shortcut template members
+    public function sortBy($name, $reverse = false)
+    {
+        $this->pieCrust->getEnvironment()->getLog()->warning(
+            "The `sortBy` template method has been renamed `sort`."
+        );
+        return $this->sort($name, $reverse);
+    }
+
+    public function with_tag($tag)
+    {
+        return $this->with_tags($tag);
     }
     // }}}
     

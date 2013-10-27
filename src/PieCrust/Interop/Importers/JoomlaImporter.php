@@ -101,13 +101,12 @@ EOD;
     {
     }
 
-    protected function importPosts($postsDir,$mode)
+    protected function importPosts($postsDir)
     {
         $posts = $this->getPostsFromMySql();
         foreach ($posts as $post){
             $this->createPost(
                 $postsDir,
-                $mode,
                 $post['name'],
                 $post['timestamp'],
                 $post['metadata'],

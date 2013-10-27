@@ -6,7 +6,6 @@ use PieCrust\IPage;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
-use PieCrust\IO\FileSystem;
 use PieCrust\IO\FlatFileSystem;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\UriBuilder;
@@ -43,26 +42,6 @@ class CachedEnvironment extends Environment
         return $this->linkCollector;
     }
 
-    protected $pageInfos;
-    /**
-     * Gets the page infos.
-     */
-    public function getPageInfos()
-    {
-        $this->ensurePageInfosCached();
-        return $this->pageInfos;
-    }
-
-    protected $postInfos;
-    /**
-     * Gets the post infos.
-     */
-    public function getPostInfos($blogKey)
-    {
-        $this->ensurePostInfosCached($blogKey);
-        return $this->postInfos[$blogKey];
-    }
-
     protected $pages;
     /**
      * Gets the pages.
@@ -91,91 +70,43 @@ class CachedEnvironment extends Environment
         parent::__construct();
     }
 
-    protected function ensurePageInfosCached()
-    {
-        if ($this->pageInfos == null)
-        {
-            // TODO: optimize this, it's quite stupid.
-
-            // Start with the built-in pages.
-            $resPagesDir = PieCrustDefaults::RES_DIR() . 'pages/';
-            $fs = new FlatFileSystem($resPagesDir, null);
-            $this->pageInfos = $fs->getPageFiles();
-
-            // Override with the theme pages.
-            if ($this->pieCrust->getThemeDir())
-            {
-                $fs = FileSystem::create($this->pieCrust, null, true);
-                $themePageInfos = $fs->getPageFiles();
-                foreach ($themePageInfos as $themePageInfo)
-                {
-                    $isOverridden = false;
-                    foreach ($this->pageInfos as &$pageInfo)
-                    {
-                        if ($pageInfo['relative_path'] == $themePageInfo['relative_path'])
-                        {
-                            $isOverridden = true;
-                            $pageInfo['path'] = $themePageInfo['path'];
-                            break;
-                        }
-                    }
-                    if (!$isOverridden)
-                    {
-                        $this->pageInfos[] = $themePageInfo;
-                    }
-                }
-            }
-
-            // And finally override with the user pages.
-            $fs = FileSystem::create($this->pieCrust, null);
-            $userPageInfos = $fs->getPageFiles();
-            foreach ($userPageInfos as $userPageInfo)
-            {
-                $isOverridden = false;
-                foreach ($this->pageInfos as &$pageInfo)
-                {
-                    if ($pageInfo['relative_path'] == $userPageInfo['relative_path'])
-                    {
-                        $isOverridden = true;
-                        $pageInfo['path'] = $userPageInfo['path'];
-                        break;
-                    }
-                }
-                if (!$isOverridden)
-                {
-                    $this->pageInfos[] = $userPageInfo;
-                }
-            }
-        }
-    }
-
-    protected function ensurePostInfosCached($blogKey)
-    {
-        if ($this->postInfos == null)
-        {
-            $this->postInfos = array();
-        }
-        if (!isset($this->postInfos[$blogKey]))
-        {
-            $fs = FileSystem::create($this->pieCrust, $blogKey);
-            $postInfos = $fs->getPostFiles();
-            $this->postInfos[$blogKey] = $postInfos;
-        }
-    }
-
     protected function ensurePagesCached()
     {
         if ($this->pages == null)
         {
+            $this->getLog()->debug("Indexing pages...");
+
+            // Start with the theme pages, if any.
+            $pageInfos = array();
+            $themeDir = $this->pieCrust->getThemeDir();
+            if ($themeDir)
+            {
+                $fs = new FlatFileSystem();
+                $fs->initializeForTheme($this->pieCrust);
+                $themePageInfos = $fs->getPageFiles();
+                foreach ($themePageInfos as $pageInfo)
+                {
+                    $pageInfos[$pageInfo->relativePath] = $pageInfo;
+                }
+            }
+
+            // Override with the user pages.
+            $fs = $this->getFileSystem();
+            $userPageInfos = $fs->getPageFiles();
+            foreach ($userPageInfos as $userPageInfo)
+            {
+                $pageInfos[$userPageInfo->relativePath] = $userPageInfo;
+            }
+
+            $this->getLog()->debug("Creating pages...");
             $pageRepository = $this->getPageRepository();
-            $pageInfos = $this->getPageInfos();
 
             $this->pages = array();
             foreach ($pageInfos as $pageInfo)
             {
                 $page = $pageRepository->getOrCreatePage(
-                    UriBuilder::buildUri($this->pieCrust, $pageInfo['relative_path']),
-                    $pageInfo['path']
+                    UriBuilder::buildUri($this->pieCrust, $pageInfo->relativePath),
+                    $pageInfo->path
                 );
 
                 $this->pages[] = $page;
@@ -191,8 +122,12 @@ class CachedEnvironment extends Environment
         }
         if (!isset($this->posts[$blogKey]))
         {
+            $this->getLog()->debug("Indexing '{$blogKey}' posts...");
+            $fs = $this->getFileSystem();
+            $postInfos = $fs->getPostFiles($blogKey);
+
+            $this->getLog()->debug("Creating '{$blogKey}' posts...");
             $pageRepository = $this->getPageRepository();
-            $postInfos = $this->getPostInfos($blogKey);
 
             $posts = array();
             foreach ($postInfos as $postInfo)
@@ -200,7 +135,7 @@ class CachedEnvironment extends Environment
                 $uri = UriBuilder::buildPostUri($this->pieCrust, $blogKey, $postInfo);
                 $page = $pageRepository->getOrCreatePage(
                     $uri,
-                    $postInfo['path'],
+                    $postInfo->path,
                     IPage::TYPE_POST,
                     $blogKey
                 );

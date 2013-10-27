@@ -191,4 +191,30 @@ class PageContentsParsingTest extends PieCrustTestCase
         $this->assertEquals($expectedFormat, $page->getConfig()->getValue('format'));
         $this->assertEquals($expectedContents, trim($page->getContentSegment()));
     }
+
+    public function testMarkdownConfig()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array(
+                'markdown' => array(
+                    'config' => array('predef_urls' => array(
+                        'ref1' => 'http://bolt80.com',
+                        'ref2' => 'http://php.net'
+                    ))
+                )
+            ))
+            ->withPage(
+                'foo.html', 
+                array(), 
+                "[FOO][ref1] and [BAR][ref2]"
+            );
+        $app = $fs->getApp();
+
+        $expectedContents = <<<EOD
+<p><a href="http://bolt80.com">FOO</a> and <a href="http://php.net">BAR</a></p>
+EOD;
+
+        $page = Page::createFromUri($app, 'foo', false);
+        $this->assertEquals($expectedContents, trim($page->getContentSegment()));
+    }
 }

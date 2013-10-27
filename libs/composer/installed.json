@@ -168,32 +168,6 @@
         ]
     },
     {
-        "name": "markdown/markdown",
-        "version": "1.0.1",
-        "version_normalized": "1.0.1.0",
-        "dist": {
-            "type": "zip",
-            "url": "https://github.com/michelf/php-markdown/archive/v1.0.1p.zip",
-            "reference": null,
-            "shasum": null
-        },
-        "type": "library",
-        "installation-source": "dist"
-    },
-    {
-        "name": "markdown/markdown-extra",
-        "version": "1.2.6",
-        "version_normalized": "1.2.6.0",
-        "dist": {
-            "type": "zip",
-            "url": "https://github.com/michelf/php-markdown/archive/x1.2.6.zip",
-            "reference": null,
-            "shasum": null
-        },
-        "type": "library",
-        "installation-source": "dist"
-    },
-    {
         "name": "smartypants/smartypants",
         "version": "1.5.1",
         "version_normalized": "1.5.1.0",
@@ -366,5 +340,58 @@
         ],
         "description": "lessphp is a compiler for LESS written in PHP.",
         "homepage": "http://leafo.net/lessphp/"
+    },
+    {
+        "name": "michelf/php-markdown",
+        "version": "1.3",
+        "version_normalized": "1.3.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/michelf/php-markdown.git",
+            "reference": "fcdd3e0781ae40c2b9847874e0755ff4f5559688"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/michelf/php-markdown/zipball/fcdd3e0781ae40c2b9847874e0755ff4f5559688",
+            "reference": "fcdd3e0781ae40c2b9847874e0755ff4f5559688",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "time": "2013-04-11 18:53:11",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-lib": "1.3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Michelf": ""
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Michel Fortin",
+                "email": "michel.fortin@michelf.ca",
+                "homepage": "http://michelf.ca/",
+                "role": "Developer"
+            },
+            {
+                "name": "John Gruber",
+                "homepage": "http://daringfireball.net/"
+            }
+        ],
+        "description": "PHP Markdown",
+        "homepage": "http://michelf.ca/projects/php-markdown/",
+        "keywords": [
+            "markdown"
+        ]
     }
 ]

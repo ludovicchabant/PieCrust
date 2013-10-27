@@ -38,11 +38,6 @@ class PageHelper
                     throw new InvalidArgumentException("Unknown page type given: " . $page->getPageType());
             }
         }
-        else if (strncmp($page->getPath(), PieCrustDefaults::RES_DIR(), strlen(PieCrustDefaults::RES_DIR())) == 0)
-        {
-            // This is a `res` page.
-            $basePath = PieCrustDefaults::RES_DIR() . 'pages/';
-        }
         else
         {
             // This is a website page.
@@ -94,9 +89,9 @@ class PageHelper
     /**
      * Gets a timestamp/date from a post info array.
      */
-    public static function getPostDate(array $postInfo)
+    public static function getPostDate($postInfo)
     {
-        return mktime(0, 0, 0, intval($postInfo['month']), intval($postInfo['day']), intval($postInfo['year']));
+        return mktime(0, 0, 0, $postInfo->monthValue, $postInfo->dayValue, $postInfo->yearValue);
     }
     
     /**

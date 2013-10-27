@@ -77,6 +77,22 @@ class PluginLoader
     }
 
     /**
+     * Gets all the custom template data providers from the loaded plugins.
+     */
+    public function getDataProviders()
+    {
+        return $this->getPluginsComponents('getDataProviders');
+    }
+
+    /**
+     * Gets all the custom file systems from the loaded plugins.
+     */
+    public function getFileSystems()
+    {
+        return $this->getPluginsComponents('getFileSystems');
+    }
+
+    /**
      * Gets all the processors from the loaded plugins.
      */
     public function getProcessors()
@@ -123,6 +139,14 @@ class PluginLoader
     public function getRepositories()
     {
         return $this->getPluginsComponents('getRepositories', true);
+    }
+
+    /**
+     * Gets all the baking assistants from the loaded plugins.
+     */
+    public function getBakerAssistants()
+    {
+        return $this->getPluginsComponents('getBakerAssistants');
     }
 
     protected function ensureLoaded()

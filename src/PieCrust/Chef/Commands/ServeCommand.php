@@ -69,26 +69,11 @@ class ServeCommand extends ChefCommand
             'default'     => null,
             'help_name'   => 'VARIANT'
         ));
-
-        // Deprecated stuff.
-        $serverParser->addOption('run_browser_old', array(
-            'long_name'   => '--nobrowser',
-            'description' => "Deprecated. Same as `--no-browser`.",
-            'default'     => false,
-            'action'      => 'StoreTrue'
-        ));
     }
 
     public function run(ChefContext $context)
     {
         $result = $context->getResult();
-
-        // Warn about deprecated stuff.
-        if ($result->command->options['run_browser_old'])
-        {
-            $context->getLog()->warning("The `--nobrowser` option has been renamed to `--no-browser`.");
-            $result->command->options['run_browser'] = false;
-        }
 
         $rootDir = $context->getApp()->getRootDir();
         $port = intval($result->command->options['port']);

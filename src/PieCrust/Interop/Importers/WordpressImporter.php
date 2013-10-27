@@ -23,8 +23,13 @@ EOD;
     protected $type;
     protected $db;
     protected $authors;
+    protected $tags;
 
     protected $tablePrefix;
+    protected $defaultPostLayout;
+    protected $defaultPageLayout;
+    protected $defaultPostCategory;
+    protected $defaultPageCategory;
 
     public function __construct()
     {
@@ -42,6 +47,30 @@ EOD;
             'description' => "For the WordPress importer: specify the SQL table prefix (default: wp_).",
             'help_name'   => 'PREFIX'
         ));
+
+        $parser->addOption('default_post_layout', array(
+            'long_name'   => '--postlayout',
+            'description' => "For the WordPress importer: specify the default layout for each post (default: none specified).",
+            'help_name'   => 'LAYOUT'
+        ));
+
+        $parser->addOption('default_page_layout', array(
+            'long_name'   => '--pagelayout',
+            'description' => "For the WordPress importer: specify the default layout for each page (default: none specified).",
+            'help_name'   => 'LAYOUT'
+        ));
+
+        $parser->addOption('default_post_category', array(
+            'long_name'   => '--default-post-category',
+            'description' => "For the WordPress importer: specify the default category for each post (default: none specified).",
+            'help_name'   => 'CATEGORY'
+        ));
+
+        $parser->addOption('default_page_category', array(
+            'long_name'   => '--default-page-category',
+            'description' => "For the WordPress importer: specify the default category for each page (default: none specified).",
+            'help_name'   => 'CATEGORY'
+        ));
     }
     
     protected function open($connection)
@@ -57,6 +86,18 @@ EOD;
             $tablePrefix = 'wp_';
             if (isset($this->options['wp_table_prefix']))
                 $tablePrefix = $this->options['wp_table_prefix'];
+
+            if (isset($this->options['default_post_layout']))
+                $this->defaultPostLayout = $this->options['default_post_layout'];
+
+            if (isset($this->options['default_page_layout']))
+                $this->defaultPageLayout = $this->options['default_page_layout'];
+
+            if (isset($this->options['default_post_category']))
+                $this->defaultPostCategory = $this->options['default_post_category'];
+
+            if (isset($this->options['default_page_category']))
+                $this->defaultPageCategory = $this->options['default_page_category'];
 
             if (isset($matches[5]))
             {
@@ -99,15 +140,15 @@ EOD;
     {
     }
     
-    protected function importPosts($postsDir, $mode)
+    protected function importPosts($postsDir)
     {
         switch ($this->type)
         {
         case 'xml':
-            $this->importPostsFromXml($postsDir, $mode);
+            $this->importPostsFromXml($postsDir);
             break;
         case 'mysql':
-            $this->importPostsFromMySql($postsDir, $mode);
+            $this->importPostsFromMySql($postsDir);
             break;
         }
     }
@@ -131,7 +172,17 @@ EOD;
         $this->tablePrefix = $tablePrefix;
 
         // Use UTF8 encoding.
-        mysql_set_charset('utf8');
+        $query = mysql_query('SHOW VARIABLES LIKE "character_set_database"');
+        if ($row = mysql_fetch_assoc($query))
+        {
+            $db_character_set = $row['Value'];
+
+            mysql_set_charset($db_character_set);
+        }
+        else
+        {
+            mysql_set_charset('utf8');
+        }
 
         // Gather the authors' names.
         $this->authors = array();
@@ -141,6 +192,16 @@ EOD;
         while ($row = mysql_fetch_assoc($query))
         {
             $this->authors[] = $row['display_name'];
+        }
+
+        // Gather the tags.
+        $this->tags = array();
+        $query = mysql_query("SELECT a.id, d.name FROM {$this->tablePrefix}posts a JOIN {$this->tablePrefix}term_relationships b ON a.id = b.object_id JOIN {$this->tablePrefix}term_taxonomy c ON b.term_taxonomy_id = c.term_taxonomy_id JOIN {$this->tablePrefix}terms d ON c.term_id = d.term_id WHERE post_status = 'publish' AND post_type IN ('post', 'page') AND c.taxonomy = 'post_tag' ORDER BY a.id");
+        if (!$query)
+            throw new PieCrustException("Error querying tags from the database: " . mysql_error());
+        while ($row = mysql_fetch_assoc($query))
+        {
+            $this->tags[$row['id']][] = $row['name'];
         }
     }
 
@@ -159,14 +220,13 @@ EOD;
         }
     }
 
-    protected function importPostsFromMySql($postsDir, $mode)
+    protected function importPostsFromMySql($postsDir)
     {
         $posts = $this->getPostsFromMySql('post');
         foreach ($posts as $post)
         {
             $this->createPost(
                 $postsDir, 
-                $mode,
                 $post['name'], 
                 $post['timestamp'], 
                 $post['metadata'], 
@@ -195,7 +255,24 @@ EOD;
             $metadata['title'] = $row['post_title'];
             $metadata['id'] = $row['ID'];
             $metadata['author'] = $this->authors[intval($row['post_author']) - 1];
-            //TODO: tags
+
+            if (array_key_exists($row['ID'], $this->tags))
+                $metadata['tags'] = $this->tags[$row['ID']];
+
+            if ($postType == 'post')
+            {
+                if ($this->defaultPostLayout)
+                    $metadata['layout'] = $this->defaultPostLayout;
+                if ($this->defaultPostCategory)
+                    $metadata['category'] = $this->defaultPostCategory;
+            }
+            elseif ($postType == 'page')
+            {
+                if ($this->defaultPageLayout)
+                    $metadata['layout'] = $this->defaultPageLayout;
+                if ($this->defaultPageCategory)
+                    $metadata['category'] = $this->defaultPageCategory;
+            }
 
             $content = $row['post_content'];
 
@@ -250,14 +327,13 @@ EOD;
         }
     }
 
-    protected function importPostsFromXml($postsDir, $mode)
+    protected function importPostsFromXml($postsDir)
     {
         $posts = $this->getPostsFromXml('post');
         foreach ($posts as $post)
         {
             $this->createPost(
                 $postsDir, 
-                $mode, 
                 $post['name'], 
                 $post['timestamp'], 
                 $post['metadata'], 

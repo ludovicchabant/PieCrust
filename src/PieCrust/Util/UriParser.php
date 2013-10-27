@@ -59,7 +59,7 @@ class UriParser
         
         // Try first with a regular page path.
         if (($uriTypes & self::PAGE_URI_REGULAR) != 0 and
-            UriParser::tryParsePageUri($pieCrust, $uri, $pageInfo))
+            self::tryParsePageUri($pieCrust, $uri, $pageInfo))
         {
             return $pageInfo;
         }
@@ -71,7 +71,7 @@ class UriParser
         {
             foreach ($blogKeys as $blogKey)
             {
-                if (UriParser::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
+                if (self::tryParsePostUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
@@ -84,12 +84,12 @@ class UriParser
             foreach ($blogKeys as $blogKey)
             {
                 if (($uriTypes & self::PAGE_URI_TAG) != 0 and
-                    UriParser::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
+                    self::tryParseTagUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
                 if (($uriTypes & self::PAGE_URI_CATEGORY) != 0 and
-                    UriParser::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
+                    self::tryParseCategoryUri($pieCrust, $blogKey, $uri, $pageInfo))
                 {
                     return $pageInfo;
                 }
@@ -122,7 +122,7 @@ class UriParser
             }
         }
 
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $relativePath);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $relativePath);
         if ($path !== false)
         {
             $pageInfo['path'] = $path;
@@ -142,8 +142,8 @@ class UriParser
         $postsPattern = UriBuilder::buildPostUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/post_url'));
         if (preg_match($postsPattern, $uri, $matches))
         {
-            $fs = FileSystem::create($pieCrust, $blogKey);
-            $pathInfo = $fs->getPostPathInfo($matches);
+            $fs = $pieCrust->getEnvironment()->getFileSystem();
+            $pathInfo = $fs->getPostPathInfo($blogKey, $matches, FileSystem::PATHINFO_PARSING);
             $date = mktime(0, 0, 0, intval($pathInfo['month']), intval($pathInfo['day']), intval($pathInfo['year']));
             
             $pageInfo['type'] = IPage::TYPE_POST;
@@ -162,18 +162,19 @@ class UriParser
             $blogKeyDir = $blogKey . '/';
             
         $tagPageName = array();
-        $themeOrResTagPageName = array();
+        $themeTagPageName = array();
         $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
         foreach ($autoFormats as $ext => $format)
         {
             $tagPageName[] = $blogKeyDir . PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
-            $themeOrResTagPageName[] = PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
+            $themeTagPageName[] = PieCrustDefaults::TAG_PAGE_NAME . '.' . $ext;
         }
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $tagPageName, $themeOrResTagPageName);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $tagPageName, $themeTagPageName);
         if ($path === false)
             return false;
 
         $matches = array();
+        $flags = $pieCrust->getConfig()->getValueUnchecked('site/slugify_flags');
         $tagsPattern = UriBuilder::buildTagUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/tag_url'));
         if (preg_match($tagsPattern, $uri, $matches))
         {
@@ -185,10 +186,15 @@ class UriParser
                 sort($tags);
                 if (implode('/', $tags) != $matches['tag'])
                     throw new PieCrustException("Multi-tags must be specified in alphabetical order, sorry.");
+                $tags = array_filter($tags, function($t) use ($flags) {
+                    $t = rawurldecode($t);
+                    return UriBuilder::slugify($t, $flags);
+                });
             }
             else
             {
-                $tags = $matches['tag'];
+                $tags = rawurldecode($matches['tag']);
+                $tags = UriBuilder::slugify($tags, $flags);
             }
             
             $pageInfo['type'] = IPage::TYPE_TAG;
@@ -208,24 +214,27 @@ class UriParser
         if ($blogKey != PieCrustDefaults::DEFAULT_BLOG_KEY)
             $blogKeyDir = $blogKey . '/';
             
-        $tagPageName = array();
-        $themeOrResCategoryPageName = array();
+        $categoryPageName = array();
+        $themeCategoryPageName = array();
         $autoFormats = $pieCrust->getConfig()->getValueUnchecked('site/auto_formats');
         foreach ($autoFormats as $ext => $format)
         {
             $categoryPageName[] = $blogKeyDir . PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
-            $themeOrResCategoryPageName[] = PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
+            $themeCategoryPageName[] = PieCrustDefaults::CATEGORY_PAGE_NAME . '.' . $ext;
         }
-        $path = PathHelper::getUserOrThemeOrResPath($pieCrust, $categoryPageName, $themeOrResCategoryPageName);
+        $path = PathHelper::getUserOrThemePath($pieCrust, $categoryPageName, $themeCategoryPageName);
         if ($path === false)
             return false;
 
+        $flags = $pieCrust->getConfig()->getValueUnchecked('site/slugify_flags');
         $categoryPattern = UriBuilder::buildCategoryUriPattern($pieCrust->getConfig()->getValueUnchecked($blogKey.'/category_url'));
         if (preg_match($categoryPattern, $uri, $matches))
         {
+            $cat = rawurldecode($matches['cat']);
+            $cat = UriBuilder::slugify($cat, $flags);
             $pageInfo['type'] = IPage::TYPE_CATEGORY;
             $pageInfo['blogKey'] = $blogKey;
-            $pageInfo['key'] = $matches['cat'];
+            $pageInfo['key'] = $cat;
             $pageInfo['path'] = $path;
             $pageInfo['was_path_checked'] = true;
             return true;

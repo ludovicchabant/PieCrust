@@ -1,0 +1,16 @@
+---
+title:
+format: none
+---
+<h2>Posts in {{ category }}</h2>
+
+<section>
+    {% for post in pagination.posts %}
+    {% include 'partial_post.html' %}
+    {% endfor %}
+</section>
+<section>
+    {% if pagination.prev_page %}<div class="prev"><a href="{{ pagination.prev_page }}">Next Posts</a></div>{% endif %}
+    {% if pagination.next_page %}<div class="next"><a href="{{ pagination.next_page }}">Previous Posts</a></div>{% endif %}
+</section>
+

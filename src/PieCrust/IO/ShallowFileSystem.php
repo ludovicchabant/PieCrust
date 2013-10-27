@@ -10,20 +10,21 @@ use PieCrust\PieCrustException;
 /**
  * Describes a year PieCrust blog file-system - single depth where dir must be year and filename mm-dd_slug.
  */
-class ShallowFileSystem extends FileSystem
+class ShallowFileSystem extends SimpleFileSystem
 {
-    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
+    public function getName()
     {
-        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
+        return 'shallow';
     }
-    
-    public function getPostFiles()
+
+    public function getPostFiles($blogKey)
     {
-        if (!$this->postsDir)
+        $postsDir = $this->getPostsDir($blogKey);
+        if (!$postsDir)
             return array();
 
         $years = array();
-        $yearsIterator = new FilesystemIterator($this->postsDir);
+        $yearsIterator = new FilesystemIterator($postsDir);
         foreach ($yearsIterator as $year)
         {
             if (!$year->isDir())
@@ -39,7 +40,7 @@ class ShallowFileSystem extends FileSystem
         $result = array();
         foreach ($years as $year)
         {
-            $postsIterator = new FilesystemIterator($this->postsDir . $year);
+            $postsIterator = new FilesystemIterator($postsDir . $year);
             foreach ($postsIterator as $path)
             {
                 if ($path->isDir())
@@ -55,20 +56,20 @@ class ShallowFileSystem extends FileSystem
                     $path->getFilename(),
                     $matches) === false)
                     continue;
-                $result[] = array(
-                    'year' => $year,
-                    'month' => $matches[1],
-                    'day' => $matches[2],
-                    'name' => $matches[3],
-                    'ext' => $extension,
-                    'path' => $path->getPathname()
+                $result[] = PostInfo::fromStrings(
+                    $year,
+                    $matches[1],
+                    $matches[2],
+                    $matches[3],
+                    $extension,
+                    $path->getPathname()
                 );
             }
         }
         return $result;
     }
     
-    public function getPostPathFormat()
+    public function getPostFilenameFormat()
     {
         return '%year%/%month%-%day%_%slug%.%ext%';
     }

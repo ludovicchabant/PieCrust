@@ -64,14 +64,14 @@ class ChefContext
         switch ($verbosity)
         {
         case 'debug':
-            $this->log->setMask(PEAR_LOG_ALL);
+            $this->log->setChildMask(ChefLog::LOG_CONSOLE, PEAR_LOG_ALL);
             $this->debuggingEnabled = true;
             break;
         case 'quiet':
-            $this->log->setMask(Log::MAX(PEAR_LOG_NOTICE));
+            $this->log->setChildMask(ChefLog::LOG_CONSOLE, Log::MAX(PEAR_LOG_WARNING));
             break;
         default:
-            $this->log->setMask(Log::MAX(PEAR_LOG_INFO));
+            $this->log->setChildMask(ChefLog::LOG_CONSOLE, Log::MAX(PEAR_LOG_INFO));
             break;
         }
     }

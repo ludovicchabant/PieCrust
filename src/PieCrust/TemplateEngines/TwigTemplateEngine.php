@@ -4,6 +4,7 @@ namespace PieCrust\TemplateEngines;
 
 use \Exception;
 use PieCrust\IPieCrust;
+use PieCrust\PieCrustException;
 use PieCrust\Plugins\Twig\ExtendedFilesystem;
 use PieCrust\Plugins\Twig\GeshiExtension;
 use PieCrust\Plugins\Twig\PieCrustExtension;
@@ -53,11 +54,31 @@ class TwigTemplateEngine implements ITemplateEngine
         $this->twigEnv->setCache($cache);
     }
     
-    public function renderFile($templateName, $data)
+    public function renderFile($templateNames, $data)
     {
         $this->ensureLoaded();
-        
-        $tpl = $this->twigEnv->loadTemplate($templateName);
+
+        $tpl = null;
+        $errors = array();
+        foreach ($templateNames as $templateName)
+        {
+            try
+            {
+                $tpl = $this->twigEnv->loadTemplate($templateName);
+                break;
+            }
+            catch (\Twig_Error_Loader $e)
+            {
+                // This template name wasn't found... keep looking, but
+                // remember all error messages so we can display them if
+                // we find nothing at all.
+                $errors[] = $e->getMessage();
+            }
+        }
+        if ($tpl == null)
+        {
+            throw new PieCrustException(implode(', ', $errors));
+        }
         
         // Some of our extensions require access to the current PieCrust app.
         $data['PIECRUST_APP'] = $this->pieCrust;

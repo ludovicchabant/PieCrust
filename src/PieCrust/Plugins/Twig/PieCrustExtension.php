@@ -8,6 +8,7 @@ use \Twig_Function_Method;
 use PieCrust\IPieCrust;
 use PieCrust\PieCrustException;
 use PieCrust\Environment\LinkCollector;
+use PieCrust\IO\PostInfo;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
 use PieCrust\Util\UriBuilder;
@@ -39,6 +40,7 @@ class PieCrustExtension extends \Twig_Extension
     {
         return array(
             new PieCrustFormatterTokenParser(),
+            new PieCrustCacheTokenParser()
         );
     }
     
@@ -83,13 +85,7 @@ class PieCrustExtension extends \Twig_Extension
     
     public function getPostUrl($year, $month, $day, $slug, $blogKey = null)
     {
-        $postInfo = array(
-            'year' => $year,
-            'month' => $month,
-            'day' => $day,
-            'name' => $slug
-        );
-
+        $postInfo = PostInfo::fromValues($year, $month, $day, $slug);
         $blogKey = $this->getSafeBlogKey($blogKey);
         return PieCrustHelper::formatUri(
             $this->pieCrust, 

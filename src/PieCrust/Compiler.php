@@ -11,14 +11,23 @@ use PieCrust\Util\PathHelper;
  */
 class Compiler
 {
-    public function compile($pharFile = 'piecrust.phar')
+    public function compile($pharFile = 'piecrust.phar', $options = array())
     {
+        $options = array_merge(
+            array(
+                'core_libs_only' => false
+            ),
+            $options
+        );
+
         if (file_exists($pharFile))
             unlink($pharFile);
 
-        $version = shell_exec('hg id -i -b -t');
+        $version = shell_exec('hg id -i');
         if ($version == null)
-            $version = "unknown";
+            $version = false;
+        else
+            $version = trim($version);
 
         $phar = new Phar($pharFile, 0, 'piecrust.phar');
         $phar->setSignatureAlgorithm(Phar::SHA1);
@@ -27,12 +36,26 @@ class Compiler
         $fileCount = 0;
         $baseDir = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR;
         $dirs = array('libs', 'res', 'src');
+        $includes = array();
         $excludes = array(
             '#^libs/\.composer#',
             '#^libs/[\w\d]+/[\w\d]+/(\.hg|\.git|\.travis)#',
             '#^libs/[\w\d]+/[\w\d]+/(bin|ext|doc|example|test|phpunit)#',
             '#^libs/mikey179/vfsStream/src/test#'
         );
+
+        if ($options['core_libs_only'])
+        {
+            $includes = array(
+                '#^src#',
+                '#^res#',
+                '#^libs/autoload#',
+                '#^libs/pear#',
+                '#^libs/composer#',
+                '#^libs/symfony#'
+            );
+        }
+
         foreach ($dirs as $dir)
         {
             $it = new \RecursiveIteratorIterator(
@@ -46,12 +69,28 @@ class Compiler
                     substr($path->getPathname(), strlen($baseDir) + 1)
                 );
                 $shouldAdd = true;
-                foreach ($excludes as $exclude)
+                if ($shouldAdd && $includes)
                 {
-                    if (preg_match($exclude, $relativePath))
+                    $isIncluded = false;
+                    foreach ($includes as $include)
                     {
-                        $shouldAdd = false;
-                        break;
+                        if (preg_match($include, $relativePath))
+                        {
+                            $isIncluded = true;
+                            break;
+                        }
+                    }
+                    $shouldAdd = $isIncluded;
+                }
+                if ($shouldAdd)
+                {
+                    foreach ($excludes as $exclude)
+                    {
+                        if (preg_match($exclude, $relativePath))
+                        {
+                            $shouldAdd = false;
+                            break;
+                        }
                     }
                 }
                 if ($shouldAdd)
@@ -63,6 +102,7 @@ class Compiler
             }
         }
         $phar->addFile($baseDir . 'piecrust.php', 'piecrust.php');
+        $phar->setMetadata(array('version' => $version));
         $phar->setStub($this->getStub());
         $phar->stopBuffering();
         echo "Added {$fileCount} files to phar archive.\n";

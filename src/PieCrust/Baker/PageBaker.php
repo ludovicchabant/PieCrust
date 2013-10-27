@@ -23,6 +23,7 @@ class PageBaker
     
     protected $logger;
     protected $bakeDir;
+    protected $bakeRecord;
     protected $parameters;
     
     protected $paginationDataAccessed;
@@ -44,7 +45,7 @@ class PageBaker
     
     protected $bakedFiles;
     /**
-     * Gets the files that were baked by the last call to 'bake()'.
+     * Gets the files that were baked by the last call to `bake()`.
      */
     public function getBakedFiles()
     {
@@ -54,13 +55,13 @@ class PageBaker
     /**
      * Creates a new instance of PageBaker.
      */
-    public function __construct($bakeDir, array $parameters = array(), $logger = null)
+    public function __construct($bakeDir, $bakeRecord = null, array $parameters = array(), $logger = null)
     {
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
+        $this->bakeRecord = $bakeRecord;
         $this->parameters = array_merge(
             array(
-                'copy_assets' => false,
-                'bake_record' => null
+                'copy_assets' => false
             ), 
             $parameters
         );
@@ -197,6 +198,12 @@ class PageBaker
             throw new PieCrustException("Error baking page '{$pageRelativePath}' (p{$page->getPageNumber()})", 0, $e);
         }
 
+        // Record our work.
+        if ($this->bakeRecord)
+        {
+            $this->bakeRecord->addPageEntry($page, $didBake ? $this : null);
+        }
+
         return $didBake;
     }
     
@@ -225,35 +232,14 @@ class PageBaker
             // the page isn't known to be using posts.
             if (filemtime($page->getPath()) < filemtime($bakePath))
             {
-                $bakeRecord = $this->parameters['bake_record'];
-                if ($bakeRecord)
-                {
-                    $relativePath = PageHelper::getRelativePath($page);
-                    if (!$bakeRecord->wasAnyPostBaked() ||
-                        !$bakeRecord->isPageUsingPosts($relativePath))
-                    {
-                        $doBake = false;
-                    }
-                }
+                // TODO: rebake if the page is using pagination and pages/posts were baked this time.
+                $doBake = false;
             }
         }
         if (!$doBake)
         {
             $this->logger->debug("Not baking '{$page->getUri()}/{$page->getPageNumber()}' because '{$bakePath}' is up-to-date.");
             return false;
-        }
-
-        // Backward compatibility warning and file-copy.
-        // [TODO] Remove in a couple of versions.
-        $copyToOldPath = false;
-        $contentType = $page->getConfig()->getValue('content_type');
-        $nativeExtension = pathinfo($page->getPath(), PATHINFO_EXTENSION);
-        if ($contentType != 'html' && $nativeExtension == 'html')
-        {
-            $copyToOldPath = $this->bakeDir . $page->getUri();
-            if ($page->getPageNumber() > 1)
-                $copyToOldPath .= $page->getPageNumber() . '/';
-            $copyToOldPath .= '.' . $contentType;
         }
 
         // If we're using portable URLs, change the site root to a relative
@@ -272,17 +258,6 @@ class PageBaker
         PathHelper::ensureDirectory(dirname($bakePath));
         file_put_contents($bakePath, $bakedContents);
         $this->bakedFiles[] = $bakePath;
-
-        // [TODO] See previous TODO.
-        if ($copyToOldPath)
-        {
-            $this->logger->warning("Page '{$page->getUri()}' has 'content_type' specified but is an HTML file.");
-            $this->logger->warning("Changing a baked file's extension using 'content_type' is deprecated and will be removed in a future version.");
-            $this->logger->warning("For backwards compatibility, the page will also be baked to: " . substr($copyToOldPath, strlen($this->bakeDir)));
-            $this->logger->warning("To fix the problem, change the source file's extension to the desired output extension.");
-            $this->logger->warning("Otherwise, just ignore these messages.");
-            file_put_contents($copyToOldPath, $bakedContents);
-        }
         
         // Copy any used assets for the first sub-page.
         if ($page->getPageNumber() == 1 and

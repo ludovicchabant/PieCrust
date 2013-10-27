@@ -4,6 +4,7 @@ namespace PieCrust\Tests;
 
 use PieCrust\IPage;
 use PieCrust\IPieCrust;
+use PieCrust\Page\Page;
 use PieCrust\Page\PageConfiguration;
 use PieCrust\Page\Paginator;
 use PieCrust\Page\Iteration\PageIterator;
@@ -132,7 +133,59 @@ class PaginatorTest extends PieCrustTestCase
 
         $pageCount = (int)ceil((float)$postCount / 5.0);
         $this->assertEquals($pageCount, $paginator->total_page_count());
-        $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
+
+        if ($pageCount == 0)
+            $this->assertEquals(array(), $paginator->all_page_numbers());
+        else
+            $this->assertEquals(range(1, $pageCount), $paginator->all_page_numbers());
+
+        foreach (range(1, 7) as $radius)
+        {
+            $numberCount = $radius * 2 + 1;
+
+            if ($pageCount == 0)
+            {
+                $pageNumbers = array();
+            }
+            else
+            {
+                $pageNumbers = range($pageNumber - $radius, $pageNumber + $radius);
+                $pageNumbers = array_filter(
+                    $pageNumbers,
+                    function ($i) use ($pageCount) { return $i >= 1 && $i <= $pageCount; }
+                );
+                $pageNumbers = array_values($pageNumbers);
+                if (count($pageNumbers) < $numberCount)
+                {
+                    $toAdd = $numberCount - count($pageNumbers);
+                    if ($pageNumbers[0] > 1)
+                    {
+                        $cur = $pageNumbers[0] - 1;
+                        foreach (range(1, $toAdd) as $i)
+                        {
+                            array_unshift($pageNumbers, $cur);
+                            if (--$cur <= 1)
+                                break;
+                        }
+                    }
+                    else if ($pageNumbers[count($pageNumbers) - 1] < $pageCount)
+                    {
+                        $cur = $pageNumbers[count($pageNumbers) - 1] + 1;
+                        foreach (range(1, $toAdd) as $i)
+                        {
+                            $pageNumbers[] = $cur;
+                            if (++$cur >= $pageCount)
+                                break;
+                        }
+                    }
+                }
+            }
+
+            $this->assertEquals(
+                $pageNumbers, 
+                $paginator->all_page_numbers($radius),
+                "Wrong result for {$numberCount} page numbers around page {$pageNumber} out of {$pageCount} total pages.");
+        }
         
         $expectedCount = $postCount;
         if ($postCount > 5)
@@ -466,6 +519,37 @@ class PaginatorTest extends PieCrustTestCase
         $paginator = new Paginator($page);
         $paginator->setPaginationDataSource($posts);
         $this->assertExpectedPostsData($expectedIndices, $paginator->posts());
+    }
+
+    public function testAssetsInPagination()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array('default_format' => 'none')))
+            ->withPost('foo1', 1, 10, 2013, array('title' => 'Foo 1'))
+            ->withAsset('_content/posts/2013-10-01_foo1-assets/thumbnail.jpg', 'Thumb 1')
+            ->withPost('foo2', 2, 10, 2013, array('title' => 'Foo 2'))
+            ->withAsset('_content/posts/2013-10-02_foo2-assets/thumbnail.jpg', 'Thumb 2')
+            ->withPost('foo3', 3, 10, 2013, array('title' => 'Foo 3'))
+            ->withAsset('_content/posts/2013-10-03_foo3-assets/thumbnail.jpg', 'Thumb 3')
+            ->withPost('foo4', 4, 10, 2013, array('title' => 'Foo 4'))
+            ->withAsset('_content/posts/2013-10-04_foo4-assets/thumbnail.jpg', 'Thumb 4')
+            ->withPage('whatever', array(), <<<EOD
+{% for p in pagination.posts %}
+{{ p.title }}: {{ p.assets.thumbnail }}
+{% endfor %}
+EOD
+            );
+        $app = $fs->getApp();
+        $page = Page::createFromUri($app, '/whatever', false);
+        $actual = $page->getContentSegment();
+        $expected = <<<EOD
+Foo 4: /_content/posts/2013-10-04_foo4-assets/thumbnail.jpg
+Foo 3: /_content/posts/2013-10-03_foo3-assets/thumbnail.jpg
+Foo 2: /_content/posts/2013-10-02_foo2-assets/thumbnail.jpg
+Foo 1: /_content/posts/2013-10-01_foo1-assets/thumbnail.jpg
+
+EOD;
+        $this->assertEquals($expected, $actual);
     }
     
     protected function buildPaginationDataSource(IPieCrust $pc, $postCount)

@@ -30,6 +30,22 @@ abstract class PieCrustPlugin
     }
 
     /**
+     * Gets the custom template data providers in this plugin.
+     */
+    public function getDataProviders()
+    {
+        return array();
+    }
+
+    /**
+     * Gets the file-systems.
+     */
+    public function getFileSystems()
+    {
+        return array();
+    }
+
+    /**
      * Gets the file processors in this plugin.
      */
     public function getProcessors()
@@ -65,6 +81,14 @@ abstract class PieCrustPlugin
      * Gets the repository types in this plugin.
      */
     public function getRepositories()
+    {
+        return array();
+    }
+
+    /**
+     * Gets the baker assistants in this plugin.
+     */
+    public function getBakerAssistants()
     {
         return array();
     }

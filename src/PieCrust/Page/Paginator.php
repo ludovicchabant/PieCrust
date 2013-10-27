@@ -47,6 +47,17 @@ class Paginator
         $this->ensurePaginationData();
         return $this->postsIterator;
     }
+
+    /**
+     * Gets whether there are any posts for this page.
+     *
+     * @noCall
+     * @documentation Whether there are any posts for this page.
+     */
+    public function has_posts()
+    {
+        return $this->posts_this_page() > 0;
+    }
  
     /**
      * Gets the maximum number of posts to be displayed on the page.
@@ -173,22 +184,32 @@ class Paginator
      *
      * This method is meant to be called from the layouts via the template engine.
      */
-    public function all_page_numbers($beforeEllipsis = false, $afterEllipsis = false)
+    public function all_page_numbers($radius = false)
     {
-        if (!$afterEllipsis)
-            $afterEllipsis = $beforeEllipsis;
-
         $totalPageCount = $this->total_page_count();
-        if (!$beforeEllipsis and !$afterEllipsis)
+
+        if ($totalPageCount == 0)
+            return array();
+
+        if (!$radius or $totalPageCount <= (2 * (int)$radius + 1) or $this->page == null)
             return range(1, $totalPageCount);
-        elseif ($totalPageCount <= ($beforeEllipsis + $afterEllipsis))
-            return range(1, $totalPageCount);
-        else
-            return array_merge(
-                range(1, $beforeEllipsis),
-                array(false),
-                range($totalPageCount - $afterEllipsis + 1, $totalPageCount)
-            );
+
+        $radius = (int)$radius;
+        $firstNumber = $this->page->getPageNumber() - $radius;
+        $lastNumber = $this->page->getPageNumber() + $radius;
+        if ($firstNumber <= 0)
+        {
+            $lastNumber += (1 - $firstNumber);
+            $firstNumber = 1;
+        }
+        if ($lastNumber > $totalPageCount)
+        {
+            $firstNumber -= ($lastNumber - $totalPageCount);
+            $lastNumber = $totalPageCount;
+        }
+        $firstNumber = max(1, $firstNumber);
+        $lastNumber = min ($totalPageCount, $lastNumber);
+        return range($firstNumber, $lastNumber);
     }
 
     /**

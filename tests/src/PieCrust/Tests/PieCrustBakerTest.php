@@ -63,7 +63,7 @@ EOD;
         $fs->withPost(
             'second-post', 1, 1, 2011,
             array('format' => 'none', 'tags' => array('blah')),
-            'Second post: {{ asset.bar }}');
+            'Second post: {{ assets.bar }}');
         $fs->withAsset('_content/posts/2011-01-01_second-post-assets/bar.jpg', 'BAR');
         $fs->withPost(
             'third-post', 1, 1, 2012,

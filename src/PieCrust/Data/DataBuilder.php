@@ -33,6 +33,8 @@ class DataBuilder
             $siteData,
             $appData
         );
+        self::mergeProviderData($page, $renderData);
+        
         return $renderData;
     }
 
@@ -52,12 +54,15 @@ class DataBuilder
             $pageContentSegments,
             $page->wasCached()
         );
+
         $renderData = Configuration::mergeArrays(
             $appData,
             $siteData,
             $pageData,
             $pageContentSegments
         );
+        self::mergeProviderData($page, $renderData);
+
         return $renderData;
     }
 
@@ -120,31 +125,24 @@ class DataBuilder
         if ($page->getPaginationDataSource() != null)
             $paginator->setPaginationDataSource($page->getPaginationDataSource());
 
-        // Accessors with warnings for deprecated stuff.
-        // TODO: remove later.
-        $legacyLinker = new Linker($page); $legacyLinker->deprecatedWarning = true;
-        $legacyAssetor = new Assetor($page); $legacyAssetor->deprecatedWarning = true;
-
         $data = array(
             'page' => $page->getConfig()->get(),
             'assets' => $assetor,
             'pagination' => $paginator,
             'siblings' => $linker,
-            'family' => $recursiveLinker,
-            'asset'=> $legacyAssetor, // TODO: deprecated.
-            'link' => $legacyLinker // TODO: deprecated.
+            'family' => $recursiveLinker
         );
 
         $data['page']['url'] = PieCrustHelper::formatUri($pieCrust, $page->getUri());
         $data['page']['slug'] = $page->getUri();
 
-        $data['page']['timestamp'] = $page->getDate();
+        $data['page']['timestamp'] = $page->getDate(true);
         $dateFormat = PageHelper::getConfigValueUnchecked(
             $page,
             'date_format',
             $page->getConfig()->getValueUnchecked('blog')
         );
-        $data['page']['date'] = date($dateFormat, $page->getDate());
+        $data['page']['date'] = date($dateFormat, $page->getDate(true));
 
         switch ($page->getPageType())
         {
@@ -240,5 +238,20 @@ class DataBuilder
         }
 
         return $data;
+    }
+
+    public static function mergeProviderData(IPage $page, array &$data)
+    {
+        foreach ($page->getApp()->getPluginLoader()->getDataProviders() as $provider)
+        {
+            $providerData = $provider->getPageData($page);
+            if ($providerData !== null)
+            {
+                $endPoint = $provider->getName();
+                if (isset($data[$endPoint]))
+                    throw new PieCrustException("Can't load data provider: the page configuration already has a value at'{$endPoint}'.");
+                $data[$endPoint] = $providerData;
+            }
+        }
     }
 }

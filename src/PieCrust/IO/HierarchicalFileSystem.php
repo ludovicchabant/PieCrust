@@ -10,22 +10,23 @@ use PieCrust\PieCrustException;
 /**
  * Describes a hierarchical PieCrust blog file-system.
  */
-class HierarchicalFileSystem extends FileSystem
+class HierarchicalFileSystem extends SimpleFileSystem
 {
-    public function __construct($pagesDir, $postsDir, $htmlExtensions = null)
+    public function getName()
     {
-        FileSystem::__construct($pagesDir, $postsDir, $htmlExtensions);
+        return 'hierarchy';
     }
-    
-    public function getPostFiles()
+
+    public function getPostFiles($blogKey)
     {
-        if (!$this->postsDir)
+        $postsDir = $this->getPostsDir($blogKey);
+        if (!$postsDir)
             return array();
 
         $result = array();
         
         $years = array();
-        $yearsIterator = new FilesystemIterator($this->postsDir);
+        $yearsIterator = new FilesystemIterator($postsDir);
         foreach ($yearsIterator as $year)
         {
             if (!$year->isDir())
@@ -41,7 +42,7 @@ class HierarchicalFileSystem extends FileSystem
         foreach ($years as $year)
         {
             $months = array();
-            $monthsIterator = new FilesystemIterator($this->postsDir . $year);
+            $monthsIterator = new FilesystemIterator($postsDir . $year);
             foreach ($monthsIterator as $month)
             {
                 if (!$month->isDir())
@@ -56,7 +57,7 @@ class HierarchicalFileSystem extends FileSystem
             
             foreach ($months as $month)
             {
-                $postsIterator = new FilesystemIterator($this->postsDir . $year . '/' . $month);
+                $postsIterator = new FilesystemIterator($postsDir . $year . '/' . $month);
                 foreach ($postsIterator as $path)
                 {
                     if ($path->isDir())
@@ -73,13 +74,13 @@ class HierarchicalFileSystem extends FileSystem
                         $matches) === false)
                         continue;
                     
-                    $result[] = array(
-                        'year' => $year,
-                        'month' => $month,
-                        'day' => $matches[1],
-                        'name' => $matches[2],
-                        'ext' => $extension,
-                        'path' => $path->getPathname()
+                    $result[] = PostInfo::fromStrings(
+                        $year,
+                        $month,
+                        $matches[1],
+                        $matches[2],
+                        $extension,
+                        $path->getPathname()
                     );
                 }
             }
@@ -88,7 +89,7 @@ class HierarchicalFileSystem extends FileSystem
         return $result;
     }
     
-    public function getPostPathFormat()
+    public function getPostFilenameFormat()
     {
         return '%year%/%month%/%day%_%slug%.%ext%';
     }
