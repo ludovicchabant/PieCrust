@@ -15,10 +15,14 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+
+Frozen changes
+--------------
+
+### 1.1.0 (2013-10-26)
+
 * BREAKING CHANGE: Removed all options and features that were marked as
   deprecated (_i.e._ they previously triggered a warning message).
-* BREAKING CHANGE: The `all_page_numbers` template method now takes a
-  *radius* for the number of page numbers to return.
 * CHANGE: Removed the sample website (it's being turned into a theme).
 * CHANGE: Added `.md` and `.textile` as default auto-format extensions
   (respectively for Markdown and Textile formatting).
@@ -78,9 +82,6 @@ Fresh changes
 * IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
   stable during a bake. Also removed PHP's default memory limit when running
   PieCrust with `chef`.
-
-Frozen changes
---------------
 
 ### 1.0.3 (2013-09-02)
 
