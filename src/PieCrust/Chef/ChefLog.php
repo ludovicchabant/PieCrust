@@ -47,6 +47,11 @@ class ChefLog extends \Log_composite
         $this->addChild($this->fileLog);
     }
 
+    public function convertColors($str)
+    {
+        return $this->consoleLog->convertColors($str);
+    }    
+
     public function exception($e, $debugMode = false)
     {
         $log = $this;

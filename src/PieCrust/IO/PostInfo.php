@@ -20,6 +20,22 @@ class PostInfo
     {
     }
 
+    public function getPath($pathFormat)
+    {
+        $replacements = array(
+            '%year%' => $this->year,
+            '%month%' => $this->month,
+            '%day%' => $this->day,
+            '%slug%' => $this->name,
+            '%ext%' => $this->extension
+        );
+        return str_replace(
+            array_keys($replacements),
+            array_values($replacements),
+            $pathFormat
+        );
+    }
+
     public static function fromValues($year, $month, $day, $name, $extension = null, $path = null)
     {
         $pi = new PostInfo();

@@ -109,7 +109,7 @@ class FileSystemRepository implements IRepository
 
         $log->info("Copying files...");
         $log->debug("{$subDir} -> {$destination}");
-        PathHelper::copyDirectory($subDir, $destination);
+        PathHelper::copyDirectory($subDir, $destination, ",\\.hg|\\.git|\\.svn,");
     }
 }
 

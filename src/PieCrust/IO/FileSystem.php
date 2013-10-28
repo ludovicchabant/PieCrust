@@ -176,6 +176,6 @@ abstract class FileSystem
      *
      * This should return a string like `/path/to/posts/%year%/%month%/%slug%.%ext%`.
      */
-    protected abstract function getPostPathFormat($blogKey);
+    public abstract function getPostPathFormat($blogKey);
 }
 

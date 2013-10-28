@@ -10,6 +10,11 @@ class CompositeFileSystem extends FileSystem
 {
     protected $fileSystems;
 
+    public function getInnerFileSystems()
+    {
+        return $this->fileSystems;
+    }
+
     public function __construct($fileSystems)
     {
         $this->fileSystems = $fileSystems;
@@ -72,7 +77,7 @@ class CompositeFileSystem extends FileSystem
         throw new PieCrustException("Can't find valid path info in any child file-system.");
     }
 
-    protected function getPostPathFormat($blogKey)
+    public function getPostPathFormat($blogKey)
     {
         throw new PieCrustException("This shouldn't be called on a composite file-system.");
     }
