@@ -79,6 +79,8 @@ Frozen changes
 * BUG: When `lowercase` is part of the slufigy flags (which is the case by
   default), PieCrust now correctly matches tags/categories in the URL regardless
   of the casing.
+* BUG: Don't copy special directories like `.hg` or `.git` when installing
+  plugins from a file-system source.
 * IMPLEMENTATION CHANGES: Did some optimizations to make memory footprint more
   stable during a bake. Also removed PHP's default memory limit when running
   PieCrust with `chef`.
