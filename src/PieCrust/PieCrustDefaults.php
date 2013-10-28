@@ -11,7 +11,7 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '1.1.0-dev';
+    const VERSION = '1.1.0';
 
     /**
      * The current version of the configuration.
