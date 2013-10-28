@@ -61,6 +61,11 @@ abstract class SimpleFileSystem extends FileSystem
         return $pages;
     }
 
+    public function getPostPathFormat($blogKey)
+    {
+        return $this->getPostsDir($blogKey) . $this->getPostFilenameFormat();
+    }
+
     protected function getPostsDir($blogKey)
     {
         if ($blogKey == PieCrustDefaults::DEFAULT_BLOG_KEY or $this->postsDir == null)
@@ -68,11 +73,6 @@ abstract class SimpleFileSystem extends FileSystem
             return $this->postsDir;
         }
         return $this->postsDir . $blogKey . '/';
-    }
-
-    protected function getPostPathFormat($blogKey)
-    {
-        return $this->getPostsDir($blogKey) . $this->getPostFilenameFormat();
     }
 
     protected abstract function getPostFilenameFormat();

@@ -104,7 +104,7 @@ class DropboxFileSystem extends FileSystem
         return $result;
     }
 
-    protected function getPostPathFormat($blogKey)
+    public function getPostPathFormat($blogKey)
     {
         $postsDir = $this->config['dir'];
         if (!$postsDir or !is_dir($postsDir))
