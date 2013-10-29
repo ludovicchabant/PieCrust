@@ -113,30 +113,37 @@ EOD;
 EOD;
 
         $fs = MockFileSystem::create();
+        $fs->withConfig(array('site' => array('default_format' => 'none')));
         $fs->withTemplate('default', '');
+        $fs->withTemplate('post', <<<EOD
+{{content|raw}}
+Prev: {{pagination.prev_post.url}}
+Next: {{pagination.next_post.url}}
+EOD
+        );
         $fs->withPage(
             'foo',
-            array('layout' => 'none', 'format' => 'none'),
+            array('layout' => 'none'),
             $indexContents);
         $fs->withPost(
             'before-post', 2, 1, 2012,
-            array('layout' => 'none', 'format' => 'none'),
+            array(),
             'Before...');
         $fs->withPost(
             'z-first-post', 4, 1, 2012,
-            array('layout' => 'none', 'format' => 'none', 'time' => '08:50'),
+            array('time' => '08:50'),
             'First post.');
         $fs->withPost(
             'a-second-post', 4, 1, 2012,
-            array('layout' => 'none', 'format' => 'none', 'time' => '12:30'),
+            array('time' => '12:30'),
             'Second post.');
         $fs->withPost(
             'b-third-post', 4, 1, 2012,
-            array('layout' => 'none', 'format' => 'none', 'time' => '17:05:32'),
+            array('time' => '17:05'),
             'Third post.');
         $fs->withPost(
             'after-post', 12, 1, 2012,
-            array('layout' => 'none', 'format' => 'none'),
+            array(),
             'After...');
 
         $app = new PieCrust(array(
@@ -151,6 +158,27 @@ EOD;
         $this->assertEquals(
             "After...\nThird post.\nSecond post.\nFirst post.\nBefore...\n",
             file_get_contents($fs->url('kitchen/_counter/foo.html'))
+        );
+
+        $this->assertEquals(
+            "Before...\nPrev: \nNext: /2012/01/04/z-first-post.html",
+            file_get_contents($fs->url('kitchen/_counter/2012/01/02/before-post.html'))
+        );
+        $this->assertEquals(
+            "First post.\nPrev: /2012/01/02/before-post.html\nNext: /2012/01/04/a-second-post.html",
+            file_get_contents($fs->url('kitchen/_counter/2012/01/04/z-first-post.html'))
+        );
+        $this->assertEquals(
+            "Second post.\nPrev: /2012/01/04/z-first-post.html\nNext: /2012/01/04/b-third-post.html",
+            file_get_contents($fs->url('kitchen/_counter/2012/01/04/a-second-post.html'))
+        );
+        $this->assertEquals(
+            "Third post.\nPrev: /2012/01/04/a-second-post.html\nNext: /2012/01/12/after-post.html",
+            file_get_contents($fs->url('kitchen/_counter/2012/01/04/b-third-post.html'))
+        );
+        $this->assertEquals(
+            "After...\nPrev: /2012/01/04/b-third-post.html\nNext: ",
+            file_get_contents($fs->url('kitchen/_counter/2012/01/12/after-post.html'))
         );
     }
 

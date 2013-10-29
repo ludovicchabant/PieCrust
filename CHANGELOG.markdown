@@ -19,6 +19,11 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.1.1 (2013-10-28)
+
+* BUG: Fixed a bug where posts written on the same day would not be ordered
+  correctly.
+
 ### 1.1.0 (2013-10-26)
 
 * BREAKING CHANGE: Removed all options and features that were marked as
