@@ -136,7 +136,7 @@ class Page implements IPage
      */
     public function setDate($date, $isLocked = false)
     {
-        if ($date !==null && $this->date != $date)
+        if ($date !== null && $this->date != $date)
         {
             $this->dateIsLocked = $isLocked;
 
