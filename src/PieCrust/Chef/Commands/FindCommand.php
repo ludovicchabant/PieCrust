@@ -162,6 +162,7 @@ class FindCommand extends ChefCommand
         $result = $context->getResult();
 
         $rootDir = $pieCrust->getRootDir();
+        $rootDir = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $rootDir);
         $exact = $result->command->options['exact'];
         $pattern = $result->command->args['pattern'];
         $fullPath = $result->command->options['full_path'];
@@ -251,6 +252,7 @@ class FindCommand extends ChefCommand
         $result = $context->getResult();
 
         $rootDir = $pieCrust->getRootDir();
+        $rootDir = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $rootDir);
         $exact = $result->command->options['exact'];
         $pattern = $result->command->args['pattern'];
         $fullPath = $result->command->options['full_path'];

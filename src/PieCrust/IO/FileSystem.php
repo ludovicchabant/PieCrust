@@ -143,7 +143,8 @@ abstract class FileSystem
             
             $pathInfo['path'] = $possiblePaths[0];
             
-            $pathComponentsRegex = preg_quote($this->getPostPathFormat($blogKey), '/');
+            $postPathFormat = str_replace('\\', '/', $this->getPostPathFormat($blogKey));
+            $pathComponentsRegex = preg_quote($postPathFormat, '/');
             $pathComponentsRegex = str_replace(
                 array('%year%', '%month%', '%day%', '%slug%', '%ext%'),
                 array('(?P<year>\d{4})', '(?P<month>\d{2})', '(?P<day>\d{2})', '(?P<slug>.+)', '(?P<ext>\w+)'),

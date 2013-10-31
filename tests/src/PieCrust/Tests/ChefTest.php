@@ -131,7 +131,7 @@ class ChefTest extends PieCrustTestCase
             {
                 if ($matches['level'] != 'debug')
                 {
-                    $filtered[] = $matches['text'];
+                    $filtered[] = str_replace('\\', '/', trim($matches['text']));
                 }
             }
         }

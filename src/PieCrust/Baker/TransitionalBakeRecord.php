@@ -256,7 +256,7 @@ class TransitionalBakeRecord
                     'files' => $prev->outputs
                 );
             }
-            else if ($prev && $cur)
+            else if ($prev && $cur && $cur->wasBaked())
             {
                 $garbageOutputs = array_diff(
                     $prev->outputs,

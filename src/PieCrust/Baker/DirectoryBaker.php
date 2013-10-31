@@ -85,7 +85,7 @@ class DirectoryBaker implements IBaker
         // Validate skip patterns.
         $this->parameters['skip_patterns'] = self::validatePatterns(
             $this->parameters['skip_patterns'],
-            array('/^_cache/', '/^_content/', '/^_counter/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
+            array('/^_cache/', '/^_content/', '/^_counter/', '/^theme_info\.yml/', '/(\.DS_Store)|(Thumbs.db)|(\.git)|(\.hg)|(\.svn)/')
         );
 
         // Validate force-bake patterns.
