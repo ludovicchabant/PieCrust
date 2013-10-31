@@ -22,8 +22,8 @@ class PieCrustBakerTest extends PieCrustTestCase
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['kitchen']['_counter'];
         $this->assertEquals(
-            array('0', 'index.html'), //TODO: bug in vfstream when using mkdir(..., 755, true)
-            array_keys($counter)
+            array('index.html'),
+            $this->getVfsEntries($counter)
         );
     }
 
@@ -39,8 +39,8 @@ class PieCrustBakerTest extends PieCrustTestCase
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['kitchen']['_counter'];
         $this->assertEquals(
-            array('0', '2010', 'index.html', 'foo.html'),
-            array_keys($counter)
+            array('2010', 'index.html', 'foo.html'),
+            $this->getVfsEntries($counter)
         );
     }
 
@@ -1081,8 +1081,8 @@ EOD
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['counter'];
         $this->assertEquals(
-            array('0', 'index.html', 'foo.html', 'bar.html'),
-            array_keys($counter)
+            array('index.html', 'foo.html', 'bar.html'),
+            $this->getVfsEntries($counter)
         );
 
         unlink($fs->url('kitchen/_content/pages/bar.html'));
@@ -1094,8 +1094,8 @@ EOD
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['counter'];
         $this->assertEquals(
-            array('0', 'index.html', 'foo.html'),
-            array_keys($counter)
+            array('index.html', 'foo.html'),
+            $this->getVfsEntries($counter)
         );
     }
 
@@ -1166,6 +1166,21 @@ EOD
             array(),
             array_keys($counter['foo'])
         );
+    }
+
+    private function getVfsEntries($structure)
+    {
+        $entries = array_keys($structure);
+        if (DIRECTORY_SEPARATOR == '\\')
+        {
+            // On Windows, there's a bug in PHP or vfsStream that creates
+            // an entry called '0' if you're creating a directory with the
+            // recursive version of 'mkdir' (passing 'true' as the 3rd parameter).
+            $zero = array_search(0, $entries, true);
+            if ($zero !== false)
+                array_splice($entries, $zero, 1);
+        }
+        return $entries;
     }
 }
 
