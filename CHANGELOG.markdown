@@ -19,6 +19,13 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.1.2 (2013-10-31)
+
+* BUG: The baker was incorrectly deleting files from the output directory during
+  incremental bakes.
+* BUG: The `theme_info.yml` file was incorrectly deployed to the output bake
+  folder.
+
 ### 1.1.1 (2013-10-28)
 
 * BUG: Fixed a bug where posts written on the same day would not be ordered
