@@ -85,25 +85,13 @@ class PieCrustBaker implements IBaker
     public function setBakeDir($dir)
     {
         $this->bakeDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
-        if (is_writable($this->bakeDir) === false)
+        try
         {
-            try
-            {
-                if (!is_dir($this->bakeDir))
-                {
-                    if (@mkdir($this->bakeDir, 0777, true) === false)
-                        throw new PieCrustException("Can't create bake directory: " . $this->bakeDir);
-                }
-                else
-                {
-                    if (@chmod($this->bakeDir, 0777) === false)
-                        throw new PieCrustException("Can't make bake directory writeable: " . $this->bakeDir);
-                }
-            }
-            catch (Exception $e)
-            {
-                throw new PieCrustException('The bake directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->bakeDir, 0, $e);
-            }
+            PathHelper::ensureDirectory($this->bakeDir, true);
+        }
+        catch (Exception $e)
+        {
+            throw new PieCrustException('The bake directory must exist and be writable, and we can\'t create it or change the permissions ourselves: ' . $this->bakeDir, 0, $e);
         }
     }
     
