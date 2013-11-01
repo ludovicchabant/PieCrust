@@ -1139,8 +1139,8 @@ EOD
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['counter'];
         $this->assertEquals(
-            array('0', '2010', 'index.html', '2.html', '3.html', 'foo.html', 'foo'),
-            array_keys($counter)
+            array('2010', 'index.html', '2.html', '3.html', 'foo.html', 'foo'),
+            $this->getVfsEntries($counter)
         );
         $this->assertEquals(
             array('2.html', '3.html'),
@@ -1159,8 +1159,8 @@ EOD
         $structure = $fs->getStructure();
         $counter = $structure[$fs->getRootName()]['counter'];
         $this->assertEquals(
-            array('0', '2010', 'index.html', 'foo.html', 'foo'),
-            array_keys($counter)
+            array('2010', 'index.html', 'foo.html', 'foo'),
+            $this->getVfsEntries($counter)
         );
         $this->assertEquals(
             array(),
