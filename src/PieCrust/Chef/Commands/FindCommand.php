@@ -9,6 +9,7 @@ use PieCrust\PieCrustDefaults;
 use PieCrust\PieCrustException;
 use PieCrust\Chef\ChefContext;
 use PieCrust\IO\FileSystem;
+use PieCrust\Page\Iteration\DateSortIterator;
 use PieCrust\Util\PageHelper;
 use PieCrust\Util\PathHelper;
 use PieCrust\Util\PieCrustHelper;
@@ -132,6 +133,9 @@ class FindCommand extends ChefCommand
             foreach ($blogKeys as $blogKey)
             {
                 $pages = PageHelper::getPosts($pieCrust, $blogKey);
+                $pagesIterator = new \ArrayIterator($pages);
+                $sorter = new DateSortIterator($pagesIterator);
+                $pages = iterator_to_array($sorter);
                 $foundAny |= $this->findPages($context, $pages, $blogKey);
             }
         }
@@ -211,11 +215,14 @@ class FindCommand extends ChefCommand
 
                 if (PageHelper::isPost($page))
                 {
-                    $timestamp = $page->getDate();
+                    $timestamp = $page->getDate(true);
                     $components['type'] = 'post';
                     $components['year'] = date('Y', $timestamp);
                     $components['month'] = date('m', $timestamp);
                     $components['day'] = date('d', $timestamp);
+                    $components['hour'] = date('H', $timestamp);
+                    $components['minute'] = date('i', $timestamp);
+                    $components['second'] = date('s', $timestamp);
 
                     $matches = array();
                     $postsPattern = UriBuilder::buildPostUriPattern(
