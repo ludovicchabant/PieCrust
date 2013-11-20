@@ -51,11 +51,16 @@ class ShallowFileSystem extends SimpleFileSystem
                     continue;
         
                 $matches = array();
-                if (preg_match(
+                if (!preg_match(
                     '/^(\d{2})-(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
                     $path->getFilename(),
-                    $matches) === false)
+                    $matches))
+                {
+                    $this->pieCrust->getEnvironment()->getLog()->warning(
+                        "File '{$path->getPathname()}' is not formatted as 'MM-DD_slug-title.{$extension}' and is ignored. Is that a typo?"
+                    );
                     continue;
+                }
                 $result[] = PostInfo::fromStrings(
                     $year,
                     $matches[1],
