@@ -68,12 +68,16 @@ class HierarchicalFileSystem extends SimpleFileSystem
                         continue;
 
                     $matches = array();
-                    if (preg_match(
+                    if (!preg_match(
                         '/^(\d{2})_(.*)\.'.preg_quote($extension, '/').'$/',
                         $path->getFilename(),
-                        $matches) === false)
+                        $matches))
+                    {
+                        $this->pieCrust->getEnvironment()->getLog()->warning(
+                            "File '{$path->getPathname()}' is not formatted as 'DD_slug-title.{$extension}' and is ignored. Is that a typo?"
+                        );
                         continue;
-                    
+                    }
                     $result[] = PostInfo::fromStrings(
                         $year,
                         $month,

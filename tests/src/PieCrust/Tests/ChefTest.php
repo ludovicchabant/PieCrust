@@ -72,7 +72,10 @@ class ChefTest extends PieCrustTestCase
                 "slug: second\n".
                 "year: 2012\n".
                 "month: 06\n".
-                "day: 03\n\n"
+                "day: 03\n".
+                "hour: 13\n".
+                "minute: 53\n".
+                "second: 44\n\n"
             )
         );
     }
@@ -84,7 +87,7 @@ class ChefTest extends PieCrustTestCase
     {
         $fs = MockFileSystem::create()
             ->withPost('first', 2, 6, 2012, array(), '')
-            ->withPost('second', 3, 6, 2012, array(), '')
+            ->withPost('second', 3, 6, 2012, array('time' => '13:53:44'), '')
             ->withPost('third', 4, 6, 2012, array(), '')
             ->withPost('third-same-day', 4, 6, 2012, array(), '')
             ->withPost('some-foo', 5, 6, 2012, array(), '')

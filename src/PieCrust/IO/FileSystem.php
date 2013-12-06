@@ -21,6 +21,7 @@ abstract class FileSystem
     const PATHINFO_CREATING = 1;
     // }}}
     
+    protected $pieCrust;
     protected $htmlExtensions;
 
     /**
@@ -33,6 +34,7 @@ abstract class FileSystem
         if (count($htmlExtensions) == 0)
             $htmlExtensions = array('html');
         $this->htmlExtensions = $htmlExtensions;
+        $this->pieCrust = $pieCrust;
     }
 
     /**

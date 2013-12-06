@@ -41,7 +41,12 @@ class FlatFileSystem extends SimpleFileSystem
                 $matches
             );
             if (!$res)
+            {
+                $this->pieCrust->getEnvironment()->getLog()->warning(
+                    "File '{$path->getPathname()}' is not formatted as 'YYYY-MM-DD_slug-title.{$extension}' and is ignored. Is that a typo?"
+                );
                 continue;
+            }
             
             $result[] = PostInfo::fromStrings(
                 $matches[1],
