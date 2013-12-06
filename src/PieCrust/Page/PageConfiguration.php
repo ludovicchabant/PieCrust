@@ -77,7 +77,7 @@ class PageConfiguration extends Configuration
         {
             if (is_array($validatedConfig['category']))
             {
-                throw new PieCrustException("This page's `category` is an array -- it must be a string. For multiple values, use `tags` instead.");
+                throw new PieCrustException("Page '{$page->getUri()}': `category` is an array -- it must be a string. For multiple values, use `tags` instead.");
             }
         }
         if (isset($validatedConfig['tags']))
@@ -86,6 +86,10 @@ class PageConfiguration extends Configuration
             {
                 $validatedConfig['tags'] = array($validatedConfig['tags']);
             }
+        }
+        if (isset($validatedConfig['single_page']))
+        {
+            throw new PieCrustException("Page '{$page->getUri()}': `single_page` has been deprecated. Use `blog.posts` with some limits if you want a single page showing the most recent posts.");
         }
 
         return $validatedConfig;

@@ -39,6 +39,28 @@ class PieCrustBaker implements IBaker
     {
         return $this->pieCrust;
     }
+
+    protected $pageBaker;
+    /**
+     * Gets the page baker.
+     */
+    public function getPageBaker()
+    {
+        if ($this->pageBaker == null)
+        {
+            $parameters = array(
+                'smart' => $this->parameters['__smart_content'],
+                'copy_assets' => $this->parameters['copy_assets']
+            );
+            $this->pageBaker = new PageBaker(
+                $this->pieCrust,
+                $this->getBakeDir(),
+                $this->bakeRecord->getCurrent(),
+                $parameters
+            );
+        }
+        return $this->pageBaker;
+    }
     
     protected $parameters;
     /**
@@ -98,7 +120,7 @@ class PieCrustBaker implements IBaker
     /**
      * Creates a new instance of the PieCrustBaker.
      */
-    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array(), $logger = null)
+    public function __construct(IPieCrust $pieCrust, array $bakerParameters = array())
     {
         $this->pieCrust = $pieCrust;
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
@@ -121,11 +143,8 @@ class PieCrustBaker implements IBaker
             $bakerParameters
         );
 
-        if ($logger == null)
-        {
-            $logger = \Log::singleton('null', '', '');
-        }
-        $this->logger = $logger;
+        $this->pageBaker = null;
+        $this->logger = $pieCrust->getEnvironment()->getLog();
         
         // New way: apply the `baker` variant.
         // Old way: apply the specified variant, or the default one. Warn about deprecation.
@@ -583,20 +602,6 @@ class PieCrustBaker implements IBaker
         {
             $this->logger->debug("No deletions detected.");
         }
-    }
-
-    protected function getPageBaker()
-    {
-        $parameters = array(
-            'smart' => $this->parameters['__smart_content'],
-            'copy_assets' => $this->parameters['copy_assets']
-        );
-        return new PageBaker(
-            $this->getBakeDir(),
-            $this->bakeRecord->getCurrent(),
-            $parameters,
-            $this->logger
-        );
     }
 
     protected function cacheAssistants()
