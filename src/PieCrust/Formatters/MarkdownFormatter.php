@@ -11,6 +11,7 @@ class MarkdownFormatter implements IFormatter
 {
     protected $pieCrust;
     protected $useExtra;
+    protected $useSundown;
     protected $parser;
     protected $parserConfig;
 
@@ -19,6 +20,7 @@ class MarkdownFormatter implements IFormatter
         $this->pieCrust = $pieCrust;
         $this->parser = null;
         $this->useExtra = $pieCrust->getConfig()->getValue('markdown/use_markdown_extra');
+        $this->useSundown = $pieCrust->getConfig()->getValue('markdown/use_sundown');
         $this->parserConfig = $pieCrust->getConfig()->getValue('markdown/config');
     }
 
@@ -38,6 +40,18 @@ class MarkdownFormatter implements IFormatter
     }
 
     public function format($text)
+    {
+        if (!$this->useSundown)
+        {
+            return $this->phpMarkdownFormat($text);
+        }
+        else
+        {
+            return $this->sundownFormat($text);
+        }
+    }
+
+    private function phpMarkdownFormat($text)
     {
         if ($this->parser == null)
         {
@@ -68,5 +82,22 @@ class MarkdownFormatter implements IFormatter
         }
 
         return $this->parser->transform($text);
+    }
+
+    private function sundownFormat($text)
+    {
+        if ($this->parser == null)
+        {
+            $options = $this->parserConfig;
+            if ($options == null)
+                $options = array();
+
+            $this->parser = new \Sundown\Markdown(
+                \Sundown\Render\HTML,
+                $options
+            );
+        }
+
+        return $this->parser->render($text);
     }
 }
