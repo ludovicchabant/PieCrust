@@ -1,17 +1,5 @@
 #!/bin/sh
 
-POSSIBLES="/usr/bin/php-5.3 /usr/local/bin/php-5.3 /usr/bin/php /usr/local/bin/php"
-for CUR in $POSSIBLES; do
-    if [ -x $CUR ]; then
-        PHP=$CUR
-        break
-    fi
-done
-if [ -z "$PHP" ]; then
-    echo "Couldn't find PHP in any of the known locations."
-    exit 1
-fi
-
 CHEF_DIR=`dirname $0`
 if `hash readlink 2>&-`; then
     LINKED_EXE=`readlink $0`
@@ -19,4 +7,5 @@ if `hash readlink 2>&-`; then
         CHEF_DIR=`dirname $LINKED_EXE`
     fi
 fi
-$PHP $CHEF_DIR/chef.php $@
+php $CHEF_DIR/chef.php $@
+
