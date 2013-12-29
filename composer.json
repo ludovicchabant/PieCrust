@@ -50,7 +50,7 @@
         "php": ">= 5.3.0",
         "symfony/yaml": "v2.2.0",
         "twig/twig": "v1.12.2",
-        "mustache/mustache": "v2.1.0",
+        "mustache/mustache": "~2.1",
         "geshi/geshi": "1.0.*",
         "leafo/lessphp": "0.3.*",
         "michelf/php-markdown": "1.3",

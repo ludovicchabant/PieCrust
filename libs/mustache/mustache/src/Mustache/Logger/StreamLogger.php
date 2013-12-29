@@ -3,7 +3,7 @@
 /*
  * This file is part of Mustache.php.
  *
- * (c) 2012 Justin Hileman
+ * (c) 2013 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -64,14 +64,14 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
     /**
      * Set the minimum logging level.
      *
-     * @throws InvalidArgumentException if the logging level is unknown.
+     * @throws Mustache_Exception_InvalidArgumentException if the logging level is unknown.
      *
-     * @param  integer $level The minimum logging level which will be written
+     * @param integer $level The minimum logging level which will be written
      */
     public function setLevel($level)
     {
         if (!array_key_exists($level, self::$levels)) {
-            throw new InvalidArgumentException('Unexpected logging level: ' . $level);
+            throw new Mustache_Exception_InvalidArgumentException(sprintf('Unexpected logging level: %s', $level));
         }
 
         $this->level = $level;
@@ -90,16 +90,16 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
     /**
      * Logs with an arbitrary level.
      *
-     * @throws InvalidArgumentException if the logging level is unknown.
+     * @throws Mustache_Exception_InvalidArgumentException if the logging level is unknown.
      *
-     * @param mixed $level
+     * @param mixed  $level
      * @param string $message
-     * @param array $context
+     * @param array  $context
      */
     public function log($level, $message, array $context = array())
     {
         if (!array_key_exists($level, self::$levels)) {
-            throw new InvalidArgumentException('Unexpected logging level: ' . $level);
+            throw new Mustache_Exception_InvalidArgumentException(sprintf('Unexpected logging level: %s', $level));
         }
 
         if (self::$levels[$level] >= self::$levels[$this->level]) {
@@ -110,21 +110,24 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
     /**
      * Write a record to the log.
      *
-     * @param  integer $level   The logging level
-     * @param  string  $message The log message
-     * @param  array   $context The log context
+     * @throws Mustache_Exception_LogicException   If neither a stream resource nor url is present.
+     * @throws Mustache_Exception_RuntimeException If the stream url cannot be opened.
+     *
+     * @param integer $level   The logging level
+     * @param string  $message The log message
+     * @param array   $context The log context
      */
     protected function writeLog($level, $message, array $context = array())
     {
         if (!is_resource($this->stream)) {
             if (!isset($this->url)) {
-                throw new LogicException('Missing stream url, the stream can not be opened. This may be caused by a premature call to close().');
+                throw new Mustache_Exception_LogicException('Missing stream url, the stream can not be opened. This may be caused by a premature call to close().');
             }
 
             $this->stream = fopen($this->url, 'a');
             if (!is_resource($this->stream)) {
                 // @codeCoverageIgnoreStart
-                throw new UnexpectedValueException(sprintf('The stream or file "%s" could not be opened.', $this->url));
+                throw new Mustache_Exception_RuntimeException(sprintf('The stream or file "%s" could not be opened.', $this->url));
                 // @codeCoverageIgnoreEnd
             }
         }
@@ -137,7 +140,7 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
      *
      * @throws InvalidArgumentException if the logging level is unknown.
      *
-     * @param  integer $level
+     * @param integer $level
      *
      * @return string
      */
@@ -149,9 +152,9 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
     /**
      * Format a log line for output.
      *
-     * @param  integer $level   The logging level
-     * @param  string  $message The log message
-     * @param  array   $context The log context
+     * @param integer $level   The logging level
+     * @param string  $message The log message
+     * @param array   $context The log context
      *
      * @return string
      */
@@ -167,14 +170,16 @@ class Mustache_Logger_StreamLogger extends Mustache_Logger_AbstractLogger
     /**
      * Interpolate context values into the message placeholders.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
      *
      * @return string
      */
     protected static function interpolateMessage($message, array $context = array())
     {
-        $message = (string) $message;
+        if (strpos($message, '{') === false) {
+            return $message;
+        }
 
         // build a replacement array with braces around the context keys
         $replace = array();
