@@ -117,7 +117,7 @@ class SelfUpdateCommand extends ChefCommand
         }
         fclose($fin);
         fclose($fout);
-        
+
         // Test the downloaded file.
         $log->debug("Checking downloaded file: {$tempPath}");
         try
@@ -133,8 +133,8 @@ class SelfUpdateCommand extends ChefCommand
             if (!$e instanceof \UnexpectedValueException && !$e instanceof \PharException)
                 throw $e;
 
-            $log->error("The downloaded binary seems to be corrupted: {$e->getMessage()}");
-            $log->error("Please try running the self update command again.");
+            $log->err("The downloaded binary seems to be corrupted: {$e->getMessage()}");
+            $log->err("Please try running the self update command again.");
             return 1;
         }
 
