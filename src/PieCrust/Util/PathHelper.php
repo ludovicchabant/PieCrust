@@ -15,9 +15,12 @@ class PathHelper
      * looking for a `_content/config.yml` file somewhere up in the hierarchy.
      * Returns `null` if no website is found.
      */
-    public static function getAppRootDir($path)
+    public static function getAppRootDir($path, $isThemeSite = false)
     {
-        while (!is_file($path . DIRECTORY_SEPARATOR . '_content' . DIRECTORY_SEPARATOR . 'config.yml'))
+        $configName = $isThemeSite ?
+            PieCrustDefaults::THEME_CONFIG_PATH :
+            PieCrustDefaults::CONFIG_PATH;
+        while (!is_file($path . DIRECTORY_SEPARATOR . $configName))
         {
             $pathParent = rtrim(dirname($path), '/\\');
             if ($path == $pathParent)
