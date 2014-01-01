@@ -45,6 +45,15 @@ class PieCrust implements IPieCrust
     {
         return $this->debuggingEnabled;
     }
+
+    protected $themeSite;
+    /**
+     * Gets whether this app is for a theme site.
+     */
+    public function isThemeSite()
+    {
+        return $this->themeSite;
+    }
     
     protected $templatesDirs;
     /**
@@ -326,7 +335,8 @@ class PieCrust implements IPieCrust
                 'root' => null,
                 'cache' => true,
                 'debug' => false,
-                'environment' => null
+                'environment' => null,
+                'theme_site' => false
             ),
             $parameters
         );
@@ -337,6 +347,7 @@ class PieCrust implements IPieCrust
         $this->rootDir = rtrim($parameters['root'], '/\\') . '/';
         $this->debuggingEnabled = (bool)$parameters['debug'];
         $this->cachingEnabled = (bool)$parameters['cache'];
+        $this->themeSite = (bool)$parameters['theme_site'];
         $this->pluginLoader = new PluginLoader($this);
 
         $this->environment = $parameters['environment'];
@@ -355,10 +366,18 @@ class PieCrust implements IPieCrust
             $configCache = $this->cachingEnabled ? $this->getCacheDir() : false;
 
             $configPaths = array();
-            $themeDir = $this->getThemeDir();
-            if ($themeDir !== false)
-                $configPaths[] = $themeDir . PieCrustDefaults::THEME_CONFIG_PATH;
-            $configPaths[] = $this->rootDir . PieCrustDefaults::CONFIG_PATH;
+            if ($this->isThemeSite())
+            {
+                $themeDir = false;
+                $configPaths[] = $this->rootDir . PieCrustDefaults::THEME_CONFIG_PATH;
+            }
+            else
+            {
+                $themeDir = $this->getThemeDir();
+                if ($themeDir !== false)
+                    $configPaths[] = $themeDir . PieCrustDefaults::THEME_CONFIG_PATH;
+                $configPaths[] = $this->rootDir . PieCrustDefaults::CONFIG_PATH;
+            }
 
             $this->config = new PieCrustConfiguration($configPaths, $configCache);
             if ($themeDir !== false)

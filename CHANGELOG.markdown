@@ -19,6 +19,14 @@ Fresh changes
 Frozen changes
 --------------
 
+### 1.1.3 (2013-01-01)
+
+* NEW: Added global `--theme` option to `chef` to treat a PieCrust theme like
+  a website. This lets the user run things like `chef serve` directly on a
+  theme.
+* BUG: Fixed incorrect sorting of blog posts published on the same day.
+* MISC: Happy new year!
+
 ### 1.1.2 (2013-10-31)
 
 * BUG: The baker was incorrectly deleting files from the output directory during

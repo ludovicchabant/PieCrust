@@ -119,7 +119,7 @@ class ChefTest extends PieCrustTestCase
     protected function runChef($fs, $args)
     {
         $chef = new Chef();
-        array_splice($args, 0, 0, array('--root="'.$fs->getAppRoot().'"', '--quiet'));
+        array_splice($args, 0, 0, array('chef', '--root="'.$fs->getAppRoot().'"', '--quiet'));
         $chef->runUnsafe(count($args), $args);
     }
 

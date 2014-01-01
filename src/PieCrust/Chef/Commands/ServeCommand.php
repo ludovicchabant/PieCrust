@@ -83,6 +83,7 @@ class ServeCommand extends ChefCommand
         $debugServer = $result->command->options['debug_server'];
         $keepAlive = $result->command->options['keep_alive'];
         $configVariant = $result->command->options['config_variant'];
+        $isThemeSite = $result->options['theme_site'];
         $nocache = $result->options['no_cache'];
         $debug = $result->options['debug'];
 
@@ -95,7 +96,8 @@ class ServeCommand extends ChefCommand
                 'debug_server' => $debugServer,
                 'debug' => $debug,
                 'cache' => !$nocache,
-                'config_variant' => $configVariant
+                'config_variant' => $configVariant,
+                'theme_site' => $isThemeSite
             ),
             $context->getLog());
         $server->run(array(

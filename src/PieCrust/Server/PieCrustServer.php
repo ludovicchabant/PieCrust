@@ -50,7 +50,8 @@ class PieCrustServer
                 'keep_alive' => false,
                 'debug' => false,
                 'config_variant' => null,
-                'cache' => true
+                'cache' => true,
+                'theme_site' => false
             ),
             $options
         );
@@ -67,7 +68,8 @@ class PieCrustServer
         {
             $pieCrust = new PieCrust(array(
                 'root' => $this->rootDir,
-                'cache' => true
+                'cache' => true,
+                'theme_site' => $this->options['theme_site']
             ));
             $this->bakeCacheDir = $pieCrust->getCacheDir() . 'server_cache';
         }
@@ -159,7 +161,8 @@ class PieCrustServer
                 array(
                     'root' => $this->rootDir,
                     'debug' => $this->options['debug'],
-                    'cache' => $this->options['cache']
+                    'cache' => $this->options['cache'],
+                    'theme_site' => $this->options['theme_site']
                 ),
                 $context->getRequest()->getServerVariables()
             );
@@ -329,7 +332,8 @@ class PieCrustServer
         $pieCrust = new PieCrust(
             array(
                 'root' => $this->rootDir,
-                'cache' => $this->options['cache']
+                'cache' => $this->options['cache'],
+                'theme_site' => $this->options['theme_site']
             ),
             $server
         );

@@ -90,8 +90,9 @@ class Chef
 
         // Find if whether the `--root` or `--config` parameters were given.
         $rootDir = null;
+        $isThemeSite = false;
         $configVariant = null;
-        for ($i = 0; $i < count($userArgv); ++$i)
+        for ($i = 1; $i < count($userArgv); ++$i)
         {
             $arg = $userArgv[$i];
 
@@ -115,14 +116,21 @@ class Chef
                 $configVariant = $userArgv[$i + 1];
                 ++$i;
             }
-
-            if ($rootDir && $configVariant)
+            elseif ($arg == '--theme')
+            {
+                $isThemeSite = true;
+            }
+            else if ($arg[0] != '-')
+            {
+                // End of the global arguments sections. This is
+                // the command name.
                 break;
+            }
         }
         if ($rootDir == null)
         {
             // No root given. Find it ourselves.
-            $rootDir = PathHelper::getAppRootDir(getcwd());
+            $rootDir = PathHelper::getAppRootDir(getcwd(), $isThemeSite);
         }
         else
         {
@@ -143,7 +151,8 @@ class Chef
             $pieCrust = new PieCrust(array(
                 'root' => $rootDir,
                 'cache' => !in_array('--no-cache', $userArgv),
-                'environment' => $environment
+                'environment' => $environment,
+                'theme_site' => $isThemeSite
             ));
         }
 
@@ -168,7 +177,9 @@ class Chef
         $this->addCommonOptionsAndArguments($parser);
         // Sort commands by name.
         $sortedCommands = $pieCrust->getPluginLoader()->getCommands();
-        usort($sortedCommands, function ($c1, $c2) { return strcmp($c1->getName(), $c2->getName()); });
+        usort($sortedCommands, function ($com1, $com2) {
+            return strcmp($com1->getName(), $com2->getName());
+        });
         // Add commands to the parser.
         foreach ($sortedCommands as $command)
         {
@@ -264,6 +275,12 @@ class Chef
             'description' => "The configuration variant to use for this command.",
             'default'     => null,
             'help_name'   => 'VARIANT'
+        ));
+        $parser->addOption('theme_site', array(
+            'long_name'   => '--theme',
+            'description' => "Treat a theme like a website.",
+            'default'     => false,
+            'action'      => 'StoreTrue'
         ));
         $parser->addOption('debug', array(
             'long_name'   => '--debug',
