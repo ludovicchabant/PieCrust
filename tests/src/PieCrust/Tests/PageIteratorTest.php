@@ -176,11 +176,11 @@ EOD
             ->withPost('post3', 3, 1, 2012, array('foo' => 'boh'), '')
             ->withPost('post4', 4, 1, 2012, array('foo' => 'blah'), '')
             ->withPage(
-                '/foos', 
+                '/foos',
                 array(
-                    'format' => 'none', 
+                    'format' => 'none',
                     'blahs' => array('is_foo' => 'blah')
-                ), 
+                ),
                 <<<EOD
 {% for p in blog.posts.filter('blahs') %}
 {{p.slug}}
@@ -226,6 +226,47 @@ post4
 post1
 
 post2
+
+EOD
+            ,
+            $page->getContentSegment()
+        );
+    }
+
+    public function testSortDateWithPostsOnSameDay()
+    {
+        $fs = MockFileSystem::create()
+            ->withConfig(array('site' => array(
+                'post_url' => '%slug%',
+                'default_format' => 'none',
+                'posts_per_page' => 10
+            )))
+            ->withPost('post1', 31, 12, 2013, array('time' => '15:07:05'))
+            ->withPost('post2', 31, 12, 2013, array('time' => '15:17:30'))
+            ->withPost('post3', 31, 12, 2013, array('time' => '20:03:42'))
+            ->withPost('post4', 1, 1, 2014, array('time' => '14:07:07'))
+            ->withPost('post5', 1, 1, 2014, array('time' => '14:08:09'))
+            ->withPost('post6', 1, 1, 2014, array('time' => '14:09:11'))
+            ->withPost('post7', 1, 1, 2014, array('time' => '14:10:13'))
+            ->withPost('post8', 1, 1, 2014, array('time' => '14:11:14'))
+            ->withPage('/foos', array('format' => 'none'), <<<EOD
+{% for p in pagination.posts %}
+{{p.slug}}
+{% endfor %}
+EOD
+            );
+        $pc = $fs->getApp();
+        $page = Page::createFromUri($pc, '/foos', false);
+        $this->assertEquals(
+            <<<EOD
+post8
+post7
+post6
+post5
+post4
+post3
+post2
+post1
 
 EOD
             ,
