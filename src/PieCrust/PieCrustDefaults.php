@@ -11,7 +11,7 @@ class PieCrustDefaults
     /**
      * The current version of PieCrust.
      */
-    const VERSION = '1.1.2';
+    const VERSION = '1.1.3';
 
     /**
      * The current version of the configuration.
@@ -20,7 +20,7 @@ class PieCrustDefaults
      * even if the PieCrust version didn't change (e.g. on the dev branch).
      */
     const CACHE_VERSION = '3';
-    
+
     /**
      * The application's source code directory.
      */
@@ -32,7 +32,7 @@ class PieCrustDefaults
     const INDEX_PAGE_NAME = '_index';
     const CATEGORY_PAGE_NAME = '_category';
     const TAG_PAGE_NAME = '_tag';
-    
+
     /**
      * Names for special directories and files.
      */
@@ -46,7 +46,7 @@ class PieCrustDefaults
     const CONTENT_THEME_DIR = '_content/theme/';
     const CACHE_DIR = '_cache/';
     const CACHE_INFO_FILENAME = 'cacheinfo';
-    
+
     /**
      * Default values for configuration settings.
      */
