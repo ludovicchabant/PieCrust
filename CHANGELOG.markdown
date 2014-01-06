@@ -15,6 +15,12 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+* CHANGED: The `chef` bootstrap script on Mac/Linux won't try to find your
+  PHP installation anymore.
+* NEW: Ability to sort pages returned by `site.pages`.
+* NEW: Added support for PHP-Sundown.
+* MISC: Optimizations for incremental baking.
+
 
 Frozen changes
 --------------

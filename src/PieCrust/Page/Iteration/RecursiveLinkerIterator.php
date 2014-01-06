@@ -52,6 +52,21 @@ class RecursiveLinkerIterator implements \ArrayAccess, \OuterIterator
     /**
      * @include
      * @noCall
+     * @documentation Sort posts by a page setting.
+     */
+    public function sort($name, $reverse = false)
+    {
+        $this->innerIterator = new ConfigSortIterator(
+            $this->innerIterator,
+            $name,
+            $reverse,
+            function ($data, $name) { return $data[$name]; });
+        return $this;
+    }
+
+    /**
+     * @include
+     * @noCall
      * @documentation Apply a named filter from the page's config (similar to `posts_filters`).
      */
     public function filter($filterName)
