@@ -212,7 +212,7 @@ class PageBaker
         {
             // Don't rebake if the output seems up-to-date, and
             // the page isn't known to be using posts.
-            $bakePathTime = filemtime($bakePath);
+            $bakePathTime = @filemtime($bakePath);
             if ($bakePathTime !== false && filemtime($page->getPath()) < $bakePathTime)
             {
                 // TODO: rebake if the page is using pagination and pages/posts were baked this time.
