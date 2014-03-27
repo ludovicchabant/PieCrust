@@ -21,7 +21,7 @@ class Chef
     public function __construct()
     {
     }
-    
+
     /**
      * Runs Chef given some command-line arguments.
      */
@@ -161,7 +161,10 @@ class Chef
         {
             // You can't apply a config variant if there's no website.
             if ($rootDir == null)
+            {
+                $cwd = getcwd();
                 throw new PieCrustException("No PieCrust website in '{$cwd}' ('_content/config.yml' not found!).");
+            }
 
             $configVariant = trim($configVariant, " \"");
             $pieCrust->getConfig()->applyVariant('variants/' . $configVariant);
@@ -246,8 +249,8 @@ class Chef
                     }
 
                     $context = new ChefContext($pieCrust, $result, $log);
-                    $context->setVerbosity($debugMode ? 
-                        'debug' : 
+                    $context->setVerbosity($debugMode ?
+                        'debug' :
                         ($quietMode ? 'quiet' : 'default')
                     );
                     $command->run($context);
