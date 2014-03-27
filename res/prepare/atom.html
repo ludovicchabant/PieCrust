@@ -6,8 +6,7 @@ categories:
 ttl:
 layout: none
 format: none
-posts_per_page: 10
-single_page: true
+post_count: 10
 content_type: xml
 ---
 <?xml version="1.0" encoding="utf-8"?>
@@ -23,7 +22,7 @@ content_type: xml
     <id>{{site.root}}</id>
     <updated>{{now|atomdate}}</updated>
     
-    {% for post in pagination.posts %}
+    {% for post in blog.posts.limit(page.post_count) %}
 	{% set author = site.author %}
     {% if post.author %}{% set author = post.author %}{% endif %}
 	{% if not author %}{{pcfail("Atom feeds require an author for each post. You can specify a global author with the 'site.author' config.")}}{% endif %}
