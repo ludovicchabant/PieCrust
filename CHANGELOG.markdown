@@ -25,7 +25,7 @@ Fresh changes
 Frozen changes
 --------------
 
-### 1.1.3 (2013-01-01)
+### 1.1.3 (2014-01-01)
 
 * NEW: Added global `--theme` option to `chef` to treat a PieCrust theme like
   a website. This lets the user run things like `chef serve` directly on a
