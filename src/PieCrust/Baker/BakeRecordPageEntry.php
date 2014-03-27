@@ -27,14 +27,6 @@ class BakeRecordPageEntry implements JsonSerializable
         $this->pageKey = $page->getPageKey();
 
         $this->taxonomy = array();
-        $tags = $page->getConfig()->getValue('tags');
-        if ($tags)
-            $this->taxonomy['tags'] = $tags;
-
-        $category = $page->getConfig()->getValue('category');
-        if ($category)
-            $this->taxonomy['category'] = $category;
-
         $this->usedTaxonomyCombinations = array();
         $this->usedPages = false;
         $this->usedPosts = array();
@@ -42,6 +34,14 @@ class BakeRecordPageEntry implements JsonSerializable
 
         if ($baker)
         {
+            $tags = $page->getConfig()->getValue('tags');
+            if ($tags)
+                $this->taxonomy['tags'] = $tags;
+
+            $category = $page->getConfig()->getValue('category');
+            if ($category)
+                $this->taxonomy['category'] = $category;
+
             $collector = $page->getApp()->getEnvironment()->getLinkCollector();
             if ($collector)
             {

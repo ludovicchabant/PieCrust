@@ -81,8 +81,13 @@ class SelfUpdateCommand extends ChefCommand
             $log->info("PieCrust is already up-to-date.");
             return 0;
         }
-
         $log->info("Updating to version {$targetVersion}...");
+
+        if ($targetVersion == 'master' or $targetVersion == 'dev')
+        {
+            // Aliases for the `default` Mercurial branch.
+            $targetVersion = 'default';
+        }
 
         $thisPath = Phar::running(false);
         if (!$requirePhar and !$thisPath)
@@ -117,7 +122,7 @@ class SelfUpdateCommand extends ChefCommand
         }
         fclose($fin);
         fclose($fout);
-        
+
         // Test the downloaded file.
         $log->debug("Checking downloaded file: {$tempPath}");
         try
@@ -133,8 +138,8 @@ class SelfUpdateCommand extends ChefCommand
             if (!$e instanceof \UnexpectedValueException && !$e instanceof \PharException)
                 throw $e;
 
-            $log->error("The downloaded binary seems to be corrupted: {$e->getMessage()}");
-            $log->error("Please try running the self update command again.");
+            $log->err("The downloaded binary seems to be corrupted: {$e->getMessage()}");
+            $log->err("Please try running the self update command again.");
             return 1;
         }
 

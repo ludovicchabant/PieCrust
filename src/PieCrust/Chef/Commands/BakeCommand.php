@@ -65,7 +65,7 @@ class BakeCommand extends ChefCommand
             'clean_cache' => $result->command->options['force'],
             'config_variant' => $result->command->options['config_variant']
         );
-        $baker = new PieCrustBaker($pieCrust, $bakerParameters, $context->getLog());
+        $baker = new PieCrustBaker($pieCrust, $bakerParameters);
         if ($outputDir)
         {
             $baker->setBakeDir($outputDir);

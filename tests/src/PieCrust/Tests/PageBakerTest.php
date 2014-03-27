@@ -57,31 +57,6 @@ class PageBakerTest extends PieCrustTestCase
                 'foo.bar.ext', 2, true,
                 'foo.bar.ext/2/index.html'
             ),
-            array(
-                'foo', 1, true,
-                'foo/index.html',
-                true
-            ),
-            array(
-                'foo/bar', 1, true,
-                'foo/bar/index.html',
-                true
-            ),
-            array(
-                'foo.ext', 1, true,
-                'foo.ext',
-                true
-            ),
-            array(
-                'foo.bar.ext', 1, true,
-                'foo.bar.ext',
-                true
-            ),
-            array(
-                'foo/bar.ext', 1, true,
-                'foo/bar.ext',
-                true
-            ),
             // Non-pretty URLs
             array(
                 '', 1, false,
@@ -129,18 +104,16 @@ class PageBakerTest extends PieCrustTestCase
     /**
      * @dataProvider getOutputPathDataProvider
      */
-    public function testGetOutputPath($uri, $pageNumber, $prettyUrls, $expectedPath, $singlePage = false)
+    public function testGetOutputPath($uri, $pageNumber, $prettyUrls, $expectedPath)
     {
         $app = new MockPieCrust();
         $page = new MockPage($app);
         $page->uri = $uri;
         $page->pageNumber = $pageNumber;
         if ($prettyUrls)
-            $page->getConfig()->setValue('pretty_urls', true);
-        if ($singlePage)
-            $page->getConfig()->setValue('single_page', true);
+            $app->getConfig()->setValue('site/pretty_urls', true);
 
-        $baker = new PageBaker('/tmp');
+        $baker = new PageBaker($app, '/tmp');
         $path = $baker->getOutputPath($page);
         $expectedPath = '/tmp/' . $expectedPath;
         $this->assertEquals($expectedPath, $path);
@@ -150,14 +123,9 @@ class PageBakerTest extends PieCrustTestCase
     {
         return array(
             array(false, 'blah', null, 'blah.html'),
-            array(false, 'blah', array('pretty_urls' => true), 'blah/index.html'),
             array(false, 'blah.foo', null, 'blah.foo'),
-            array(false, 'blah.foo', array('pretty_urls' => true), 'blah.foo/index.html'),
-
             array(true, 'blah', null, 'blah/index.html'),
-            array(true, 'blah', array('pretty_urls' => false), 'blah.html'),
             array(true, 'blah.foo', null, 'blah.foo/index.html'),
-            array(true, 'blah.foo', array('pretty_urls' => false), 'blah.foo'),
         );
     }
 
@@ -187,7 +155,7 @@ class PageBakerTest extends PieCrustTestCase
         $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/' . $name, false);
         
-        $baker = new PageBaker($fs->url('counter'));
+        $baker = new PageBaker($app, $fs->url('counter'));
         $baker->bake($page);
 
         $this->assertFalse($baker->wasPaginationDataAccessed());
@@ -239,7 +207,7 @@ class PageBakerTest extends PieCrustTestCase
         $app = $fs->getApp();
         $page = Page::createFromUri($app, $uri, false);
         
-        $baker = new PageBaker($fs->url('counter'));
+        $baker = new PageBaker($app, $fs->url('counter'));
         $baker->bake($page);
 
         $this->assertEquals(1, $baker->getPageCount());
@@ -297,7 +265,7 @@ EOD
         ));
         $page = Page::createFromUri($app, '/' . $name, false);
         
-        $baker = new PageBaker($fs->url('counter'));
+        $baker = new PageBaker($app, $fs->url('counter'));
         $baker->bake($page);
 
         $this->assertTrue($baker->wasPaginationDataAccessed());
@@ -359,7 +327,7 @@ EOD
         ));
         $page = Page::createFromUri($app, '/' . $name, false);
         
-        $baker = new PageBaker($fs->url('counter'));
+        $baker = new PageBaker($app, $fs->url('counter'));
         $baker->bake($page);
 
         $this->assertTrue($baker->wasPaginationDataAccessed());
@@ -419,7 +387,7 @@ EOD
         $app = new PieCrust(array('root' => $fs->url('kitchen')));
         $page = Page::createFromUri($app, '/' . $name, false);
         
-        $baker = new PageBaker($fs->url('counter'), null, array('copy_assets' => true));
+        $baker = new PageBaker($app, $fs->url('counter'), null, array('copy_assets' => true));
         $baker->bake($page);
 
         $this->assertFalse($baker->wasPaginationDataAccessed());

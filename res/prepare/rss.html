@@ -6,8 +6,7 @@ categories:
 ttl:
 layout: none
 format: none
-posts_per_page: 10
-single_page: true
+post_count: 10
 content_type: xml
 ---
 <?xml version="1.0" encoding="UTF-8"?>
@@ -33,7 +32,7 @@ content_type: xml
         {% endfor %}
         {% if page.ttl %}<ttl>{{page.ttl}}</ttl>{% endif %}
 
-        {% for post in pagination.posts %}
+        {% for post in blog.posts.limit(page.post_count) %}
         {% set author = site.author %}
         {% if post.author %}{% set author = post.author %}{% endif %}
         <item>

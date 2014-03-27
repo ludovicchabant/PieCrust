@@ -21,10 +21,13 @@ class PageBaker
      */
     const BAKE_INDEX_DOCUMENT = 'index.html';
     
-    protected $logger;
+    protected $pieCrust;
     protected $bakeDir;
     protected $bakeRecord;
     protected $parameters;
+
+    protected $logger;
+    protected $prettyUrls;
     
     protected $paginationDataAccessed;
     /**
@@ -55,22 +58,21 @@ class PageBaker
     /**
      * Creates a new instance of PageBaker.
      */
-    public function __construct($bakeDir, $bakeRecord = null, array $parameters = array(), $logger = null)
+    public function __construct(IPieCrust $pieCrust, $bakeDir, $bakeRecord = null, array $parameters = array())
     {
+        $this->pieCrust = $pieCrust;
         $this->bakeDir = rtrim(str_replace('\\', '/', $bakeDir), '/') . '/';
         $this->bakeRecord = $bakeRecord;
         $this->parameters = array_merge(
             array(
+                'smart' => true,
                 'copy_assets' => false
             ), 
             $parameters
         );
 
-        if ($logger == null)
-        {
-            $logger = \Log::singleton('null', '', '');
-        }
-        $this->logger = $logger;
+        $this->logger = $pieCrust->getEnvironment()->getLog();
+        $this->prettyUrls = $pieCrust->getConfig()->getValue('site/pretty_urls');
     }
 
     public function getOutputPath(IPage $page)
@@ -78,8 +80,7 @@ class PageBaker
         $bakePath = $this->bakeDir;
         $isSubPage = ($page->getPageNumber() > 1);
         $decodedUri = rawurldecode($page->getUri());
-        $prettyUrls = PageHelper::getConfigValue($page, 'pretty_urls', 'site');
-        if ($prettyUrls)
+        if ($this->prettyUrls)
         {
             // Output will be one of:
             // - `uri/name/index.html` (if not a sub-page).
@@ -87,32 +88,10 @@ class PageBaker
             // This works also for URIs with extensions, as it will produce:
             // - `uri/name.ext/index.html`
             // - `uri/name.ext/2/index.html`
-            // But wait! If the page has `single_page` set to `true`, and it's not
-            // an HTML page, then just use the filename itself:
-            // - `uri/name.ext`
-            if ($page->getConfig()->getValue('single_page'))
-            {
-                if ($isSubPage)
-                {
-                    $pageRelativePath = PageHelper::getRelativePath($page);
-                    throw new PieCrustException("Page '{$pageRelativePath}' has `single_page` set to `true` but we're baking sub-page {$page->getPageNumber()}. What the hell?");
-                }
-
-                $extension = pathinfo($decodedUri, PATHINFO_EXTENSION);
-                if ($extension)
-                    $bakePath .= $decodedUri;
-                else
-                    $bakePath .= $decodedUri . 
-                    (($decodedUri == '') ? '' : '/') . 
-                    self::BAKE_INDEX_DOCUMENT;
-            }
-            else
-            {
-                $bakePath .= $decodedUri . (($decodedUri == '') ? '' : '/');
-                if ($isSubPage)
-                    $bakePath .= $page->getPageNumber() . '/';
-                $bakePath .= self::BAKE_INDEX_DOCUMENT;
-            }
+            $bakePath .= $decodedUri . (($decodedUri == '') ? '' : '/');
+            if ($isSubPage)
+                $bakePath .= $page->getPageNumber() . '/';
+            $bakePath .= self::BAKE_INDEX_DOCUMENT;
         }
         else
         {
@@ -174,8 +153,11 @@ class PageBaker
             $hasMorePages = true;
             while ($hasMorePages)
             {
-                $didBake |= $this->bakeSinglePage($pageRenderer, $extraData);
-                
+                $didBakeThisOne = $this->bakeSinglePage($pageRenderer, $extraData);
+                $didBake |= $didBakeThisOne;
+                if (!$didBakeThisOne)
+                    break;
+
                 $data = $page->getPageData();
                 if ($data and isset($data['pagination']))
                 {
@@ -226,11 +208,12 @@ class PageBaker
 
         // Figure out if we should re-bake this page.
         $doBake = true;
-        if (is_file($bakePath) && $this->parameters['smart'])
+        if ($this->parameters['smart'])
         {
             // Don't rebake if the output seems up-to-date, and
             // the page isn't known to be using posts.
-            if (filemtime($page->getPath()) < filemtime($bakePath))
+            $bakePathTime = @filemtime($bakePath);
+            if ($bakePathTime !== false && filemtime($page->getPath()) < $bakePathTime)
             {
                 // TODO: rebake if the page is using pagination and pages/posts were baked this time.
                 $doBake = false;

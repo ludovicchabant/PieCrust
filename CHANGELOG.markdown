@@ -19,7 +19,19 @@ Fresh changes
 Frozen changes
 --------------
 
-### 1.1.3 (2013-01-01)
+### 1.2.0 (2014-03-26)
+
+* CHANGED: The `chef` bootstrap script on Mac/Linux won't try to find your
+  PHP installation anymore.
+* NEW: Ability to sort pages returned by `site.pages`.
+* NEW: Added support for PHP-Sundown.
+* BUG: Fixed a crash when trying to display an error message about incorrectly
+  running `chef` outside of a website directory in some situations.
+* BUG: Don't use deprecated markup in the `chef prepare feed` command.
+* MISC: Optimizations for incremental baking.
+* MISC: Ability to update to the `dev` branch with aliases like `master`.
+
+### 1.1.3 (2014-01-01)
 
 * NEW: Added global `--theme` option to `chef` to treat a PieCrust theme like
   a website. This lets the user run things like `chef serve` directly on a

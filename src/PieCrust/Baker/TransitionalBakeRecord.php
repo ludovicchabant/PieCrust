@@ -89,6 +89,7 @@ class TransitionalBakeRecord
 
             if ($prev && $cur && !$cur->wasBaked())
             {
+                $cur->taxonomy = $prev->taxonomy;
                 $cur->usedTaxonomyCombinations = $prev->usedTaxonomyCombinations;
                 $cur->usedPages = $prev->usedPages;
                 $cur->usedPosts = $prev->usedPosts;
