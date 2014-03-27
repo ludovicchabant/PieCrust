@@ -81,8 +81,13 @@ class SelfUpdateCommand extends ChefCommand
             $log->info("PieCrust is already up-to-date.");
             return 0;
         }
-
         $log->info("Updating to version {$targetVersion}...");
+
+        if ($targetVersion == 'master' or $targetVersion == 'dev')
+        {
+            // Aliases for the `default` Mercurial branch.
+            $targetVersion = 'default';
+        }
 
         $thisPath = Phar::running(false);
         if (!$requirePhar and !$thisPath)
