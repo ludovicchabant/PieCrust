@@ -15,6 +15,12 @@ development branch (the development branch is ahead of the stable branch).
 Fresh changes
 -------------
 
+
+Frozen changes
+--------------
+
+### 1.2.0 (2014-03-26)
+
 * CHANGED: The `chef` bootstrap script on Mac/Linux won't try to find your
   PHP installation anymore.
 * NEW: Ability to sort pages returned by `site.pages`.
@@ -24,10 +30,6 @@ Fresh changes
 * BUG: Don't use deprecated markup in the `chef prepare feed` command.
 * MISC: Optimizations for incremental baking.
 * MISC: Ability to update to the `dev` branch with aliases like `master`.
-
-
-Frozen changes
---------------
 
 ### 1.1.3 (2014-01-01)
 
