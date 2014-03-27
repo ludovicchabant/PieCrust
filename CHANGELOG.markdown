@@ -19,7 +19,11 @@ Fresh changes
   PHP installation anymore.
 * NEW: Ability to sort pages returned by `site.pages`.
 * NEW: Added support for PHP-Sundown.
+* BUG: Fixed a crash when trying to display an error message about incorrectly
+  running `chef` outside of a website directory in some situations.
+* BUG: Don't use deprecated markup in the `chef prepare feed` command.
 * MISC: Optimizations for incremental baking.
+* MISC: Ability to update to the `dev` branch with aliases like `master`.
 
 
 Frozen changes
