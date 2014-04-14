@@ -30,7 +30,7 @@ class PieCrustServer
     protected $bakeCacheDir;
     protected $bakeCacheFiles;
     protected $bakeError;
-    
+
     /**
      * Creates a new chef server.
      */
@@ -141,14 +141,14 @@ class PieCrustServer
             }
         }
     }
-    
+
     /**
      * For internal use only.
      */
     public function _runPieCrustRequest(\StupidHttp_HandlerContext $context)
     {
         $startTime = microtime(true);
-        
+
         // Things like the plugin loader will add paths to the PHP include path.
         // Let's save it and restore it later.
         $includePath = get_include_path();
@@ -171,6 +171,9 @@ class PieCrustServer
             $pieCrust->getConfig()->setValue('site/pretty_urls', true);
             $pieCrust->getConfig()->setValue('site/cache_time', false);
             $pieCrust->getConfig()->setValue('server/is_hosting', true);
+
+            // Initialize all plugins.
+            $pieCrust->getPluginLoader()->getPlugins();
 
             // New way: apply the `server` variant.
             // Old way: apply the specified variant, or the default one. Warn about deprecation.
@@ -207,7 +210,7 @@ class PieCrustServer
             $pieCrustException = $this->bakeError;
             $this->bakeError = null;
         }
-        
+
         // If there was no error so far, run the current request.
         $headers = array();
         if ($pieCrustException == null)
@@ -228,7 +231,7 @@ class PieCrustServer
                 $pieCrustException = $e;
             }
         }
-        
+
         // Set the return HTTP status code.
         $code = 500;
         if (isset($headers[0]))
@@ -246,13 +249,13 @@ class PieCrustServer
                         );
         }
         $context->getResponse()->setStatus($code);
-        
+
         // Set the headers.
         foreach ($headers as $h => $v)
         {
             $context->getResponse()->setHeader($h, $v);
         }
-        
+
         // Show an error message, if needed.
         if ($pieCrustException)
         {
@@ -263,7 +266,7 @@ class PieCrustServer
 
         // Restore the include path.
         set_include_path($includePath);
-        
+
         $endTime = microtime(true);
         $timeSpan = microtime(true) - $startTime;
         $context->getLog()->debug("Ran PieCrust request in " . $timeSpan * 1000 . "ms.");
@@ -305,7 +308,7 @@ class PieCrustServer
             $requestFormat = $color->convert("[%%date%%] %m%%client_ip%%%n --> %g%%method%%%n %%path%% --> %c%%status_name%%%n [%%time%%ms]");
             $this->server->getLog()->setRequestFormat($requestFormat);
         }
-        
+
         foreach ($this->options['mime_types'] as $ext => $mime)
         {
             $this->server->setMimeType($ext, $mime);
@@ -313,7 +316,7 @@ class PieCrustServer
 
         // Mount the `_content` directory so that we can see page assets.
         $this->server->mount($this->rootDir . DIRECTORY_SEPARATOR . '_content', '_content');
-        
+
         $self = $this; // Workaround for $this not being capturable in closures.
         $this->server->onPattern('GET', '.*')
                      ->call(function($context) use ($self)
