@@ -23,7 +23,7 @@ class Paginator
 {
     protected $page;
     protected $postsIterator;
-    
+
     /**
      * Creates a new Paginator instance.
      *
@@ -34,7 +34,7 @@ class Paginator
         $this->page = $page;
         $this->postsIterator = null;
     }
-    
+
     // {{{ Template members
     /**
      * Gets the posts for this page.
@@ -58,7 +58,7 @@ class Paginator
     {
         return $this->posts_this_page() > 0;
     }
- 
+
     /**
      * Gets the maximum number of posts to be displayed on the page.
      */
@@ -67,7 +67,7 @@ class Paginator
         $blogKey = $this->page->getConfig()->getValue('blog');
         return PageHelper::getConfigValue($this->page, 'posts_per_page', $blogKey);
     }
- 
+
     /**
      * Gets the actual number of posts on the page.
      */
@@ -84,7 +84,7 @@ class Paginator
     {
         return ($this->page->getPageNumber() > 1) ? $this->page->getPageNumber() - 1 : null;
     }
-    
+
     /**
      * Gets this page's page number.
      */
@@ -92,7 +92,7 @@ class Paginator
     {
         return $this->page->getPageNumber();
     }
- 
+
     /**
      * Gets the next page's page number.
      */
@@ -124,7 +124,7 @@ class Paginator
         }
         return null;
     }
-    
+
     /**
      * Gets this page's URI.
      *
@@ -134,7 +134,7 @@ class Paginator
     {
         return $this->getSubPageUri($this->page->getPageNumber());
     }
-   
+
     /**
      * Gets the next page's URI.
      *
@@ -172,7 +172,7 @@ class Paginator
             $this->page->getConfig()->getValue('single_page'))
             return 1;
 
-        $totalPostCount = $this->total_post_count(); 
+        $totalPostCount = $this->total_post_count();
         $postsPerPage = $this->posts_per_page();
         if (is_int($postsPerPage) && $postsPerPage > 0)
             return ceil($totalPostCount / $postsPerPage);
@@ -223,7 +223,7 @@ class Paginator
     }
 
     /**
-     * Gets the post coming after the current page, 
+     * Gets the post coming after the current page,
      * if it is a post, and it's not the last one.
      *
      * This method is meant to be called from the layouts via the template engine.
@@ -271,7 +271,7 @@ class Paginator
             throw new PieCrustException("Can't set the pagination data source after the pagination data has been loaded.");
         $this->dataSource = $posts;
     }
-    
+
     /**
      * Resets the pagination data, as if it had never been accessed.
      *
@@ -281,7 +281,7 @@ class Paginator
     {
         $this->postsIterator = null;
     }
-    
+
     /**
      * Gets whether the pagination data was requested by the page.
      *
@@ -291,7 +291,7 @@ class Paginator
     {
         return ($this->postsIterator != null);
     }
-    
+
     /**
      * Gets whether the current page has more pages to show.
      *
@@ -302,7 +302,7 @@ class Paginator
         return ($this->next_page() != null);
     }
     // }}}
-    
+
     protected function ensurePaginationData()
     {
         if ($this->postsIterator != null)
@@ -315,7 +315,7 @@ class Paginator
         {
             $posts = PageHelper::getPosts($this->page->getApp(), $blogKey);
         }
-        
+
         // Create the pagination iterator.
         $this->postsIterator = new PageIterator($this->page->getApp(), $blogKey, $posts);
         // Set our current page.
@@ -334,14 +334,16 @@ class Paginator
         }
         $this->postsIterator->setLocked();
     }
-    
+
     protected function getPaginationFilter()
     {
         $filter = new PaginationFilter();
         $filterInfo = $this->page->getConfig()->getValue('posts_filters');
+        if ($filterInfo == null)
+            $filterInfo = $this->page->getApp()->getConfig()->getValue('site/posts_filters');
         if ($filterInfo == 'none' or $filterInfo == 'nil' or $filterInfo == '')
             $filterInfo = null;
-        
+
         if (PageHelper::isTag($this->page) or PageHelper::isCategory($this->page))
         {
             // If the current page is a tag/category page, add filtering
