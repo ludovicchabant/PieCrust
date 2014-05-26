@@ -13,8 +13,7 @@
 /**
  * Lexes a template string.
  *
- * @package    twig
- * @author     Fabien Potencier <fabien@symfony.com>
+ * @author Fabien Potencier <fabien@symfony.com>
  */
 class Twig_Lexer implements Twig_LexerInterface
 {
@@ -32,6 +31,7 @@ class Twig_Lexer implements Twig_LexerInterface
     protected $regexes;
     protected $position;
     protected $positions;
+    protected $currentVarBlockLine;
 
     const STATE_DATA            = 0;
     const STATE_BLOCK           = 1;
@@ -73,18 +73,15 @@ class Twig_Lexer implements Twig_LexerInterface
     }
 
     /**
-     * Tokenizes a source code.
-     *
-     * @param string $code     The source code
-     * @param string $filename A unique identifier for the source code
-     *
-     * @return Twig_TokenStream A token stream instance
+     * {@inheritdoc}
      */
     public function tokenize($code, $filename = null)
     {
         if (function_exists('mb_internal_encoding') && ((int) ini_get('mbstring.func_overload')) & 2) {
             $mbEncoding = mb_internal_encoding();
             mb_internal_encoding('ASCII');
+        } else {
+            $mbEncoding = null;
         }
 
         $this->code = str_replace(array("\r\n", "\r"), "\n", $code);
@@ -135,7 +132,7 @@ class Twig_Lexer implements Twig_LexerInterface
             throw new Twig_Error_Syntax(sprintf('Unclosed "%s"', $expect), $lineno, $this->filename);
         }
 
-        if (isset($mbEncoding)) {
+        if ($mbEncoding) {
             mb_internal_encoding($mbEncoding);
         }
 
@@ -186,12 +183,14 @@ class Twig_Lexer implements Twig_LexerInterface
                 } else {
                     $this->pushToken(Twig_Token::BLOCK_START_TYPE);
                     $this->pushState(self::STATE_BLOCK);
+                    $this->currentVarBlockLine = $this->lineno;
                 }
                 break;
 
             case $this->options['tag_variable'][0]:
                 $this->pushToken(Twig_Token::VAR_START_TYPE);
                 $this->pushState(self::STATE_VAR);
+                $this->currentVarBlockLine = $this->lineno;
                 break;
         }
     }
@@ -225,13 +224,13 @@ class Twig_Lexer implements Twig_LexerInterface
             $this->moveCursor($match[0]);
 
             if ($this->cursor >= $this->end) {
-                throw new Twig_Error_Syntax(sprintf('Unexpected end of file: Unclosed "%s"', $this->state === self::STATE_BLOCK ? 'block' : 'variable'), $this->lineno, $this->filename);
+                throw new Twig_Error_Syntax(sprintf('Unclosed "%s"', $this->state === self::STATE_BLOCK ? 'block' : 'variable'), $this->currentVarBlockLine, $this->filename);
             }
         }
 
         // operators
         if (preg_match($this->regexes['operator'], $this->code, $match, null, $this->cursor)) {
-            $this->pushToken(Twig_Token::OPERATOR_TYPE, $match[0]);
+            $this->pushToken(Twig_Token::OPERATOR_TYPE, preg_replace('/\s+/', ' ', $match[0]));
             $this->moveCursor($match[0]);
         }
         // names
@@ -324,7 +323,6 @@ class Twig_Lexer implements Twig_LexerInterface
             $this->moveCursor($match[0]);
 
         } elseif (preg_match(self::REGEX_DQ_STRING_DELIM, $this->code, $match, null, $this->cursor)) {
-
             list($expect, $lineno) = array_pop($this->brackets);
             if ($this->code[$this->cursor] != '"') {
                 throw new Twig_Error_Syntax(sprintf('Unclosed "%s"', $expect), $lineno, $this->filename);
@@ -380,10 +378,15 @@ class Twig_Lexer implements Twig_LexerInterface
             // an operator that ends with a character must be followed by
             // a whitespace or a parenthesis
             if (ctype_alpha($operator[$length - 1])) {
-                $regex[] = preg_quote($operator, '/').'(?=[\s()])';
+                $r = preg_quote($operator, '/').'(?=[\s()])';
             } else {
-                $regex[] = preg_quote($operator, '/');
+                $r = preg_quote($operator, '/');
             }
+
+            // an operator with a space can be any amount of whitespaces
+            $r = preg_replace('/\s+/', '\s+', $r);
+
+            $regex[] = $r;
         }
 
         return '/'.implode('|', $regex).'/A';
