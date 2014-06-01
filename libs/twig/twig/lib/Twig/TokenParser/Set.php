@@ -42,14 +42,13 @@ class Twig_TokenParser_Set extends Twig_TokenParser
         $names = $this->parser->getExpressionParser()->parseAssignmentExpression();
 
         $capture = false;
-        if ($stream->test(Twig_Token::OPERATOR_TYPE, '=')) {
-            $stream->next();
+        if ($stream->nextIf(Twig_Token::OPERATOR_TYPE, '=')) {
             $values = $this->parser->getExpressionParser()->parseMultitargetExpression();
 
             $stream->expect(Twig_Token::BLOCK_END_TYPE);
 
             if (count($names) !== count($values)) {
-                throw new Twig_Error_Syntax("When using set, you must have the same number of variables and assignements.", $stream->getCurrent()->getLine(), $stream->getFilename());
+                throw new Twig_Error_Syntax("When using set, you must have the same number of variables and assignments.", $stream->getCurrent()->getLine(), $stream->getFilename());
             }
         } else {
             $capture = true;
