@@ -52,12 +52,12 @@ class PreparePageCommandExtension extends ChefCommandExtension
         $formats = $app->getConfig()->getValue('site/auto_formats');
         $extensions = array_keys($formats);
         foreach ($extensions as $maybe_ext) {
-	        $alternativeTemplatePath = PieCrustDefaults::CONTENT_DIR . $templateRelPath . '.' . $maybe_ext;
-	        if (file_exists($alternativeTemplatePath)) {
-		        $templatePath = $alternativeTemplatePath;
-		        $ext = $maybe_ext;
-		        break;
-	        }
+            $alternativeTemplatePath = PieCrustDefaults::CONTENT_DIR . $templateRelPath . '.' . $maybe_ext;
+            if (file_exists($alternativeTemplatePath)) {
+                $templatePath = $alternativeTemplatePath;
+                $ext = $maybe_ext;
+                break;
+            }
         }
 
         // Create the path of the new page.
@@ -78,11 +78,11 @@ class PreparePageCommandExtension extends ChefCommandExtension
         // Read in the template
         $template = file_get_contents($templatePath);
 
-		// Render the template with the default template engine
-		$engine = PieCrustHelper::getTemplateEngine($app, 'html');
-		ob_start();
-		$engine->renderString($template, compact('title'));
-		$output = ob_get_clean();
+        // Render the template with the default template engine
+        $engine = PieCrustHelper::getTemplateEngine($app, 'html');
+        ob_start();
+        $engine->renderString($template, compact('title'));
+        $output = ob_get_clean();
 
         // Write the contents.
         if (!is_dir(dirname($fullPath)))
