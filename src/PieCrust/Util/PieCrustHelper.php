@@ -73,6 +73,7 @@ class PieCrustHelper
     
     /**
      * Gets the template engine associated with the given extension.
+     * @return null| \PieCrust\TemplateEngines\ITemplateEngine
      */
     public static function getTemplateEngine(IPieCrust $pieCrust, $extension = 'html')
     {

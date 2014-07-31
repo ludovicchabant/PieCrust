@@ -1,9 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
     ],
-    "hash": "eb1673e2c4a3e4335a6c4ae0625a4012",
+    "hash": "7af00ff6fc1e02b42551439bfc280c0a",
     "packages": [
         {
             "name": "bolt80/stupidhttp",
@@ -184,20 +185,23 @@
         },
         {
             "name": "mustache/mustache",
-            "version": "v2.1.0",
+            "version": "v2.6.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/bobthecow/mustache.php",
-                "reference": "v2.1.0"
+                "url": "https://github.com/bobthecow/mustache.php.git",
+                "reference": "1430ca884912eaba2b3830856b45685733b16789"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/bobthecow/mustache.php/archive/v2.1.0.zip",
-                "reference": "v2.1.0",
+                "url": "https://api.github.com/repos/bobthecow/mustache.php/zipball/1430ca884912eaba2b3830856b45685733b16789",
+                "reference": "1430ca884912eaba2b3830856b45685733b16789",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.2.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "*"
             },
             "type": "library",
             "autoload": {
@@ -205,7 +209,7 @@
                     "Mustache": "src/"
                 }
             },
-            "notification-url": "http://packagist.org/downloads/",
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -222,7 +226,7 @@
                 "mustache",
                 "templating"
             ],
-            "time": "2013-01-12 07:18:03"
+            "time": "2014-06-20 19:34:49"
         },
         {
             "name": "netcarver/textile",

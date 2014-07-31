@@ -68,7 +68,6 @@ class PageRenderer
             // Get the template engine and the page data.
             $extension = pathinfo($templateNames[0], PATHINFO_EXTENSION);
             $templateEngine = PieCrustHelper::getTemplateEngine($pieCrust, $extension);
-            
             // Render the page.
             $data = DataBuilder::getTemplateRenderingData($this->page);
             $templateEngine->renderFile($templateNames, $data);

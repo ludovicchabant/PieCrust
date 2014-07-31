@@ -62,7 +62,30 @@ class MustacheTemplateEngine implements ITemplateEngine
     {
         if ($this->mustache === null)
         {
-            $this->mustache = new \Mustache_Engine();
+            $dirs = $this->pieCrust->getTemplatesDirs();
+
+            $loaders = array();
+            foreach($dirs as $dir){
+                $loaders[]= new \Mustache_Loader_FilesystemLoader($dir);
+            }
+            $loaders[]=new \Mustache_Loader_StringLoader();
+            $loader =new \Mustache_Loader_CascadingLoader($loaders);
+            $options  = array(
+                'loader'          => $loader,
+                'partials_loader' => $loader,
+                'debug'=>false,
+                'cache'=>null
+            );
+            if ($this->pieCrust->isDebuggingEnabled() or
+                $this->pieCrust->getConfig()->getValue('mustache/debug') === true)
+            {
+                $options['debug'] = true;
+            }
+            if ($this->pieCrust->isCachingEnabled())
+            {
+                $options['cache'] = $this->pieCrust->getCacheDir() . 'mustache_c';
+            }
+            $this->mustache = new \Mustache_Engine($options);
         }
     }
 }
