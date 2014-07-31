@@ -36,8 +36,7 @@ class MustacheTemplateEngine implements ITemplateEngine
         foreach ($templateNames as $templateName)
         {
             $templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
-            if ($templatePath)
-                break;
+            $this->mustache->loadTemplate($templatePath);
         }
         if (!$templatePath)
         {
@@ -49,9 +48,14 @@ class MustacheTemplateEngine implements ITemplateEngine
                 )
             );
         }
+        try{
+            $this->mustache->render($data);
+        }catch (\Exception $e){
+            var_dump($templateNames);
+            var_dump($data);
+                die();
+        }
 
-        $content = file_get_contents($templatePath);
-        $this->renderString($content, $data);
     }
     
     public function clearInternalCache()
@@ -66,15 +70,17 @@ class MustacheTemplateEngine implements ITemplateEngine
 
             $loaders = array();
             foreach($dirs as $dir){
-                $loaders[]= new \Mustache_Loader_FilesystemLoader($dir);
+                $loaders[]= new \Mustache_Loader_FilesystemLoader(realpath($dir));
             }
-            $loaders[]=new \Mustache_Loader_StringLoader();
+
+            //$loaders[]=new \Mustache_Loader_StringLoader();
             $loader =new \Mustache_Loader_CascadingLoader($loaders);
             $options  = array(
                 'loader'          => $loader,
                 'partials_loader' => $loader,
                 'debug'=>false,
-                'cache'=>null
+                'cache'=>null,
+                'extension'=>'html'
             );
             if ($this->pieCrust->isDebuggingEnabled() or
                 $this->pieCrust->getConfig()->getValue('mustache/debug') === true)
@@ -85,7 +91,10 @@ class MustacheTemplateEngine implements ITemplateEngine
             {
                 $options['cache'] = $this->pieCrust->getCacheDir() . 'mustache_c';
             }
+
             $this->mustache = new \Mustache_Engine($options);
+            var_dump($this->mustache );
+            die();
         }
     }
 }
