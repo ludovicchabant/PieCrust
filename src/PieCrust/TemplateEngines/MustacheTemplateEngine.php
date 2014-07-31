@@ -25,6 +25,7 @@ class MustacheTemplateEngine implements ITemplateEngine
     public function renderString($content, $data)
     {
         $this->ensureLoaded();
+
         echo $this->mustache->render($content, $data);
     }
     
@@ -33,10 +34,11 @@ class MustacheTemplateEngine implements ITemplateEngine
         $this->ensureLoaded();
 
         $templatePath = null;
+
         foreach ($templateNames as $templateName)
         {
-            $templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
-            $this->mustache->loadTemplate($templatePath);
+            //$templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
+            $this->mustache->loadTemplate($templateName);
         }
         if (!$templatePath)
         {
@@ -51,8 +53,9 @@ class MustacheTemplateEngine implements ITemplateEngine
         try{
             $this->mustache->render($data);
         }catch (\Exception $e){
+            var_dump($e->getMessage());
             var_dump($templateNames);
-            var_dump($data);
+
                 die();
         }
 
@@ -70,17 +73,16 @@ class MustacheTemplateEngine implements ITemplateEngine
 
             $loaders = array();
             foreach($dirs as $dir){
-                $loaders[]= new \Mustache_Loader_FilesystemLoader(realpath($dir));
+                $loaders[]= new \Mustache_Loader_FilesystemLoader(realpath($dir),array('extension'=>'html'));
             }
 
-            //$loaders[]=new \Mustache_Loader_StringLoader();
+            $loaders[]=new \Mustache_Loader_StringLoader();
             $loader =new \Mustache_Loader_CascadingLoader($loaders);
             $options  = array(
                 'loader'          => $loader,
                 'partials_loader' => $loader,
                 'debug'=>false,
-                'cache'=>null,
-                'extension'=>'html'
+                'cache'=>null
             );
             if ($this->pieCrust->isDebuggingEnabled() or
                 $this->pieCrust->getConfig()->getValue('mustache/debug') === true)
@@ -93,8 +95,7 @@ class MustacheTemplateEngine implements ITemplateEngine
             }
 
             $this->mustache = new \Mustache_Engine($options);
-            var_dump($this->mustache );
-            die();
+
         }
     }
 }
