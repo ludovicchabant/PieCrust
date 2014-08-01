@@ -107,9 +107,11 @@ class PieCrustBaker implements IBaker
     public function setBakeDir($dir)
     {
         $this->bakeDir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
+
         try
         {
             PathHelper::ensureDirectory($this->bakeDir, true);
+            $this->bakeDir = realpath($this->bakeDir);
         }
         catch (Exception $e)
         {
