@@ -10,6 +10,9 @@ use PieCrust\Util\PathHelper;
 class MustacheTemplateEngine implements ITemplateEngine
 {
     protected $pieCrust;
+    /**
+     * @var \Mustache_Engine
+     */
     protected $mustache;
     
     public function initialize(IPieCrust $pieCrust)
@@ -37,26 +40,7 @@ class MustacheTemplateEngine implements ITemplateEngine
 
         foreach ($templateNames as $templateName)
         {
-            //$templatePath = PathHelper::getTemplatePath($this->pieCrust, $templateName);
-            $this->mustache->loadTemplate($templateName);
-        }
-        if (!$templatePath)
-        {
-            throw new PieCrustException(
-                sprintf(
-                    "Couldn't find template(s) '%s' in: %s",
-                    implode(', ', $templateNames),
-                    implode(', ', $this->pieCrust->getTemplatesDirs())
-                )
-            );
-        }
-        try{
-            $this->mustache->render($data);
-        }catch (\Exception $e){
-            var_dump($e->getMessage());
-            var_dump($templateNames);
-
-                die();
+            echo $this->mustache->render($templateName,$data);
         }
 
     }
@@ -73,7 +57,7 @@ class MustacheTemplateEngine implements ITemplateEngine
 
             $loaders = array();
             foreach($dirs as $dir){
-                $loaders[]= new \Mustache_Loader_FilesystemLoader(realpath($dir),array('extension'=>'html'));
+                $loaders[]= new \Mustache_Loader_FilesystemLoader(realpath($dir));
             }
 
             $loaders[]=new \Mustache_Loader_StringLoader();
