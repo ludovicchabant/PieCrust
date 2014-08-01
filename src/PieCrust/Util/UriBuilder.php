@@ -49,13 +49,7 @@ class UriBuilder
     public static function buildPostUri(IPieCrust $pieCrust, $blogKey, $postInfo)
     {
         $postUrlFormat = $pieCrust->getConfig()->getValue($blogKey.'/post_url');
-        $replacements = array(
-            '%year%' => $postInfo->year,
-            '%month%' => $postInfo->month,
-            '%day%' => $postInfo->day,
-            '%slug%' => $postInfo->name
-        );
-        return str_replace(array_keys($replacements), array_values($replacements), $postUrlFormat);
+        return $postInfo->getPath($postUrlFormat);
     }
     
     /**
@@ -63,6 +57,7 @@ class UriBuilder
      */
     public static function buildPostUriPattern($postUrlFormat)
     {
+        //TODO: too much year month things
         static $replacements = array(
             '%year%' => '(?P<year>\d{4})',
             '%month%' => '(?P<month>\d{2})',

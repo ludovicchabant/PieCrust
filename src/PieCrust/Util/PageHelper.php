@@ -91,7 +91,10 @@ class PageHelper
      */
     public static function getPostDate($postInfo)
     {
-        return mktime(0, 0, 0, $postInfo->monthValue, $postInfo->dayValue, $postInfo->yearValue);
+        $date = new \DateTime();
+        $date->setTimestamp(filemtime($postInfo->path));
+        $date->setTime(0,0,0);
+        return $date->getTimestamp();
     }
     
     /**
