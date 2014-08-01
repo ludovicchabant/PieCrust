@@ -124,10 +124,11 @@ class PieCrustBaker implements IBaker
     {
         $this->pieCrust = $pieCrust;
         $this->pieCrust->getConfig()->setValue('baker/is_baking', false);
-        
+
         $bakerParametersFromApp = $this->pieCrust->getConfig()->getValue('baker');
         if ($bakerParametersFromApp == null)
             $bakerParametersFromApp = array();
+
         $this->parameters = array_merge(array(
                 'smart' => true,
                 'clean_cache' => false,
@@ -137,15 +138,20 @@ class PieCrustBaker implements IBaker
                 'processors' => '*',
                 'mounts' => array(),
                 'skip_patterns' => array(),
-                'force_patterns' => array()
+                'force_patterns' => array(),
+                'output' => false
             ),
             $bakerParametersFromApp,
             $bakerParameters
         );
+        $outputDir = $this->getParameterValue('output');
+        if($outputDir){
+            $this->setBakeDir($outputDir);
+        }
 
         $this->pageBaker = null;
         $this->logger = $pieCrust->getEnvironment()->getLog();
-        
+
         // New way: apply the `baker` variant.
         // Old way: apply the specified variant, or the default one. Warn about deprecation.
         $variantName = $this->parameters['config_variant'];

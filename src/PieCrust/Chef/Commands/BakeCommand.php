@@ -57,7 +57,7 @@ class BakeCommand extends ChefCommand
         $pieCrust = $context->getApp();
         $result = $context->getResult();
 
-        $outputDir = $result->command->options['output'];
+
 
         // Set-up the app and the baker.
         $bakerParameters = array(
@@ -65,11 +65,11 @@ class BakeCommand extends ChefCommand
             'clean_cache' => $result->command->options['force'],
             'config_variant' => $result->command->options['config_variant']
         );
-        $baker = new PieCrustBaker($pieCrust, $bakerParameters);
-        if ($outputDir)
-        {
-            $baker->setBakeDir($outputDir);
+        if( $result->command->options['output']){
+            $bakerParameters['output'] =  $result->command->options['output'];
         }
+        $baker = new PieCrustBaker($pieCrust, $bakerParameters);
+
         if ($result->command->options['portable_urls'])
         {
             $pieCrust->getConfig()->setValue('baker/portable_urls', true);
