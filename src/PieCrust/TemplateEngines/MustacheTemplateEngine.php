@@ -3,8 +3,7 @@
 namespace PieCrust\TemplateEngines;
 
 use PieCrust\IPieCrust;
-use PieCrust\PieCrustException;
-use PieCrust\Util\PathHelper;
+use PieCrust\Plugins\Mustache\PieCrustExtension;
 
 
 class MustacheTemplateEngine implements ITemplateEngine
@@ -68,6 +67,7 @@ class MustacheTemplateEngine implements ITemplateEngine
                 'debug'=>false,
                 'cache'=>null
             );
+
             if ($this->pieCrust->isDebuggingEnabled() or
                 $this->pieCrust->getConfig()->getValue('mustache/debug') === true)
             {
@@ -79,6 +79,10 @@ class MustacheTemplateEngine implements ITemplateEngine
             }
 
             $this->mustache = new \Mustache_Engine($options);
+            $pieCrustExtension = new PieCrustExtension($this->pieCrust);
+            foreach($pieCrustExtension->getFunctions() as $name => $function){
+                $this->mustache->addHelper($name,$function);
+            }
 
         }
     }
