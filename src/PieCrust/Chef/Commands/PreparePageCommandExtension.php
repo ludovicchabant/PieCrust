@@ -42,13 +42,30 @@ class PreparePageCommandExtension extends ChefCommandExtension
             mkdir($pagesDir, 0777, true);
             $app->setPagesDir($pagesDir);
         }
+        
+        // Get the post template.
+        $templateRelPath = 'prepare/page';
+        $ext = 'html';
+        $templatePath = PieCrustDefaults::RES_DIR() . $templateRelPath . '.' . $ext;
+        
+        // Look for the page template in the various supported formatter extensions.
+        $formats = $app->getConfig()->getValue('site/auto_formats');
+        $extensions = array_keys($formats);
+        foreach ($extensions as $maybe_ext) {
+            $alternativeTemplatePath = PieCrustDefaults::CONTENT_DIR . $templateRelPath . '.' . $maybe_ext;
+            if (file_exists($alternativeTemplatePath)) {
+                $templatePath = $alternativeTemplatePath;
+                $ext = $maybe_ext;
+                break;
+            }
+        }
 
         // Create the path of the new page.
         $slug = $result->command->command->args['slug'];
         $slug = ltrim($slug, '/\\');
         $fullPath = $app->getPagesDir() . $slug;
         if (!preg_match('/\.[a-z0-9]+$/i', $slug))
-           $fullPath .= '.html';
+           $fullPath .= '.' . $ext;
         $relativePath = PieCrustHelper::getRelativePath($app, $fullPath);
         if (file_exists($fullPath))
             throw new PieCrustException("Page already exists: {$relativePath}");
@@ -57,18 +74,20 @@ class PreparePageCommandExtension extends ChefCommandExtension
         // Create the title and date/time of post.
         $title = preg_replace('/[\-_]+/', ' ', $slug);
         $title = ucwords($title);
-        $date = date('Y-m-d H:i');
+        
+        // Read in the template
+        $template = file_get_contents($templatePath);
+
+        // Render the template with the default template engine
+        $engine = PieCrustHelper::getTemplateEngine($app, 'html');
+        ob_start();
+        $engine->renderString($template, compact('title'));
+        $output = ob_get_clean();
 
         // Write the contents.
         if (!is_dir(dirname($fullPath)))
             mkdir(dirname($fullPath), 0777, true);
-        $f = fopen($fullPath, 'w');
-        fwrite($f, "---\n");
-        fwrite($f, "title: {$title}\n");
-        fwrite($f, "date: {$date}\n");
-        fwrite($f, "---\n");
-        fwrite($f, "A new page.\n");
-        fclose($f);
+        file_put_contents($fullPath, $output);
     }
 }
 
