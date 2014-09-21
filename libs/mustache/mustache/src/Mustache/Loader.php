@@ -3,7 +3,7 @@
 /*
  * This file is part of Mustache.php.
  *
- * (c) 2012 Justin Hileman
+ * (c) 2013 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -17,6 +17,8 @@ interface Mustache_Loader
 
     /**
      * Load a Template by name.
+     *
+     * @throws Mustache_Exception_UnknownTemplateException If a template file is not found.
      *
      * @param string $name
      *
