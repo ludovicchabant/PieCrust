@@ -1,6 +1,10 @@
 
 [![build status](https://secure.travis-ci.org/ludovicchabant/PieCrust.png?branch=master)](http://travis-ci.org/ludovicchabant/PieCrust)
 
+*__ATTENTION__: PieCrust 1.x is deprecated. Please update to PieCrust 2.x. See
+[the official website](http://bolt80.com/piecrust) for details.*
+
+
 PieCrust is a static website generator and lightweight CMS that's all managed
 with text files. No complex setup, databases, or administrative panels.
 Simple, beautiful, and yummy.
