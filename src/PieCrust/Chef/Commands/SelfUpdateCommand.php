@@ -45,6 +45,10 @@ class SelfUpdateCommand extends ChefCommand
         $result = $context->getResult();
         $log = $context->getLog();
 
+        $log->warning("PieCrust 1.x is now deprecated. ".
+            "Please update to PieCrust 2.x. ".
+            "See http://bolt80.com/piecrust for details.");
+
         $matches = array();
         $dryRun = false;
         $requirePhar = true;
