@@ -3,7 +3,7 @@
 /*
  * This file is part of Mustache.php.
  *
- * (c) 2013 Justin Hileman
+ * (c) 2010-2014 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,14 +27,16 @@ class Mustache_HelperCollection
      */
     public function __construct($helpers = null)
     {
-        if ($helpers !== null) {
-            if (!is_array($helpers) && !$helpers instanceof Traversable) {
-                throw new Mustache_Exception_InvalidArgumentException('HelperCollection constructor expects an array of helpers');
-            }
+        if ($helpers === null) {
+            return;
+        }
 
-            foreach ($helpers as $name => $helper) {
-                $this->add($name, $helper);
-            }
+        if (!is_array($helpers) && !$helpers instanceof Traversable) {
+            throw new Mustache_Exception_InvalidArgumentException('HelperCollection constructor expects an array of helpers');
+        }
+
+        foreach ($helpers as $name => $helper) {
+            $this->add($name, $helper);
         }
     }
 
@@ -101,7 +103,7 @@ class Mustache_HelperCollection
      *
      * @param string $name
      *
-     * @return boolean True if helper is present
+     * @return bool True if helper is present
      */
     public function __isset($name)
     {
@@ -113,7 +115,7 @@ class Mustache_HelperCollection
      *
      * @param string $name
      *
-     * @return boolean True if helper is present
+     * @return bool True if helper is present
      */
     public function has($name)
     {
@@ -161,7 +163,7 @@ class Mustache_HelperCollection
     /**
      * Check whether the helper collection is empty.
      *
-     * @return boolean True if the collection is empty
+     * @return bool True if the collection is empty
      */
     public function isEmpty()
     {

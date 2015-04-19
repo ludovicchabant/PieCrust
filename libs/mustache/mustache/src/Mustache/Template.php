@@ -3,7 +3,7 @@
 /*
  * This file is part of Mustache.php.
  *
- * (c) 2013 Justin Hileman
+ * (c) 2010-2014 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,14 +16,13 @@
  */
 abstract class Mustache_Template
 {
-
     /**
      * @var Mustache_Engine
      */
     protected $mustache;
 
     /**
-     * @var boolean
+     * @var bool
      */
     protected $strictCallables = false;
 
@@ -38,7 +37,7 @@ abstract class Mustache_Template
     }
 
     /**
-     * Mustache Template instances can be treated as a function and rendered by simply calling them:
+     * Mustache Template instances can be treated as a function and rendered by simply calling them.
      *
      *     $m = new Mustache_Engine;
      *     $tpl = $m->loadTemplate('Hello, {{ name }}!');
@@ -64,7 +63,9 @@ abstract class Mustache_Template
      */
     public function render($context = array())
     {
-        return $this->renderInternal($this->prepareContextStack($context));
+        return $this->renderInternal(
+            $this->prepareContextStack($context)
+        );
     }
 
     /**
@@ -108,23 +109,26 @@ abstract class Mustache_Template
      *
      * @param mixed $value
      *
-     * @return boolean True if the value is 'iterable'
+     * @return bool True if the value is 'iterable'
      */
     protected function isIterable($value)
     {
-        if (is_object($value)) {
-            return $value instanceof Traversable;
-        } elseif (is_array($value)) {
-            $i = 0;
-            foreach ($value as $k => $v) {
-                if ($k !== $i++) {
-                    return false;
-                }
-            }
+        switch (gettype($value)) {
+            case 'object':
+                return $value instanceof Traversable;
 
-            return true;
-        } else {
-            return false;
+            case 'array':
+                $i = 0;
+                foreach ($value as $k => $v) {
+                    if ($k !== $i++) {
+                        return false;
+                    }
+                }
+
+                return true;
+
+            default:
+                return false;
         }
     }
 
@@ -139,7 +143,7 @@ abstract class Mustache_Template
      */
     protected function prepareContextStack($context = null)
     {
-        $stack = new Mustache_Context;
+        $stack = new Mustache_Context();
 
         $helpers = $this->mustache->getHelpers();
         if (!$helpers->isEmpty()) {
