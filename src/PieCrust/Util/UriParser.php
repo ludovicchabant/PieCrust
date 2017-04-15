@@ -119,6 +119,8 @@ class UriParser
             foreach ($autoFormats as $ext => $format)
             {
                 $relativePath[] = $uri . '.' . $ext;
+                // Allow also _index pages in subdirectories...
+                $relativePath[] = $uri . '/' . PieCrustDefaults::INDEX_PAGE_NAME . '.' . $ext;
             }
         }
 
