@@ -13,7 +13,7 @@ For more information, along with the complete documentation, visit [the
 official website](http://bolt80.com/piecrust/).
 
 
-Quickstart
+Quickstart:An smart project
 ==========
 
 If you want to quickly give it a spin:
